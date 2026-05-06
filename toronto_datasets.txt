@@ -1,0 +1,630 @@
+Address Points (Municipal) - Toronto One Address Repository | The One Address Repository data set provides a point representation for over 500
+Building Permits - Cleared Permits | Provides information on Building Permits completed/closed. 
+    
+A building pe
+Short Term Rentals Registration | The short-term rental regulation is based on Toronto Municipal Code Chapter 547,
+Building Construction/Demolition Violations | This data set includes all Open and Closed building construction/demolition viol
+Building Permits - Active Permits | Provides information on currently active Building Applications and Permits.
+Preliminary Zoning Reviews | This data considers 4 different programs supported by Toronto Building: Busines
+Committee of Adjustment Applications | This dataset includes information about applications submitted to the Committee
+Apartment Building Evaluation | RentSafeTO: Apartment Building Standards is a bylaw enforcement program establis
+Intersection File - City of Toronto | This data was collected for planning and mapping purposes and includes all inter
+Development Applications | This dataset lists all currently active (open) and inactive (closed) Community P
+BodySafe | Starting July 1, 2013, under the revised [Municipal Code Chapter 545, Licensing
+Topographic Mapping – Physical location of trees | Point layer representing the physical location of trees. Part of the City’s topo
+Non Regulated Lead Sample | The City's Residential Lead Testing Program is a non-regulated program provided
+Topographic Mapping - Waterbodies & Rivers | Polygon layer representing the physical area of waterbodies and rivers. Some fea
+Municipal Licensing and Standards - Business Licences and Permits | **Category -** Type of licence or permit  
+
+**Licence No -** Number of licenc
+Toronto Island Ferry Ticket Counts | Ferries to [Toronto Island Park](https://www.toronto.ca/explore-enjoy/parks-gard
+Red Light Cameras | Red Light Camera (RLC) is an automated system which photographs vehicles that ru
+Traffic Volumes - Midblock Vehicle Speed, Volume and Classification Counts | The City of Toronto's Transportation Services Division collects short-term traff
+EarlyON Child and Family Centres | EarlyON Child and family centres offer free programs to parents/caregivers and t
+Open Data Portal Usage | This dataset measures usership of the City of Toronto [Open Data Portal](https:/
+Dinesafe | DineSafe is Toronto Public Health’s food safety program that inspects all establ
+Toronto's Dashboard Key Indicators | Key indicator data from City of Toronto divisions and agencies are shared with t
+Noise Exemption Permits | The Noise Bylaw provides standards for noise in Toronto. This includes decibel
+Traffic Volumes - Multimodal Intersection Turning Movement Counts | The City of Toronto's Transportation Services Division collects short-term traff
+Property Boundaries | This data is a GIS file that outlines the geographical area of all properties in
+Green Spaces | Green Spaces is a geospatial dataset of polygons that is a point-in-time general
+Sidewalk Construction Program | The City of Toronto's Missing Sidewalk Installation Program Dataset illustrates
+Motor Vehicle Collisions Involving Killed or Seriously Injured Persons | The City of Toronto’s Transportation Services Division receives collision data f
+Festivals & Events | **Description and Purpose of the Dataset**
+
+This dataset lists all festivals,
+Temporary Extension and Special Occasion Permit Endorsements for Liquor Licences | All temporary liquor licence applications that have been endorsed as municipally
+Light duty city vehicle utilization data | The Fleet Services Division provides and maintains the City's vehicles and equip
+Permanent Bicycle Counters | This dataset contains counts of bicycles from permanent detectors installed on T
+Toronto Open Data Quality Scores | The Data Quality Score reflects, in the form of a Gold, Silver or Bronze badge,
+Municipal Licensing and Standards - Investigation Activity | This dataset provides information related to by-law enforcement activity within
+Lobbyist Registry | See Lobbyist Registry Data Readme
+
+The Lobbyist Registrar's office promotes an
+Parks Drinking Water Sources | This dataset includes data on drinking water sources (i.e. drinking fountains, b
+Park Washroom Facilities | This dataset includes data on washroom facilities operated by the City of Toront
+Licensed Child Care Centres | A dataset of all Licensed Child Care Centres in the City of Toronto including th
+Watermains | This dataset provides pertinent information on the location of water system pipe
+Toronto Bids Solicitations | The Solicitations for the Purchase of Goods and Services dataset contains a list
+Water Valves | This dataset provides pertinent information on the general location of water sys
+Water Hydrants | This dataset provides pertinent information on the general location of water sys
+Water Fittings | This dataset provides pertinent information on the general location of water sys
+Licensed Dogs and Cats | The reports include data on licensed dogs and cats residing in Toronto after yea
+Polls conducted by the City | The City Clerk's Office is responsible for conducting polls on behalf of City
+Rain Gauge Locations and Precipitation | This dataset contains the locations of all rain gauge equipment across the city
+Traffic Signal Timing | This dataset contains traffic signal phasing and interval sequences that were in
+Daily Shelter & Overnight Service Occupancy & Capacity | This data set provides a daily list of active overnight shelter and allied servi
+Toronto Open Data Intake | This dataset displays the Open Data intake queue in its raw form. Data here cont
+Bike Share Toronto Ridership Data | This Bike Share Toronto ridership dataset contains anonymized trip data. It incl
+Short Term Rental Registration & Enforcement overview | In Toronto, short-term rentals are regulated by the Toronto Municipal Code Chapt
+Real Estate Asset Inventory | This dataset contains the City of Toronto's real estate asset portfolio
+Budget - Operating Budget Program Summary by Expenditure Category | This dataset identifies the approved and recommended annual operating budget sum
+Building Permits - Signs | Dataset contains information on all Sign Permit applications received on or
+aft
+Building Permits - Pool Enclosures | See Toronto Building - Pool Permits readme.xls
+
+Dataset may not be complete be
+Building Permits - Solar Hot Water Heaters | See Solar Water Heater Permits readme.xls
+
+Ability to specifically identify th
+Registry of Dogs Subject to and Issued a Dangerous Dog Order | Dangerous Dog Orders issued to dogs by the City of Toronto that are currently ac
+Building Permits - Green Roofs | The Green Roof By-law was adopted by Toronto City Council May 2009 under the
+au
+Tennis Courts Facilities | This dataset includes data on tennis court locations that belong to the City of
+Residential Front Yard Parking | **Address -** Number and street
+
+**Licensed Spaces -** Number of parking spots
+Web Analytics | See Readme File
+
+This dataset contains web analytics (statistics) capturing vi
+Members of Toronto City Council - Meeting Attendance | This dataset includes the legislative meeting attendance data for Members of Tor
+City Council and Committees Meeting Schedule Reports | This open data set provides access to meeting schedule data extracted from TMMIS
+Multi-Tenant (Rooming) House Licences | All operators of multi-tenant houses across the City of Toronto are required
+to
+City Vehicle Availability | The Fleet Services Division (FSD) procures and maintains over 5,000 City vehicle
+Street Furniture - Bicycle Parking - Bicycle Locking Ring | The City installs and maintains bicycle post-and-rings within the public right-o
+Park and Recreation Facility Projects | A city builds parks and recreation facilities so its people can build community.
+Utility Cut Permits | The addresses and intersections provided in the file are references to the appro
+Private Transportation Companies - Summary and Trip Data | The City of Toronto collects trip and vehicle operating data from Private Transp
+Private Transportation Companies – Vehicle Operating Data | The City of Toronto collects trip and vehicle operating data from Private Transp
+Toronto Centreline (TCL) | The Toronto Centreline is a data set of linear features representing streets, wa
+Registry of Declared Interest | Effective March 1, 2019, the [Municipal Conflict of Interest Act](https://www.on
+Sewer Maintenance Holes | This dataset provides pertinent information on the general location of sewer sys
+Sewer Gravity Mains | This dataset provides pertinent information on the location of gravity sewer sys
+Sewer Outfalls | This dataset provides pertinent information on the general location of sewer sys
+Sewer Inlets | This dataset provides pertinent information on the general location of sewer sys
+Sewer Junctions | This dataset provides pertinent information on the general location of sewer sys
+Toronto Bids Non-Competitive Contracts | The Non-Competitive Contracts dataset contains a list of non-competitive contrac
+Toronto Bids Awarded Contracts | The Competitive Contracts dataset contains a list and summary of information abo
+Central Intake calls | If you are in need of emergency shelter space, please call the City of Toronto’s
+Registered Programs and Drop In Courses Offering | City of Toronto has a multitude of exciting programs for all ages. Whether publi
+Members of Toronto City Council - Voting Record | This dataset includes the Voting record for Members of Toronto City Council at l
+Monthly Communicable Disease Surveillance Data | The [Health Protection and Promotion Act](https://www.ontario.ca/laws/statute/90
+Development Pipeline | The Development Pipeline examines how and where the city has grown over the past
+Sewer Pressurized Mains | This dataset provides pertinent information on the general location of pressuriz
+Outbreaks in Toronto Healthcare Institutions | Under the Ontario [Health Protection and Promotion Act](https://www.ontario.ca/l
+Budget - Capital Budget & Plan By Ward (10 yr Approved) | ### Attributes for Capital Budget & Plan
+  
+**Program/Agency Name** - Name of
+Road Reconstruction Program | This dataset includes 2 categories of road reconstruction:
+
+Road rehabilitatio
+Road Resurfacing Program | This data shows the currently active, planned, or completed road resurfacing pro
+Air Conditioned and Cool Spaces (Heat Relief Network) | The City of Toronto coordinates a Heat Relief Network throughout the summer seas
+On-Street Permit Parking Area Maps | **FID -** System field
+
+**Feature Id Shape -** Feature Type (polygon)
+
+**Are
+Bicycle Parking - High Capacity (Outdoor) | This dataset identifies the location of all outdoor high capacity bicycle
+parki
+Community Grants Allocations | This dataset contains information about grants approved by City Council through
+Toronto Beaches Water Quality | The Beach Water Sampling Program for the City of Toronto is a co-operative effor
+Library Branch Programs and Events Feed | JSON data providing details on upcoming programs and events offered at Toronto P
+Toronto Shelter System Flow | The City of Toronto funds and operates services dedicated to people experiencing
+Highrise Residential Fire Inspection Results | Indicates properties where violations have been found by an Inspector which are
+3D Massing | Exploring new ways to share information with each other is a cornerstone of impr
+Traffic and Parking By-Law Schedules | Traffic and parking by-law data from 44 Schedules to City of Toronto Municipal C
+Traffic Signals Tabular | Please see "Traffic Signal Tabular Readme" for more info
+
+This dataset contain
+Labour Force Survey | Statistics Canada publishes monthly labour force statistics for all Canadian Cen
+Freedom of Information Requests Summary | Freedom of Information (FOI Requests) are made under the Municipal Freedom of In
+Water Pressure Districts | This dataset provides pertinent information on the delineation of water system p
+311 Service Requests - Customer Initiated | The dataset contains information on customer initiated service requests received
+311 Contact Centre Performance Metrics | This dataset outlines a number of key performance metrics of the 311 Contact Cen
+Toronto Raccoon Activity Index | Raccoons (Procyon lotor) are a prominent feature of Toronto's urban environment,
+Mobile Watch Your Speed Program – Speed Summary | The Mobile WYSP uses devices called speed display signs or driver feedback signs
+Safety Zone Watch Your Speed Program – Monthly Summary | The WYSP uses devices called speed display signs or driver feedback signs which
+School Safety Zone Watch Your Speed Program – Locations | The WYSP uses devices called speed display signs or driver feedback signs which
+Apartment Building Registration | The Apartment Building Standard (ABS) program is based on a new bylaw Chapter 35
+Traffic Calming Database | The Vision Zero Project Unit within Transportation Services maintains a database
+Topographic Mapping – Building Outlines | Polygon layer representing the physical area of buildings. Building polygon coll
+Clothing Drop-Box Locations | This dataset provides information on the location and operators of permitted clo
+Merged GTFS - TTC Routes and Schedules | Data contains scheduling information (route definitions, stop patterns, stop loc
+Long-Term Care Locations, City Operated | The data was obtained from the Long-Term Care Homes and Services Division in a l
+Heritage Register | See Readme file in Shapefile.
+
+The heritage register is a list required under
+Toronto Animal Services - Service Requests & Complaints | The data includes all service requests related to animals that responded to by T
+Parks and Recreation Facilities | This data set, for each of the City of Toronto's parks and community recreation
+Paramedic Services Incident Data | This dataset provides information relating to all incidents to which Toronto Par
+Land Ambulance Response Time Standard | The legislative response time standard submission timeline requirements are esta
+Pre-Hospital Emergency Care Performance Metrics | For the years 2014 to 2020 inclusive, this dataset provides the number of emerge
+Specialized Patient Transports by Paramedics | This dataset provides the number of patients suffering from stroke, STEMI (a typ
+By-Elections – Unofficial Results | This dataset consists of 2 unofficial election results files in the JSON format:
+Toronto Signature Sites | This dataset provides a collection of large industrial & commercial properties f
+Marriage Licence Statistics | The dataset is created in support of the Marriage Act and the Vital Statistics
+Death Registry Statistics | This dataset includes information relating to the registration of deaths
+docume
+Stillbirth Registration Statistics | This dataset includes information about registration of stillbirths documented
+Bridge Structures | Like all infrastructure, bridges and structures require ongoing maintenance. Reg
+Municipal Licensing and Standards - Toronto Animal Shelter Activity | Toronto Animal Services (TAS) operates three Animal Shelters, and cares for anim
+Imagination, Manufacturing, Innovation and Technology (IMIT) Program Recipients | Toronto’s Imagination, Manufacturing, Innovation and Technology (IMIT) business
+Library Branch General Information | This dataset shows the current characteristics of Toronto Public Library branche
+Deaths of People Experiencing Homelessness | Toronto Public Health (TPH) leads the data collection, analysis and reporting of
+Deaths of People Experiencing Homelessness (Archival) | This dataset is retired and remains solely for archival purposes. The updated da
+Affordable Housing Pipeline | This dataset tracks rent-controlled market homes, affordable rental homes, and R
+Bicycle Cordon Count: 2010, 2013, 2014 | The data in this repository was collected as part of the City of Toronto Bicycle
+Bicycle and Micromobility Cordon Count | The data in this repository were collected as part of the 2022 Toronto Micromobi
+Report Request Log – City Council and its Committees | The City Clerk's Office maintains a log of report requests made by City Council
+Street Furniture - Automated Public Washroom | Toronto’s automated public toilets were first introduced in 2008. The automated
+Site and area Specific policies | Site and Area Specific Policies have been completed to reflect the December 2025
+Environmentally Significant Areas | Areas of land or water within the natural heritage system with characteristics a
+Cycling Network | The Toronto bikeways dataset illustrates the existing cycling network across the
+Natural Heritage System | The natural heritage system is illustrated on Map 9A of the [Official Plan](http
+Library Circulation | This dataset shows the annual circulation of materials at Toronto Public Library
+Library Workstation Usage | This dataset shows the annual computer workstation sessions at Toronto Public Li
+Secondary Plans | Secondary Plans are more detailed local development policies to guide growth
+an
+Library Card Registrations | This dataset shows the annual library card registrations at Toronto Public Libra
+Z39.50 - Library Catalogue | Z39.50 provides real-time library catalogue access. It is an international stand
+Library Circulation by Cardholder Type | This dataset shows the annual circulation of materials by cardholder type at Tor
+Library Branch Space Rentals | This dataset lists Toronto Public Library spaces that are available for the publ
+Library Visits | This dataset shows the annual visits at Toronto Public Library branches. Visits
+Active Affordable and Social Housing Units | This dataset contains information on the active social housing stock and the act
+Deaths of Shelter Residents | This dataset provides data about Deaths of Shelter Residents.
+
+More informatio
+Licensed Dog and Cat Names | This dataset contains the most popular names of licensed dogs and cats living in
+Historical Toronto Police Operating Budget | **This dataset is retired. Please see [Toronto Police Budget](https://open.toron
+Community Safety Indicators | This dataset includes all Community Safety Indicators (CSI) occurrences by repor
+Neighbourhood Crime Rates | This dataset includes the Crime Data by Neighbourhood. Counts are available for
+Theft from Motor Vehicle | This dataset includes all Theft from Motor Vehicle occurrences by reported date
+Police Annual Statistical Report - Traffic Collisions | This dataset includes all Motor Vehicle Collision (MVC) occurrences by their occ
+Persons in Crisis Calls for Service Attended | This dataset includes all Persons in Crisis (PIC) calls for service attended (CF
+Mental Health Act Apprehensions | This dataset includes Mental Health Act Apprehensions from 2014. 
+
+[Download D
+Bicycle Thefts | This dataset contains occurrences related to bicycle thefts since 2014. These oc
+Shootings & Firearm Discharges | This dataset contains all shooting-related occurrences reported to the Toronto P
+Police Annual Statistical Report - Homicides | This dataset includes all Homicides since 2004. Divisional association to each h
+Hate Crimes | This dataset includes all verified Hate Crime occurrences investigated by the Ha
+Intimate Partner and Family Violence | This data set includes all verified Intimate Partner Violence occurrences invest
+Police Annual Statistical Report - Shooting Occurrences | The Toronto’s Police Service Annual Statistical Report (ASR) is a comprehensive
+Police Annual Statistical Report - Regulated Interactions Demographics | The Toronto’s Police Service Annual Statistical Report (ASR) is a comprehensive
+Field Information Reports | As part of our ongoing commitment to open data, the Toronto Police Service conti
+Patrol Zones | This dataset includes the Toronto Police Service patrol zone boundaries updated
+Police Annual Statistical Report - Victims of Crimes | This dataset includes all identified victims of crimes against the person, inclu
+Police Annual Statistical Report - Regulated Interactions | The data provided count describes situations involving regulated interactions.
+Police Annual Statistical Report - Search of Persons | This dataset includes all Level 3 and Level 4 searches that were conducted.
+In
+Police Annual Statistical Report - Reported Crimes | This dataset includes all reported crime offences by reported date aggregated by
+Police Annual Statistical Report - Complaint Dispositions | This dataset provides a breakdown of the total investigated complaints by dispos
+Police Annual Statistical Report - Investigated Alleged Misconduct | This dataset provides a breakdown of the total investigated complaints by type o
+Police Annual Statistical Report - Total Public Complaints | This dataset provides a breakdown of the total number of public complaints from
+Police Annual Statistical Report - Gross Operating Budget | This dataset provides the Gross Operating Budget incurred by the Toronto Police
+Police Annual Statistical Report - Personnel by Rank by Division | This dataset provides a count of personnel broken down by rank classification fo
+Police Annual Statistical Report - Personnel by Rank | This dataset provides a count of personnel broken down by rank classification fo
+Police Annual Statistical Report - Miscellaneous Firearms | **Firearm Type**
+
+Breakdown of firearm type for every firearm that was seized
+Police Annual Statistical Report - Top 20 Offences of Firearms Seizures | This dataset provides a list of top 20 offences ranked by volume, for occurrence
+Police Annual Statistical Report - Tickets Issued | This dataset provides an aggregated count of tickets issued by year, ticket type
+Police Annual Statistical Report - Arrested and Charged Persons | This dataset provides an aggregate count of persons who have been arrested and c
+Police Annual Statistical Report - Calls for Service Attended | This dataset provides a count of calls for service attended aggregated by divisi
+Police Annual Statistical Report - Miscellaneous Calls for Service | This dataset includes the following categories of data: Languages, Calls Receive
+Police Annual Statistical Report - Administrative | This dataset provides a breakdown of administrative information. This data is co
+Police Race and Identity Based Data - Arrests and Strip Searches | This dataset includes information related to all arrests and strip searches. A s
+Police Race and Identity Based Data - Use of Force | This dataset contains summary table data of information from the provincial Use
+Police Annual Statistical Report - Dispatched Calls by Division | This dataset provides a count of the dispatched calls by division, including som
+Police Annual Statistical Report - Firearms Top 5 Calibres | The dataset provides a list of the most common types of pistols, revolvers, rifl
+Police Annual Statistical Report - Gross Expenditures by Division | This dataset provides a breakdown of the Gross Expenditures for each division. T
+Police Annual Statistical Report - Miscellaneous Data | The Toronto’s Police Service Annual Statistical Report (ASR) is a comprehensive
+Police Annual Statistical Report - Personnel by Command | This dataset provides a count of personnel broken down by command level.
+Surface Routes and Schedules for BusTime | The TTC may provide additional updates as required to address service impacts an
+Automated Speed Enforcement (ASE) Charges | This dataset contains the number of Automated Speed Enforcement (ASE) tickets is
+City of Toronto Free Public WiFi | Location and description data of all City of Toronto free public WiFi locations
+Fatal and non-fatal suspected opioid overdoses in the shelter system | This data set shows the number of fatal and non-fatal suspected opioid overdose
+TTC Routes and Schedules | __The TTC may provide additional updates as required to address service impacts
+Small Business Property Tax Subclass: Eligible Properties | On November 9, 2021, City Council approved a 15 per cent reduction in the tax ra
+Solid Waste Collection Schedule | This dataset contains the schedules for Organics (Green Bin), Garbage, Recycling
+Heritage Conservation Districts | See Readme file in shapefile.
+
+The HCDs in the City of Toronto are protected b
+Area Speed Limit Reductions | The City of Toronto is currently reducing speed limits to curb speeding on  road
+TTC Bus Delay Data | TTC Bus Delay Data
+TTC Subway Delay Data | TTC Subway & SRT Train Service Delay Data
+TTC Streetcar Delay Data | TTC Streetcar Delay Data
+TTC LRT Delay Data | Timing, location, and cause of TTC LRT delays
+Fire Hydrants | This dataset contains the location of all City owned fire hydrants in Toronto.
+Wellbeing Youth - Adult Education Upgrading | Educational programs to help you gain entry into apprenticeships and post-second
+Wellbeing Youth - Affordable Housing Access | Includes access to subsidized or rent-geared-to-income housing and supportive ho
+Wellbeing Youth - Alternative Adult Education | Information on alternative schools and adult learning centres. Also includes sch
+Wellbeing Youth - Concurrent Disorder Programs | Support services for youth struggling with any combination of mental health and
+Wellbeing Youth - Disability Supports Services | Youth-specific programs and services for those with physical and developmental d
+Wellbeing Youth - Sexual Health Services | Information about sexual health support services, sexual assault care and genera
+Wellbeing Youth - Housing Eviction Help | Includes access to emergency shelters, Toronto Rent Bank, Landlord and Tenant Bo
+Wellbeing Youth - Legal Justice Support | Programs and resources to assist youth in accessing or upholding their rights, i
+Wellbeing Youth - Legal Support Advocacy | Other community services offering legal/paralegal support and advocacy. Taxonomo
+Wellbeing Youth - Life Skills Training | Programs that empower participants and help them acquire skills to deal with eve
+Wellbeing Youth - Newcomer Settlement Services | Services and programs serving the specific needs of immigrant and refugee youth.
+Wellbeing Youth - Substance Use Treatment | Crisis services and support programs for youth dealing with substance use and ad
+Wellbeing Youth- Aboriginal Youth Services | Programs and services focused on the needs of youth in the First Nations, Inuit
+Wellbeing Youth - Educational Support | Services that support students’ capacity to pursue educational and training prog
+Wellbeing Youth - Employment Resources | Programs and resources for youth and young adults seeking employment, such as Em
+Wellbeing Youth - Financial Services | Government programs that provide a source of income and access to services for f
+Wellbeing Youth - Health Services | Includes health crisis and general information services, hospitals and emergency
+Wellbeing Youth - LGBTQ Resources | Programs for youth who are lesbian, gay, bisexual, transsexual, transgendered, q
+Wellbeing Youth - Mental Health | Listings for crisis lines, general information, case management and support serv
+Wellbeing Youth - Parenting Programs | Includes prenatal and postnatal care, education, residential, counselling and pa
+Wellbeing Youth - Recreation | Cultural, arts, sports, and recreation programs geared to youth and young adults
+Wellbeing Youth - Refugee Housing | Agencies that offer safe shelter and transitional housing programs to assist ref
+Wellbeing Youth - Transitional Housing | Housing for homeless youth and youth coming out of unstable housing situations.
+Fire Services Emergency Incident Basic Detail | This dataset includes response time intervals (dispatch, enroute, arrive and c
+Transport Bus Initiative Usage | This data set provides daily data about use of the TTC’s Transport Bus Initiativ
+SolarTO | The City of Toronto’s SolarTO Map was created through a Geographic Information S
+Subsidized Housing Listings | The Subsidized Housing Listings dataset represents the portfolio of subsidized b
+Community Benefits Secured (Planning Act Sections 37 and 45) | The legacy Section 37 density bonusing framework in the  Planning Act, 1990 enab
+Current and Future Climate | This dataset was developed by Toronto and Region Conservation Authority for the
+Basement Flooding Study Areas | This dataset provides pertinent information on the delineation of areas that are
+The City Operated Electric Vehicle Charging Station Map | The map shows an expanding network of publicly accessible electric vehicle (EV)
+Park and Recreation Facility Study Areas | Parks, Forestry and Recreation develops plans and strategies to help guide how w
+Topographic Mapping - Water Line | Line layer representing small waterways. These are for any waterways too narrow
+Topographic Mapping - Railway | Polyline layer representing aboveground railway tracks. Part of the City’s topog
+Green Streets | Green Streets are roads that include [green infrastructure](https://www.toronto.
+Litter Bin Collection Frequency | There are more than 10,000 garbage/recycling street litter bins across the city
+StrollTO | This dataset list points of interest associated with each of Toronto’s 158 neigh
+Off Leash Areas | This data set, for each of the City of Toronto's off leash areas, provides locat
+COVID-19 Immunization Clinics | The City of Toronto’s Immunization Task Force is readying nine City-operated COV
+COVID-19 Testing Sites | COVID-19 testing is coordinated by the provincial government and local healthcar
+Bicycle Parking Racks | Shapefile of permanent and seasonal multiple-capacity bicycle parking racks
+ins
+Public Art | This map shows over 400 works of public art throughout the City of Toronto. The
+Zoning By-law | Zoning By-law 569-2013 has been updated to include amendments up to June 18th, 2
+Blacklegged Tick Surveillance | Toronto’s tick surveillance program monitors the number of blacklegged ticks, th
+Community Council Boundaries | This is a geo-spatial file that outlines the service districts of the City of
+T
+Archaeological Potential - Interim | Attributes are described in a readme file as part of each dataset.
+
+The City's
+Toronto Fire Services Run Areas | A run area is a geographical area in proximity to a fire station that is normall
+Sign Bylaw Districts | The data layer shows the sign district designations of all properties in the Cit
+Outdoor Artificial Ice Rinks | This dataset includes data on outdoor Artificial Ice Rinks (AIR) and skate trail
+Indoor Ice Rinks | This dataset includes information on arenas, community centres, and recreation c
+Traffic Control Devices | The Traffic Systems Delivery (TSD) map tracks Traffic Control Devices (TCDs) tha
+Topographic Mapping – Edge of Road | Polygon layer representing the physical area of the City’s street system. Part o
+Topographic Mapping – Physical area of sidewalks | Polygon layer representing the physical area of sidewalks. Part of the City’s to
+Topographic Mapping - Poles | Topographic mapping includes features that are visible on the ground (planimet
+Pedestrian Network | The Pedestrian Network (pednet) was created by the DAV team at the City of Toron
+Cultural Hotspot - Points of Interest | Cultural Hotspot spans a vast geographic area and many local neighbourhoods with
+Fire Facility Locations | This dataset contains the location of all active fire stations and fire related
+MBNCanada Performance Measures | Publicly reportable performance measures data from City of Toronto's participati
+Doors Open Toronto 2016 | This dataset lists all properties participating in Doors Open Toronto on Saturda
+Doors Open Toronto 2017 | This dataset lists all properties participating in Doors Open Toronto on Saturd
+Doors Open Toronto 2018 | This dataset lists all properties participating in Doors Open Toronto on
+Saturd
+Councillors' Constituency Services & Office Expense Reporting | Each Councillor has a constituency services and office budget to pay for expense
+Metadata Catalog | List of the tags that the Toronto Open Data Portal will use to categorize and se
+Toronto Police Staffing by Command | This datasets includes the Toronto Police Service’s approved and actual staffing
+Toronto Police Budget By Command | This dataset includes a summarized breakdown of the Toronto Police Service appro
+Topographic Mapping – Physical area of parking lots | Polygon layer representing the physical area of parking lots. Part of the City’s
+Annual Summary of Reportable Communicable Diseases | **This dataset has not been update since 2019 due to COVID-19, and will be resum
+Business Incubation | The dataset comprises a list of organizations within the ecosystem that provid
+King St. Transit Pilot - 2015 King Street Traffic Counts | The [King Street Transit Pilot](https://www.toronto.ca/city-government/plannin
+King St. Transit Pilot - Bluetooth Travel Time Summary | The [King Street Transit Pilot](https://www.toronto.ca/city-government/plannin
+King St. Transit Pilot - Traffic & Pedestrian Volumes Summary | The [King Street Transit Pilot](https://www.toronto.ca/city-government/plannin
+Transportation Innovation Zones - Stakeholder Workshops Results | The City of Toronto hosted four online workshops in mid-September 2020 to gather
+Air Conditioned Public Places & Cooling Centres | **This dataset has been retired and replaced with [Air Conditioned and Cool Spac
+Civic Issue Campaign Results | The Open Data team launched a campaign in order to help identify as well as prio
+Neighbourhood Profiles | The Census of Population is held across Canada every 5 years and collects data a
+Daily Shelter Occupancy | The data set provides a listing of all the active shelters serving the City of T
+COVID-19 Cases in Toronto | Toronto Public Health (TPH) shared anonymized, person-level information for all
+Elections Subdivisions | Polygon shapefiles that depicts the Election Polling Subdivisions for the 2023 M
+Elections Voting Locations | This is a point data set that identifies the address of voting locations for the
+Neighbourhoods | "Toronto’s 158 neighbourhoods are a microcosm of the city’s inhabitants, culture
+Places of Worship | Religious locations such as churches, synagogues, temples, ashrams, mosques, etc
+Police Facility Locations | A geographical point shape file that depicts the police facility locations.
+Renewable Energy Installations | This dataset contains City of Toronto renewable energy installations on City-o
+Retirement Homes | ID - used for labels on maps 
+
+NAME - name of location 
+
+ADDRESS - address o
+Street Tree Data | This data primarily pertains to City-owned trees located on road allowances acro
+Former Municipality Boundaries | Field Name - Description/Definition  
+AREA_ID - Internal geographic identifier
+Places of Interest and Toronto Attractions | This dataset contains a listing of attractions in Toronto including parks, landm
+Ambulance Station Locations | This geographical file contains the locations of ambulance stations within the C
+Toronto Community Housing Data | This is Toronto Community Housing data covering developments and buildings large
+Council and Standing Committee Meeting Statistics | These datasets contains meeting data for Council, Community Council and Standing
+Neighbourhood Improvement Areas | Neighbourhood Improvement Areas are specially-selected and designated neighbourh
+Proclamations | Proclamations are used for public awareness campaigns, charitable fundraising ca
+Bicycle Parking - Bike Stations (Indoor) | This dataset contains the locations of all the indoor bike station facilities
+l
+Bicycle Shops | __This datast is no longer being maintained. It has been retired as of April 15,
+City Wards | The City of Toronto is divided into municipal wards. This dataset includes:
+Toronto Beaches Observations | Observations made daily by city staff on Toronto's beaches. Where appropriate, i
+Cultural Festivals Funding Program recipients | This data is contained in the larger [Community Grants Allocations](https://open
+PollinateTO Primary Project Garden Locations | This dataset contains information on the locations of primary gardens for Pollin
+Presto Card Access | This map showcases where you can get a physical PRESTO Card in the City of Toron
+Parking Occupancy | The Toronto Parking Authority (TPA) operates a portfolio of several City-owned o
+Update Downsview | The Update Downsview Study established a comprehensive planning framework for th
+Immunization Coverage for students | Ontario’s Immunization of School Pupils Act (ISPA) requires that students who at
+Wards and Elected Councillors | This dataset contains a map file for wards and councilors elected of City of Tor
+Elected Officials' Contact Information | This dataset contains contact information of the Mayor and the 25 Councillors el
+Traffic Cameras | The Traffic Camera dataset contains the location and number for every Traffic ca
+Tenant Notification for Rent Reduction | See attached for readme file.
+
+The Residential Tenancies Act (RTA) allows resi
+Toronto Police Budget | This dataset includes a line-by-line breakdown of the Toronto Police Service’s a
+Chemical Tracking (ChemTrac) | Municipal Code Chapter 423, Environmental Reporting and Disclosure By-law,
+requ
+CaféTO Locations | CaféTO is a program that provides licensed eating or drinking establishments in
+Street Furniture - Information Pillar-Wayfinding Structure | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Street Furniture - Bench | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Street Furniture - Poster Board | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Street Furniture - Litter Receptacle | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Street Furniture - Poster Structure | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Street Furniture - Publication Structure | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Street Furniture - Transit Shelter | The City of Toronto entered into a 20-year contractual agreement with Astral
+Ou
+Fire Incidents | This dataset includes only fire incidents as defined by the Ontario Fire Marshal
+Business Improvement Areas | A Business Improvement Area (BIA) is an association of commercial property
+owne
+Automated Speed Enforcement Locations | In November of 2025, the Ontario Government banned the use of speed cameras, and
+TPS Police Divisions | This dataset has been retired. Please view [https://open.toronto.ca/dataset/poli
+Police Boundaries | Data shows which geographical areas in the City are associated to each Toronto P
+Properties Requiring a Cultural Heritage Evaluation Report Under OPA 720 | The following dataset includes properties that have been identified by City Coun
+Demolition and Replacement of Rental Housing Units | This dataset contains information pertaining to projects that have been approved
+Centralized Waiting List Activity for Social Housing | This dataset contains the activity of the Centralized Waiting List (CWL) since 2
+School Locations - All Types | A geographical file covering the City of Toronto that contains all the point loc
+Toronto District School Board Locations | This dataset is retired, as its contents are contained by this other, more compl
+TCDSB - Schools | This dataset is retired, as its contents are contained by this other, more compl
+Cost of Living in Toronto for Low-Income Households | The City of Toronto monitors food affordability every year using the Ontario Nut
+Minister-Approved Major Transit Station Areas | Chapter 8 of Toronto’s Official Plan contains policies and delineations for Majo
+Red Light Camera Annual Charges | This dataset contains the annual number of Red Light Camera tickets issued at al
+PCard Expenditures | See README file (PCard Expenditures Readme.xls)
+
+Council PCard expenses are
+Annual Energy Consumption [City Owned/Operated Buildings] | Energy consumption and GHG emissions data for City owned and operated buildings
+Toronto Employment Survey Summary Tables | The Toronto Employment Survey Bulletin summarizes the highlights of the field su
+Topographic Mapping – Impermeable Surface | - The Impermeable Surface dataset is a 1-bit raster indicating mainly artificial
+HousingTO Action Plan | The HousingTO 2020-2030 Action Plan (HousingTO Plan) provides a blueprint for ac
+Elections - By-Election Voter Statistics | This dataset contains the number of eligible electors on the Voters' List, the n
+TTC GTFS-Realtime (GTFS-RT) | This GTFS-RT feed provides improved real-time service disruptions information.
+Green P Parking | See "Green P Parking Readme" file.
+
+The Toronto Parking Authority is a local B
+Community Referrals by EMS (CREMS) | From 2008 to 2020 inclusive, this dataset provides the number of referrals made
+Elections - Official By-Election Results | The by-election results are used to identify the candidates running, the number
+Paramedic Services 911 Language Interpretation | This dataset provides a list of instances when Toronto Paramedic Services' Emerg
+TTC Real-Time Next Vehicle Arrival (NVAS) | **Service Decommission Notice – Effective November 30, 2025**
+
+Please be advis
+Financial Information Return - Revenues (Schedule 10) and Expenses (Schedule 40) | Through the Financial Information Return, the Ministry collects data on municipa
+Heritage Formerly Listed | Through Bill 23, the More Homes Built Faster Act, 2022, the Province of Ontario
+Poverty Reduction Strategy Consultation - Qualitative Input | One in four families in Toronto does not have the income necessary to live a h
+Wellbeing Toronto - Demographics | **Demographics (2006 and 2011 Census Data)**
+
+This dataset contains three wo
+Wellbeing Toronto - Civics & Equity Indicators | This dataset contains Civics and Equity indicators which include information a
+Wellbeing Toronto - Culture | For Reference Period 2008: Martin Prosperity Institute, Year 2010 data. The Cu
+TTC Ridership - All Day Weekday for Surface Routes | This dataset lists typical all day and peak hour weekday ridership for each TT
+Multi-Use Trail Entrances | This dataset contains the location information of entrances to multi-purpose t
+Sidewalk Inventory | The sidewalk inventory provides information on the location of sidewalks along
+Sexual Health Clinic Locations, Hours and Services | Clinic Name - Name of the clinic  
+Clinic Location - Rough location of the cli
+Human Rights Office Service Statistics | The statistics contained in this dataset were included in the Annual Human Rig
+Cultural Spaces | **This dataset has been expired on January 16th, 2023. EDC  is currently investi
+Parking Ticket Trials | This dataset provides upcoming parking ticket trials. The order on the court d
+Automatic External Defibrillators (AED) Locations | Locations of automatic external defibrillators (AED) available to the public whe
+Heritage Shoreline Evolution | A spatial geographical file that shows Toronto's historical shoreline developmen
+Elections - Voter Statistics | This dataset contains the number of eligible electors on the Voters' List, the n
+Bicycle Counts | Two separate data sets are available:
+
+1\. Ongoing intersections counts:  thes
+Taxicab Stand Locations | See Readme in Shapefile and Attrbutes in Excel
+
+The taxicab stand locations we
+Casino Survey Results | Please see Readme file
+
+In November 2012, City Council's Executive Committee r
+Licensed Dogs and Cats Reports | See "Readme" file.
+
+The reports list the number of licensed dogs and cats resi
+Archives Name Authorities - List of Authorized Names | ** This dataset has been retired **
+
+Based on the eac-cpf.xsd schema definitio
+Ontario Early Years Centres (Toronto) | This data set is **retired**. A new data set replaces at:[Child & Family Progr
+Web Map Services | The following published OGC compliant WMTS services facilitate access to live ge
+Watermain Breaks | BREAK_DATE - Date of watermain break reported  
+BREAK_YEAR - Year of watermai
+Water Billing by Ward | The annual amount of water billed in each ward is reported as well as the number
+Turn Restrictions | This dataset has been retired. There is no update to this dataset since the reti
+Toronto Public Library Branch Locations | This dataset is retired. More up to date information on this subject can be foun
+Supportive Housing Locations, City Operated | See "Supportive Housing Locations Readme" file
+
+This data set contains the loc
+Sports & Recreation - Program Enrollment, Drop-In Usage and Permit Activity Summary | **This dataset has been retired and will not be updated. Please see [Toronto's D
+Solid Waste Management Services - Transfer Station Locations | **FID -** system field, record identifier  
+
+**SHAPE -** system field, file
+Solid Waste Management Districts | The Harmonized Waste Collection Area layer covers the entire City of Toronto.
+Solid Waste Daytime Curbside Collection Areas | See Readme file 
+
+This file is best utilized when overlaid with the districts
+Solid Waste - Recycled Material Sales Revenue | See "SWM Recycled Material Sales Revenue Readme" File
+
+Revenue from the sale o
+Social Housing - Wait List , Rent Bank Loans Granted and Shelter Use Summary | See "SSHA Social Housing Summary Readme" File
+
+Number of people in Toronto o
+Shelter Profile Information | * **SHELTER AND SECTOR -** Shelter names grouped by sector (shelter type)
+  *
+Regional Municipal Boundary | **Field Name -** Description/Definition  
+**AREA_ID -** Internal geographic i
+Priority Investment Neighbourhoods | The 13 Priority Investment Neighbourhoods are composed of neighbourhoods, neighb
+Parks | **This dataset is no longer accurate. Please see [Green Spaces](https://open.tor
+Parking Tickets | See Parking Ticket Data Readme file
+
+Approximately 2.8 million parking tickets
+One Way Streets | Linear representations of one way streets found within the City of Toronto.
+Municipal Land Transfer Tax Revenue Summary | See "Municipal Land Transfer Tax Revenue Summary Readme" File 
+
+City of Toro
+Inventory of Applications | * Application Name
+  * Application Description
+  * Primary Application Busin
+Hostel Services: Homeless Shelter Locations | See the Readme file: Emergency Shelters Locations Readme.xls
+
+The data set is
+Forest and Land Cover | <strong>2008 Study: </strong>
+
+High resolution land cover dataset for Toronto
+Drop-In Locations (Toronto Drop-In Network Members - TDIN) | See the Readme file: Drop-In Locations (TDIN Members) Readme.xls
+
+This data se
+Daily Bread Food Banks - Client Visits by Month | **This data set is no longer maintained. You will find the new data [here](https
+Core Service Review - Quantitative Data | To address Toronto's 2012 budget gap of $774 million, City Council has launche
+Core Service Review - Qualitative Data | To address Toronto's 2012 budget gap of $774 million, City Council launched a
+Consulting Services Expenditures | This dataset contains five years of consulting services expenditure history
+Clerks - Record Classification System - Internally Approved (RSMT) | ** This dataset has been retired **
+
+See "RCS Authoritative Source Readme" fil
+Clerks - Record Classification System - Authoritative Source (RSMT) | ** This dataset has been retired **
+
+See "RCS Authoritative Source Readme" fil
+Clerk's Directory of Record for Record Series Management Tool (RSMT) | ** This dataset is retired **
+
+See "RSMT Directory of Records Readme" file
+City Subject Thesaurus | This subject-based controlled vocabulary contains approximately 2500 terms in to
+Bikeways | The Toronto bikeways dataset illustrates the existing cycling network across the
+Bicycle Post and Ring Locations | This dataset is retired. The following datasets now replace it: [Street Furnit
+Bicycle Count and Locations | Data includes when and where cyclists are riding, and other characteristics abou
+311 Service Request Codes | This data set is **retired**. A new data set replaces at: [311 Service Request
+311 - Open311 API Calls for Service Requests | **This dataset is retired as of December 5, 2021 & will not be updated.**
+
+The
+Population Health Status Indicators | Population Health Status Indicators (PHSIs) summarize data used to measure healt
+City Budget Pre-Budget Consultation | Toronto residents were invited by the Mayor, Budget Committee Chair, and Members
+Neighbourhood Intensification Estimates to 2051 | This dataset provides ward-level estimates for uptake of the Expanding Housing O
+Count Yourself In Workforce Survey | The CYI Survey invites employees to voluntarily disclose how they self-identify
+Free Floating Carshare Program | The City of Toronto’s Free-Floating Car-Share program was approved by Council, a
+Travel Times - Bluetooth | The City of Toronto collects travel time data from Bluetooth and WiFi sensors on
+Chinatown Tomorrow Planning Initiative Consultation | As part of the Chinatown Planning Study (www.toronto.ca/chinatownstudy), extensi
+Bike Share Toronto | The Toronto Parking Authority manages the Bike Share Toronto program, a form of
+TTC Subway Shapefiles | This dataset contains separate shape files for the four major TTC routes (lines)
+Agency Survey Results on COVID-19 Recovery And Rebuild | An online survey of the City’s partner organizations was conducted from June 22
+Competitive Contracts | **This data set is no longer maintained. You will find the new data [here](https
+Non Competitive Contracts | **This data set is no longer maintained. You will find the new data [here](https
+TTC Ridership Analysis | This dataset measures first point of payment when boarding at the start of a jou
+Waste Wizard | This data is from the City of Toronto’s Waste Wizard tool, which is available on
+TransformTO Community Feedback | From August 2015 to July 2016, TransformTO's first phase of engagement encoura
+Toronto Office of Recovery and Rebuild – Public Survey Results | While the City continues to work on reducing the spread of COVID-19 and ensuring
+Toronto Economic Bulletin | The Toronto Economic Bulletin provides a monthly snapshot of the city/regional e
+Rain Gauge Locations and Water Collected | Location of Toronto water rain gauge equipment and water accumulation collected
+Lobbying Bylaw - Public Consultation on Amendments | At the September 21, 2015 meeting of Executive Committee, the City Manager submi
+Input from Roundtables, Public and Stakeholders on Recovery and Rebuild | From April to August, 2020, the Mayor and Members of City Council, divisions and
+Hotel Association Member List for the Greater Toronto Area | The Excel file contains a list of all hotels in the GTA that are members of th
+Elections - School Ward | The four school boards within the City of Toronto are divided into districts.
+Elections - Advance Poll Voter Turnout | This dataset contains the number of voters that came out to vote during the adva
+Elections – Official Results | Election poll by poll results data from the 2003, 2006, 2010, 2014, 2018 and 202
+Doors Open Toronto 2019 | The 20th annual Doors Open Toronto presented by Great Gulf provides an opportuni
+Current Value Assessment (CVA)  Tax Impact Residential Properties | This outlines the current tax year phased-in average Current Value Assessment
+City of Toronto Act (COTA) Consultation, 2015 | In June 2015, the Province of Ontario launched a review of the City of Toronto A
+Bridges, Elevated Roadways, and Culverts in Toronto | **This data set is retired. A new data set replaces at: [Bridge Structure](https
+Bloor Street Bike Lanes Feedback Survey | Results of the Bloor Street Bike Lanes Feedback Survey #2, which was online fo
+Basement flooding by ward | Service requests by ward due to basement flooding and number of approved applica
+10 Year Cycling Network Plan – Trails (2016) | On June 9, 2016 Toronto City Council approved a Cycling Network Plan to Connect,
+10 Year Cycling Network Plan – On-Street (2016) | On June 9, 2016 Toronto City Council approved a Cycling Network Plan to Connect,
+Budget - Capital Budget & Plan By Ward (10 Year Recommended) | **Ward -** Ward number and ward name 
+
+**Project Name -** Name of constructio
+Elections - Campaign Contributions | This data set contains the names and postal codes of individuals, organizations
+Near-term Cycling Program | Toronto's Cycling Network Plan consists of three components: a Long-Term Cycling
+Public Notices | The Public Notice website contains open source data related to notices published
+Major City-Wide Cycling Routes | There are a number of significant corridors that cross Toronto from east to west
+Triangular Irregular Network (TIN) | Triangular Irregular Network (TIN) polygon elevation data. This TIN was derived
+Rent Bank  Access Centres | Point file of locations of Rent Bank Access Centres within the City of Toronto
+Social Housing Unit Density by Neighbourhoods | This dataset contains unit density profiles of Social Housing in the City of T
+Council Business Travel Expenses | Councillors who fulfill an official capacity with a municipal organization of
+Head of Household | **This dataset is retired.**
+
+This dataset contains the Head of Household tren
+Events at Nathan Phillips Square | Nathan Phillips Square is a vibrant, active space in the heart of Toronto. Every
+TTC BusTime Real-Time Next Vehicle Arrival (NVAS) | This NVAS feed provides improved real-time next vehicle arrival predictions base
+HR Number of Job Applications Received per External Advertisement | **This data set is no longer maintained. You will find the new data [here](https
+Solicitations for the Purchase of Goods and Services | **This data set is no longer maintained. You will find the new data [here](https
+Child Care -  Licensed Child Care Spaces | **This data set is no longer maintained. You will find the new data [here](https
+Ward Profiles (25-Ward Model) | The 2021 Ward Profiles based on the 25-Ward model (effective December 1, 2018) a
+Community Planning Boundaries | This dataset contains an ESRI shapefile of all the community planning boundaries
+Hate Activity Policy Survey | The City of Toronto's Hate Activity Policy helps to identify hate activity and
+Development Charge Revenues | City of Toronto development charges revenues, net of refunds, unaudited and subj
+City Initiated Appeals To Property Assessment | This dataset identifies properties where, as a result of City staff review and a
+Court Services Customer Satisfaction Survey | See Codebook.
+
+Court Services Division conducted a Customer Satisfaction Sur
+Court Services Customer Satisfaction Survey Results 2017 | Court Services Division conducted a **Customer Satisfaction Survey**  in 2017.
+Community Council Boundaries Survey Results | This data set contains input from the Community Council boundaries consultatio
+Wellbeing Toronto - Youth Services | This dataset contains an Excel spreadsheet and ESRI shapefiles relating to you
+Wellbeing Toronto - Transportation | This dataset contains three worksheets. The full description for each column o
+Wellbeing Toronto - Safety | This dataset contains three worksheets. The full description for each column o
+Wellbeing Toronto - Recreation | This dataset contains information about recreation programs, registration, var
+Wellbeing Toronto - Housing | This dataset contains three worksheets. The full description for each column o
+Wellbeing Toronto - Health | This dataset contains and number of health indicators by neighbourhood. The fu
+Wellbeing Toronto - Environment | This dataset contains three worksheets. The full description for each column o
+Wellbeing Toronto - Education | This dataset contains three worksheets. The full description for each column o
+Wellbeing Toronto - Economics | This dataset contains three worksheets. The full description for each column o
+Wellbeing Toronto - Demographics: TaxFiler Indicators | This data set contains three worksheets. The full description for each column
+Wellbeing Toronto - Demographics: NHS Indicators | This data set shows the following indicators: population breakdown by ethnicit
+Wellbeing Toronto - Aboriginal Service Organizations | A spatial point file, to illustrate the location of services, provided by Aborig
+2013 Street Needs Assessment Results | The Street Needs Assessment survey was conducted by City staff, community partne
+2018 Street Needs Assessment Results | The Street Needs Assessment (SNA) is a survey and point-in-time count of people
+2021 Street Needs Assessment Results | The Street Needs Assessment (SNA) is a survey and point-in-time count of people
+Ward Profiles, 2018 (47-Ward Model) | The [2016 Ward Profiles for the 2018 City Wards](https://www.toronto.ca/cit
+Ward Profiles, 2014-2018 Wards (44-Ward Model) | The 2016 and 2011 Ward Profiles (2014-2018 Wards) and Community Council Are
+Multilingual Policy - Language Survey | The City of Toronto conducted an online survey from February 22 to March 10, 2
+Participatory Budgeting Pilot | Toronto's Participatory Budget Pilot (2015-2017) invited residents in Ward 33 an
+Pan Am-Parapan Am Venues - TO2015 | This dataset depicts the venues being used for the Toronto 2015 Pan Am/Parapan A
+Vehicles Utilizing Green Technology | List of all the green vehicles managed by Fleet Services.  The list provides inf
+School Safety Zone Watch Your Speed Program – Detailed Speed Counts | The WYSP uses devices called speed display signs or driver feedback signs which
+Mobile Watch Your Speed Program – Detailed Speed Counts | The Mobile WYSP uses devices called speed display signs or driver feedback signs
+Traffic Signal Vehicle and Pedestrian Volumes | This dataset contains the most recent 8 peak hour vehicle and pedestrian volume
+Unclaimed Deposits | Unclaimed deposits collected as security to protect City property (e.g. road c
+Live Green Toronto Membership Card Businesses | Please see "Readme" file.
+
+This dataset contains a list of the participating
+Public Engagement Review Survey | The City of Toronto is reviewing its public engagement activities to support mor
+Credit Balance - Property Tax | Parcel ID - Assessment Roll Number   
+Property Address - Property Address
+Elections – Unofficial Results | ###**2022 Unofficial Election Results**
+
+This dataset consists of 2 unofficial
+Historic Rain Gauge Locations and Precipitation | **This dataset is no longer being maintained. Please see [Rain Gauge Locations a
+Realtime Feed of Searches Conducted on torontopubliclibrary.ca | **This dataset has been retired as this feed is no longer operational.**
+
+Webs
+Long-term Financial Plan Public Consultation | This data set contains input from the Long-Term Financial Plan consultation he
+Woodbine Racetrack Casino Consultation 2015 | The City Manager conducted a public consultation in May 2015 to seek input fro
+E-Bike Survey Response Results | Between April 10 and May 8, 2013 the City of Toronto posted an online survey, wh
+Tax Rebates - Tax Exemptions | This data is retired and will no longer be updated. For more information, please
+Climate Perception Study | The City of Toronto commissioned Environics Research (2018) and Ipsos (2021) to
+TTC  - Ridership Revenues | **This data set is no longer maintained. You will find the new data [here](https
+TTC - Monthly Ridership | **This data set is no longer maintained. You will find the new data [here](https

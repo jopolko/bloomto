@@ -1,0 +1,35 @@
+# Python venv + bytecode — never committed
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ETL caches (re-downloadable from Toronto Open Data on next ETL run)
+tools/cache/
+
+# ETL outputs — regenerable from `python3 tools/build_parcels.py` +
+# `python3 tools/build_parcels_top.py`. parcels.geojson is ~250 MB and
+# changes every rebuild; not appropriate for git history.
+data/parcels.geojson
+data/parcels-top.json
+data/parcels-broader.json
+
+# Pre-rebuild snapshot files saved by the audit comparison step
+audit/*.PRE.md
+
+# Editor / OS scrap
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build/run logs
+/tmp/bloomto-rebuild.log
+*.log
+
+# Secrets — defensive guard. The real secrets file lives at
+# /var/secrets/bloomto.env on prod (outside this tree), but if anyone ever
+# drops a *.env file IN the repo it should never get committed.
+.env
+*.env

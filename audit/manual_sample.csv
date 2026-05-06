@@ -1,0 +1,11 @@
+rank_in_sample,band,parcelId,address,neighborhood,lat,lng,score,bloom,zoneClass,maxUnits,sixplexEligible,heritageStatus,distSubwayM,distStreetcarM,outsideTransitBuffer,lotAreaM2,cornerLot,abutsLaneway,inFloodingStudyArea,inRegulatedArea,manual_result,manual_notes
+1,top-elite (rank 1-50),5266679,1024 Avenue Rd,Lawrence Park South,43.70479,-79.40887,97,False,CR,8,False,,805,14,False,722,False,False,True,False,,
+2,mid-elite (rank 200-1500),5279972,115 Whitmore Ave,Forest Hill North,43.70027,-79.43769,82,False,RD,4,False,,91,177,False,358,False,False,True,False,,
+3,bottom-elite (last 250),5446766,45 Elm St,Yonge-Bay Corridor,43.65718,-79.38375,70,False,CR,8,True,,207,151,False,385,True,True,True,False,,
+4,broader-mid,5514870,141 Sixth St,New Toronto,43.60185,-79.50413,77,False,RM,8,False,,5000,113,False,275,False,True,True,False,,
+5,broader-low (lowest 500),5463572,64 St Annes Rd,Little Portugal,43.65138,-79.42838,60,False,R,4,True,,1186,199,False,279,False,True,True,False,,
+6,top-elite (rank 1-50),5454261,643 College St,Trinity-Bellwoods,43.65475,-79.41569,96,False,CR,8,True,,1086,20,False,353,False,False,True,False,,
+7,mid-elite (rank 200-1500),5464491,260 Indian Rd,High Park-Swansea,43.65108,-79.45569,85,False,R,4,True,,563,77,False,544,False,False,True,False,,
+8,bottom-elite (last 250),5438295,26 Gerrard St E,Downtown Yonge East,43.6595,-79.38101,70,False,CR,8,True,,150,267,False,471,False,False,True,False,,
+9,broader-mid,5343795,20 Pinewood Ave,Humewood-Cedarvale,43.68298,-79.42535,73,False,RM,8,True,,800,137,False,300,False,False,True,False,,
+10,broader-low (lowest 500),5366687,79 Normandy Blvd,Woodbine Corridor,43.67771,-79.31237,60,False,R,4,True,,970,200,False,270,False,False,True,False,,

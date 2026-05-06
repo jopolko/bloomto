@@ -1,0 +1,6 @@
+requests==2.32.3
+shapely==2.0.6
+pyproj==3.7.0
+openpyxl==3.1.5
+ijson==3.3.0
+pyshp==3.0.3
