@@ -28,6 +28,10 @@ Thumbs.db
 /tmp/bloomto-rebuild.log
 *.log
 
+# Local Claude Code state — per-machine, not for sharing
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
 # Secrets — defensive guard. The real secrets file lives at
 # /var/secrets/bloomto.env on prod (outside this tree), but if anyone ever
 # drops a *.env file IN the repo it should never get committed.

@@ -56,6 +56,24 @@ def _fmt_examples(examples, max_n=5):
     return "\n".join(f"  - {e}" for e in head) + suffix
 
 
+# Fields that are constant-by-design in the elite/broader projection because
+# `tools/build_parcels_top.py:_passes_shared` (and the score>0 gate) filter
+# them upstream. The audit was previously firing HIGH on each of these every
+# run; we now record them as LOW with the reason so a real new degeneracy
+# stands out instead of getting buried.
+EXPECTED_GATE_CONSTANTS = {
+    "heritageStatus": (None, "_passes_shared excludes any heritage tier"),
+    "inRegulatedArea": (False, "_passes_shared excludes TRCA-regulated parcels"),
+    "residential": (True, "score>0 requires residential zoning"),
+    "outsideTransitBuffer": (False, "score>0 requires distSubwayStreetcarM<500"),
+    "solarShadowQuality": ("measured", "score>0 requires positive solar"),
+    "inFloodingStudyArea": (True,
+        "basement-flooding-study-areas covers ~all pre-1990 residential Toronto; "
+        "this dataset is non-discriminating (see memory: project_flood_dataset_choice). "
+        "Replace with TRCA Reg 41/24 riverine when endpoint is confirmed."),
+}
+
+
 # ---------- Universal degeneracy ---------------------------------------------
 
 def check_degenerate_columns(rows, file_label):
@@ -70,6 +88,15 @@ def check_degenerate_columns(rows, file_label):
         non_null = [v for v in values if v is not None]
         # All-null
         if nulls == n:
+            if col in EXPECTED_GATE_CONSTANTS:
+                exp_v, reason = EXPECTED_GATE_CONSTANTS[col]
+                if exp_v is None:
+                    findings.append(Finding(
+                        "LOW",
+                        f"`{col}` is null on all {n:,} rows in {file_label} (expected — gate-filtered)",
+                        f"Reason: {reason}.",
+                    ))
+                    continue
             findings.append(Finding(
                 "HIGH",
                 f"`{col}` is null on all {n:,} rows in {file_label}",
@@ -83,6 +110,15 @@ def check_degenerate_columns(rows, file_label):
             uniq = None
         if uniq is not None and len(uniq) == 1:
             v = next(iter(uniq))
+            if col in EXPECTED_GATE_CONSTANTS:
+                exp_v, reason = EXPECTED_GATE_CONSTANTS[col]
+                if v == exp_v:
+                    findings.append(Finding(
+                        "LOW",
+                        f"`{col}` is constant `{v!r}` on {n - nulls:,} rows in {file_label} (expected — gate-filtered)",
+                        f"Reason: {reason}.",
+                    ))
+                    continue
             sev = "HIGH" if nulls == 0 else "MEDIUM"
             findings.append(Finding(
                 sev,

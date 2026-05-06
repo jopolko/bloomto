@@ -1,11 +1,11 @@
 # BloomTO &mdash; permits backtest
 
-_Generated 2026-05-05 22:01 UTC &middot; window: ISSUED_DATE ≥ 2024-01-01, units in [3, 6]_
+_Generated 2026-05-06 20:47 UTC &middot; window: ISSUED_DATE ≥ 2024-01-01, units in [3, 6]_
 
 ## Summary
 
 - **483** approved permits matched the multiplex window
-- **12** (2%) parcels appear in `parcels-top.json` (elite, top 3,757)
+- **12** (2%) parcels appear in `parcels-top.json` (elite, top 3,778)
 - **31** (6%) parcels appear in `parcels-broader.json` only
 - **440** (91%) parcels are missing from both feeds &mdash; *recall gap*
 

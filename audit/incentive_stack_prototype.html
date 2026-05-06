@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BloomTO — Incentive Stack Prototype (164 Main St)</title>
+<style>
+:root {
+  --ink: #1f2937;
+  --ink-muted: #4b5563;
+  --ink-mute2: #9ca3af;
+  --rule: #e5e7eb;
+  --rule-strong: #cbd5e1;
+  --surface: #ffffff;
+  --tor-blue: #0a4ca8;
+  --cot-green: #2f6a4f;
+  --warn: #b45309;
+  --warn-soft: #fef3c7;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #f8fafc;
+  color: var(--ink);
+  margin: 0;
+  padding: 24px;
+  line-height: 1.5;
+}
+.wrap { max-width: 880px; margin: 0 auto; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(17,24,39,0.05);
+  margin-bottom: 16px;
+}
+.head {
+  border-bottom: 2px solid var(--cot-green);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+.brand {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cot-green);
+}
+.addr {
+  font-size: 26px;
+  font-weight: 700;
+  margin: 4px 0 2px;
+  letter-spacing: -0.01em;
+}
+.meta {
+  font-size: 12px;
+  color: var(--ink-mute2);
+}
+h2 {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin: 18px 0 8px;
+}
+
+/* Stack total — the headline number */
+.stack-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #f0f7f2 0%, #ffffff 60%, #fff7ed 100%);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+.stack-total .num {
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--cot-green);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.stack-total .lab {
+  font-size: 12px;
+  color: var(--ink-muted);
+  max-width: 50ch;
+  text-align: right;
+}
+.stack-total .lab strong { color: var(--ink); }
+
+/* Stack table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+thead th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute2);
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--rule-strong);
+}
+thead th.r { text-align: right; }
+tbody td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+tbody td.line {
+  font-weight: 600;
+  color: var(--ink);
+}
+tbody td.src {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+tbody td.src a { color: var(--tor-blue); text-decoration: none; }
+tbody td.src a:hover { text-decoration: underline; }
+tbody td.val {
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--cot-green);
+  white-space: nowrap;
+}
+tbody td.note {
+  font-size: 11px;
+  color: var(--ink-mute2);
+  line-height: 1.4;
+}
+
+/* Urgency row */
+tr.urgent td.line { color: var(--warn); }
+tr.urgent td.val { color: var(--warn); }
+tr.urgent td.note { color: var(--warn); font-weight: 500; }
+tr.urgent {
+  background: var(--warn-soft);
+}
+.deadline-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #fb923c;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  text-transform: uppercase;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+tbody tr.total-row {
+  background: #f0f7f2;
+}
+tbody tr.total-row td {
+  border-top: 2px solid var(--cot-green);
+  border-bottom: 0;
+  padding: 14px 8px;
+  font-weight: 700;
+}
+tbody tr.total-row td.val {
+  font-size: 16px;
+}
+
+.disclaimer {
+  font-size: 10px;
+  color: var(--ink-mute2);
+  margin-top: 12px;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.tag.auto { background: #d1fae5; color: #065f46; }
+.tag.apply { background: #fef3c7; color: #92400e; }
+.tag.competitive { background: #fed7aa; color: #c2410c; }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Print header (BloomTO branding) -->
+  <div class="card">
+    <div class="head">
+      <div class="brand">BloomTO · Toronto multiplex parcel finder</div>
+      <h1 class="addr">164 Main St</h1>
+      <div class="meta">East End-Danforth · Parcel ID 5395814 · Lot 423&nbsp;m² · Zone R · Sixplex eligible (T&amp;EY District) · Generated May 6, 2026</div>
+    </div>
+
+    <h2>Maximum incentive stack — 6-unit purpose-built rental</h2>
+
+    <!-- The headline number -->
+    <div class="stack-total">
+      <div class="num">~$835K</div>
+      <div class="lab">
+        <strong>Conservative max stack</strong> across automatic + applied programs, assuming 6-unit purpose-built rental at $500&nbsp;K FMV per unit. Plus an additional <strong>$50&nbsp;K</strong> if selected for Toronto Hydro's PowerPlay pilot (deadline May 31).
+      </div>
+    </div>
+
+    <!-- The stack table -->
+    <table>
+      <thead>
+        <tr>
+          <th style="width:30%">Line</th>
+          <th style="width:30%">Authority</th>
+          <th class="r" style="width:18%">Value</th>
+          <th style="width:22%">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="line">Development Charges waived <span class="tag auto">Auto</span></td>
+          <td class="src">2025.<a href="https://secure.toronto.ca/council/agenda-item.do?item=2025.EX24.2" target="_blank" rel="noopener">EX24.2</a> + <a href="https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185" target="_blank" rel="noopener">Bill 185</a></td>
+          <td class="val">$245,000</td>
+          <td class="note">≤6 units, fully waived. Range $200K–$270K depending on configuration.</td>
+        </tr>
+
+        <tr>
+          <td class="line">Provincial HST rebate (8%, no cap) <span class="tag apply">Apply</span></td>
+          <td class="src"><a href="https://budget.ontario.ca/2026/hst.html" target="_blank" rel="noopener">2026 ON Budget</a></td>
+          <td class="val">$240,000</td>
+          <td class="note">$40K × 6 units at $500K FMV. Build start by Dec 31, 2030; complete by Dec 31, 2035.</td>
+        </tr>
+
+        <tr>
+          <td class="line">Federal GST rebate (5%, no cap) <span class="tag apply">Apply</span></td>
+          <td class="src"><a href="https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/purpose-built-rental-housing.html" target="_blank" rel="noopener">PBRH (CRA)</a></td>
+          <td class="val">$150,000</td>
+          <td class="note">$25K × 6 units at $500K FMV. Stacks with provincial. ≥4 apt units, ≥90% long-term rental.</td>
+        </tr>
+
+        <tr>
+          <td class="line">Parking minimums eliminated <span class="tag auto">Auto</span></td>
+          <td class="src"><a href="https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185" target="_blank" rel="noopener">Bill 185 (2024)</a></td>
+          <td class="val">$150,000</td>
+          <td class="note">~$25K saved per stall not built × 6.</td>
+        </tr>
+
+        <tr class="urgent">
+          <td class="line">
+            Toronto Hydro Multiplex PowerPlay
+            <span class="tag competitive">Pilot · 6 spots</span>
+            <span class="deadline-pill">⏰ May 31</span>
+          </td>
+          <td class="src"><a href="https://www.torontohydro.com/contractors-and-developers/multiplex-powerplay-pilot-program" target="_blank" rel="noopener">TH PowerPlay 2026</a></td>
+          <td class="val">+$50,000</td>
+          <td class="note">EOI by May 31, 2026. M postal codes only. Smart load management equipment, avoids 400A+ service upgrade. <strong>Only 6 winners.</strong></td>
+        </tr>
+
+        <tr class="total-row">
+          <td class="line">Conservative stack total</td>
+          <td class="src">Sum of automatic + filed-rebate lines</td>
+          <td class="val">$835,000</td>
+          <td class="note">Plus $50K if selected for PowerPlay pilot.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="disclaimer">
+      Estimates assume 6-unit purpose-built rental, $500&nbsp;K FMV per unit, all qualifying gates clear (already verified for this parcel — heritage clear, transit &lt;500&nbsp;m, sixplex-eligible district, no TRCA, &lt;500&nbsp;m² existing footprint). Each line is grounded in primary regulation; verify program-specific eligibility with the issuing authority before relying on these numbers in a pro-forma. BloomTO does not warrant financial outcomes.
+    </p>
+  </div>
+
+  <!-- Side-by-side: what we used to show vs the new stack -->
+  <div class="card">
+    <h2>Before vs. after</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>What the page shows now</th>
+          <th>What the new stack shows</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>$362K · "Bill 185 incentives"</td>
+          <td>$835K · 5 program lines with citations + 1 deadline-driven applied bonus</td>
+        </tr>
+        <tr>
+          <td>One source (Bill 185)</td>
+          <td>Five sources (EX24.2, Bill 185, ON Budget 2026, federal PBRH, TH PowerPlay)</td>
+        </tr>
+        <tr>
+          <td>No urgency signal</td>
+          <td>May 31 deadline highlighted with countdown styling</td>
+        </tr>
+        <tr>
+          <td>Implies all $ goes to dev</td>
+          <td>Tags each line: Auto / Apply / Competitive — dev sees what they have to do for each</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>

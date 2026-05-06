@@ -1,79 +1,68 @@
 # BloomTO &mdash; wire consistency audit
 
-_Generated 2026-05-05 22:01 UTC &middot; 3,757 elite + 15,514 broader rows_
+_Generated 2026-05-06 20:46 UTC &middot; 3,778 elite + 15,624 broader rows_
 
 ## Summary
 
 | Severity | Count |
 |---|---:|
 | CRITICAL | 0 |
-| HIGH | 14 |
+| HIGH | 0 |
 | MEDIUM | 0 |
-| LOW | 2 |
-
-
-## HIGH
-
-### 1. `bloom` is the constant `False` on all 3,757 non-null rows in top
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 2. `heritageStatus` is null on all 3,757 rows in top
-
-Column carries no signal — drop from wire or fix ETL.
-
-### 3. `inFloodingStudyArea` is the constant `True` on all 3,757 non-null rows in top
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 4. `inRegulatedArea` is the constant `False` on all 3,757 non-null rows in top
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 5. `outsideTransitBuffer` is the constant `False` on all 3,757 non-null rows in top
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 6. `residential` is the constant `True` on all 3,757 non-null rows in top
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 7. `solarShadowQuality` is the constant `'measured'` on all 3,757 non-null rows in top
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 8. `bloom` is the constant `False` on all 15,514 non-null rows in broader
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 9. `heritageStatus` is null on all 15,514 rows in broader
-
-Column carries no signal — drop from wire or fix ETL.
-
-### 10. `inFloodingStudyArea` is the constant `True` on all 15,514 non-null rows in broader
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 11. `inRegulatedArea` is the constant `False` on all 15,514 non-null rows in broader
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 12. `outsideTransitBuffer` is the constant `False` on all 15,514 non-null rows in broader
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 13. `residential` is the constant `True` on all 15,514 non-null rows in broader
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
-
-### 14. `solarShadowQuality` is the constant `'measured'` on all 15,514 non-null rows in broader
-
-Either the gate already filters by this value (then drop from wire), or the column never wired through (then fix ETL).
+| LOW | 14 |
 
 
 ## LOW
 
-### 1. `sixplexEligible=False` but `maxUnits>=6` on 582 rows in top
+### 1. `heritageStatus` is null on all 3,778 rows in top (expected — gate-filtered)
+
+Reason: _passes_shared excludes any heritage tier.
+
+### 2. `inFloodingStudyArea` is constant `True` on 3,778 rows in top (expected — gate-filtered)
+
+Reason: basement-flooding-study-areas covers ~all pre-1990 residential Toronto; this dataset is non-discriminating (see memory: project_flood_dataset_choice). Replace with TRCA Reg 41/24 riverine when endpoint is confirmed..
+
+### 3. `inRegulatedArea` is constant `False` on 3,778 rows in top (expected — gate-filtered)
+
+Reason: _passes_shared excludes TRCA-regulated parcels.
+
+### 4. `outsideTransitBuffer` is constant `False` on 3,778 rows in top (expected — gate-filtered)
+
+Reason: score>0 requires distSubwayStreetcarM<500.
+
+### 5. `residential` is constant `True` on 3,778 rows in top (expected — gate-filtered)
+
+Reason: score>0 requires residential zoning.
+
+### 6. `solarShadowQuality` is constant `'measured'` on 3,778 rows in top (expected — gate-filtered)
+
+Reason: score>0 requires positive solar.
+
+### 7. `heritageStatus` is null on all 15,624 rows in broader (expected — gate-filtered)
+
+Reason: _passes_shared excludes any heritage tier.
+
+### 8. `inFloodingStudyArea` is constant `True` on 15,624 rows in broader (expected — gate-filtered)
+
+Reason: basement-flooding-study-areas covers ~all pre-1990 residential Toronto; this dataset is non-discriminating (see memory: project_flood_dataset_choice). Replace with TRCA Reg 41/24 riverine when endpoint is confirmed..
+
+### 9. `inRegulatedArea` is constant `False` on 15,624 rows in broader (expected — gate-filtered)
+
+Reason: _passes_shared excludes TRCA-regulated parcels.
+
+### 10. `outsideTransitBuffer` is constant `False` on 15,624 rows in broader (expected — gate-filtered)
+
+Reason: score>0 requires distSubwayStreetcarM<500.
+
+### 11. `residential` is constant `True` on 15,624 rows in broader (expected — gate-filtered)
+
+Reason: score>0 requires residential zoning.
+
+### 12. `solarShadowQuality` is constant `'measured'` on 15,624 rows in broader (expected — gate-filtered)
+
+Reason: score>0 requires positive solar.
+
+### 13. `sixplexEligible=False` but `maxUnits>=6` on 588 rows in top
 
 Likely fine if `maxUnits` represents another threshold (e.g. fourplex+laneway, or CR mixed-use cap). Worth confirming the field's documented meaning.
 
@@ -87,10 +76,10 @@ parcelId=5514753  sixplexEligible=False  maxUnits=8  zoneClass=CR
 parcelId=5242194  sixplexEligible=False  maxUnits=8  zoneClass=CR
 parcelId=5510889  sixplexEligible=False  maxUnits=8  zoneClass=RM
 parcelId=5272203  sixplexEligible=False  maxUnits=8  zoneClass=CR
-…and 574 more
+…and 580 more
 ```
 
-### 2. `sixplexEligible=False` but `maxUnits>=6` on 2,283 rows in broader
+### 14. `sixplexEligible=False` but `maxUnits>=6` on 2,302 rows in broader
 
 Likely fine if `maxUnits` represents another threshold (e.g. fourplex+laneway, or CR mixed-use cap). Worth confirming the field's documented meaning.
 
@@ -104,5 +93,5 @@ parcelId=5248274  sixplexEligible=False  maxUnits=8  zoneClass=CR
 parcelId=5287022  sixplexEligible=False  maxUnits=8  zoneClass=CR
 parcelId=10650316  sixplexEligible=False  maxUnits=8  zoneClass=CR
 parcelId=5517404  sixplexEligible=False  maxUnits=8  zoneClass=CR
-…and 2,275 more
+…and 2,294 more
 ```

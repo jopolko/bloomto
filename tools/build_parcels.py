@@ -48,6 +48,7 @@ from tools.sources import (
     streets as streets_src,
     trca_floodplain as trca_src,
     ttc as ttc_src,
+    osm_ttc_stations as ttc_stations_src,
     zoning as zoning_src,
 )
 
@@ -403,6 +404,7 @@ def assemble_parcel_payload(
     parcels,
     heritage_index,
     institutions_index,
+    ttc_station_index: STRtree,
     flood_index,
     trca_index,
     rapidto_tree: STRtree,
@@ -451,6 +453,7 @@ def assemble_parcel_payload(
     stats_skipped_no_nb = 0
     stats_skipped_non_buildable = 0
     stats_skipped_institutional = 0
+    stats_skipped_ttc_station = 0
     stats_outside_transit_buffer = 0
     stats_abuts_laneway = 0
     stats_near_rapidto = 0
@@ -486,6 +489,16 @@ def assemble_parcel_payload(
         if is_inst:
             stats_skipped_institutional += 1
             institutional_by_category[inst_category] = institutional_by_category.get(inst_category, 0) + 1
+            continue
+
+        # TTC subway-station exclusion (added 2026-05-06). Catches station
+        # parcels that the institutional ETL above misses — TTC isn't in any
+        # of the 10 city institutional CKAN datasets, so station infrastructure
+        # (e.g., 22 Chester Ave = Chester Station) used to slip through with
+        # civic addresses that look residential. Buffered point exclusion
+        # against GTFS subway stops; see tools/sources/ttc_stations.py.
+        if ttc_stations_src.is_ttc_station(parcel.geometry, ttc_station_index):
+            stats_skipped_ttc_station += 1
             continue
 
         zone_class = _lookup_zone_class(parcel, zone_tree, zone_classes)
@@ -697,8 +710,11 @@ def assemble_parcel_payload(
 
         bloom = parcel_scoring.bloom_flag(
             heritage_status=heritage_status,
-            solar_score_raw=int(solar_raw) if solar_raw is not None else None,
-            dist_subway_m=dist_subway_m,
+            dist_subway_streetcar_m=dist_subway_streetcar_m,
+            lot_area_m2=parcel.area_m2,
+            sixplex_eligible=sixplex_eligible,
+            mature_tree_count=mature_tree_count,
+            in_regulated_area=in_regulated_area,
         )
         if bloom:
             stats_bloom += 1
@@ -902,6 +918,7 @@ def assemble_parcel_payload(
             "skippedNonBuildable": stats_skipped_non_buildable,
             "skippedInstitutional": stats_skipped_institutional,
             "skippedInstitutionalByCategory": dict(institutional_by_category),
+            "skippedTtcStation": stats_skipped_ttc_station,
             "outsideTransitBuffer": stats_outside_transit_buffer,
             "abutsLaneway": stats_abuts_laneway,
             "nearRapidToCorridor": stats_near_rapidto,
@@ -959,6 +976,10 @@ def main(argv=None) -> int:
     t = _stage("compute institutions (schools, parks, places of worship, etc.)")
     institutions_index = institutions_src.compute_institutions(cache)
     _done("institutions", t)
+
+    t = _stage("compute TTC subway-station exclusion (buffered subway stops)")
+    ttc_station_index = ttc_stations_src.compute_station_exclusion_index(cache)
+    _done("TTC station exclusion", t)
 
     t = _stage("compute basement-flooding study areas")
     flood_index = flood_src.compute_flood_index(cache)
@@ -1066,6 +1087,7 @@ def main(argv=None) -> int:
         parcels=zoning_src.iter_parcels(cache),
         heritage_index=heritage_index,
         institutions_index=institutions_index,
+        ttc_station_index=ttc_station_index,
         flood_index=flood_index,
         trca_index=trca_index,
         rapidto_tree=rapidto_tree,

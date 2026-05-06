@@ -184,6 +184,7 @@ class ParcelE2ETests(unittest.TestCase):
             parcels=self.parcels,
             heritage_index=self.heritage_index,
             institutions_index=empty_institutions,
+            ttc_station_index=empty_tree,
             flood_index=empty_flood,
             trca_index=empty_trca,
             rapidto_tree=empty_tree,
@@ -260,17 +261,22 @@ class ParcelE2ETests(unittest.TestCase):
         # Parcel D is outside the neighborhood polygon and should be counted as skipped.
         self.assertEqual(payload["meta"]["stats"]["skippedNoNeighborhood"], 1)
 
-    def test_parcel_a_is_bloom_when_solar_high_and_subway_close(self):
+    def test_parcel_a_is_bloom_when_multiplex_friction_clear(self):
+        # 2026-05-06: Bloom reframed from solar+subway to multiplex-friction-clear.
+        # Bloom requires: heritage clear + transit < 500m + lot ≥ 600m² +
+        # sixplexEligible + matureTreeCount == 0 + !inRegulatedArea.
+        # The synthetic Parcel A fixture has empty sixplex_district (so
+        # sixplexEligible=False), which means it cannot be Bloom under the
+        # new gate. Verify the structural inputs and the not-bloom result.
         payload = self._build()
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         a = feats_by_addr["100 A St"]
-        # Solar raw is 100 (max_kwh == p95), shadow attenuation may reduce it,
-        # but parcel A's neighbor building is small, so shadow is small.
-        # bloom = (heritageStatus is null) && solarScore > 80 && distSubwayM < 800
         self.assertIsNone(a["properties"]["heritageStatus"])
-        self.assertGreater(a["properties"]["solarScore"], 80)
-        self.assertLess(a["properties"]["distSubwayM"], 800)
-        self.assertTrue(a["properties"]["bloom"])
+        self.assertLess(a["properties"]["distSubwayStreetcarM"], 500)
+        self.assertFalse(a["properties"]["inRegulatedArea"])
+        # Synthetic fixture: not in sixplex district → not Bloom.
+        self.assertFalse(a["properties"]["sixplexEligible"])
+        self.assertFalse(a["properties"]["bloom"])
 
     def test_part_iv_parcel_when_included_shows_status_and_score_zero(self):
         payload = self._build(include_non_eligible=True)

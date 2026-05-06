@@ -2,8 +2,9 @@ import unittest
 
 from tools.parcel_scoring import (
     BLOOM_FORMULA_TEXT,
-    BLOOM_SOLAR_THRESHOLD,
-    BLOOM_SUBWAY_M,
+    BLOOM_MAX_TREES,
+    BLOOM_MIN_LOT_M2,
+    BLOOM_TRANSIT_M,
     FORMULA_TEXT,
     LISTED_HERITAGE_FACTOR,
     MIN_BUILDABLE_AREA_M2,
@@ -13,6 +14,21 @@ from tools.parcel_scoring import (
     bloom_flag,
     score,
 )
+
+
+def _bloom_kwargs(**overrides):
+    """Default kwargs: a parcel that passes every Bloom gate. Tests override
+    the field they want to flip negative."""
+    base = dict(
+        heritage_status=None,
+        dist_subway_streetcar_m=200.0,
+        lot_area_m2=750.0,
+        sixplex_eligible=True,
+        mature_tree_count=0,
+        in_regulated_area=False,
+    )
+    base.update(overrides)
+    return base
 
 
 class ScoreEligibilityTests(unittest.TestCase):
@@ -147,54 +163,47 @@ class ScoreSliverGateTests(unittest.TestCase):
 
 
 class BloomFlagTests(unittest.TestCase):
-    """Bloom blocks every non-null heritage status, plus the existing gates."""
-
-    def test_part_iv_blocks_bloom(self):
-        self.assertFalse(
-            bloom_flag(heritage_status="part_iv", solar_score_raw=100, dist_subway_m=100),
-        )
-
-    def test_part_v_blocks_bloom(self):
-        # Part V parcels may have score > 0 but bloom is the premium gate;
-        # a heritage-touched parcel never qualifies.
-        self.assertFalse(
-            bloom_flag(heritage_status="part_v", solar_score_raw=100, dist_subway_m=100),
-        )
-
-    def test_listed_blocks_bloom(self):
-        self.assertFalse(
-            bloom_flag(heritage_status="listed", solar_score_raw=100, dist_subway_m=100),
-        )
-
-    def test_solar_score_none_blocks_bloom(self):
-        # Accuracy-over-completeness: shadow quality "unavailable" → bloom False.
-        self.assertFalse(
-            bloom_flag(heritage_status=None, solar_score_raw=None, dist_subway_m=100),
-        )
-
-    def test_dist_subway_none_blocks_bloom(self):
-        self.assertFalse(
-            bloom_flag(heritage_status=None, solar_score_raw=85, dist_subway_m=None),
-        )
-
-    def test_dist_subway_at_or_above_threshold_blocks_bloom(self):
-        self.assertFalse(
-            bloom_flag(heritage_status=None, solar_score_raw=85, dist_subway_m=800),
-        )
-        self.assertFalse(
-            bloom_flag(heritage_status=None, solar_score_raw=85, dist_subway_m=900),
-        )
-
-    def test_solar_score_at_threshold_blocks_bloom(self):
-        # solarScore > 80 strictly; 80 fails.
-        self.assertFalse(
-            bloom_flag(heritage_status=None, solar_score_raw=80, dist_subway_m=400),
-        )
+    """Bloom requires every multiplex-friction-clear gate to pass."""
 
     def test_all_gates_pass_returns_true(self):
-        self.assertTrue(
-            bloom_flag(heritage_status=None, solar_score_raw=85, dist_subway_m=799),
-        )
+        self.assertTrue(bloom_flag(**_bloom_kwargs()))
+
+    def test_part_iv_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(heritage_status="part_iv")))
+
+    def test_part_v_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(heritage_status="part_v")))
+
+    def test_listed_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(heritage_status="listed")))
+
+    def test_dist_none_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(dist_subway_streetcar_m=None)))
+
+    def test_dist_at_or_above_threshold_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(dist_subway_streetcar_m=BLOOM_TRANSIT_M)))
+        self.assertFalse(bloom_flag(**_bloom_kwargs(dist_subway_streetcar_m=BLOOM_TRANSIT_M + 1)))
+
+    def test_dist_just_inside_threshold_passes(self):
+        self.assertTrue(bloom_flag(**_bloom_kwargs(dist_subway_streetcar_m=BLOOM_TRANSIT_M - 1)))
+
+    def test_lot_below_min_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(lot_area_m2=BLOOM_MIN_LOT_M2 - 1)))
+
+    def test_lot_at_min_passes(self):
+        self.assertTrue(bloom_flag(**_bloom_kwargs(lot_area_m2=BLOOM_MIN_LOT_M2)))
+
+    def test_lot_none_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(lot_area_m2=None)))
+
+    def test_not_sixplex_eligible_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(sixplex_eligible=False)))
+
+    def test_protected_tree_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(mature_tree_count=BLOOM_MAX_TREES + 1)))
+
+    def test_trca_regulated_blocks_bloom(self):
+        self.assertFalse(bloom_flag(**_bloom_kwargs(in_regulated_area=True)))
 
 
 class FormulaTextTests(unittest.TestCase):
@@ -216,26 +225,27 @@ class FormulaTextTests(unittest.TestCase):
         self.assertIn("lot_area_m2", FORMULA_TEXT)
         self.assertIn("100", FORMULA_TEXT)
 
-    def test_bloom_formula_text_matches_design_verbatim(self):
-        # Updated 2026-05-05: switched from shadow-adjusted solarScore to
-        # solarScoreRaw. Developer audience demolish-rebuilds, so existing-
-        # neighbor shadows don't survive (rationale in `bloom_flag` docstring).
-        self.assertEqual(
-            BLOOM_FORMULA_TEXT,
-            "bloom = (heritageStatus is null) AND (solarScoreRaw != null) AND "
-            "(solarScoreRaw > 80) AND (distSubwayM < 800). "
-            "solarScoreRaw is the un-shadowed P95-normalized SolarTO rooftop yield "
-            "(0-100); the developer audience rebuilds, so existing-neighbor shadows "
-            "won't survive demolition.",
-        )
+    def test_bloom_formula_text_describes_six_gates(self):
+        # 2026-05-06: reframed from "net-zero premium" (solar+subway) to
+        # "premium multiplex-friction-clear" (heritage / transit / lot /
+        # sixplex / trees / TRCA). The formula text must mention every
+        # gate so consumers of `meta.bloomFormula` can explain why a
+        # parcel did or didn't pass.
+        self.assertIn("heritageStatus is null", BLOOM_FORMULA_TEXT)
+        self.assertIn("distSubwayStreetcarM < 500", BLOOM_FORMULA_TEXT)
+        self.assertIn("lotAreaM2 >= 600", BLOOM_FORMULA_TEXT)
+        self.assertIn("sixplexEligible == True", BLOOM_FORMULA_TEXT)
+        self.assertIn("matureTreeCount == 0", BLOOM_FORMULA_TEXT)
+        self.assertIn("inRegulatedArea == False", BLOOM_FORMULA_TEXT)
 
 
 class ConstantsTests(unittest.TestCase):
     def test_constant_values(self):
         self.assertEqual(TRANSIT_BUFFER_M, 500)
         self.assertEqual(MULTIPLEX_FLOOR, 4)
-        self.assertEqual(BLOOM_SOLAR_THRESHOLD, 80)
-        self.assertEqual(BLOOM_SUBWAY_M, 800)
+        self.assertEqual(BLOOM_TRANSIT_M, 500)
+        self.assertEqual(BLOOM_MIN_LOT_M2, 600)
+        self.assertEqual(BLOOM_MAX_TREES, 0)
         self.assertEqual(PART_V_HERITAGE_FACTOR, 0.5)
         self.assertEqual(LISTED_HERITAGE_FACTOR, 0.85)
         self.assertEqual(MIN_BUILDABLE_AREA_M2, 100)

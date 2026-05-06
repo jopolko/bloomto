@@ -40,10 +40,20 @@ MULTIPLEX_FLOOR = 4
 # clear of any real housing parcel.
 MIN_BUILDABLE_AREA_M2 = 100
 
-# Bloom gate thresholds. A bloom-true parcel must clear BOTH a high
-# shadow-adjusted solar score AND a tighter (subway-only) transit buffer.
-BLOOM_SOLAR_THRESHOLD = 80
-BLOOM_SUBWAY_M = 800
+# Bloom gate thresholds — premium multiplex-friction-clear tier.
+# Reframed 2026-05-06 from "net-zero premium" (solar + subway) to
+# "premium multiplex" (frictionless multiplex feasibility). A bloom-true
+# parcel must clear ALL of:
+#   - heritage clear (no Part IV / V / Listed)
+#   - within 500m of major transit (subway∪streetcar combined)
+#   - lot >= 600 m² (room for a real sixplex w/o variance)
+#   - sixplex-eligible district (T&EY + Ward 23, June 2025 carve-out)
+#   - 0 mature ≥30cm DBH protected trees (no Section 7 friction)
+#   - not TRCA-regulated
+# Solar moved to a separate `solarPrime` badge in the frontend.
+BLOOM_TRANSIT_M = 500
+BLOOM_MIN_LOT_M2 = 600
+BLOOM_MAX_TREES = 0
 
 # Per-tier heritage discount factors. Part IV (individually designated) is a hard
 # block at 0.0 — under by-law 569-2013 demolition is prohibited without an OMB
@@ -78,11 +88,16 @@ FORMULA_TEXT = (
 )
 
 BLOOM_FORMULA_TEXT = (
-    "bloom = (heritageStatus is null) AND (solarScoreRaw != null) AND "
-    "(solarScoreRaw > 80) AND (distSubwayM < 800). "
-    "solarScoreRaw is the un-shadowed P95-normalized SolarTO rooftop yield "
-    "(0-100); the developer audience rebuilds, so existing-neighbor shadows "
-    "won't survive demolition."
+    "bloom = (heritageStatus is null) AND "
+    "(distSubwayStreetcarM < 500) AND "
+    "(lotAreaM2 >= 600) AND "
+    "(sixplexEligible == True) AND "
+    "(matureTreeCount == 0) AND "
+    "(inRegulatedArea == False). "
+    "Premium multiplex-friction-clear tier — heritage-clear, walks to "
+    "major transit (matches Bill 185 parking-waiver buffer), room for a "
+    "real sixplex, in a sixplex-eligible district (T&EY + Ward 23), no "
+    "Section 7 Tree Bylaw friction, no TRCA permit gate."
 )
 
 # SolarTO upstream rooftop screening — what passes into BloomTO's solarScore.
@@ -212,31 +227,42 @@ def compute_full_score(
 def bloom_flag(
     *,
     heritage_status: str | None,
-    solar_score_raw: int | None,
-    dist_subway_m: float | None,
+    dist_subway_streetcar_m: float | None,
+    lot_area_m2: float | None,
+    sixplex_eligible: bool,
+    mature_tree_count: int,
+    in_regulated_area: bool,
 ) -> bool:
-    """Bloom flag — the precomputed "premium gold-mine" boolean.
+    """Bloom flag — the precomputed "premium multiplex" boolean.
 
-    Tests the **un-shadowed** SolarTO score (`solar_score_raw`), not the
-    shadow-adjusted `solar_score`. Rationale: BloomTO's audience is developers
-    doing demolish-and-rebuild multiplex work. The shadow analysis is based
-    on the *existing* building's neighbors casting shadows on the *existing*
-    roof — none of which survives demolition. The new building will have a
-    different height, footprint, and roof orientation, so the relevant
-    rooftop solar signal is the parcel's *raw* rooftop yield potential
-    (which captures latitude, orientation, and area), not the
-    encumbrance the predecessor was paying.
+    Reframed 2026-05-06 from "net-zero premium" (solar + subway only) to
+    "premium multiplex-friction-clear": every input is a city-data signal
+    that directly affects multiplex feasibility cost or timeline. Solar
+    moved to a separate `solarPrime` badge in the frontend.
 
-    Returns False when `solar_score_raw is None` (no rooftop measured —
-    accuracy-over-completeness) or when `heritage_status is not None`
-    (any heritage tier blocks bloom — Part IV, Part V, and Listed are all
-    premium-gate disqualifiers, even though Part V and Listed parcels may
-    still receive a discounted base score).
+    All six gates must pass:
+      - heritage_status is None (no Part IV / V / Listed encumbrance)
+      - dist_subway_streetcar_m < BLOOM_TRANSIT_M (500m, matches the
+        TRANSIT_BUFFER_M parking-waiver buffer / Bill 185)
+      - lot_area_m2 >= BLOOM_MIN_LOT_M2 (600m², room for a real sixplex
+        without variance)
+      - sixplex_eligible is True (T&EY District + Ward 23, June 2025)
+      - mature_tree_count <= BLOOM_MAX_TREES (no Section 7 Tree Bylaw
+        friction — protected trees add $5K-$30K + permit delay each)
+      - not in_regulated_area (TRCA permit gate doesn't apply)
+
+    Returns False when any gate's input is None (accuracy-over-completeness).
     """
     if heritage_status is not None:
         return False
-    if solar_score_raw is None:
+    if dist_subway_streetcar_m is None or dist_subway_streetcar_m >= BLOOM_TRANSIT_M:
         return False
-    if dist_subway_m is None:
+    if lot_area_m2 is None or lot_area_m2 < BLOOM_MIN_LOT_M2:
         return False
-    return solar_score_raw > BLOOM_SOLAR_THRESHOLD and dist_subway_m < BLOOM_SUBWAY_M
+    if not sixplex_eligible:
+        return False
+    if mature_tree_count > BLOOM_MAX_TREES:
+        return False
+    if in_regulated_area:
+        return False
+    return True

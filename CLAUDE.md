@@ -77,6 +77,30 @@ This directory lives under `/var/www/html/` on an Apache + mod_php (PHP 7.4) Wor
 
 The file is human-readable text scraped from dataset descriptions, with hard line wraps mid-paragraph (each dataset's description is truncated to roughly the first wrapped line). It is *not* line-per-dataset and *not* machine-parseable as-is. Before relying on it programmatically, expect to either re-fetch the canonical list from the Toronto Open Data CKAN API (`https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/package_list`) or write a tolerant parser.
 
+## MANDATORY: Verify dollar figures, program names, and dates before surfacing
+
+When the user (or you) propose a specific dollar amount, program name,
+deadline date, or regulatory citation for the page or any product
+artifact, you MUST verify it via WebSearch / WebFetch BEFORE writing it
+into code, copy, or memory. No exceptions.
+
+This includes:
+- Government program names and amounts (DC waivers, HST rebates, GST
+  rebates, Toronto Hydro grants, NRRPR, HRSP, HELP, Greener Homes, etc.)
+- Bill numbers, regulation numbers, council item numbers (e.g., Bill 185,
+  EX24.2, O. Reg 462/24)
+- Application/registration deadlines
+- Per-unit / per-project caps and ceilings
+- Eligibility criteria
+
+If a value comes from a third-party suggestion (Gemini, ChatGPT, a memo,
+a forum post): treat it as unverified until you've grounded it in a
+primary source (Government of Ontario / Toronto.ca / canada.ca / a
+program's own application page). Flag any discrepancies you find.
+
+When the user notices an unverified figure on the page, they lose trust
+in every other figure on the page. The cost of one wrong number cascades.
+
 ## MANDATORY: Wire-field audit when adding/changing per-parcel data
 
 When you add, rename, or remove a field on `data/parcels.geojson` (or its
