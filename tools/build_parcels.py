@@ -56,6 +56,331 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = PROJECT_ROOT / "data" / "parcels.geojson"
 DEFAULT_CACHE = PROJECT_ROOT / "tools" / "cache"
 
+# Worker module-globals used when the per-parcel loop runs under
+# multiprocessing. Set by `_init_worker(state)` in each child process at
+# Pool startup. Sequential runs also call _init_worker locally so the same
+# `_W`-driven `_process_parcel` function works in both modes — single source
+# of truth for the per-parcel logic.
+_W: dict = {}
+
+
+def _init_worker(state: dict) -> None:
+    """Pool initializer. Stash shared inputs in module-global `_W` so
+    `_process_parcel` can use them without re-passing on every call.
+    Linux fork() COW means workers share the parent's loaded indexes
+    until/unless they're written to — read-only `_W` stays cheap.
+    """
+    global _W
+    _W = state
+
+
+def _process_parcel(parcel) -> dict:
+    """Process one parcel, return a result dict the parent aggregates.
+
+    Pure read of `_W` (the shared state set by `_init_worker`). No outer
+    state mutation — claims sets and stats counters are RETURNED, not
+    mutated, so workers under multiprocessing don't fight over shared sets.
+
+    Result shape:
+      {'skip': '<reason>', ['inst_category': str]}      # parcel dropped
+      {'feature': dict, 'stats': {...},                 # parcel kept
+       'heritage_claims': set[int],
+       'permit_claims_by_nb': dict[str, list[int]],
+       'permit_unjoined': bool}
+
+    Stats deltas (always present in the keep path; absent in skip path):
+      score_pos, residential, sixplex_eligible, corner, postwar, bloom,
+      heritage_part_iv, heritage_part_v, heritage_listed,
+      outside_transit_buffer, abuts_laneway, near_rapidto,
+      in_flooding_area, in_regulated_area, mature_trees,
+      permits_address_join (count, not bool), permits_unjoined_per_parcel
+    """
+    nb_tree = _W['nb_tree']
+    neighborhoods = _W['neighborhoods']
+    institutions_index = _W['institutions_index']
+    ttc_station_index = _W['ttc_station_index']
+    zone_index = _W['zone_index']
+    multipliers = _W['multipliers']
+    sixplex_index = _W['sixplex_index']
+    heritage_index = _W['heritage_index']
+    transit_subway_tree = _W['transit_subway_tree']
+    transit_streetcar_only_tree = _W['transit_streetcar_only_tree']
+    transit_bus_tree = _W['transit_bus_tree']
+    massing_index = _W['massing_index']
+    building_geoms = _W['building_geoms']
+    building_tree = _W['building_tree']
+    solar_tree = _W['solar_tree']
+    solar_kwh = _W['solar_kwh']
+    solar_p95 = _W['solar_p95']
+    centreline_index = _W['centreline_index']
+    rapidto_tree = _W['rapidto_tree']
+    flood_index = _W['flood_index']
+    trca_index = _W['trca_index']
+    bike_tree = _W['bike_tree']
+    bike_lines = _W['bike_lines']
+    street_tree_index = _W['street_tree_index']
+    permit_index = _W['permit_index']
+    permit_freshness_cutoff = _W['permit_freshness_cutoff']
+    nb_canopy_by_name = _W['nb_canopy_by_name']
+    built_year_by_name = _W['built_year_by_name']
+    include_non_eligible = _W['include_non_eligible']
+
+    zone_tree, zone_classes = zone_index
+    centreline_tree, centreline_name_ids, centreline_laneway_idx = centreline_index
+
+    # --- gate stage 1: neighborhood ---
+    nb = _lookup_neighborhood(parcel, nb_tree, neighborhoods)
+    if nb is None:
+        return {'skip': 'no_nb'}
+    built_year = built_year_by_name.get(nb.name, 0)
+
+    # --- gate stage 2: institutional ---
+    is_inst, inst_category = institutions_src.is_institutional(parcel.geometry, institutions_index)
+    if is_inst:
+        return {'skip': 'institutional', 'inst_category': inst_category}
+
+    # --- gate stage 3: TTC station ---
+    if ttc_stations_src.is_ttc_station(parcel.geometry, ttc_station_index):
+        return {'skip': 'ttc_station'}
+
+    # --- per-parcel work ---
+    zone_class = _lookup_zone_class(parcel, zone_tree, zone_classes)
+    max_units = zoning_src.lookup_multiplier(zone_class, multipliers)
+    residential = max_units > 0
+
+    sixplex_eligible = sixplex_src.is_sixplex_eligible(parcel.geometry, sixplex_index)
+    if sixplex_eligible and residential and max_units < 6:
+        max_units = 6
+
+    # Heritage: in sequential mode `_W['claimed_heritage_indices']` IS the
+    # parent's shared set — mutations stick, address-join takes precedence
+    # over point-in-parcel exactly like the legacy code. In parallel mode
+    # each worker has its own copy via fork-COW; cross-worker dedup is
+    # approximate (documented in --workers help). Return the snapshot for
+    # parent merge — set-union is idempotent so the parallel merge stays
+    # correct even when multiple workers hit overlapping claims.
+    shared_claims = _W['claimed_heritage_indices']
+    heritage_status = _resolve_heritage_status(parcel, heritage_index, shared_claims)
+    local_heritage_claims = set(shared_claims)
+
+    rep_pt = parcel.geometry.representative_point()
+    rep_coords = (rep_pt.x, rep_pt.y)
+    dist_subway_m = _distance_to_nearest_stop_m(rep_coords, transit_subway_tree)
+    dist_streetcar_m = _distance_to_nearest_stop_m(rep_coords, transit_streetcar_only_tree)
+    dist_subway_streetcar_m = min(dist_subway_m, dist_streetcar_m)
+    dist_bus_m = _distance_to_nearest_stop_m(rep_coords, transit_bus_tree)
+
+    full_score = parcel_scoring.compute_full_score(
+        residential=residential,
+        heritage_status=heritage_status,
+        dist_m=dist_subway_streetcar_m,
+        max_units=max_units,
+        area_m2=parcel.area_m2,
+    )
+    base_score = full_score['score']
+    soft_s = full_score['softScore']
+    outside_buffer = full_score['outsideTransitBuffer']
+
+    if base_score == 0 and soft_s == 0 and not include_non_eligible:
+        return {'skip': 'score_zero'}
+
+    # Building coverage
+    building_area_m2 = 0.0
+    for idx in building_tree.query(parcel.geometry):
+        try:
+            inter = parcel.geometry.intersection(building_geoms[idx])
+        except Exception:
+            continue
+        if inter.is_empty:
+            continue
+        area_signed, _ = _GEOD.geometry_area_perimeter(inter)
+        building_area_m2 += abs(area_signed)
+    coverage = (
+        max(0.0, min(1.0, building_area_m2 / parcel.area_m2))
+        if parcel.area_m2 > 0 else 0.0
+    )
+
+    if parcel.address is None and coverage == 0:
+        return {'skip': 'non_buildable'}
+
+    aspect = _lot_aspect_ratio(parcel)
+
+    max_kwh = 0.0
+    for idx in solar_tree.query(parcel.geometry):
+        pt = solar_tree.geometries[idx]
+        if not parcel.geometry.contains(pt):
+            continue
+        kwh = solar_kwh[idx]
+        if kwh > max_kwh:
+            max_kwh = kwh
+    solar_raw = (
+        max(0, min(100, round(100 * max_kwh / solar_p95)))
+        if solar_p95 > 0 else 0
+    )
+
+    try:
+        shadow_result = shadow_analysis.analyze_parcel(parcel, massing_index)
+    except Exception as e:
+        _log.warning(
+            "shadow_analysis failed for parcel %s (%s): %s — marking unavailable",
+            parcel.parcel_id, parcel.address, e,
+        )
+        shadow_result = shadow_analysis.ShadowResult(None, 'unavailable')
+    if shadow_result.quality == 'unavailable' or shadow_result.unshadowed_fraction is None:
+        solar_score = None
+    else:
+        solar_score = max(0, min(100, round(solar_raw * shadow_result.unshadowed_fraction)))
+
+    corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
+    abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
+    near_rapidto = _near_rapidto(parcel, rapidto_tree)
+    in_flooding_area = flood_src.is_in_flooding_area(parcel.geometry, flood_index)
+    in_regulated_area = trca_src.is_in_regulated_area(parcel.geometry, trca_index)
+
+    # Permits (per-worker claims; parent merges)
+    normalized_addr = (
+        heritage_src.normalize_address(parcel.address) if parcel.address else ''
+    )
+    local_permit_claims: list[int] = []
+    if normalized_addr:
+        for pi in permit_index.address_to_indices.get(normalized_addr, []):
+            if pi in permit_index.claimed:
+                continue
+            permit_index.claimed.add(pi)  # local-to-worker due to fork COW
+            local_permit_claims.append(pi)
+    permits_address_join = len(local_permit_claims)
+    permits_unjoined_per_parcel_bool = (permits_address_join == 0)
+    denom_source = 'address_join' if local_permit_claims else 'no_joined_permits'
+    permits_payload = permits_src.aggregate_per_parcel(
+        local_permit_claims, permit_index.permits, permit_freshness_cutoff, denom_source,
+    )
+    permit_claims_by_nb: dict = {}
+    if local_permit_claims:
+        permit_claims_by_nb[nb.name] = list(local_permit_claims)
+
+    nb_canopy_pct = nb_canopy_by_name.get(nb.name)
+    street_tree_count, mature_tree_count = street_trees_src.count_for_parcel(
+        parcel.geometry, street_tree_index,
+    )
+    dist_bike_m = cycling_src.nearest_bike_lane_distance_m(
+        parcel.geometry, bike_tree, bike_lines,
+    )
+
+    postwar = (
+        POSTWAR_BUILT_YEAR_MIN <= built_year <= POSTWAR_BUILT_YEAR_MAX
+        and heritage_status is None
+    )
+    bloom = parcel_scoring.bloom_flag(
+        heritage_status=heritage_status,
+        dist_subway_streetcar_m=dist_subway_streetcar_m,
+        lot_area_m2=parcel.area_m2,
+        sixplex_eligible=sixplex_eligible,
+        mature_tree_count=mature_tree_count,
+        in_regulated_area=in_regulated_area,
+    )
+
+    feature = {
+        'type': 'Feature',
+        'geometry': {
+            'type': 'Point',
+            'coordinates': [
+                round(rep_pt.x, COORD_DECIMALS),
+                round(rep_pt.y, COORD_DECIMALS),
+            ],
+        },
+        'properties': {
+            'parcelId': parcel.parcel_id,
+            'address': parcel.address,
+            'score': base_score,
+            'softScore': soft_s,
+            'outsideTransitBuffer': outside_buffer,
+            'zoneClass': zone_class,
+            'maxUnits': int(max_units),
+            'residential': residential,
+            'heritageStatus': heritage_status,
+            'distSubwayStreetcarM': int(round(dist_subway_streetcar_m)),
+            'distSubwayM': int(round(dist_subway_m)),
+            'distStreetcarM': int(round(dist_streetcar_m)),
+            'distBusM': int(round(dist_bus_m)),
+            'neighborhood': nb.name,
+            'builtYear': int(built_year),
+            'cornerLot': corner,
+            'abutsLaneway': abuts_laneway,
+            'nearRapidToCorridor': near_rapidto,
+            'inFloodingStudyArea': in_flooding_area,
+            'inRegulatedArea': in_regulated_area,
+            'permits': permits_payload,
+            'neighborhoodPermitComp': None,
+            'neighborhoodCanopyPct': nb_canopy_pct,
+            'streetTreeCount': street_tree_count,
+            'matureTreeCount': mature_tree_count,
+            'distBikeLaneM': int(round(dist_bike_m)),
+            'sixplexEligible': sixplex_eligible,
+            'lotAreaM2': int(round(parcel.area_m2)),
+            'lotAspectRatio': round(aspect, 2),
+            'buildingCoverageRatio': round(coverage, 3),
+            'solarScoreRaw': int(solar_raw),
+            'solarScore': solar_score,
+            'solarShadowQuality': shadow_result.quality,
+            'postwarNeighborhood': postwar,
+            'bloom': bloom,
+            'lotGeometry': (lambda lo, sh, o: {
+                'longAxisM': lo, 'shortAxisM': sh, 'orientationDeg': o,
+            })(*_lot_geometry(parcel)),
+            'neighborHeights': _neighbor_heights(rep_pt, massing_index),
+            'solarYieldKwhPerYr': int(round(max_kwh)) if max_kwh else 0,
+            'pvCapacityKwEstimate': round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
+            'sixplexBonusValueCad': None,
+        },
+    }
+
+    stats_delta = {
+        'score_pos': 1 if base_score > 0 else 0,
+        'residential': 1 if residential else 0,
+        'sixplex_eligible': 1 if sixplex_eligible else 0,
+        'corner': 1 if corner else 0,
+        'postwar': 1 if postwar else 0,
+        'bloom': 1 if bloom else 0,
+        'heritage_part_iv': 1 if heritage_status == 'part_iv' else 0,
+        'heritage_part_v': 1 if heritage_status == 'part_v' else 0,
+        'heritage_listed': 1 if heritage_status == 'listed' else 0,
+        'outside_transit_buffer': 1 if (outside_buffer and soft_s > 0) else 0,
+        'abuts_laneway': 1 if abuts_laneway else 0,
+        'near_rapidto': 1 if near_rapidto else 0,
+        'in_flooding_area': 1 if in_flooding_area else 0,
+        'in_regulated_area': 1 if in_regulated_area else 0,
+        'mature_trees': 1 if mature_tree_count > 0 else 0,
+        'permits_address_join': permits_address_join,
+        'permits_unjoined_per_parcel': 1 if permits_unjoined_per_parcel_bool else 0,
+    }
+
+    return {
+        'feature': feature,
+        'stats': stats_delta,
+        'heritage_claims': local_heritage_claims,
+        'permit_claims_by_nb': permit_claims_by_nb,
+    }
+
+
+def _iterate_parcels(parcels, *, workers: int, state: dict):
+    """Yield `_process_parcel` results for every parcel, sequentially or via
+    multiprocessing.Pool. Always yields in the order workers complete (i.e.
+    NOT input order under parallel mode — caller must not rely on order).
+    """
+    import multiprocessing
+    if workers <= 1:
+        # Sequential: set up _W in this process and call _process_parcel directly.
+        _init_worker(state)
+        for parcel in parcels:
+            yield _process_parcel(parcel)
+        return
+    # Parallel: Pool with fork (default on Linux). Workers inherit parent's
+    # loaded indexes via COW, so the heavy state isn't re-pickled per worker.
+    ctx = multiprocessing.get_context('fork')
+    with ctx.Pool(workers, initializer=_init_worker, initargs=(state,)) as pool:
+        for result in pool.imap_unordered(_process_parcel, parcels, chunksize=200):
+            yield result
+
 DISTANCE_CAP_M = 5000.0
 POSTWAR_BUILT_YEAR_MIN = 1945
 POSTWAR_BUILT_YEAR_MAX = 1960
@@ -429,12 +754,17 @@ def assemble_parcel_payload(
     sixplex_index,
     nb_canopy_by_name: dict[str, int],
     include_non_eligible: bool,
+    workers: int = 1,
 ) -> dict:
     """Build the GeoJSON FeatureCollection payload (no I/O).
 
     Exposed at module scope so the e2e test can drive it against in-memory
     fixtures without touching disk. Caller is responsible for sourcing every
     index / tree from the cached data; this function only composes them.
+
+    `workers`: 1 (default) runs sequentially in-process. >1 fans the per-
+    parcel loop out across `multiprocessing.Pool` workers (Linux fork). Heavy
+    indexes are COW-shared with workers so memory only grows ~1.5×, not N×.
     """
     nb_tree = STRtree([n.polygon for n in neighborhoods])
     zone_tree, zone_classes = zone_index
@@ -470,344 +800,97 @@ def assemble_parcel_payload(
     stats_permits_address_join = 0
     stats_permits_unjoined_per_parcel = 0  # parcels with denominatorSource="no_joined_permits"
 
-    for parcel in parcels:
+    # Build the worker state dict — every shared input the per-parcel loop
+    # body needs. Both sequential and parallel paths use the same
+    # `_process_parcel` function, so the per-parcel logic is single-source.
+    # IMPORTANT: `claimed_heritage_indices` is the same Python set object
+    # the parent uses; in sequential mode the worker mutates it in-place
+    # (preserves address-join-precedence dedup). In parallel mode each
+    # worker gets its own fork-COW copy.
+    _worker_state = {
+        'claimed_heritage_indices': claimed_heritage_indices,
+        'nb_tree': nb_tree,
+        'neighborhoods': neighborhoods,
+        'institutions_index': institutions_index,
+        'ttc_station_index': ttc_station_index,
+        'zone_index': zone_index,
+        'multipliers': multipliers,
+        'sixplex_index': sixplex_index,
+        'heritage_index': heritage_index,
+        'transit_subway_tree': transit_subway_tree,
+        'transit_streetcar_only_tree': transit_streetcar_only_tree,
+        'transit_bus_tree': transit_bus_tree,
+        'massing_index': massing_index,
+        'building_geoms': building_geoms,
+        'building_tree': building_tree,
+        'solar_tree': solar_tree,
+        'solar_kwh': solar_kwh,
+        'solar_p95': solar_p95,
+        'centreline_index': centreline_index,
+        'rapidto_tree': rapidto_tree,
+        'flood_index': flood_index,
+        'trca_index': trca_index,
+        'bike_tree': bike_tree,
+        'bike_lines': bike_lines,
+        'street_tree_index': street_tree_index,
+        'permit_index': permit_index,
+        'permit_freshness_cutoff': permit_freshness_cutoff,
+        'nb_canopy_by_name': nb_canopy_by_name,
+        'built_year_by_name': built_year_by_name,
+        'include_non_eligible': include_non_eligible,
+    }
+
+    # Materialize parcels — multiprocessing.Pool.imap needs a finite iterable
+    # of picklable items. Generator from `iter_parcels()` is consumed once.
+    parcel_list = list(parcels) if workers > 1 else parcels
+
+    for result in _iterate_parcels(parcel_list, workers=workers, state=_worker_state):
         stats_total += 1
-
-        nb = _lookup_neighborhood(parcel, nb_tree, neighborhoods)
-        if nb is None:
-            stats_skipped_no_nb += 1
-            continue
-        built_year = built_year_by_name.get(nb.name, 0)
-
-        # Institutional-points exclusion (TDSB+TCDSB schools, places of
-        # worship, parks, libraries, fire/police/ambulance, long-term care,
-        # community-recreation facilities, child-care centres). Drops the
-        # parcel entirely from the wire — same shape as the non-buildable
-        # gate. Cheap STRtree query; runs before the expensive zoning /
-        # heritage / shadow stages so institutional sites cost nothing.
-        is_inst, inst_category = institutions_src.is_institutional(parcel.geometry, institutions_index)
-        if is_inst:
-            stats_skipped_institutional += 1
-            institutional_by_category[inst_category] = institutional_by_category.get(inst_category, 0) + 1
+        if 'skip' in result:
+            reason = result['skip']
+            if reason == 'no_nb':
+                stats_skipped_no_nb += 1
+            elif reason == 'institutional':
+                stats_skipped_institutional += 1
+                cat = result.get('inst_category', 'unknown')
+                institutional_by_category[cat] = institutional_by_category.get(cat, 0) + 1
+            elif reason == 'ttc_station':
+                stats_skipped_ttc_station += 1
+            elif reason == 'non_buildable':
+                stats_skipped_non_buildable += 1
+            # 'score_zero' is the bulk of skips — not counted in any stat
+            # (matches the legacy sequential loop, which fell through silently)
             continue
 
-        # TTC subway-station exclusion (added 2026-05-06). Catches station
-        # parcels that the institutional ETL above misses — TTC isn't in any
-        # of the 10 city institutional CKAN datasets, so station infrastructure
-        # (e.g., 22 Chester Ave = Chester Station) used to slip through with
-        # civic addresses that look residential. Buffered point exclusion
-        # against GTFS subway stops; see tools/sources/ttc_stations.py.
-        if ttc_stations_src.is_ttc_station(parcel.geometry, ttc_station_index):
-            stats_skipped_ttc_station += 1
-            continue
+        # Keep path: feature + stats deltas + claims to merge
+        features.append(result['feature'])
+        st = result['stats']
+        stats_score_pos += st['score_pos']
+        stats_residential += st['residential']
+        stats_sixplex_eligible += st['sixplex_eligible']
+        stats_corner += st['corner']
+        stats_postwar += st['postwar']
+        stats_bloom += st['bloom']
+        stats_heritage_part_iv += st['heritage_part_iv']
+        stats_heritage_part_v += st['heritage_part_v']
+        stats_heritage_listed += st['heritage_listed']
+        stats_outside_transit_buffer += st['outside_transit_buffer']
+        stats_abuts_laneway += st['abuts_laneway']
+        stats_near_rapidto += st['near_rapidto']
+        stats_in_flooding_area += st['in_flooding_area']
+        stats_in_regulated_area += st['in_regulated_area']
+        stats_mature_trees += st['mature_trees']
+        stats_permits_address_join += st['permits_address_join']
+        stats_permits_unjoined_per_parcel += st['permits_unjoined_per_parcel']
+        # Merge per-worker claim sets so the parent's globally-deduplicated
+        # views stay correct (heritage stats + permit aggregations).
+        claimed_heritage_indices |= result['heritage_claims']
+        for nb_name, claims in result['permit_claims_by_nb'].items():
+            permits_claims_by_neighborhood.setdefault(nb_name, []).extend(claims)
 
-        zone_class = _lookup_zone_class(parcel, zone_tree, zone_classes)
-        max_units = zoning_src.lookup_multiplier(zone_class, multipliers)
-        residential = max_units > 0
-        if residential:
-            stats_residential += 1
+    # Loop body fully extracted to `_process_parcel` (2026-05-06 multiproc
+    # refactor). The legacy inline body is gone — single source of truth.
 
-        # Sixplex carve-out (Bill 185 / June 2025): T&EY District + Ward 23
-        # get as-of-right cap of 6 even though zoning_multipliers.json caps
-        # at the 2023-amendment value of 4 for R/RD/RS/RT. Resolved here —
-        # before scoring — so the displayed cap, the eligibility flag, and
-        # any unit-count-driven score factor stay coherent.
-        sixplex_eligible = sixplex_src.is_sixplex_eligible(parcel.geometry, sixplex_index)
-        if sixplex_eligible and residential and max_units < 6:
-            max_units = 6
-        if sixplex_eligible:
-            stats_sixplex_eligible += 1
-
-        heritage_status = _resolve_heritage_status(
-            parcel, heritage_index, claimed_heritage_indices,
-        )
-        if heritage_status == "part_iv":
-            stats_heritage_part_iv += 1
-        elif heritage_status == "part_v":
-            stats_heritage_part_v += 1
-        elif heritage_status == "listed":
-            stats_heritage_listed += 1
-
-        # rep_pt is the parcel's guaranteed-inside point. We use it for
-        # distance-to-transit calculations AND as the wire's lat/lng so a
-        # consumer doing their own client-side haversine on the wire point
-        # gets the same answer as the wire's distSubway*M / distStreetcar*M.
-        # (Was previously parcel.centroid for distances — for non-convex /
-        # multi-part lots that can fall hundreds of metres from rep_pt.)
-        rep_pt = parcel.geometry.representative_point()
-        rep_coords = (rep_pt.x, rep_pt.y)
-        dist_subway_m = _distance_to_nearest_stop_m(
-            rep_coords, transit_subway_tree,
-        )
-        # Per-mode distances — added 2026-05-03 to replace the inference trick
-        # the frontend was using to derive streetcar from subway+streetcar.
-        dist_streetcar_m = _distance_to_nearest_stop_m(
-            rep_coords, transit_streetcar_only_tree,
-        )
-        # Combined distance derived from the per-mode pair so it's always
-        # consistent with them. Was previously a third independent tree query
-        # against the major-transit (subway∪streetcar) tree, which diverged
-        # from min(subway,streetcar) on ~70 rows under STRtree's bbox pruning.
-        dist_subway_streetcar_m = min(dist_subway_m, dist_streetcar_m)
-        dist_bus_m = _distance_to_nearest_stop_m(
-            rep_coords, transit_bus_tree,
-        )
-
-        # Pass the raw distance — both score() and soft_score() apply their
-        # own range gates (500m strict, 1500m soft).
-        full_score = parcel_scoring.compute_full_score(
-            residential=residential,
-            heritage_status=heritage_status,
-            dist_m=dist_subway_streetcar_m,
-            max_units=max_units,
-            area_m2=parcel.area_m2,
-        )
-        base_score = full_score["score"]
-        soft_s = full_score["softScore"]
-        outside_buffer = full_score["outsideTransitBuffer"]
-
-        # NFR budget gate: skip the expensive shadow stage for ineligible
-        # parcels. With the soft-transit extension, "ineligible" now means
-        # BOTH strict score and soft score are zero — i.e., the parcel fails
-        # for non-transit reasons (sliver / Part IV / non-residential).
-        # Outside-buffer suburban multiplex candidates have softScore > 0
-        # and are kept on the wire so the frontend can opt them in.
-        if base_score == 0 and soft_s == 0 and not include_non_eligible:
-            continue
-        if base_score > 0:
-            stats_score_pos += 1
-        if outside_buffer and soft_s > 0:
-            stats_outside_transit_buffer += 1
-
-        # Building coverage
-        building_area_m2 = 0.0
-        for idx in building_tree.query(parcel.geometry):
-            try:
-                inter = parcel.geometry.intersection(building_geoms[idx])
-            except Exception:
-                continue
-            if inter.is_empty:
-                continue
-            area_signed, _ = _GEOD.geometry_area_perimeter(inter)
-            building_area_m2 += abs(area_signed)
-        coverage = (
-            max(0.0, min(1.0, building_area_m2 / parcel.area_m2))
-            if parcel.area_m2 > 0 else 0.0
-        )
-
-        # Buildable-polygon gate: a polygon with no address AND no building
-        # footprint is almost certainly an easement, road-widening leftover,
-        # common-element strip, or laneway segment that the Property
-        # Boundaries dataset includes alongside real parcels. Real residential
-        # lots have either a building or an address (typically both). This
-        # drops ~6,200 score-positive non-residential polygons that pollute
-        # the top picks (e.g. the 296 m² aspect-9 strip in Beechborough-
-        # Greenbrook that scored 99 with no building on it). Skip BEFORE the
-        # expensive shadow analysis to avoid wasting that work.
-        if parcel.address is None and coverage == 0:
-            stats_skipped_non_buildable += 1
-            continue
-
-        aspect = _lot_aspect_ratio(parcel)
-
-        # Solar (raw): max kWh of contained rooftop points, normalized by P95.
-        max_kwh = 0.0
-        for idx in solar_tree.query(parcel.geometry):
-            pt = solar_tree.geometries[idx]
-            if not parcel.geometry.contains(pt):
-                continue
-            kwh = solar_kwh[idx]
-            if kwh > max_kwh:
-                max_kwh = kwh
-        solar_raw = (
-            max(0, min(100, round(100 * max_kwh / solar_p95)))
-            if solar_p95 > 0 else 0
-        )
-
-        # Shadow analysis (only for score>0 parcels — gated above).
-        # Wrapped: even with shadow_analysis._safe_unary_union, an unexpected
-        # GEOS exception or invariant violation should drop this one parcel's
-        # shadow score to "unavailable" rather than crash the ETL. The wire
-        # format already supports `solarScore=None` ↔ `quality="unavailable"`.
-        try:
-            shadow_result = shadow_analysis.analyze_parcel(parcel, massing_index)
-        except Exception as e:
-            _log.warning(
-                "shadow_analysis failed for parcel %s (%s): %s — marking unavailable",
-                parcel.parcel_id, parcel.address, e,
-            )
-            shadow_result = shadow_analysis.ShadowResult(None, "unavailable")
-        if shadow_result.quality == "unavailable":
-            solar_score = None
-        elif shadow_result.unshadowed_fraction is None:
-            solar_score = None
-        else:
-            solar_score = max(0, min(100, round(solar_raw * shadow_result.unshadowed_fraction)))
-
-        corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
-        if corner:
-            stats_corner += 1
-
-        # Laneway / RapidTO / flood flags — added 2026-05-03 to ground BloomTO
-        # in TransformTO 2026-30 priorities + Toronto's 2019/2022 garden-suite
-        # by-laws.
-        abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
-        if abuts_laneway:
-            stats_abuts_laneway += 1
-        near_rapidto = _near_rapidto(parcel, rapidto_tree)
-        if near_rapidto:
-            stats_near_rapidto += 1
-        in_flooding_area = flood_src.is_in_flooding_area(parcel.geometry, flood_index)
-        if in_flooding_area:
-            stats_in_flooding_area += 1
-        in_regulated_area = trca_src.is_in_regulated_area(parcel.geometry, trca_index)
-        if in_regulated_area:
-            stats_in_regulated_area += 1
-
-        # ── New 2026-05-04 wire fields: permits, canopy, bike, street trees, sixplex ──
-        # Permits: address-only join (source has no lat/lng — see building_permits.py
-        # docstring). Spatial-fallback path is a no-op for now; the enum value
-        # "spatial_fallback" remains valid in the validator for future enabling.
-        normalized_addr = (
-            heritage_src.normalize_address(parcel.address) if parcel.address else ""
-        )
-        permit_indices: list[int] = []
-        if normalized_addr:
-            for pi in permit_index.address_to_indices.get(normalized_addr, []):
-                if pi in permit_index.claimed:
-                    continue
-                permit_index.claimed.add(pi)
-                permit_indices.append(pi)
-        if permit_indices:
-            stats_permits_address_join += len(permit_indices)
-            denom_source = "address_join"
-            permits_claims_by_neighborhood.setdefault(nb.name, []).extend(permit_indices)
-        else:
-            denom_source = "no_joined_permits"
-            stats_permits_unjoined_per_parcel += 1
-        permits_payload = permits_src.aggregate_per_parcel(
-            permit_indices, permit_index.permits, permit_freshness_cutoff, denom_source,
-        )
-
-        nb_canopy_pct = nb_canopy_by_name.get(nb.name)
-        street_tree_count, mature_tree_count = street_trees_src.count_for_parcel(
-            parcel.geometry, street_tree_index,
-        )
-        if mature_tree_count > 0:
-            stats_mature_trees += 1
-        dist_bike_m = cycling_src.nearest_bike_lane_distance_m(
-            parcel.geometry, bike_tree, bike_lines,
-        )
-        # sixplex_eligible already resolved above (alongside max_units) so the
-        # cap and the flag stay coherent.
-
-        postwar = (
-            POSTWAR_BUILT_YEAR_MIN <= built_year <= POSTWAR_BUILT_YEAR_MAX
-            and heritage_status is None
-        )
-        if postwar:
-            stats_postwar += 1
-
-        bloom = parcel_scoring.bloom_flag(
-            heritage_status=heritage_status,
-            dist_subway_streetcar_m=dist_subway_streetcar_m,
-            lot_area_m2=parcel.area_m2,
-            sixplex_eligible=sixplex_eligible,
-            mature_tree_count=mature_tree_count,
-            in_regulated_area=in_regulated_area,
-        )
-        if bloom:
-            stats_bloom += 1
-
-        # rep_pt resolved above; reuse for the wire geometry so the displayed
-        # marker is exactly the point the distance fields were measured from.
-        feature = {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [
-                    round(rep_pt.x, COORD_DECIMALS),
-                    round(rep_pt.y, COORD_DECIMALS),
-                ],
-            },
-            "properties": {
-                # parcelId is the empty-string-coerced PARCELID from the
-                # Property Boundaries dataset. Empty string → polygon has no
-                # registered parcel record (almost always a sliver / common-
-                # element strip / road-widening leftover); the buildability
-                # gate above already drops the obvious cases.
-                "parcelId": parcel.parcel_id,
-                "address": parcel.address,
-                "score": base_score,
-                "softScore": soft_s,
-                "outsideTransitBuffer": outside_buffer,
-                "zoneClass": zone_class,
-                "maxUnits": int(max_units),
-                "residential": residential,
-                "heritageStatus": heritage_status,
-                "distSubwayStreetcarM": int(round(dist_subway_streetcar_m)),
-                "distSubwayM": int(round(dist_subway_m)),
-                "distStreetcarM": int(round(dist_streetcar_m)),
-                "distBusM": int(round(dist_bus_m)),
-                "neighborhood": nb.name,
-                # builtYear is the median-year-built of the parcel's
-                # neighborhood, lifted from the v1.1 NPP-2021 join. Per-parcel
-                # year-built isn't published by Toronto Open Data; the
-                # neighborhood median is the finest-grained signal we have and
-                # is the same value driving postwarNeighborhood.
-                "builtYear": int(built_year),
-                "cornerLot": corner,
-                "abutsLaneway": abuts_laneway,
-                "nearRapidToCorridor": near_rapidto,
-                "inFloodingStudyArea": in_flooding_area,
-                "inRegulatedArea": in_regulated_area,
-                "permits": permits_payload,
-                # neighborhoodPermitComp gets stamped in the second pass after
-                # the loop (medians need every neighborhood's full permit set).
-                "neighborhoodPermitComp": None,
-                "neighborhoodCanopyPct": nb_canopy_pct,
-                "streetTreeCount": street_tree_count,
-                "matureTreeCount": mature_tree_count,
-                "distBikeLaneM": int(round(dist_bike_m)),
-                "sixplexEligible": sixplex_eligible,
-                "lotAreaM2": int(round(parcel.area_m2)),
-                "lotAspectRatio": round(aspect, 2),
-                "buildingCoverageRatio": round(coverage, 3),
-                "solarScoreRaw": int(solar_raw),
-                "solarScore": solar_score,
-                "solarShadowQuality": shadow_result.quality,
-                "postwarNeighborhood": postwar,
-                "bloom": bloom,
-                # ── Architect / dev detail-panel fields (added 2026-05-05) ──
-                # `lotGeometry`: actual MRR dimensions + bearing of long axis.
-                # Surfaced because passive-solar designers want orientation in
-                # degrees, not the 0-100 `lotAspectRatio` abstraction.
-                "lotGeometry": (lambda lo, sh, o: {
-                    "longAxisM": lo, "shortAxisM": sh, "orientationDeg": o,
-                })(*_lot_geometry(parcel)),
-                # `neighborHeights`: avg building height in each compass
-                # quadrant within 30m of the parcel rep-point. Lets the panel
-                # show "south side: 11m rowhouse blocks winter sun" instead
-                # of inferring it from a shadow score alone.
-                "neighborHeights": _neighbor_heights(rep_pt, massing_index),
-                # `solarYieldKwhPerYr`: best-rooftop max kWh/year, raw
-                # (un-shadowed). Existing `solarScoreRaw` is the same value
-                # P95-normalized to 0-100 — the kWh figure is what a developer
-                # actually wants to see.
-                "solarYieldKwhPerYr": int(round(max_kwh)) if max_kwh else 0,
-                # `pvCapacityKwEstimate`: installable PV nameplate (kW). At
-                # Toronto's latitude 1 kW PV ≈ 1,150 kWh/yr south-facing
-                # unshaded, so the inverse converts the raw kWh figure into
-                # the "you could install ~X kW on this roof" tease.
-                "pvCapacityKwEstimate": round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
-                # `sixplexBonusValueCad`: stamped in the second pass below,
-                # alongside `neighborhoodPermitComp` (the input it depends
-                # on isn't available until every neighborhood's permit set
-                # is aggregated).
-                "sixplexBonusValueCad": None,
-            },
-        }
-        features.append(feature)
 
     # Sort by max(score, softScore) so soft-only parcels (the >500m opt-in
     # catchment, score=0 but softScore>0) appear in the top-N projection
@@ -946,6 +1029,13 @@ def _parse_args(argv):
                    help="keep parcels with score=0 (non-residential / heritage / no major transit) on the wire")
     p.add_argument("--quiet", action="store_true",
                    help="suppress progress logs (errors still printed)")
+    import os as _os
+    p.add_argument("--workers", type=int, default=1,
+                   help="number of parallel worker processes for the per-parcel loop. "
+                        f"1 = sequential (default, safest). Try {_os.cpu_count() or 8} to use all cores. "
+                        "Linux fork+COW means heavy indexes are shared across workers — memory grows ~1.5×, not N×. "
+                        "Stats counters are slightly approximate under parallel mode (heritage/permit "
+                        "deduplication crosses worker boundaries imperfectly), but per-parcel data is bit-identical.")
     return p.parse_args(argv)
 
 
@@ -1112,6 +1202,7 @@ def main(argv=None) -> int:
         sixplex_index=sixplex_index,
         nb_canopy_by_name=nb_canopy_by_name,
         include_non_eligible=args.include_non_eligible,
+        workers=args.workers,
     )
     _done("assemble", t)
 
