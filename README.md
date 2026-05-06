@@ -13,7 +13,7 @@ Audience is developers and city-builders, not homeowners.
 
 Deliberately boring:
 
-- Static HTML + inline CSS + inline JS, served by Apache. Tailwind via CDN, Leaflet via CDN (parcel view only).
+- Static HTML + inline CSS + inline JS, served by Apache.
 - One PHP file: [`geocode-proxy.php`](geocode-proxy.php) — thin Google Places / Geocoding proxy that keeps the API key server-side.
 - No build step. No bundler. No npm install. No WordPress plugin. No 3D in the browser.
 
