@@ -1421,23 +1421,16 @@
         .pick .star:hover { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
         .pick .star.on { color: #f59e0b; }
         .pick .star:active { transform: scale(0.92); }
-        .detail-star {
-            width: 32px; height: 32px; flex-shrink: 0;
-            border: none; background: rgba(47, 106, 79, 0.08);
-            border-radius: 8px; cursor: pointer; color: #d1d5db;
-            font-size: 18px; line-height: 1;
-            transition: all 0.12s ease;
-        }
-        .detail-star:hover { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
-        .detail-star.on { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
         .detail-print {
-            width: 32px; height: 32px; flex-shrink: 0;
-            border: none; background: rgba(10, 76, 168, 0.08);
+            height: 32px; flex-shrink: 0;
+            padding: 0 12px;
+            border: none; background: rgba(10, 76, 168, 0.10);
             border-radius: 8px; cursor: pointer; color: var(--tor-blue);
-            font-size: 18px; line-height: 1;
+            font-size: 13px; font-weight: 600; line-height: 1;
+            white-space: nowrap;
             transition: all 0.12s ease;
         }
-        .detail-print:hover { background: rgba(10, 76, 168, 0.18); }
+        .detail-print:hover { background: rgba(10, 76, 168, 0.20); }
         .detail-nearby {
             height: 32px; flex-shrink: 0;
             padding: 0 12px;
@@ -1860,7 +1853,6 @@
             body > main,
             #detail-overlay,
             .detail-print,
-            .detail-star,
             .detail-close,
             .detail-nearby,
             .detail-maps,
@@ -2124,8 +2116,7 @@
             </div>
             <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">📍 Nearby</button>
             <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">🗺 Maps</a>
-            <button class="detail-print" id="detail-print" aria-label="Save as PDF" title="Save this parcel as a one-page PDF (uses your browser's print dialog → 'Save as PDF')">⎙</button>
-            <button class="detail-star" id="detail-star" aria-label="Save to watchlist">☆</button>
+            <button class="detail-print" id="detail-print" type="button" aria-label="Save as PDF" title="Open the print dialog and choose 'Save as PDF' to keep this parcel as a one-page deal doc.">🖨 Save PDF</button>
             <button class="detail-close" id="detail-close" aria-label="Close detail panel">✕</button>
         </div>
         <div class="detail-body" id="detail-body"></div>
@@ -4560,7 +4551,6 @@
             document.getElementById('detail-nb').textContent = r.neighborhood;
             document.getElementById('detail-body').innerHTML = detailHtml(r);
             populatePrintHeader(r, initialTitle);
-            updateDetailStarUI();
             document.getElementById('detail-maps').href = googleMapsUrl(r);
             panel.hidden = false;
             // Trigger transition on next frame so the slide-in animates.
@@ -4643,16 +4633,6 @@
             });
         }
 
-        function updateDetailStarUI() {
-            const starBtn = document.getElementById('detail-star');
-            if (!starBtn || !detailCurrent) return;
-            const on = isWatched(detailCurrent);
-            starBtn.classList.toggle('on', on);
-            starBtn.textContent = on ? '★' : '☆';
-            starBtn.setAttribute('aria-label', on ? 'Remove from saved' : 'Save to watchlist');
-            starBtn.title = on ? 'Saved — click to remove' : 'Save to watchlist';
-        }
-
         function closeDetail() {
             const panel = document.getElementById('detail-panel');
             const overlay = document.getElementById('detail-overlay');
@@ -4696,22 +4676,6 @@
             // the list). Desktop already sees the listings on the left.
             const listings = document.getElementById('picks');
             if (listings) listings.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-        document.getElementById('detail-star').addEventListener('click', () => {
-            if (!detailCurrent) return;
-            toggleWatched(detailCurrent);
-            updateDetailStarUI();
-            // If actively filtered to Saved, full re-render so removed
-            // items disappear; otherwise just refresh the saved-toggle
-            // count so it stays accurate.
-            if (activePresets.has('saved')) render();
-            else syncSavedToggleUI();
-            // Update the in-list star state too without a full re-render.
-            const k = parcelKey(detailCurrent);
-            document.querySelectorAll(`.pick[data-key="${k}"] .star`).forEach(el => {
-                el.classList.toggle('on', isWatched(detailCurrent));
-                el.textContent = isWatched(detailCurrent) ? '★' : '☆';
-            });
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !document.getElementById('detail-panel').hidden) closeDetail();
@@ -5375,9 +5339,6 @@
                         starBtn.classList.toggle('on', on);
                         starBtn.textContent = on ? '★' : '☆';
                         starBtn.setAttribute('aria-label', on ? 'Remove from saved' : 'Save to watchlist');
-                        if (detailCurrent && parcelKey(detailCurrent) === parcelKey(r)) {
-                            updateDetailStarUI();
-                        }
                         // Keep the ★ Saved toggle count fresh; full render
                         // only when actively filtering by saved (otherwise
                         // the row we just toggled would vanish out from
