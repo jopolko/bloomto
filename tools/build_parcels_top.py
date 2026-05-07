@@ -120,6 +120,23 @@ WEALTHY_ENCLAVE_NEIGHBORHOODS = frozenset({
     "Hoggs Hollow",
 })
 
+# ── Wealthy-estate structural filter (2026-05-07 evening) ──────────────────
+# The named-neighborhood enclave list above only catches the obvious 10
+# wealthy hoods. It misses estate-shaped properties scattered through
+# nominally-mixed neighborhoods (1 Grenadier Hts in High Park-Swansea,
+# Old Colony / Northdale / Truman in St. Andrew-Windfields, the Cummer
+# Ave cluster in Newtonbrook East, etc.). These don't redevelop into
+# multiplex regardless of zoning permission — they're owner-occupied
+# heritage-grade homes on $5M+ lots.
+#
+# Structural signature: large lot + low coverage + a recorded structure
+# (Massing-confirmed, not just a Building Outlines polygon). 1 Grenadier:
+# 2,593 m² lot, 8.3 % coverage, 16.8 m height. Spares legitimate teardown
+# candidates (~25–35 % coverage on normal-sized RD lots) and vacant lots
+# (which go through the POSRES_VACANT_MAX gate, not this one).
+WEALTHY_ESTATE_MIN_LOT_M2 = 2000
+WEALTHY_ESTATE_MAX_COVERAGE = 0.15
+
 
 def _passes_positive_residential(props: dict) -> bool:
     """Affirmative check that the parcel looks like a residential lot.
@@ -178,6 +195,22 @@ def _is_wealthy_enclave(props: dict) -> bool:
     return (props.get("neighborhood") or "") in WEALTHY_ENCLAVE_NEIGHBORHOODS
 
 
+def _looks_like_wealthy_estate(props: dict) -> bool:
+    """Mansion-on-a-yard structural signature: large lot, low coverage,
+    AND a Massing-recorded existing structure. Vacant lots fall through
+    (no Massing height) — those are gated separately by
+    POSRES_VACANT_MAX_LOT_AREA_M2.
+    """
+    lot = props.get("lotAreaM2") or 0
+    cov = props.get("buildingCoverageRatio") or 0
+    has_h = props.get("existingMaxBuildingHeightM") is not None
+    return (
+        lot > WEALTHY_ESTATE_MIN_LOT_M2
+        and cov < WEALTHY_ESTATE_MAX_COVERAGE
+        and has_h
+    )
+
+
 def _passes_shared(props: dict) -> bool:
     """Binary-gate eligibility shared by elite + broader.
 
@@ -205,6 +238,12 @@ def _passes_shared(props: dict) -> bool:
         return False
     addr = props.get("address") or ""
     if not addr or addr == "None None":
+        return False
+    # Estate filter — mansion-on-a-yard properties don't redevelop into
+    # multiplex regardless of zoning permission. Catches 1 Grenadier Hts
+    # (2,593 m² · 8.3 % cov) plus the St.Andrew-Windfields / Kingsway /
+    # Bedford Park clusters that the named-enclave list misses.
+    if _looks_like_wealthy_estate(props):
         return False
     return True
 
