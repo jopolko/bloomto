@@ -259,6 +259,9 @@
         .signal-violation {
             background: #fffbeb; color: #92400e; border-color: #fcd34d;
         }
+        .signal-pzr {
+            background: #eef2ff; color: #4338ca; border-color: #a5b4fc;
+        }
         /* Inline age tag — works on both row badges and detail-panel
            cards. Slightly muted so the primary label reads first. */
         .signal-age {
@@ -287,6 +290,7 @@
         .signal-block-severance { border-color: #67e8f9; background: #ecfeff; }
         .signal-block-demo      { border-color: #fca5a5; background: #fef2f2; }
         .signal-block-violation { border-color: #fcd34d; background: #fffbeb; }
+        .signal-block-pzr       { border-color: #a5b4fc; background: #eef2ff; }
         .signal-block-head {
             font-size: 13px; font-weight: 700;
             color: var(--ink);
@@ -308,63 +312,175 @@
         /* Daily picks strip — three real-signal cards above the listings:
            Newest (entered elite since your last visit), Hottest (freshest
            owner-activity signal), Underdog (high-incentive deal hiding
-           outside the top 10). Replaces the prior cosmetic spotlight. */
+           outside the top 10). Each card has a distinct color theme so
+           the eye picks each one up at a glance. */
         .daily-picks {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 10px;
-            margin: 8px 0 10px;
+            gap: 12px;
+            margin: 10px 0 14px;
         }
         @media (max-width: 760px) {
-            .daily-picks { grid-template-columns: 1fr; }
+            .daily-picks { grid-template-columns: 1fr; gap: 10px; }
         }
         .pick-card {
-            display: block;
+            position: relative;
+            display: grid;
+            grid-template-columns: 44px 1fr;
+            gap: 12px; align-items: start;
             text-align: left;
-            padding: 12px 14px;
-            border: 1px solid var(--rule);
-            border-radius: 8px;
-            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 60%);
+            padding: 14px 16px;
+            border: 1.5px solid transparent;
+            border-radius: 10px;
             font-family: inherit;
             cursor: pointer;
-            transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
-            min-width: 0; /* allow ellipsis inside grid track */
+            min-width: 0;
+            overflow: hidden;
+            transition: transform 0.12s ease,
+                        box-shadow 0.18s ease,
+                        border-color 0.18s ease;
         }
-        .pick-card:hover {
-            border-color: #d97706;
-            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.14);
+        .pick-card::before {
+            /* Soft halo behind the icon for visual weight. */
+            content: '';
+            position: absolute;
+            top: 12px; left: 12px;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            opacity: 0.14;
+            transition: opacity 0.18s ease;
         }
+        .pick-card:hover { transform: translateY(-1px); }
+        .pick-card:hover::before { opacity: 0.22; }
         .pick-card:active { transform: scale(0.99); }
-        .pick-card-empty {
-            cursor: help;
-            opacity: 0.55;
-            background: var(--surface);
+        .pick-card-icon {
+            font-size: 28px; line-height: 1;
+            position: relative;  /* over the ::before halo */
+            z-index: 1;
+            text-align: center;
+            padding-top: 2px;
         }
-        .pick-card-empty:hover { border-color: var(--rule); box-shadow: none; }
+        .pick-card-body { min-width: 0; }
         .pick-card-head {
             font-size: 10px; font-weight: 800;
-            color: #b45309;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.1em;
             margin-bottom: 4px;
         }
         .pick-card-addr {
-            font-size: 14px; font-weight: 700;
+            font-size: 16px; font-weight: 700;
             color: var(--ink);
             line-height: 1.2;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
+        .pick-card-kpis {
+            display: flex; gap: 14px;
+            margin-top: 6px; margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+        .pick-card-kpi {
+            display: flex; flex-direction: column;
+            line-height: 1.1;
+        }
+        .pick-card-kpi .kpi-num {
+            font-size: 14px; font-weight: 700;
+            color: var(--ink);
+            font-variant-numeric: tabular-nums;
+        }
+        .pick-card-kpi .kpi-lab {
+            font-size: 9px; font-weight: 600;
+            color: var(--ink-mute2);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-top: 1px;
+        }
         .pick-card-why {
             font-size: 11px; font-weight: 500;
             color: var(--ink-muted);
-            line-height: 1.35;
-            margin-top: 4px;
+            line-height: 1.4;
+            margin-top: 2px;
         }
+        .pick-card-empty {
+            cursor: help;
+            opacity: 0.6;
+        }
+        .pick-card-empty:hover { transform: none; }
         .pick-card-empty-msg {
             font-size: 11px;
             color: var(--ink-mute2);
-            line-height: 1.35;
+            line-height: 1.4;
             font-style: italic;
+        }
+        /* Per-slot color themes — each card lives in its own emotional
+           register: fresh teal (discovery), hot orange (urgency),
+           premium violet (rare find). Subtle gradients keep the grid
+           cohesive on desktop while reading distinct on mobile. */
+        .pick-card-newest {
+            background: linear-gradient(135deg, #ecfeff 0%, #ffffff 70%);
+            border-color: #a5f3fc;
+        }
+        .pick-card-newest::before { background: #06b6d4; }
+        .pick-card-newest .pick-card-head { color: #0e7490; }
+        .pick-card-newest:hover { border-color: #06b6d4; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.18); }
+
+        .pick-card-hottest {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 70%);
+            border-color: #fdba74;
+        }
+        .pick-card-hottest::before { background: #ea580c; }
+        .pick-card-hottest .pick-card-head { color: #c2410c; }
+        .pick-card-hottest:hover { border-color: #ea580c; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.18); }
+
+        .pick-card-underdog {
+            background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 70%);
+            border-color: #c4b5fd;
+        }
+        .pick-card-underdog::before { background: #7c3aed; }
+        .pick-card-underdog .pick-card-head { color: #5b21b6; }
+        .pick-card-underdog:hover { border-color: #7c3aed; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.18); }
+
+        /* Freshness banner — small pulse-dot strip above the picks
+           cards. "Since your last visit Tue: 2 new fresh permits..." */
+        .freshness-banner {
+            display: flex; align-items: center; flex-wrap: wrap;
+            gap: 8px;
+            padding: 9px 14px;
+            margin: 8px 0 4px;
+            background: linear-gradient(90deg, #ecfdf5 0%, #ffffff 70%);
+            border: 1px solid #6ee7b7;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--ink);
+            line-height: 1.4;
+        }
+        .freshness-banner strong { font-weight: 700; color: #047857; }
+        .freshness-since {
+            font-size: 11px;
+            font-weight: 600;
+            color: #065f46;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .freshness-chunk {
+            white-space: nowrap;
+        }
+        .freshness-sep {
+            color: #6ee7b7; font-weight: 700;
+        }
+        .freshness-pulse {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55);
+            animation: freshness-pulse 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes freshness-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.55); }
+            50%      { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+        }
+        @media (max-width: 760px) {
+            .freshness-banner { gap: 6px; padding: 8px 11px; font-size: 11.5px; }
         }
         /* Methodology drawer — collapsed by default. All the chrome (hero
            stats, data pedigree, recency stripe, pre-filter gates) lives in
@@ -1788,6 +1904,11 @@
             <!-- Stats line ("X matches · Y top-contender parcels...") survives
                  here for the filter feedback ("3,585 matches · ...") — slim. -->
             <div id="stats" class="text-xs text-gray-500 listings-stats">Loading parcels…</div>
+            <!-- Freshness banner — surfaces what new owner-activity
+                 signals landed since your last visit. Populated by
+                 renderFreshnessBanner() each render; hidden when nothing
+                 changed or on first-ever visit. -->
+            <div id="freshness-banner" class="freshness-banner" hidden></div>
             <!-- Daily picks strip — three real-signal cards (newest /
                  hottest / underdog) above the listings, replacing the
                  prior date-hash spotlight. Populated by
@@ -2463,7 +2584,7 @@
         }
         function hasAnySignal(r) {
             const s = getSignals(r);
-            return !!(s && (s.severance || s.demoPermit || s.violation));
+            return !!(s && (s.severance || s.demoPermit || s.violation || s.prelimZoning));
         }
 
         // ── Freshness layer for the signals pill ──
@@ -2517,42 +2638,76 @@
         }
 
         // localStorage state for "since your last visit" diff.
-        const SIGNALS_VISIT_KEY = 'bloomto:multiplex:signals-last-visit:v1';
-        // { snapshot: [parcelId, ...], at: ISO } — taken from the *previous*
-        // visit. We diff the current any-signal set against `snapshot` to
-        // surface what's new. On each visit, after rendering, we write the
-        // current set as the next visit's snapshot.
+        // v2 schema (2026-05-07): adds `byKind` so the freshness banner
+        // can distinguish "1 new severance + 2 new demos" from a flat
+        // "3 new parcels". v1 (`snapshot` only) is read for back-compat.
+        const SIGNALS_VISIT_KEY = 'bloomto:multiplex:signals-last-visit:v2';
+        const SIGNALS_VISIT_KEY_LEGACY = 'bloomto:multiplex:signals-last-visit:v1';
+        const SIGNAL_KINDS = ['severance', 'demoPermit', 'violation', 'prelimZoning'];
+
         function readSignalsVisitSnapshot() {
+            // Prefer v2; fall back to v1 (any-signal pids only — banner
+            // shows aggregate count without by-kind breakdown).
             try {
                 const raw = localStorage.getItem(SIGNALS_VISIT_KEY);
-                if (!raw) return null;
-                const obj = JSON.parse(raw);
-                if (!obj || !Array.isArray(obj.snapshot)) return null;
-                return obj;
-            } catch (e) { return null; }
+                if (raw) {
+                    const obj = JSON.parse(raw);
+                    if (obj && Array.isArray(obj.snapshot) && obj.byKind) return obj;
+                }
+            } catch (e) { /* fall through */ }
+            try {
+                const raw = localStorage.getItem(SIGNALS_VISIT_KEY_LEGACY);
+                if (raw) {
+                    const obj = JSON.parse(raw);
+                    if (obj && Array.isArray(obj.snapshot)) {
+                        return { ...obj, byKind: null };  // mark as legacy
+                    }
+                }
+            } catch (e) { /* silent */ }
+            return null;
         }
-        function writeSignalsVisitSnapshot(currentIds, atIso) {
+        function writeSignalsVisitSnapshot(currentIds, byKind, atIso) {
             try {
                 localStorage.setItem(SIGNALS_VISIT_KEY, JSON.stringify({
-                    snapshot: currentIds, at: atIso || new Date().toISOString(),
+                    snapshot: currentIds,
+                    byKind: byKind,
+                    at: atIso || new Date().toISOString(),
                 }));
             } catch (e) { /* silent */ }
         }
-        // The snapshot loaded ONCE at page load — held in module state so
-        // every subsequent re-render uses the same baseline (we only refresh
-        // the snapshot once the user actually leaves / next-loads). Without
-        // this, opening / closing a chip would zero-out the delta.
+        // Loaded ONCE at page load.
         const _signalsVisitSnapshotOnLoad = readSignalsVisitSnapshot();
-        // Set true after we persist the new snapshot — only persist once
-        // per page load, after the first signals render.
         let _signalsSnapshotWritten = false;
 
         function computeNewSinceLastVisit(currentParcelIds) {
             const prev = _signalsVisitSnapshotOnLoad;
-            if (!prev) return { count: null, since: null };  // first-ever visit
+            if (!prev) return { count: null, since: null };
             const old = new Set(prev.snapshot);
             const newOnes = currentParcelIds.filter(pid => !old.has(pid));
             return { count: newOnes.length, since: prev.at };
+        }
+        // Per-kind delta for the freshness banner. For each signal kind,
+        // returns the number of parcelIds that have that signal *now* but
+        // didn't at the user's last visit.
+        function computeFreshSignalsByKind() {
+            const prev = _signalsVisitSnapshotOnLoad;
+            if (!prev || !prev.byKind) return null;  // first visit OR legacy snapshot
+            const out = { severance: 0, demoPermit: 0, violation: 0, prelimZoning: 0 };
+            const oldByKind = {};
+            for (const k of SIGNAL_KINDS) oldByKind[k] = new Set(prev.byKind[k] || []);
+            for (const [pid, payload] of signalsByParcelId.entries()) {
+                for (const k of SIGNAL_KINDS) {
+                    if (payload[k] && !oldByKind[k].has(pid)) out[k]++;
+                }
+            }
+            return { delta: out, since: prev.at };
+        }
+        function buildCurrentSignalsByKind() {
+            const out = { severance: [], demoPermit: [], violation: [], prelimZoning: [] };
+            for (const [pid, payload] of signalsByParcelId.entries()) {
+                for (const k of SIGNAL_KINDS) if (payload[k]) out[k].push(pid);
+            }
+            return out;
         }
         // Compact inline badges for the listing row — one per active signal.
         // Each carries a tooltip with the specific record context.
@@ -2592,6 +2747,13 @@
                 const age = formatAge(v.filedDate);
                 const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
                 parts.push(`<span class="signal-badge signal-violation" title="${v.status || 'Violation'} filed ${date}. ${desc}">⚠ ${v.status || 'Violation'}${ageTag}</span>`);
+            }
+            if (s.prelimZoning) {
+                const z = s.prelimZoning;
+                const date = z.applicationDate || '?';
+                const age = formatAge(z.applicationDate);
+                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
+                parts.push(`<span class="signal-badge signal-pzr" title="Preliminary Zoning Review filed ${date}. Someone (owner / dev / broker) asked City Planning &quot;what can I build at this address&quot; — the earliest dev-interest signal we surface. Anonymous; no purpose field.">📋 Zoning inquiry${ageTag}</span>`);
             }
             return parts.length ? ` <span class="signal-badges">${parts.join('')}</span>` : '';
         }
@@ -2676,6 +2838,23 @@
                         <div class="signal-block-meta">${filed}${status}${work}${more}</div>
                         ${desc ? `<div class="signal-block-desc">${desc}</div>` : ''}
                         ${ageNote}
+                    </div>`);
+            }
+            if (s.prelimZoning) {
+                const z = s.prelimZoning;
+                const age = formatAge(z.applicationDate);
+                const filed = z.applicationDate
+                    ? `Filed ${z.applicationDate}${age ? ` <span class="signal-age">(${age})</span>` : ''}`
+                    : '';
+                const completed = z.completedDate
+                    ? ` · Completed ${z.completedDate}` : '';
+                const status = z.status ? ` · ${escapeHtml(z.status)}` : '';
+                const more = z.extraCount ? ` · <em>+${z.extraCount} more on this lot</em>` : '';
+                blocks.push(`
+                    <div class="signal-block signal-block-pzr">
+                        <div class="signal-block-head">📋 Preliminary Zoning Review <span class="signal-block-lots">${escapeHtml(z.permitNum || '')}</span></div>
+                        <div class="signal-block-meta">${filed}${completed}${status}${more}</div>
+                        <div class="signal-block-desc">Someone — owner, broker, or another developer — asked City Planning what can be built at this address. Earliest possible dev-interest signal; identity is not disclosed.</div>
                     </div>`);
             }
             return `
@@ -2871,15 +3050,20 @@
                 else if (s.demoPermit.applicationDate) cands.push(s.demoPermit.applicationDate);
             }
             if (s.violation && s.violation.filedDate) cands.push(s.violation.filedDate);
+            if (s.prelimZoning && s.prelimZoning.applicationDate) cands.push(s.prelimZoning.applicationDate);
             return cands.length ? cands.reduce((a, b) => a > b ? a : b) : null;
         }
         function _signalKindForRow(r) {
             const s = getSignals(r);
             if (!s) return null;
-            // Most-actionable first when more than one is set.
+            // Priority: most-actionable first. Demo > severance > violation
+            // > prelim zoning. ZPR is the earliest signal but the murkiest
+            // (anonymized, no purpose field) — surface it only when it's
+            // the only signal on the parcel.
             if (s.demoPermit) return { kind: 'demo', label: 'demo permit', dateField: s.demoPermit.issuedDate || s.demoPermit.applicationDate };
             if (s.severance) return { kind: 'severance', label: 'severance application', dateField: s.severance.filedDate };
             if (s.violation) return { kind: 'violation', label: 'enforcement order', dateField: s.violation.filedDate };
+            if (s.prelimZoning) return { kind: 'prelimZoning', label: 'zoning inquiry', dateField: s.prelimZoning.applicationDate };
             return null;
         }
 
@@ -2966,9 +3150,14 @@
             if (!el) return;
             const picks = computeDailyPicks(rows);
             const cards = [];
+            // Each slot has its own color theme — fresh teal for "newest",
+            // hot orange for "hottest", premium violet for "underdog". The
+            // distinct hues mean the eye picks each card up at a glance,
+            // particularly on mobile where they stack vertically.
             const slotMeta = [
                 {
                     key: 'newest',
+                    cls: 'pick-card-newest',
                     icon: '✨',
                     label: 'Newest',
                     fallback: 'Just entered the elite list since your last visit. Visit again tomorrow to see what changed.',
@@ -2976,40 +3165,80 @@
                 },
                 {
                     key: 'hottest',
+                    cls: 'pick-card-hottest',
                     icon: '🔥',
                     label: 'Hottest',
                     fallback: 'No fresh owner-activity signal on the current set.',
-                    tip: 'Parcel with the most recent severance application, demolition permit, or City enforcement order in the daily-refreshed signals layer. The owner is doing something with this property right now.',
+                    tip: 'Parcel with the most recent severance application, demolition permit, City enforcement order, or zoning inquiry in the daily-refreshed signals layer. The owner is doing something with this property right now.',
                 },
                 {
                     key: 'underdog',
+                    cls: 'pick-card-underdog',
                     icon: '💎',
                     label: 'Underdog',
                     fallback: 'No high-savings parcel ranked outside the top 10.',
                     tip: 'Highest stacked Bill 185 incentive total on a parcel ranked outside the top 10 by score. The high-leverage deal hiding beneath the obvious frontrunners — same dollar incentives, lower visibility, less competition.',
                 },
             ];
+
+            // Compact KPI strip per card — 1–2 stats relevant to the slot's
+            // theme. Gives a "card has substance" feel before the dev clicks.
+            const kpiFor = (slot, r) => {
+                if (!r) return '';
+                const lot = r.lotAreaM2 != null ? `${r.lotAreaM2.toLocaleString()} m²` : '—';
+                const score = r.score != null ? `<strong>${r.score}</strong>` : '—';
+                if (slot.key === 'underdog') {
+                    const sv = stackedSavingsFor(r).savings || 0;
+                    const dollars = sv >= 1_000_000 ? `$${(sv/1_000_000).toFixed(2)}M`
+                                                    : `$${Math.round(sv/1000)}K`;
+                    return `<div class="pick-card-kpis">
+                        <span class="pick-card-kpi"><span class="kpi-num">${dollars}</span><span class="kpi-lab">stacked $</span></span>
+                        <span class="pick-card-kpi"><span class="kpi-num">${lot}</span><span class="kpi-lab">lot</span></span>
+                    </div>`;
+                }
+                if (slot.key === 'hottest') {
+                    const sk = _signalKindForRow(r);
+                    const ago = sk && sk.dateField ? formatAge(sk.dateField) : '';
+                    const kindLabel = sk ? sk.label : 'activity';
+                    return `<div class="pick-card-kpis">
+                        <span class="pick-card-kpi"><span class="kpi-num">${ago || '?'}</span><span class="kpi-lab">${kindLabel}</span></span>
+                        <span class="pick-card-kpi"><span class="kpi-num">${score}</span><span class="kpi-lab">score</span></span>
+                    </div>`;
+                }
+                // newest
+                return `<div class="pick-card-kpis">
+                    <span class="pick-card-kpi"><span class="kpi-num">${score}</span><span class="kpi-lab">score</span></span>
+                    <span class="pick-card-kpi"><span class="kpi-num">${lot}</span><span class="kpi-lab">lot</span></span>
+                </div>`;
+            };
+
             for (const slot of slotMeta) {
                 const r = picks[slot.key];
                 if (!r) {
-                    cards.push(`<div class="pick-card pick-card-empty" title="${slot.tip}">
-                        <div class="pick-card-head">${slot.icon} ${slot.label}</div>
-                        <div class="pick-card-empty-msg">${slot.fallback}</div>
+                    cards.push(`<div class="pick-card pick-card-empty ${slot.cls}" title="${escapeHtml(slot.tip)}">
+                        <div class="pick-card-icon">${slot.icon}</div>
+                        <div class="pick-card-body">
+                            <div class="pick-card-head">${slot.label}</div>
+                            <div class="pick-card-empty-msg">${escapeHtml(slot.fallback)}</div>
+                        </div>
                     </div>`);
                     continue;
                 }
                 const wireAddr = (r.address && r.address !== 'None None') ? r.address : (resolvedAddress(r) || 'Unaddressed parcel');
                 const why = r._pickWhy || '';
                 const k = parcelKey(r);
-                cards.push(`<button type="button" class="pick-card" data-key="${escapeHtml(k)}" title="${escapeHtml(slot.tip)}">
-                    <div class="pick-card-head">${slot.icon} ${slot.label}</div>
-                    <div class="pick-card-addr">${escapeHtml(wireAddr)}</div>
-                    <div class="pick-card-why">${escapeHtml(why)}</div>
+                cards.push(`<button type="button" class="pick-card ${slot.cls}" data-key="${escapeHtml(k)}" title="${escapeHtml(slot.tip)}">
+                    <div class="pick-card-icon">${slot.icon}</div>
+                    <div class="pick-card-body">
+                        <div class="pick-card-head">${slot.label}</div>
+                        <div class="pick-card-addr">${escapeHtml(wireAddr)}</div>
+                        ${kpiFor(slot, r)}
+                        <div class="pick-card-why">${escapeHtml(why)}</div>
+                    </div>
                 </button>`);
             }
             el.innerHTML = cards.join('');
             el.hidden = false;
-            // Click → open detail for that parcel.
             el.querySelectorAll('button.pick-card[data-key]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const k = btn.dataset.key;
@@ -3018,6 +3247,43 @@
                     if (r) openDetail(r);
                 });
             });
+        }
+
+        // Freshness banner — diff-against-snapshot reading "Since your
+        // last visit on Tue, May 5: 2 new fresh permits, 1 new severance,
+        // 1 new zoning inquiry." Hidden when there's nothing new (or
+        // first-ever visit).
+        function renderFreshnessBanner() {
+            const el = document.getElementById('freshness-banner');
+            if (!el) return;
+            if (signalsByParcelId.size === 0) { el.hidden = true; return; }
+            const fresh = computeFreshSignalsByKind();
+            if (!fresh) { el.hidden = true; return; }  // first visit / legacy
+            const total = SIGNAL_KINDS.reduce((a, k) => a + (fresh.delta[k] || 0), 0);
+            if (total === 0) { el.hidden = true; return; }
+            const KIND_NOUN = {
+                severance: { sing: 'severance application', plur: 'severance applications', icon: '🔪' },
+                demoPermit: { sing: 'demolition permit',    plur: 'demolition permits',    icon: '🔨' },
+                violation:  { sing: 'enforcement order',    plur: 'enforcement orders',    icon: '⚠' },
+                prelimZoning: { sing: 'zoning inquiry',     plur: 'zoning inquiries',      icon: '📋' },
+            };
+            const parts = SIGNAL_KINDS
+                .filter(k => (fresh.delta[k] || 0) > 0)
+                .map(k => {
+                    const n = fresh.delta[k];
+                    const w = KIND_NOUN[k];
+                    return `<span class="freshness-chunk">${w.icon} <strong>${n}</strong> new ${n === 1 ? w.sing : w.plur}</span>`;
+                })
+                .join('<span class="freshness-sep">·</span>');
+            const sinceTxt = fresh.since
+                ? `Since your last visit ${relativeTimeFromIso(fresh.since)}`
+                : 'New since your last visit';
+            el.innerHTML = `
+                <span class="freshness-pulse" aria-hidden="true"></span>
+                <span class="freshness-since">${sinceTxt}:</span>
+                ${parts}
+            `;
+            el.hidden = false;
         }
 
         // ---- 3. localStorage visit deltas ----
@@ -4897,6 +5163,11 @@
             const list = document.getElementById('picks');
             pickRows = rows;
             renderedCount = 0;
+            // Freshness banner (delta vs last-visit snapshot) above the
+            // picks strip. Re-renders on every render() but the snapshot
+            // is loaded once per page-load so the deltas don't shift as
+            // the user filters.
+            renderFreshnessBanner();
             // Three real-signal picks (newest / hottest / underdog) replace
             // the prior date-hash spotlight. Re-rendered on every filter
             // change so the picks reflect the current visible set.
@@ -5110,7 +5381,11 @@
                 // don't re-persist, so the user's "since last visit" anchor
                 // stays at their actual last visit until they reload.
                 if (!_signalsSnapshotWritten) {
-                    writeSignalsVisitSnapshot(allSignalPids, signalsGeneratedAt || new Date().toISOString());
+                    writeSignalsVisitSnapshot(
+                        allSignalPids,
+                        buildCurrentSignalsByKind(),
+                        signalsGeneratedAt || new Date().toISOString(),
+                    );
                     _signalsSnapshotWritten = true;
                 }
             }

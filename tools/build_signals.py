@@ -39,6 +39,7 @@ from tools.sources import (
     coa_applications as coa_src,
     demo_permits as demo_src,
     property_violations as viol_src,
+    preliminary_zoning_reviews as pzr_src,
 )
 
 logging.basicConfig(
@@ -64,6 +65,12 @@ DEFAULT_BROADER = PROJECT_ROOT / "data" / "parcels-broader.json"
 DEFAULT_SINCE_DAYS_PERMITS = 365
 DEFAULT_SINCE_DAYS_VIOLATIONS = 365
 DEFAULT_SINCE_DAYS_SEVERANCE = 365
+# ZPR (preliminary zoning review) is the earliest pre-application
+# signal — owner / dev pings the City "what can I build at X?". The
+# hottest of the four signals decays quickly: after 365 days, whoever
+# pulled the ZPR has either moved (formal app, deal flow) or moved
+# on. Keep the same window for consistency.
+DEFAULT_SINCE_DAYS_PZR = 365
 
 
 def _load_parcel_index(*paths: Path) -> tuple[dict, dict]:
@@ -155,6 +162,19 @@ def _demo_payload(permits) -> dict:
     }
 
 
+def _pzr_payload(pzrs) -> dict:
+    """Per-parcel preliminary-zoning-review payload — pick most recent."""
+    pzrs = sorted(pzrs, key=lambda p: p.application_date or "", reverse=True)
+    p = pzrs[0]
+    return {
+        "permitNum": p.permit_num,
+        "applicationDate": p.application_date or None,
+        "completedDate": p.completed_date,
+        "status": p.status,
+        "extraCount": len(pzrs) - 1,
+    }
+
+
 def _violation_payload(viols) -> dict:
     """Per-parcel violation payload — surface the most-severe + most-recent."""
     # Sort by (severity desc, in_date desc).
@@ -195,33 +215,41 @@ def main():
         "--since-days-severance", type=int, default=DEFAULT_SINCE_DAYS_SEVERANCE,
         help="filter severance applications by filing date — last N days (default 365)",
     )
+    parser.add_argument(
+        "--since-days-pzr", type=int, default=DEFAULT_SINCE_DAYS_PZR,
+        help="filter preliminary zoning reviews by application date — last N days (default 365)",
+    )
     args = parser.parse_args()
 
     today = date.today()
     permits_since = (today - timedelta(days=args.since_days_permits)).isoformat()
     violations_since = (today - timedelta(days=args.since_days_violations)).isoformat()
     severance_since = (today - timedelta(days=args.since_days_severance)).isoformat()
+    pzr_since = (today - timedelta(days=args.since_days_pzr)).isoformat()
 
     addr_index, _id_to_row = _load_parcel_index(args.top, args.broader)
     if not addr_index:
         _log.error("empty parcel index — run build_parcels_top.py first")
         return 1
 
-    # Fetch the three CKAN feeds
+    # Fetch the four CKAN feeds
     severances = coa_src.fetch_severance_applications(args.cache, since_iso=severance_since)
     demos = demo_src.fetch_demo_permits(args.cache, since_iso=permits_since)
     violations = viol_src.fetch_property_violations(args.cache, since_iso=violations_since)
+    pzrs = pzr_src.fetch_preliminary_zoning_reviews(args.cache, since_iso=pzr_since)
 
     # Address-join each
     sev_by_pid, sev_m, sev_u = _join_to_parcels(severances, addr_index)
     demo_by_pid, demo_m, demo_u = _join_to_parcels(demos, addr_index)
     viol_by_pid, viol_m, viol_u = _join_to_parcels(violations, addr_index)
+    pzr_by_pid, pzr_m, pzr_u = _join_to_parcels(pzrs, addr_index)
 
     _log.info(
-        "joined: severance %d/%d  demo %d/%d  violations %d/%d  (matched/total)",
+        "joined: severance %d/%d  demo %d/%d  violations %d/%d  ZPR %d/%d  (matched/total)",
         sev_m, sev_m + sev_u,
         demo_m, demo_m + demo_u,
         viol_m, viol_m + viol_u,
+        pzr_m, pzr_m + pzr_u,
     )
 
     # Build per-parcel payloads
@@ -232,6 +260,8 @@ def main():
         by_parcel.setdefault(pid, {})["demoPermit"] = _demo_payload(permits)
     for pid, viols in viol_by_pid.items():
         by_parcel.setdefault(pid, {})["violation"] = _violation_payload(viols)
+    for pid, pzrs in pzr_by_pid.items():
+        by_parcel.setdefault(pid, {})["prelimZoning"] = _pzr_payload(pzrs)
 
     payload = {
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -239,6 +269,7 @@ def main():
             "demoPermits": args.since_days_permits,
             "violations": args.since_days_violations,
             "severances": args.since_days_severance,
+            "prelimZoning": args.since_days_pzr,
         },
         "stats": {
             "severance": {
@@ -255,6 +286,11 @@ def main():
                 "total": len(violations),
                 "matched": viol_m, "unmatched": viol_u,
                 "parcels": len(viol_by_pid),
+            },
+            "prelimZoning": {
+                "total": len(pzrs),
+                "matched": pzr_m, "unmatched": pzr_u,
+                "parcels": len(pzr_by_pid),
             },
         },
         "byParcelId": by_parcel,
