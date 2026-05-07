@@ -142,7 +142,7 @@ def _process_parcel(parcel_or_record) -> dict:
     built_year_by_name = _W['built_year_by_name']
     include_non_eligible = _W['include_non_eligible']
 
-    zone_tree, zone_classes = zone_index
+    zone_tree, zone_records = zone_index
     centreline_tree, centreline_name_ids, centreline_laneway_idx = centreline_index
 
     # --- gate stage 1: neighborhood ---
@@ -177,13 +177,20 @@ def _process_parcel(parcel_or_record) -> dict:
         return {'skip': 'tall_existing_building'}
 
     # --- per-parcel work ---
-    zone_class = _lookup_zone_class(parcel, zone_tree, zone_classes)
-    max_units = zoning_src.lookup_multiplier(zone_class, multipliers)
+    zone_record = _lookup_zone_record(parcel, zone_tree, zone_records)
+    zone_class = zone_record.zone_class if zone_record else ""
+    max_units, max_units_rationale = _derive_max_units(
+        zone_record, multipliers, parcel.area_m2,
+    )
     residential = max_units > 0
 
     sixplex_eligible = sixplex_src.is_sixplex_eligible(parcel.geometry, sixplex_index)
+    # Sixplex carve-out (T&EY/Ward 23, June 2025) lifts the cap to 6 only
+    # when the by-law's own number is below 6 — RM/RA/CR with explicit
+    # higher caps already exceed 6 and shouldn't be reduced.
     if sixplex_eligible and residential and max_units < 6:
         max_units = 6
+        max_units_rationale = "sixplex_carveout"
 
     # Heritage: in sequential mode `_W['claimed_heritage_indices']` IS the
     # parent's shared set — mutations stick, address-join takes precedence
@@ -339,6 +346,11 @@ def _process_parcel(parcel_or_record) -> dict:
             'address': parcel.address,
             'zoneClass': zone_class,
             'maxUnits': int(max_units),
+            'maxUnitsRationale': max_units_rationale,
+            'zoneString': zone_record.zone_string if zone_record else "",
+            'zoneFsi': zone_record.fsi if zone_record else None,
+            'zoneMinLotFrontageM': zone_record.min_lot_frontage_m if zone_record else None,
+            'zoneMinLotAreaM2': zone_record.min_lot_area_m2 if zone_record else None,
             'residential': residential,
             'heritageStatus': heritage_status,
             'distSubwayStreetcarM': int(round(dist_subway_streetcar_m)),
@@ -532,13 +544,61 @@ def _lookup_neighborhood(parcel, nb_tree: STRtree, neighborhoods):
     return None
 
 
-def _lookup_zone_class(parcel, zone_tree: STRtree, zone_classes: list[str]) -> str:
-    """Return the zone class label for the parcel (empty string if no match)."""
+def _lookup_zone_record(parcel, zone_tree: STRtree, zone_records):
+    """Return the `ZoneRecord` for the parcel, or None if no zone polygon
+    contains its representative point.
+    """
     rep = parcel.geometry.representative_point()
     for idx in zone_tree.query(rep):
         if zone_tree.geometries[idx].contains(rep):
-            return zone_classes[idx]
-    return ""
+            return zone_records[idx]
+    return None
+
+
+# Approximate Toronto multiplex unit floor area (median of 2-3 BR mix from
+# recent permit data). Used to derive max-units from FSI when the by-law's
+# UNITS field is not set explicitly.
+ZONE_TYPICAL_UNIT_AREA_M2 = 85.0
+
+
+def _derive_max_units(zone_record, multipliers: dict[str, int], lot_area_m2: float) -> tuple[int, str]:
+    """Per-parcel max-units derivation from the by-law's actual parameters.
+
+    Returns `(max_units, rationale)` where `rationale` is one of:
+      'by_law_units'  — explicit UNITS field set in the zoning polygon
+      'fsi_derived'   — derived from FSI_TOTAL × lot_area / typical_unit_area
+      'zone_average'  — fallback to per-class average (zoning_multipliers.json)
+                        when the polygon's by-law parameters are absent
+      'unzoned'       — no zone record (parcel outside zoning boundary)
+
+    Per-class average is the LOWER bound; if the by-law's actual cap is
+    higher (e.g. by_law_units = 4 on RD lot, but zone_average says 4 too),
+    we use the per-class. The point of the upgrade is honesty — if the
+    by-law SAYS u4, surface that explicitly and label it `by_law_units`.
+    """
+    if zone_record is None:
+        return 0, "unzoned"
+    zone_class = zone_record.zone_class
+    if not zone_class:
+        return 0, "unzoned"
+    # 1. Explicit UNITS in the by-law text
+    if zone_record.units is not None and zone_record.units > 0:
+        return zone_record.units, "by_law_units"
+    # 2. Derive from FSI envelope
+    if zone_record.fsi is not None and zone_record.fsi > 0 and lot_area_m2 > 0:
+        units = max(1, int(round(zone_record.fsi * lot_area_m2 / ZONE_TYPICAL_UNIT_AREA_M2)))
+        return units, "fsi_derived"
+    # 3. Per-class average fallback (legacy behavior)
+    if zone_class in multipliers:
+        return multipliers[zone_class], "zone_average"
+    # Truly unknown zone class — surface loudly, with a pointer to the file
+    # the operator needs to update (matches legacy `lookup_multiplier` text
+    # so a future Toronto by-law amendment fails closed with an actionable
+    # error rather than a silent wrong score).
+    raise KeyError(
+        f"unrecognized ZN_ZONE class {zone_class!r}; "
+        f"add it to tools/zoning_multipliers.json"
+    )
 
 
 def _resolve_heritage_status(parcel, heritage_index, claimed: set[int]) -> str | None:
@@ -723,13 +783,17 @@ _NEIGHBOR_RADIUS_M = 30.0
 _NEIGHBOR_RADIUS_DEG = _NEIGHBOR_RADIUS_M / 111_000  # ≤1.4× over-bound for bbox query at 43°N
 
 # Existing-building height threshold for the multiplex-teardown gate.
-# 15m ≈ 5 storeys at 3m floor-to-floor. At/above this height the existing
-# structure is a real apartment building — teardown economics fail vs the
-# 4–6 plex Toronto multiplex by-law allows. Below this, the lot may carry
-# a 1–4 storey existing structure that's still a legitimate teardown
-# candidate. The 50% overlap requirement guards against picking up a
+# 18m ≈ 6 storeys at 3m floor-to-floor. At/above this the existing
+# structure is a real apartment building — teardown economics fail.
+# Below this, the lot may carry a 1–5 storey structure that's still a
+# legitimate teardown candidate. Bumped 2026-05-07 from 15m after user
+# spot-check found 614 Dovercourt Rd at 14.5m — a real single-family
+# Dufferin Grove home on a 2300m² lot with a steeply pitched roof
+# (Toronto's pre-WW2 detached stock peaks 14–17m at the roof while
+# being only 2.5–3 habitable storeys). 15m was over-blocking that
+# cohort. The 50% overlap requirement guards against picking up a
 # neighbour's tower that just clips this parcel's boundary.
-EXISTING_BUILDING_HEIGHT_THRESHOLD_M = 15.0
+EXISTING_BUILDING_HEIGHT_THRESHOLD_M = 18.0
 EXISTING_BUILDING_OVERLAP_RATIO = 0.5
 
 
@@ -869,7 +933,7 @@ def assemble_parcel_payload(
     indexes are COW-shared with workers so memory only grows ~1.5×, not N×.
     """
     nb_tree = STRtree([n.polygon for n in neighborhoods])
-    zone_tree, zone_classes = zone_index
+    zone_tree, zone_records = zone_index
     centreline_tree, centreline_name_ids, centreline_laneway_idx = centreline_index
 
     features = []

@@ -145,6 +145,16 @@ def _passes_positive_residential(props: dict) -> bool:
     if cover == 0 and not has_height:
         return lot_area <= POSRES_VACANT_MAX_LOT_AREA_M2
 
+    # Active redevelopment / construction-site signature: Outlines
+    # reports cover = 0 but Massing has a recorded height. The two
+    # datasets capture different snapshots of the parcel; when they
+    # disagree like this, the parcel is in flux — newly demolished,
+    # newly built, or under active construction. None of those are
+    # fresh teardown candidates. See 677 Queen St E (active apartment
+    # construction, mid-2026).
+    if cover == 0 and has_height:
+        return False
+
     # Has cover but no Massing height → footprint exists but the
     # structure is sub-massing-threshold. That's a kiosk / shed / awning
     # / pavilion — not a real residential building. Reject.

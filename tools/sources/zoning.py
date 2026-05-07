@@ -51,6 +51,73 @@ _log = logging.getLogger(__name__)
 
 
 @dataclass
+class ZoneRecord:
+    """One Zoning By-law 569-2013 polygon, with all the by-law parameters
+    we extract for per-parcel max-units derivation.
+
+    Field semantics:
+      `zone_class`         — ZN_ZONE prefix (e.g., "RM", "RD"). The high-
+                             level category. Always set (empty string when
+                             zoning has no record for the parcel).
+      `zone_string`        — Full ZN_STRING with all parameters (e.g.
+                             "RM (f18.0; a665; u4) (x252)"). Surface to
+                             the dev so they see the actual by-law text.
+      `units`              — Explicit per-lot unit cap from `UNITS` field
+                             when set (e.g., `u4`). `None` when -1/missing.
+      `fsi`                — `FSI_TOTAL` Floor Space Index (e.g., `d0.85`).
+                             `None` when -1/missing.
+      `min_lot_frontage_m` — `FRONTAGE` minimum from `f12.0`. `None` when
+                             not set; doesn't apply to the parcel.
+      `min_lot_area_m2`    — `ZN_AREA` minimum from `a665`. `None` when
+                             not set.
+      `coverage_max`       — `COVERAGE` max coverage ratio (0–1).
+                             Currently surfaced for downstream use.
+      `pct_residential`    — `PRCNT_RES` as a 0–100 number; `None` when
+                             not specified (e.g. pure residential = 100).
+    """
+    zone_class: str
+    zone_string: str
+    units: int | None
+    fsi: float | None
+    min_lot_frontage_m: float | None
+    min_lot_area_m2: int | None
+    coverage_max: float | None
+    pct_residential: float | None
+
+
+def _coerce_pos(v) -> float | None:
+    """Toronto's zoning data uses -1 for "not set" and Decimal/string types.
+    Return float(v) when v > 0, else None.
+    """
+    if v is None:
+        return None
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f > 0 else None
+
+
+def _coerce_pos_int(v) -> int | None:
+    f = _coerce_pos(v)
+    return int(f) if f is not None else None
+
+
+def _build_zone_record(props: dict) -> ZoneRecord:
+    """Materialize a `ZoneRecord` from a zoning polygon's CKAN properties."""
+    return ZoneRecord(
+        zone_class=props.get("ZN_ZONE") or "",
+        zone_string=props.get("ZN_STRING") or "",
+        units=_coerce_pos_int(props.get("UNITS")),
+        fsi=_coerce_pos(props.get("FSI_TOTAL")),
+        min_lot_frontage_m=_coerce_pos(props.get("FRONTAGE")),
+        min_lot_area_m2=_coerce_pos_int(props.get("ZN_AREA")),
+        coverage_max=_coerce_pos(props.get("COVERAGE")),
+        pct_residential=_coerce_pos(props.get("PRCNT_RES")),
+    )
+
+
+@dataclass
 class Parcel:
     """One Property Boundaries feature, normalized for downstream scoring.
 
@@ -273,12 +340,19 @@ def iter_parcels(cache_dir: Path) -> Iterator[Parcel]:
             )
 
 
-def load_zone_index(cache_dir: Path) -> tuple[STRtree, list[str]]:
-    """Load the Zoning By-law GeoJSON as an STRtree + parallel `ZN_ZONE` labels.
+def load_zone_index(cache_dir: Path) -> tuple[STRtree, list[ZoneRecord]]:
+    """Load the Zoning By-law GeoJSON as an STRtree + parallel ZoneRecord list.
 
-    Returns `(tree, zone_classes)` where `tree.geometries[i]` is the polygon
-    parallel to `zone_classes[i]`. Consumers querying `tree.query(point)` get
-    bbox-candidate indices into both arrays.
+    Returns `(tree, zone_records)` where `tree.geometries[i]` is the polygon
+    parallel to `zone_records[i]`. Consumers querying `tree.query(point)`
+    get bbox-candidate indices into both arrays.
+
+    2026-05-07: previously returned `list[str]` (zone class labels only).
+    Replaced with `list[ZoneRecord]` so downstream consumers (build_parcels
+    per-parcel maxUnits derivation) have access to the by-law's actual
+    UNITS / FSI_TOTAL / FRONTAGE / ZN_AREA fields instead of the coarse
+    `zoning_multipliers.json` per-class average. Backward-compat
+    callers can read `record.zone_class` to recover the old behavior.
     """
     cache = Path(cache_dir)
     zoning_path = _ensure_cached(cache, ZONING_CACHE, ZONING_RESOURCE_URL,
@@ -288,14 +362,19 @@ def load_zone_index(cache_dir: Path) -> tuple[STRtree, list[str]]:
     with zoning_path.open(encoding="utf-8") as fp:
         zdata = json.load(fp)
     zone_geoms: list[BaseGeometry] = []
-    zone_classes: list[str] = []
+    zone_records: list[ZoneRecord] = []
     for feat in zdata.get("features") or []:
         if not feat.get("geometry"):
             continue
         zone_geoms.append(shape(feat["geometry"]))
-        zone_classes.append((feat.get("properties") or {}).get("ZN_ZONE") or "")
-    _log.info("zoning: %d zone polygons", len(zone_geoms))
-    return STRtree(zone_geoms), zone_classes
+        zone_records.append(_build_zone_record(feat.get("properties") or {}))
+    n_with_units = sum(1 for r in zone_records if r.units is not None)
+    n_with_fsi = sum(1 for r in zone_records if r.fsi is not None)
+    _log.info(
+        "zoning: %d zone polygons (%d with explicit UNITS, %d with FSI)",
+        len(zone_geoms), n_with_units, n_with_fsi,
+    )
+    return STRtree(zone_geoms), zone_records
 
 
 def compute_potential(neighborhoods: list[Neighborhood],

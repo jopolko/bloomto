@@ -47,6 +47,9 @@ KNOWN_FALSE_POSITIVES: list[tuple[str | None, str | None, str]] = [
     # ── Parking lots not fully tagged in OSM (asphalt > tagged polygon) ──
     ("5404834", "13 Essex St",            "Fiesta Gardens supermarket parking complex (only 19% OSM-tagged)"),
 
+    # ── Active construction sites (Building Outlines + 3D Massing disagree) ──
+    (None,      "677 Queen St E",         "Active apartment construction site (cov=0% but Massing height=11.3m — datasets disagree, parcel is mid-build)"),
+
     # ── TTC subway-station infrastructure ──
     (None,      "11 Bedford Rd",          "St. George station entrance"),
     (None,      "9 Bedford Rd",           "St. George station plaza"),

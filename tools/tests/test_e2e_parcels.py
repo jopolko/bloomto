@@ -21,7 +21,22 @@ from tools.build_parcels import assemble_parcel_payload
 from tools.sources.heritage import HeritageIndex
 from tools.sources.massing import Building
 from tools.sources.neighborhoods import Neighborhood
-from tools.sources.zoning import Parcel
+from tools.sources.zoning import Parcel, ZoneRecord
+
+
+def _zone_record(zone_class: str) -> ZoneRecord:
+    """Minimal ZoneRecord for fixtures: only `zone_class` matters for the
+    multiplier-table fallback path; all other by-law parameters are absent."""
+    return ZoneRecord(
+        zone_class=zone_class,
+        zone_string=zone_class,
+        units=None,
+        fsi=None,
+        min_lot_frontage_m=None,
+        min_lot_area_m2=None,
+        coverage_max=None,
+        pct_residential=None,
+    )
 
 
 def _square(lon: float, lat: float, side: float) -> Polygon:
@@ -108,7 +123,7 @@ class ParcelE2ETests(unittest.TestCase):
 
         # Zone index: one residential zone covering A/B/C.
         zone_polygon = _square(-79.405, 43.6995, 0.020)
-        self.zone_index = (STRtree([zone_polygon]), ["RD"])
+        self.zone_index = (STRtree([zone_polygon]), [_zone_record("RD")])
         self.multipliers = {"RD": 4}
 
         # Transit: streetcar/subway stops within 25 m of parcels A and B.
@@ -309,7 +324,7 @@ class ParcelE2ETests(unittest.TestCase):
         # The orchestrator must not silently fall through to a default — see
         # zone-class-coverage bug analysis.
         zone_polygon = self.zone_index[0].geometries[0]
-        self.zone_index = (STRtree([zone_polygon]), ["XXX"])
+        self.zone_index = (STRtree([zone_polygon]), [_zone_record("XXX")])
         with self.assertRaises(KeyError) as ctx:
             self._build()
         self.assertIn("XXX", str(ctx.exception))
