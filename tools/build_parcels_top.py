@@ -86,18 +86,10 @@ SHARED_MAX_FOOTPRINT_M2 = 500
 # Real multiplex teardown candidates fit (a). Genuine vacant residential
 # lots are rare in Toronto and almost always under 2000 m². Anything
 # larger and unbuilt is a school field, parkette, or municipal holding.
-POSRES_MIN_COVER = 0.05               # at least 5% lot covered (small lots)
-POSRES_LARGE_LOT_THRESHOLD_M2 = 1500  # above this lot size, demand more coverage
-POSRES_LARGE_LOT_MIN_COVER = 0.15     # 15% cover floor for ≥1500m² lots —
-                                      # below that is a parking-lot signature
-                                      # (small kiosk + big asphalt) even when
-                                      # OSM doesn't have it tagged. See 13 Essex
-                                      # St (Fiesta Gardens parking, 3284m² @
-                                      # 9% cover, OSM polygon tag covers only
-                                      # 19% of the parcel — under our 50%
-                                      # exclusion threshold).
 POSRES_MAX_LOT_AREA_M2 = 5000         # above this is institutional even with a building
-POSRES_VACANT_MAX_LOT_AREA_M2 = 2000
+POSRES_VACANT_MAX_LOT_AREA_M2 = 2000  # vacant exception only on small typical
+                                      # residential lots (above this, almost
+                                      # always institutional / parkette / ROW)
 
 # ── Wealthy-enclave filter (2026-05-07) ────────────────────────────────────
 # Layer 2/3 multiplex devs (BloomTO's target cohort) operate $1–3M project
@@ -123,15 +115,23 @@ WEALTHY_ENCLAVE_NEIGHBORHOODS = frozenset({
 def _passes_positive_residential(props: dict) -> bool:
     """Affirmative check that the parcel looks like a residential lot.
 
-    Replaces "negative-only" filtering for the ELITE set. Returns False
-    for parcels with the structural signature of an institutional /
-    municipal / parking / parkette / weird parcel.
+    The decisive signal is **3D Massing recorded height**. A real
+    residential building (anything 1+ storey) is in Toronto's 3D Massing
+    dataset. A parking-lot kiosk, awning, storage shed, or transit
+    pavilion is NOT in Massing — too small to mass — but Building
+    Outlines may still tag them as a footprint (giving a non-zero
+    coverage ratio). Coverage % alone is unreliable: a small house on a
+    big lot legitimately has 12–20% cover, while a 9% cover kiosk on a
+    parking lot looks identical numerically.
 
-    Three failure modes caught here:
-      1. Vacant lot too big to be residential (≥2000 m² + 0% cover).
-      2. Lot too big to be residential at all (>5000 m²).
-      3. Large lot with too-little cover (>1500 m² + <15% cover) — the
-         parking-lot-with-kiosk signature, regardless of OSM tagging.
+    The rule:
+      - Lot > POSRES_MAX_LOT_AREA_M2 → fail (too big for residential)
+      - Has a Building Outlines footprint AND a Massing-recorded height
+        → pass (real residential structure exists)
+      - Vacant (cover = 0 AND no height) AND lot ≤ POSRES_VACANT_MAX_LOT_AREA_M2
+        → pass (typical residential vacant)
+      - Otherwise → fail (Massing-less footprint = kiosk / shed / awning,
+        or other structural ambiguity)
     """
     cover = props.get("buildingCoverageRatio") or 0
     lot_area = props.get("lotAreaM2") or 0
@@ -141,18 +141,18 @@ def _passes_positive_residential(props: dict) -> bool:
     if lot_area > POSRES_MAX_LOT_AREA_M2:
         return False
 
-    # Vacant: only OK on small typical residential lots.
+    # Vacant exception — only OK on small typical residential lots.
     if cover == 0 and not has_height:
         return lot_area <= POSRES_VACANT_MAX_LOT_AREA_M2
 
-    # Large lot must show real residential coverage. Below the threshold,
-    # the structural signature is parking-lot or institutional yard even
-    # when OSM doesn't tag it.
-    if lot_area > POSRES_LARGE_LOT_THRESHOLD_M2:
-        return cover >= POSRES_LARGE_LOT_MIN_COVER
+    # Has cover but no Massing height → footprint exists but the
+    # structure is sub-massing-threshold. That's a kiosk / shed / awning
+    # / pavilion — not a real residential building. Reject.
+    if not has_height:
+        return False
 
-    # Small lots: any meaningful coverage qualifies.
-    return cover >= POSRES_MIN_COVER or has_height
+    # Has Massing-recorded height → real building exists. Pass.
+    return True
 
 
 def _is_wealthy_enclave(props: dict) -> bool:
