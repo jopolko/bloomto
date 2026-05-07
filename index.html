@@ -3236,7 +3236,13 @@
             if (!rows || rows.length === 0) return { newest: null, hottest: null, underdog: null };
 
             // Newest — first row in `rows` whose parcelId isn't in the
-            // last-visit snapshot. Falls back to null on first-ever visit.
+            // last-visit snapshot. On first-ever visit (no snapshot yet)
+            // OR when there's no delta this visit, falls back to the elite
+            // parcel with the freshest permit so the card always populates
+            // with real data instead of greying out. The fallback message
+            // explicitly previews what the slot will become on the next
+            // visit ("come back to see deltas") so the card teaches its own
+            // value rather than apologising for missing it.
             let newest = null;
             const prev = _eliteVisitSnapshotOnLoad;
             if (prev && prev.snapshot && prev.snapshot.length > 0) {
@@ -3245,7 +3251,33 @@
                     if (!old.has(String(r.parcelId))) { newest = r; break; }
                 }
                 if (newest) {
-                    newest._pickWhy = `Just entered the elite list since your last visit on ${(new Date(prev.at)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}.`;
+                    newest._pickWhy = `Just entered the cover-list since your last visit on ${(new Date(prev.at)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}.`;
+                }
+            }
+            // First-visit fallback: freshest permit on any current elite parcel.
+            // Uses the same `freshPermitsByKey` layer that drives the inline 🔥
+            // permit badge on the picks list, so first-visit users see the
+            // exact kind of signal they'll be tracking on subsequent visits.
+            if (!newest && freshPermitsByKey && freshPermitsByKey.size > 0) {
+                let bestRow = null;
+                let bestDate = '';
+                for (const r of rows) {
+                    const fp = freshPermitsByKey.get(parcelKey(r));
+                    if (!fp || !fp.applicationDate) continue;
+                    if (fp.applicationDate > bestDate) {
+                        bestDate = fp.applicationDate;
+                        bestRow = r;
+                    }
+                }
+                if (bestRow) {
+                    const fp = freshPermitsByKey.get(parcelKey(bestRow));
+                    const ago = fp.daysAgo === 0 ? 'today'
+                              : fp.daysAgo === 1 ? 'yesterday'
+                              : `${fp.daysAgo} days ago`;
+                    const units = fp.unitsCreated > 0 ? `${fp.unitsCreated}-unit ` : '';
+                    newest = bestRow;
+                    newest._pickWhy = `${units}permit filed ${ago} on a current cover-list parcel. Come back — this slot will track new entries to the cover-list since your last visit.`;
+                    newest._pickIsFirstVisitFallback = true;
                 }
             }
             // Persist the current set on first render only.
@@ -3328,8 +3360,8 @@
                     cls: 'pick-card-newest',
                     icon: '✨',
                     label: 'Newest',
-                    fallback: 'Just entered the elite list since your last visit. Visit again tomorrow to see what changed.',
-                    tip: 'Compares the current elite parcels to a snapshot from your last visit (stored in your browser only). The first parcel in the list that wasn\'t there before. First-ever visit shows nothing here — come back to see deltas.',
+                    fallback: 'No new cover-list entries this visit. Toronto Open Data refreshes daily — come back tomorrow.',
+                    tip: 'Compares the current cover-list to a snapshot from your last visit (stored in your browser only). On a first-ever visit this slot falls back to the elite parcel with the freshest permit, so you always see the kind of signal this card tracks.',
                 },
                 {
                     key: 'hottest',
