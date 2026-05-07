@@ -8,7 +8,7 @@ polygons), unions them into a single STRtree, and exposes a per-parcel test
 The build pipeline (`tools/build_parcels.py`) consumes this index to force
 `score = 0` on any parcel whose polygon contains an institutional point
 (or intersects an institutional polygon for parks). This replaces the
-frontend bandaid (`looksInstitutional()` in goldmines.html) with an
+frontend bandaid (`looksInstitutional()` in index.html) with an
 ETL-side, data-grounded filter — the proper fix per the 2026-05-02
 brainstorm-list item #1.
 

@@ -119,7 +119,7 @@ ETL / wire contract (Python):
 - [ ] `tools/tests/test_parcels_top_io.py` fixtures
 - [ ] `tools/tests/test_e2e_parcels.py` synthetic-fixture index/tree
 
-Frontend (`goldmines.html`):
+Frontend (`index.html`):
 - [ ] `popupHtml(r)` — map marker popup table
 - [ ] `detailHtml(r)` — slide-in detail panel (Lot / Transit / Regulatory sections)
 - [ ] `pickRowHtml(r, i)` — list row inline indicators / badges
@@ -135,7 +135,7 @@ Frontend (`goldmines.html`):
       do the disclosure strings need updating?
 
 After editing, run all three of these before reporting done:
-1. `node -e "<script syntax check, see end of section>"` for goldmines.html
+1. `node -e "<script syntax check, see end of section>"` for index.html
 2. `.venv/bin/python -m unittest discover -s tools/tests` (must show "OK")
 3. Open the page locally; verify the new field is *visible* somewhere — not just
    present on the wire. Wire-only adds are not "shipped."
@@ -148,7 +148,7 @@ likely missed others. Surface them proactively in the same reply.
 shifts the burden of verification to the user, which is the explicit
 anti-pattern this checklist exists to prevent.
 
-JS syntax check one-liner (run after every goldmines.html edit):
+JS syntax check one-liner (run after every index.html edit):
 ```
-node -e "const fs=require('fs');const h=fs.readFileSync('/home/josh/bloomto_work/goldmines.html','utf8');const m=h.match(/<script>([\s\S]*?)<\/script>/g);let ok=true;for(const b of m){try{new Function(b.replace(/^<script[^>]*>/,'').replace(/<\/script>$/,''))}catch(e){ok=false;console.log('ERR:',e.message)}}console.log(ok?'syntax OK':'SYNTAX ERRORS')"
+node -e "const fs=require('fs');const h=fs.readFileSync('/home/josh/bloomto_work/index.html','utf8');const m=h.match(/<script>([\s\S]*?)<\/script>/g);let ok=true;for(const b of m){try{new Function(b.replace(/^<script[^>]*>/,'').replace(/<\/script>$/,''))}catch(e){ok=false;console.log('ERR:',e.message)}}console.log(ok?'syntax OK':'SYNTAX ERRORS')"
 ```

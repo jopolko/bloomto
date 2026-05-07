@@ -78,7 +78,7 @@ def _make_feature(*, address="100 Test St", score=80, lng=-79.4, lat=43.7,
 class ProjectFeaturesTests(unittest.TestCase):
     def test_surfaces_full_property_set(self):
         # As of 2026-05-02 the projection mirrors FEATURE_PROPERTIES — the
-        # goldmines page's badge gates and traceability links need the full
+        # listing page's badge gates and traceability links need the full
         # set (parcelId, residential, builtYear, solarScoreRaw all surfaced).
         rows, _ = project_features([_make_feature()], top_n=10)
         for key in ("parcelId", "residential", "builtYear", "solarScoreRaw"):

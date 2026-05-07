@@ -64,6 +64,18 @@ def _passes_shared(props: dict) -> bool:
         return False
     if props.get("inRegulatedArea"):
         return False
+    # RA / RAC zoning excluded 2026-05-06: pure-residential apartment zones
+    # (20+ units per lot per zoning_multipliers.json) are not multiplex
+    # territory. A dev evaluating these lots will build a small apartment,
+    # not a 4-6 unit multiplex — different product, different financing,
+    # different audience. The wire was surfacing RA parcels with normal-
+    # looking civic addresses (e.g., 2439 Finch Ave W = vacant RA lot,
+    # Humbermede neighborhood with 4 permits in 5 years = dead market) and
+    # devs were asking why apartment land showed up as multiplex picks.
+    # CR / CRE / CL stay — those mainstreet mixed-use lots are real
+    # multiplex teardowns (single-storey storefront → 6-plex above retail).
+    if props.get("zoneClass") in ("RA", "RAC"):
+        return False
     cover = props.get("buildingCoverageRatio") or 0
     area = props.get("lotAreaM2") or 0
     footprint = cover * area
@@ -130,11 +142,22 @@ def main():
     geojson = json.loads(args.in_path.read_text(encoding="utf-8"))
     features = geojson["features"]
     total_in = len(features)
-    _log.info("loaded %d features (already sorted by max(score, softScore) desc)", total_in)
+    # Citywide total (every parcel processed, not just score-positive ones)
+    # — sourced from the master GeoJSON's meta. The frontend uses this for
+    # the "filtered from ~N citywide" copy so the figure stays current as
+    # subdivisions / lot merges shift the parcel count over time.
+    total_citywide = (
+        (geojson.get("meta") or {}).get("stats", {}).get("totalParcels")
+    )
+    _log.info(
+        "loaded %d features (already sorted by max(score, softScore) desc); "
+        "citywide total = %s",
+        total_in, total_citywide,
+    )
 
     if args.no_elite:
         # Legacy single-file path — kept for parity with downstream tools.
-        payload = parcels_top_io.make_payload(features, args.top_n)
+        payload = parcels_top_io.make_payload(features, args.top_n, total_citywide=total_citywide)
         parcels_top_io.write_atomic(payload, args.out)
         out_size_kb = args.out.stat().st_size / 1024
         _log.info("DONE (legacy): %d rows → %s | %.0f KB",
@@ -155,13 +178,17 @@ def main():
         BROADER_MIN_SCORE, BROADER_MIN_LOT_M2,
     )
 
-    elite_payload = parcels_top_io.make_payload(elite_features, args.top_n)
+    elite_payload = parcels_top_io.make_payload(
+        elite_features, args.top_n, total_citywide=total_citywide,
+    )
     parcels_top_io.write_atomic(elite_payload, args.out)
     elite_kb = args.out.stat().st_size / 1024
     _log.info("DONE elite:   %d rows → %s | %.0f KB",
               elite_payload["topN"], args.out, elite_kb)
 
-    broader_payload = parcels_top_io.make_payload(broader_features, args.top_n)
+    broader_payload = parcels_top_io.make_payload(
+        broader_features, args.top_n, total_citywide=total_citywide,
+    )
     parcels_top_io.write_atomic(broader_payload, args.out_broader)
     broader_kb = args.out_broader.stat().st_size / 1024
     _log.info("DONE broader: %d rows → %s | %.0f KB",

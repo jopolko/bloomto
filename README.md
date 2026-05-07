@@ -6,8 +6,7 @@ A static web app that ranks Toronto parcels for as-of-right multiplex developmen
 
 | URL | What it is |
 |---|---|
-| `/` (`index.html`) | **Today's Top Multiplex Sites** — the active product. 528K Toronto parcels filtered to a ranked elite set with per-parcel deal context (lot size, footprint, transit distance, sixplex eligibility, neighborhood permit velocity, Bill 185 incentive total). Detail panel surfaces lot geometry, Underwriting snapshot KPIs, regulatory citations, and a print-as-PDF deal-doc. |
-| `/goldmines.html` | Same content as `/` — frozen snapshot kept around so any links shared before the URL restructure still resolve. **Do not edit; all changes go to `index.html`.** |
+| `/` (`index.html`) | **Today's Top Multiplex Sites** — the active product. 528K Toronto parcels filtered to a ranked elite set with per-parcel deal context (lot size, footprint, transit distance, sixplex eligibility, neighborhood permit velocity, Bill 185 incentive total). Detail panel surfaces lot geometry, Underwriting snapshot KPIs, regulatory citations, daily-refreshed owner-activity signals (severance / demo / violation), and a print-as-PDF deal-doc. |
 | `/neighborhoods.html` | v1.1 neighborhood Net-Zero scorer — every Toronto neighborhood ranked by retrofit potential + transit + tree canopy + Missing Middle capacity. Older product, kept for archival access; not actively developed. |
 | `/parcels.html` | Older parcels view; superseded by `index.html`. |
 
@@ -40,7 +39,7 @@ Browser reads two static JSON files:
 
 Both are projections of the master `data/parcels.geojson` (~310 MB, gitignored — regenerable from ETL). The neighborhoods view uses `data/neighborhoods.json` (committed).
 
-ETL lives under [`tools/`](tools/) and runs on a workstation, not on the server. Python, **17 Toronto Open Data sources** (Property Boundaries, Zoning By-law 569-2013, Heritage Register, SolarTO, 3D Massing, Building Outlines, Toronto Centreline, TTC GTFS, Forest & Land Cover, NPP 2021, Cycling Network, Basement Flooding Study Areas, TRCA Reg 41/24, RapidTO Corridors, Building Permits, Street Tree Data, Community Council Boundaries) plus OpenStreetMap (TTC subway-station polygons via Overpass API).
+ETL lives under [`tools/`](tools/) and runs on a workstation, not on the server. Python, **17 Toronto Open Data sources** (Property Boundaries, Zoning By-law 569-2013, Heritage Register, SolarTO, 3D Massing, Building Outlines, Toronto Centreline, TTC GTFS, Forest & Land Cover, NPP 2021, Cycling Network, Basement Flooding Study Areas, TRCA Reg 41/24, RapidTO Corridors, Building Permits, Street Tree Data, Community Council Boundaries) plus **OpenStreetMap via Overpass API** (TTC + GO + LRT station polygons; subway-entrance nodes with 30m exclusion buffer; ~50K parking / industrial / construction / brownfield exclusion polygons).
 
 ```bash
 # Sequential rebuild (~2.5 hours, single core):

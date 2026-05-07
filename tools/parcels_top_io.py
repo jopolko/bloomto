@@ -9,7 +9,7 @@ collapsed) and writes it atomically.
 
 Atomic-write pattern mirrors `tools/parcel_io.py` and `tools/io.py`. The
 projection is the full FEATURE_PROPERTIES set as of 2026-05-02 —
-`solarScoreRaw` powers the goldmines "Shadow-Free" badge, `residential`,
+`solarScoreRaw` powers the "Shadow-Free" badge, `residential`,
 `parcelId`, and `builtYear` are now surfaced for badge gates and
 client-side traceability.
 """
@@ -77,6 +77,9 @@ ROW_KEYS = (
 )
 
 PAYLOAD_KEYS = ("generatedAt", "totalAvailable", "topN", "rows")
+# `totalParcels` (citywide count) is set by build_parcels_top.py from
+# parcels.geojson `meta.stats.total`. Optional in validate() for backward
+# compatibility with payloads written before 2026-05-07.
 
 
 def project_features(features, top_n):
@@ -153,14 +156,24 @@ def project_features(features, top_n):
     return rows, total
 
 
-def make_payload(features, top_n):
+def make_payload(features, top_n, *, total_citywide: int | None = None):
+    """Build the projected payload.
+
+    `total_citywide` is the count of *every* parcel ever processed by the
+    ETL (citywide), not just the ones that scored. The frontend uses it
+    for the "filtered from N citywide" copy. Defaults to None when the
+    caller doesn't have it; the validator accepts both shapes.
+    """
     rows, total = project_features(features, top_n)
-    return {
+    payload = {
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "totalAvailable": total,
         "topN": min(top_n, total),
         "rows": rows,
     }
+    if total_citywide is not None:
+        payload["totalParcels"] = int(total_citywide)
+    return payload
 
 
 def validate(payload):

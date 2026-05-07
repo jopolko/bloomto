@@ -64,6 +64,13 @@ TORONTO_BBOX = (43.58, -79.65, 43.86, -79.10)  # (south, west, north, east)
 # Overpass query: TTC subway stations as polygons + as nodes (we'll associate
 # nearby building polygons with them client-side). Excludes GO stations
 # (Metrolinx, network!=TTC) and light_rail (Eglinton Crosstown — pre-revenue).
+#
+# 2026-05-06 expansion: added railway=subway_entrance because each station has
+# 4-12 separate entrance nodes scattered around it (e.g., St. George has
+# "Bedford Road Entrance" and "OISE Entrance" tagged this way), and those
+# entrances often land on parcels DISTINCT from the main station box —
+# producing the 9 Bedford Rd / 11 Bedford Rd false-positive elites the
+# previous query missed.
 OVERPASS_QUERY = f"""
 [out:json][timeout:90];
 (
@@ -76,6 +83,24 @@ OVERPASS_QUERY = f"""
   way["building"="train_station"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
   // Bus terminals (Kipling, Kennedy, Don Mills attached to subway stations)
   way["amenity"="bus_station"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  // Subway entrance NODES — separate headhouses scattered around stations
+  // (Bedford Road Entrance, OISE Entrance, etc.). Buffered with the same
+  // fallback radius applied to plain station nodes.
+  node["railway"="subway_entrance"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  // Subway entrance POLYGONS (rare — most are nodes, but a few are mapped as
+  // building outlines when the entrance is a freestanding headhouse).
+  way["railway"="subway_entrance"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  // Light rail stations (Eglinton Crosstown, Finch West LRT). Eglinton
+  // opened 2025; geometry is now stable. User direction 2026-05-06: any
+  // station infrastructure should be caught regardless of system.
+  node["station"="light_rail"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["station"="light_rail"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["public_transport"="station"]["network"~"GO|Metrolinx|Eglinton"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  // Streetcar / tram-stop POLYGONS only (transit centers, transit
+  // platforms mapped as ways). Bus_stop / tram_stop NODES are road-
+  // shoulder pinpoints, not parcels — adding them would over-reach.
+  way["railway"="tram_stop"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["public_transport"="platform"]["network"="TTC"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
 );
 out body geom tags;
 """.strip()
@@ -90,6 +115,16 @@ BUILDING_TO_STATION_MAX_M = 250.0
 # implementation missed Bedford Rd cases (~128m); we go to 50m here as a
 # pessimistic pass — still narrower than the over-reach of 100m+.
 NODE_FALLBACK_BUFFER_M = 50.0
+# Entrance nodes are precise (mapped right at the head-house door). 30m
+# is the inflection point where both 11 Bedford Rd (entrance node 41m
+# from centroid) and 9 Bedford Rd (4930m² plaza, headhouse at one edge)
+# get caught via parcel-polygon intersection — the entrance buffer reaches
+# the parcel boundary at ~30m, even when the centroid is farther.
+# Empirically calibrated on the elite set: 20m catches 27 elites (no
+# Bedford); 30m catches 58 (both Bedford); 50m catches 143 (with too
+# many adjacent residential false positives). 30m strikes the cleanest
+# precision/recall balance for principled inclusion in the wire.
+ENTRANCE_FALLBACK_BUFFER_M = 30.0
 
 CACHE_TTL_S = 7 * 24 * 3600  # weekly refresh cadence
 
@@ -188,32 +223,52 @@ def compute_station_exclusion_index(cache_dir: Path) -> STRtree:
     payload = _fetch_overpass(cache / CACHE_FILENAME)
 
     nodes = []  # list of (name, lon, lat) for subway-station nodes
+    entrance_nodes = []  # list of (name, lon, lat) for subway_entrance nodes
     candidate_polys = []  # list of (name, poly, station_tag)
     for elem in payload.get("elements", []):
         tags = elem.get("tags") or {}
         name = tags.get("name", "")
-        # Drop GO trains explicitly — Metrolinx, not TTC.
-        if "GO" in name:
-            continue
-        # Drop light rail (Eglinton Crosstown, pre-revenue, geometry unstable).
-        if tags.get("station") == "light_rail":
-            continue
+        # 2026-05-06 user direction: exclude transit-infrastructure parcels
+        # of every flavor from the listings (we keep using their *values*
+        # for transit-distance scoring, but the lots themselves shouldn't
+        # surface as multiplex picks). Previously we dropped GO and
+        # light_rail here — those exclusions are removed so GO stations
+        # (Mimico, Langstaff, Agincourt, Cooksville, Finch GO terminal)
+        # and Eglinton Crosstown LRT stations are caught by the gate.
 
-        if elem["type"] == "node" and tags.get("station") == "subway":
+        if elem["type"] == "node" and tags.get("station") in ("subway", "light_rail"):
             ll = _node_lonlat(elem)
             if ll:
                 nodes.append((name, ll[0], ll[1]))
+            continue
+
+        if elem["type"] == "node" and tags.get("railway") == "subway_entrance":
+            ll = _node_lonlat(elem)
+            if ll:
+                entrance_nodes.append((name, ll[0], ll[1]))
             continue
 
         if elem["type"] == "way":
             building = tags.get("building")
             station = tags.get("station")
             amenity = tags.get("amenity")
-            if not (
-                station == "subway"
-                or building == "train_station"
-                or amenity == "bus_station"
-            ):
+            railway = tags.get("railway")
+            public_transport = tags.get("public_transport")
+            network = (tags.get("network") or "").upper()
+            operator = (tags.get("operator") or "").upper()
+            is_metrolinx = (
+                "GO TRANSIT" in network or "METROLINX" in operator
+                or "GO TRANSIT" in operator or "METROLINX" in network
+            )
+            keep = (
+                station in ("subway", "light_rail")
+                or building == "train_station"  # subway boxes + GO stations
+                or amenity == "bus_station"     # bus terminals (incl. GO)
+                or railway in ("subway_entrance", "tram_stop")
+                or (public_transport == "platform" and network == "TTC")
+                or (public_transport == "station" and is_metrolinx)
+            )
+            if not keep:
                 continue
             poly = _way_polygon(elem)
             if poly is None:
@@ -221,8 +276,9 @@ def compute_station_exclusion_index(cache_dir: Path) -> STRtree:
             candidate_polys.append((name, poly, station))
 
     _log.info(
-        "osm_ttc_stations: parsed %d subway nodes, %d candidate polygons",
-        len(nodes), len(candidate_polys),
+        "osm_ttc_stations: parsed %d subway nodes, %d entrance nodes, "
+        "%d candidate polygons",
+        len(nodes), len(entrance_nodes), len(candidate_polys),
     )
 
     # Filter polygons to those within BUILDING_TO_STATION_MAX_M of a subway node.
@@ -273,7 +329,23 @@ def compute_station_exclusion_index(cache_dir: Path) -> STRtree:
         len(fallback_buffers), NODE_FALLBACK_BUFFER_M,
     )
 
-    all_polys: list[BaseGeometry] = kept_polys + fallback_buffers
+    # Buffer subway-entrance nodes uniformly — these are precise headhouse
+    # locations and almost never have a building polygon mapped, so we always
+    # add the buffered point (no proximity-skip).
+    entrance_buffers = []
+    for (name, lon, lat) in entrance_nodes:
+        x_m, y_m = _LONLAT_TO_M.transform(lon, lat)
+        buf_m = Point(x_m, y_m).buffer(ENTRANCE_FALLBACK_BUFFER_M)
+        coords_lonlat = [
+            _M_TO_LONLAT.transform(x, y) for x, y in buf_m.exterior.coords
+        ]
+        entrance_buffers.append(Polygon(coords_lonlat))
+    _log.info(
+        "osm_ttc_stations: added %d entrance %.0fm buffers",
+        len(entrance_buffers), ENTRANCE_FALLBACK_BUFFER_M,
+    )
+
+    all_polys: list[BaseGeometry] = kept_polys + fallback_buffers + entrance_buffers
     _log.info(
         "osm_ttc_stations: %d total exclusion polygons in STRtree",
         len(all_polys),
@@ -284,15 +356,15 @@ def compute_station_exclusion_index(cache_dir: Path) -> STRtree:
 def is_ttc_station(parcel_geom: BaseGeometry, station_index: STRtree) -> bool:
     """True iff the parcel intersects any TTC station / transit-infra polygon.
 
-    Same shape as `tools.sources.institutions.is_institutional` so
-    `build_parcels.py` can call both gates the same way. Uses representative
-    point of the parcel for cheap point-in-polygon (sufficient for residential
-    lots, where the station polygon is large compared to the lot).
+    Uses geometric intersection, not point-in-polygon — the prior
+    representative_point test missed plaza-style station parcels where the
+    headhouse sits at one edge of a wide lot (9 Bedford Rd: 70m-wide plaza,
+    headhouse at the corner; representative point is mid-plaza, well outside
+    a 50m headhouse buffer). Intersection correctly catches any overlap.
     """
     if station_index is None or len(station_index.geometries) == 0:
         return False
-    rep = parcel_geom.representative_point()
-    for idx in station_index.query(rep):
-        if station_index.geometries[idx].contains(rep):
+    for idx in station_index.query(parcel_geom):
+        if station_index.geometries[idx].intersects(parcel_geom):
             return True
     return False

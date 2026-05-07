@@ -115,6 +115,23 @@
             .glass-card.mb-4 { margin-bottom: 0.5rem; }
             .filter-bar { margin-bottom: 8px; gap: 8px; }
             #stats { font-size: 12px; line-height: 1.35; margin-top: 6px; }
+            .nearby-bar {
+                display: flex; justify-content: space-between; align-items: center;
+                gap: 8px;
+                background: rgba(47, 106, 79, 0.08);
+                border: 1px solid rgba(47, 106, 79, 0.25);
+                color: var(--cot-green);
+                border-radius: 6px;
+                padding: 6px 10px;
+                margin-bottom: 6px;
+                font-size: 12px;
+            }
+            .nearby-bar strong { font-weight: 600; }
+            .nearby-bar button {
+                border: none; background: transparent; color: var(--cot-green);
+                cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1;
+            }
+            .nearby-bar button:hover { color: #0b3d1f; }
         }
         .gradient-text {
             color: var(--tor-blue);
@@ -219,6 +236,68 @@
         }
         .visit-badge.new { background: #2f6a4f; color: white; }
         .visit-badge.up  { background: #0a4ca8; color: white; padding: 1px 5px; }
+        /* Actionable Signals badges — one per active signal on a parcel.
+           Distinct color per signal type so the eye picks them up at row scan. */
+        .signal-badges { display: inline-flex; gap: 4px; margin-left: 6px; }
+        .signal-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            cursor: help;
+            border: 1px solid transparent;
+        }
+        .signal-severance {
+            background: #ecfeff; color: #0e7490; border-color: #67e8f9;
+        }
+        .signal-demo {
+            background: #fef2f2; color: #991b1b; border-color: #fca5a5;
+        }
+        .signal-violation {
+            background: #fffbeb; color: #92400e; border-color: #fcd34d;
+        }
+        /* Detail-panel "Owner activity" section — full per-record cards. */
+        .signal-section-tag {
+            display: inline-block; margin-left: 8px;
+            font-size: 10px; font-weight: 600;
+            padding: 1px 8px; border-radius: 10px;
+            background: #fef3c7; color: #92400e;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            vertical-align: middle;
+        }
+        .signal-section-intro {
+            font-size: 12px; color: var(--ink-muted);
+            line-height: 1.4; margin: 4px 0 8px;
+        }
+        .signal-block {
+            border: 1px solid; border-radius: 6px;
+            padding: 10px 12px; margin-top: 8px;
+            background: #fff;
+        }
+        .signal-block-severance { border-color: #67e8f9; background: #ecfeff; }
+        .signal-block-demo      { border-color: #fca5a5; background: #fef2f2; }
+        .signal-block-violation { border-color: #fcd34d; background: #fffbeb; }
+        .signal-block-head {
+            font-size: 13px; font-weight: 700;
+            color: var(--ink);
+        }
+        .signal-block-lots {
+            font-size: 11px; font-weight: 500;
+            color: var(--ink-muted); margin-left: 6px;
+        }
+        .signal-block-meta {
+            font-size: 12px; color: var(--ink-muted);
+            margin-top: 3px; line-height: 1.4;
+        }
+        .signal-block-meta a { color: var(--cot-green); }
+        .signal-block-desc {
+            font-size: 12px; color: var(--ink);
+            margin-top: 5px; line-height: 1.45;
+            font-style: italic;
+        }
         /* Today's spotlight — single pinned card at the top of the picks
            list. Rotates daily via date-seed so visiting Tuesday sees a
            different parcel than Monday. */
@@ -600,10 +679,55 @@
             max-width: 50ch;
         }
         .money-hero .money-lab strong { color: var(--ink); font-weight: 600; }
+        .signals-pill {
+            display: flex; flex-direction: column; align-items: flex-end;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1.5px solid var(--rule);
+            border-radius: 10px;
+            padding: 14px 22px;
+            cursor: pointer;
+            font-family: inherit;
+            text-align: right;
+            transition: border-color .15s, background .15s, transform .1s;
+        }
+        .signals-pill:hover {
+            border-color: #d97706;
+            background: #fff;
+        }
+        .signals-pill:active { transform: scale(0.98); }
+        .signals-pill.active {
+            border-color: #d97706;
+            background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
+        }
+        .signals-pill.empty { cursor: default; opacity: 0.55; }
+        .signals-pill.empty:hover {
+            border-color: var(--rule);
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .signals-pill .signals-num {
+            font-size: 38px;
+            font-weight: 800;
+            color: #d97706;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        .signals-pill.active .signals-num { color: #b45309; }
+        .signals-pill .signals-lab {
+            font-size: 12px;
+            color: var(--ink-muted);
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        .signals-pill.active .signals-lab { color: var(--ink); font-weight: 600; }
         @media (max-width: 640px) {
             .money-hero { padding: 18px 18px; gap: 10px; }
             .money-hero .money-num { font-size: 38px; }
             .money-hero .money-lab { font-size: 12px; }
+            .signals-pill { padding: 10px 14px; align-items: flex-start; text-align: left; }
+            .signals-pill .signals-num { font-size: 28px; }
         }
         /* Filters moved into the listings card 2026-05-06 — slim row, no
            label "Filters" / no redundant stats. Search + chips + chip
@@ -1054,6 +1178,16 @@
             transition: all 0.12s ease;
         }
         .detail-print:hover { background: rgba(10, 76, 168, 0.18); }
+        .detail-nearby {
+            height: 32px; flex-shrink: 0;
+            padding: 0 12px;
+            border: none; background: rgba(47, 106, 79, 0.10);
+            border-radius: 8px; cursor: pointer; color: var(--cot-green);
+            font-size: 13px; font-weight: 600; line-height: 1;
+            white-space: nowrap;
+            transition: all 0.12s ease;
+        }
+        .detail-nearby:hover { background: rgba(47, 106, 79, 0.20); }
         /* Print-only header — populated dynamically when the panel opens
            and shown only in the print stylesheet below. */
         .print-header { display: none; }
@@ -1421,6 +1555,7 @@
             .detail-print,
             .detail-star,
             .detail-close,
+            .detail-nearby,
             .detail-header .head-text,
             .ext-links a[target="_blank"]:not([href*="google.com/maps"]) {
                 display: none !important;
@@ -1544,13 +1679,9 @@
     <header class="px-6 py-4" style="background: var(--surface); border-bottom: 1px solid var(--rule);">
         <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
             <div>
-                <h1 class="text-2xl font-bold"><a href="goldmines.html" class="gradient-text title-link" aria-label="Reload BloomTO">BloomTO</a></h1>
+                <h1 class="text-2xl font-bold"><a href="./" class="gradient-text title-link" aria-label="Reload BloomTO">BloomTO</a></h1>
                 <p class="text-xs text-gray-600 mt-0.5">Toronto Multiplex picks, from <a href="https://open.toronto.ca/" target="_blank" rel="noopener" class="map-link">City of Toronto Open Data Portal</a></p>
             </div>
-            <nav class="text-sm flex gap-4">
-                <a href="neighborhoods.html" class="text-gray-600 hover:text-gray-900">Neighborhoods (v1.1)</a>
-                <a href="parcels.html" class="text-gray-600 hover:text-gray-900">Parcels table</a>
-            </nav>
         </div>
     </header>
 
@@ -1652,6 +1783,7 @@
                 <h2 id="detail-title">—</h2>
                 <div class="nb" id="detail-nb">—</div>
             </div>
+            <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">📍 Nearby</button>
             <button class="detail-print" id="detail-print" aria-label="Save as PDF" title="Save this parcel as a one-page PDF (uses your browser's print dialog → 'Save as PDF')">⎙</button>
             <button class="detail-star" id="detail-star" aria-label="Save to watchlist">☆</button>
             <button class="detail-close" id="detail-close" aria-label="Close detail panel">✕</button>
@@ -1669,9 +1801,28 @@
             if (r.parcelId) return 'p:' + r.parcelId;
             return 'g:' + r.lat.toFixed(5) + ',' + r.lng.toFixed(5);
         }
-        const WATCH_KEY = 'bloomto:goldmines:watchlist:v1';
-        const RECENT_KEY = 'bloomto:goldmines:recent:v1';
+        const WATCH_KEY = 'bloomto:multiplex:watchlist:v1';
+        const RECENT_KEY = 'bloomto:multiplex:recent:v1';
         const RECENT_MAX = 20;
+        // One-time migration from the legacy 'goldmines' namespace
+        // (deprecated 2026-05-07 when goldmines.html was deleted). Copies
+        // any pre-existing watchlist/recent/revgeo data over to the new
+        // keys so users don't lose their saved state. Safe to keep
+        // indefinitely; it's a no-op once data is on the new keys.
+        (function migrateLegacyKeys() {
+            try {
+                const pairs = [
+                    ['bloomto:goldmines:watchlist:v1', 'bloomto:multiplex:watchlist:v1'],
+                    ['bloomto:goldmines:recent:v1',    'bloomto:multiplex:recent:v1'],
+                    ['bloomto:goldmines:revgeo:v1',    'bloomto:multiplex:revgeo:v1'],
+                ];
+                for (const [oldK, newK] of pairs) {
+                    if (localStorage.getItem(newK) != null) continue;
+                    const v = localStorage.getItem(oldK);
+                    if (v != null) localStorage.setItem(newK, v);
+                }
+            } catch (e) { /* silent */ }
+        })();
 
         function readSet(key) {
             try {
@@ -1708,7 +1859,7 @@
         // index.html uses. Cached in localStorage so we never re-fetch a
         // parcel we've already resolved (keeps Google API calls to one per
         // parcel ever, across sessions).
-        const REVGEO_KEY = 'bloomto:goldmines:revgeo:v1';
+        const REVGEO_KEY = 'bloomto:multiplex:revgeo:v1';
         const revgeoCache = (() => {
             try { return JSON.parse(localStorage.getItem(REVGEO_KEY) || '{}'); }
             catch (e) { return {}; }
@@ -1804,6 +1955,20 @@
             { id: 'tree_low', label: 'Trees', tip: 'No mature street trees ≥30cm DBH on lot frontage. Toronto Municipal Code Chapter 813 protection threshold.',
               fn: r => (r.matureTreeCount || 0) === 0 },
 
+            // ── Actionable Signals (daily-refreshed CKAN feeds) ──
+            // Filter to parcels where an owner is currently doing something
+            // with the property — strongest pre-listing / motivated-seller
+            // / lot-subdivision signals publicly available. Daily refresh
+            // via tools/build_signals.py (data/signals.json).
+            { id: 'severance', label: '🔪 Severance', tip: 'Active Committee of Adjustment Consent application — owner has formally applied to subdivide this lot. Filing fee paid (~$1,200), public hearing scheduled. Strongest pre-sale / pre-development signal: owner is preparing to either sell two lots or build on a smaller footprint. Daily-refreshed Toronto Open Data feed.',
+              fn: r => !!(getSignals(r)?.severance) },
+            { id: 'demo_permit', label: '🔨 Demo permit', tip: 'Active Demolition permit filed in the last 365 days. Either the owner is about to sell the cleared site (offer them land cost) or they are DIY-redeveloping (still a real-estate-active person to talk to). Pulled from Toronto Open Data daily.',
+              fn: r => !!(getSignals(r)?.demoPermit) },
+            { id: 'violation', label: '⚠ Violation', tip: 'Active Property Standards / Stop Work / Unsafe / Emergency Order from Municipal Licensing & Standards. Owner is under City pressure — strongest motivated-seller signal we have. Daily-refreshed; severity ranges from Notice (mild) to Emergency Order (immediate). Excludes commercial signage violations.',
+              fn: r => !!(getSignals(r)?.violation) },
+            { id: 'any_signal', label: '⚡ Any signal', tip: 'Any of the three actionable signals: severance application, demolition permit, or active enforcement order. The unified "owner is moving on this property" filter.',
+              fn: r => hasAnySignal(r) },
+
             // ── Lot quality ──
             { id: 'corner',  label: 'Corner', tip: 'Two-street frontage. Better access, more daylight, design flexibility for multi-unit massing.',
               fn: r => r.cornerLot === true },
@@ -1813,9 +1978,32 @@
               fn: r => isWatched(r) },
         ];
 
+        // Minimal HTML escape for arbitrary text injected into innerHTML.
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        // Great-circle distance, meters. Cheap; spherical-earth simplification
+        // is fine at Toronto-block scale (sub-1% error vs WGS84 ellipsoid).
+        function haversineM(lat1, lng1, lat2, lng2) {
+            const R = 6371000;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) ** 2
+                + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+                * Math.sin(dLng/2) ** 2;
+            return 2 * R * Math.asin(Math.sqrt(a));
+        }
+
         // ---- State ----
         let allRows = [];
         let payload = null;
+        // "Search nearby" geo filter — set by the detail-panel "Search nearby"
+        // button. While non-null, applyFilters() also rejects rows beyond
+        // radiusM from this center. The chip strip and clear-bar surface it.
+        let nearbyFilter = null;  // { lat, lng, label, parcelId, radiusM } | null
         // Multi-select filter chips: Set of active preset IDs (excluding 'all').
         // Empty set ⇒ "All" (no filter constraint). Clicking a chip toggles
         // it in/out; clicking "All" clears the set. Multiple active chips
@@ -2208,6 +2396,115 @@
         // Populated after CKAN fetch completes; consumed by signalStripHtml + pickRowHtml.
         let freshPermitsByKey = new Map();
         let freshFetchedAt = null;
+
+        // ── Actionable Signals layer (data/signals.json) ──
+        // Three CKAN-fresh signals address-joined to parcels by build_signals.py:
+        //   severance:  active CoA Consent / lot-subdivision applications
+        //   demoPermit: active demolition permits filed in last 365d
+        //   violation:  active Property Standards / Stop Work / Unsafe orders
+        // parcelId → { severance?, demoPermit?, violation? }
+        // Populated after data/signals.json fetch.
+        let signalsByParcelId = new Map();
+        let signalsGeneratedAt = null;
+        function getSignals(r) {
+            return signalsByParcelId.get(String(r.parcelId)) || null;
+        }
+        function hasAnySignal(r) {
+            const s = getSignals(r);
+            return !!(s && (s.severance || s.demoPermit || s.violation));
+        }
+        // Compact inline badges for the listing row — one per active signal.
+        // Each carries a tooltip with the specific record context.
+        function signalBadgesHtml(r) {
+            const s = getSignals(r);
+            if (!s) return '';
+            const parts = [];
+            if (s.severance) {
+                const sv = s.severance;
+                const desc = (sv.description || '').replace(/"/g, '&quot;').slice(0, 200);
+                const filed = sv.filedDate || '?';
+                const lots = sv.lotsCreated ? ` · ${sv.lotsCreated} lots` : '';
+                parts.push(`<span class="signal-badge signal-severance" title="Severance application filed ${filed}${lots}. ${desc}">🔪 Severance</span>`);
+            }
+            if (s.demoPermit) {
+                const d = s.demoPermit;
+                const desc = (d.description || '').replace(/"/g, '&quot;').slice(0, 200);
+                const date = d.issuedDate || d.applicationDate || '?';
+                const status = d.status ? ` · ${d.status}` : '';
+                parts.push(`<span class="signal-badge signal-demo" title="Demolition permit ${date}${status}. ${desc}">🔨 Demo permit</span>`);
+            }
+            if (s.violation) {
+                const v = s.violation;
+                const desc = (v.description || '').replace(/"/g, '&quot;').slice(0, 200);
+                const date = v.filedDate || '?';
+                parts.push(`<span class="signal-badge signal-violation" title="${v.status || 'Violation'} filed ${date}. ${desc}">⚠ ${v.status || 'Violation'}</span>`);
+            }
+            return parts.length ? ` <span class="signal-badges">${parts.join('')}</span>` : '';
+        }
+        // Detail-panel section showing the specific signal record(s) for a
+        // parcel, when present. Empty string when the parcel has no signals.
+        function signalsDetailHtml(r) {
+            const s = getSignals(r);
+            if (!s || (!s.severance && !s.demoPermit && !s.violation)) return '';
+            const blocks = [];
+            if (s.severance) {
+                const sv = s.severance;
+                const lots = sv.lotsCreated ? `<strong>${sv.lotsCreated}</strong> new lots` : 'lot subdivision';
+                const filed = sv.filedDate ? `Filed ${sv.filedDate}` : '';
+                const hearing = sv.hearingDate ? ` · Hearing ${sv.hearingDate}` : '';
+                const desc = escapeHtml(sv.description || '').slice(0, 400);
+                const url = sv.applicationUrl
+                    ? ` · <a href="${escapeHtml(sv.applicationUrl)}" target="_blank" rel="noopener">View application ↗</a>`
+                    : '';
+                const more = sv.extraCount ? ` · <em>+${sv.extraCount} more on this lot</em>` : '';
+                blocks.push(`
+                    <div class="signal-block signal-block-severance">
+                        <div class="signal-block-head">🔪 Severance application <span class="signal-block-lots">${lots}</span></div>
+                        <div class="signal-block-meta">${filed}${hearing}${url}${more}</div>
+                        ${desc ? `<div class="signal-block-desc">${desc}</div>` : ''}
+                    </div>`);
+            }
+            if (s.demoPermit) {
+                const d = s.demoPermit;
+                const filed = d.applicationDate ? `Applied ${d.applicationDate}` : '';
+                const issued = d.issuedDate ? ` · Issued ${d.issuedDate}` : '';
+                const status = d.status ? ` · ${escapeHtml(d.status)}` : '';
+                const useChange = (d.currentUse || d.proposedUse)
+                    ? `<div class="signal-block-meta"><strong>${escapeHtml(d.currentUse || '?')}</strong> → <strong>${escapeHtml(d.proposedUse || '?')}</strong></div>`
+                    : '';
+                const desc = escapeHtml(d.description || '').slice(0, 400);
+                const builder = d.builderName ? ` · Builder: ${escapeHtml(d.builderName)}` : '';
+                const more = d.extraCount ? ` · <em>+${d.extraCount} more permit${d.extraCount===1?'':'s'} on this lot</em>` : '';
+                blocks.push(`
+                    <div class="signal-block signal-block-demo">
+                        <div class="signal-block-head">🔨 Demolition permit <span class="signal-block-lots">${escapeHtml(d.permitNum || '')}</span></div>
+                        <div class="signal-block-meta">${filed}${issued}${status}${builder}${more}</div>
+                        ${useChange}
+                        ${desc ? `<div class="signal-block-desc">${desc}</div>` : ''}
+                    </div>`);
+            }
+            if (s.violation) {
+                const v = s.violation;
+                const filed = v.filedDate ? `Filed ${v.filedDate}` : '';
+                const status = v.status ? ` · <strong>${escapeHtml(v.status)}</strong>` : '';
+                const subType = v.subType ? ` (${escapeHtml(v.subType)})` : '';
+                const work = v.work ? ` · ${escapeHtml(v.work)}` : '';
+                const desc = escapeHtml(v.description || '').slice(0, 400);
+                const more = v.extraCount ? ` · <em>+${v.extraCount} more on this lot</em>` : '';
+                blocks.push(`
+                    <div class="signal-block signal-block-violation">
+                        <div class="signal-block-head">⚠ ${escapeHtml(v.status || 'Violation')}${subType}</div>
+                        <div class="signal-block-meta">${filed}${status}${work}${more}</div>
+                        ${desc ? `<div class="signal-block-desc">${desc}</div>` : ''}
+                    </div>`);
+            }
+            return `
+                <section>
+                    <h4>Owner activity <span class="signal-section-tag">live · daily refresh</span></h4>
+                    <div class="signal-section-intro">CKAN-fresh signals address-joined to this parcel. Each is a publicly-filed City record signalling that the owner is doing something with the property right now — your highest-leverage prospecting moments.</div>
+                    ${blocks.join('')}
+                </section>`;
+        }
 
         function _ckanPermitsUrl() {
             const base = 'https://ckan0.cf.opendata.inter.prod-toronto.ca/api/3/action/datastore_search';
@@ -2935,6 +3232,8 @@
                     </div>
                 </section>
 
+                ${signalsDetailHtml(r)}
+
                 <!-- ── Tier 1: Underwriting snapshot ─────────────────────────────
                      Three KPI cards above the fold: pro-forma, velocity,
                      as-of-right. Reads like a one-page deal memo before the
@@ -3457,7 +3756,7 @@
                 year: 'numeric', month: 'short', day: 'numeric',
             });
             const pidPart = r.parcelId ? ` · Parcel ID ${String(r.parcelId).replace(/[<>&"']/g, '')}` : '';
-            metaEl.textContent = `${r.neighborhood}${pidPart} · Generated ${dateStr} · joshuaopolko.com/bloomto/goldmines.html`;
+            metaEl.textContent = `${r.neighborhood}${pidPart} · Generated ${dateStr} · joshuaopolko.com/bloomto/`;
             // Mark sections to KEEP in print (everything else collapses).
             // Whitelist approach — easier to reason about than blacklist
             // since detailHtml() has 16+ sections. The deal-doc keeps:
@@ -3510,6 +3809,33 @@
             // visual transformation. User picks "Save as PDF" in the print
             // dialog. No extra libraries, no jsPDF.
             window.print();
+        });
+        document.getElementById('detail-nearby').addEventListener('click', () => {
+            // Filter listings to other multiplex sites within 500m of the
+            // currently-open parcel. Closes the detail panel and scrolls the
+            // listings into view so the dev can scan the local pocket.
+            if (!detailCurrent || detailCurrent.lat == null || detailCurrent.lng == null) return;
+            const r = detailCurrent;
+            const wireAddr = (r.address && r.address !== 'None None') ? r.address : null;
+            nearbyFilter = {
+                lat: r.lat,
+                lng: r.lng,
+                label: wireAddr || resolvedAddress(r) || `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}`,
+                parcelId: r.parcelId,
+                radiusM: 500,
+            };
+            // Bounds-restriction would compete with the radius filter — drop it.
+            if (boundsRestricted) {
+                boundsRestricted = false;
+                syncBoundsBtnUI();
+            }
+            closeDetail();
+            render();
+            fitBoundsToFiltered(applyFilters());
+            // Bring the listings into view on mobile (where the panel covered
+            // the list). Desktop already sees the listings on the left.
+            const listings = document.getElementById('picks');
+            if (listings) listings.scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
         document.getElementById('detail-star').addEventListener('click', () => {
             if (!detailCurrent) return;
@@ -3739,6 +4065,10 @@
                 // for downstream specs but isn't surfaced here.
                 if (r.outsideTransitBuffer === true) return false;
                 if (bounds && !bounds.contains([r.lat, r.lng])) return false;
+                if (nearbyFilter && r.lat != null && r.lng != null) {
+                    const d = haversineM(nearbyFilter.lat, nearbyFilter.lng, r.lat, r.lng);
+                    if (d > nearbyFilter.radiusM) return false;
+                }
                 for (const fn of activePresetFns) {
                     if (!fn(r)) return false;
                 }
@@ -4048,7 +4378,7 @@
                 <div class="pick ${rankClass(i)} ${spotClass} ${heroClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
                         ${spotBanner}
-                        <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}</div>
+                        <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${signalBadgesHtml(r)}</div>
                         <div class="meta">${r.neighborhood}</div>
                         ${heroSubhead}
                     </div>
@@ -4230,16 +4560,35 @@
             const stats = document.getElementById('stats');
             const total = payload.totalAvailable;
             const inFile = payload.topN;
-            stats.innerHTML = `<strong>${filteredCount.toLocaleString()}</strong> matches · ` +
+            const nearbyHtml = nearbyFilter
+                ? `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM}m of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Clear nearby filter">✕</button></div>`
+                : '';
+            const cityWide = (payload && payload.totalParcels) || TORONTO_PARCEL_TOTAL;
+            const cityWideRounded = Math.round(cityWide / 1000) + 'K';
+            stats.innerHTML = nearbyHtml +
+                `<strong>${filteredCount.toLocaleString()}</strong> matches · ` +
                 `${total.toLocaleString()} top-contender parcels in the loaded set ` +
-                `<span style="color:#9ca3af">(filtered from ~528K citywide via the gates above)</span>`;
+                `<span style="color:#9ca3af">(filtered from ~${cityWideRounded} citywide via the gates above)</span>`;
+            const clearBtn = document.getElementById('nearby-clear');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    nearbyFilter = null;
+                    selectedIdx = null;
+                    render();
+                    fitBoundsToFiltered(applyFilters());
+                });
+            }
         }
 
         // Hero stats strip — derives counts from `allRows` (the loaded picks)
         // directly. parcels-top.json doesn't carry meta.stats so we compute
         // on the fly. Total-parcel count is the citywide universe (slow-
         // changing constant, refreshed each rebuild).
-        const TORONTO_PARCEL_TOTAL = 528397;  // refreshed each rebuild
+        // Fallback only — used before payload loads or if a stale payload
+        // is missing the totalParcels meta. Real value comes from
+        // payload.totalParcels (set by tools/build_parcels_top.py from
+        // parcels.geojson meta.stats.total). Refreshed every full ETL.
+        const TORONTO_PARCEL_TOTAL = 528397;
 
         function renderHeroStats() {
             const el = document.getElementById('hero-stats');
@@ -4272,8 +4621,9 @@
             for (const r of (allRows || [])) {
                 if (r.cornerLot) cornerLots++;
             }
+            const cityWide = (payload && payload.totalParcels) || TORONTO_PARCEL_TOTAL;
             const tiles = [
-                { num: TORONTO_PARCEL_TOTAL.toLocaleString(), lab: 'Toronto parcels analyzed' },
+                { num: cityWide.toLocaleString(), lab: 'Toronto parcels analyzed' },
                 { num: totalRanked.toLocaleString(),          lab: 'Top contenders · loaded' },
                 { num: sixplexEligible > 0 ? sixplexEligible.toLocaleString() : '—',
                   lab: 'Sixplex-eligible · June 2025' },
@@ -4347,11 +4697,14 @@
             el.style.display = '';
             let total = 0;
             let bloomN = 0;
-            let permitN = 0;
+            // Unified "owner is moving" count: any of the three CKAN-fresh
+            // signals (severance / demo permit / active violation) attached
+            // to a parcel in the current filtered set.
+            let signalsN = 0;
             for (const r of rows) {
                 total += stackedSavingsFor(r).savings || 0;
                 if (visualBloom(r)) bloomN++;
-                if (((r.permits || {}).recentCount ?? r.permitsRecentCount ?? 0) > 0) permitN++;
+                if (hasAnySignal(r)) signalsN++;
             }
             const dollar = total >= 1_000_000_000
                 ? `$${(total / 1_000_000_000).toFixed(2)}B`
@@ -4359,18 +4712,45 @@
                     ? `$${(total / 1_000_000).toFixed(0)}M`
                     : `$${Math.round(total / 1_000).toLocaleString()}K`;
             const tier = broaderMode ? 'broader' : 'elite';
-            const freshFrag = permitN > 0
-                ? ` · <strong>${permitN}</strong> with permits filed in the last 30 days`
-                : '';
+            const signalsActive = activePresets.has('any_signal');
+            const signalsHtml = signalsN > 0
+                ? `<button id="signals-pill" class="signals-pill ${signalsActive ? 'active' : ''}" type="button"
+                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} where the owner is currently doing something — active severance application, demolition permit, or City enforcement order. Three daily-refreshed Toronto Open Data feeds. Click again to clear.">
+                       <div class="signals-num">${signalsN.toLocaleString()}</div>
+                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}owners moving · severance / demo / violation</div>
+                   </button>`
+                : `<div class="signals-pill empty"><div class="signals-num">—</div><div class="signals-lab">no active signals on filtered parcels</div></div>`;
             el.innerHTML = `
                 <div>
                     <div class="money-num">${dollar}</div>
                     <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · DC waiver + parking minimums eliminated. <em>HST + GST rebates not yet stacked.</em></div>
                 </div>
-                <div class="money-lab" style="text-align:right;">
-                    ${permitN > 0 ? `<strong>${permitN.toLocaleString()}</strong> with permits filed in last 30 days` : '—'}
-                </div>
+                ${signalsHtml}
             `;
+            const btn = document.getElementById('signals-pill');
+            if (btn && signalsN > 0) {
+                btn.addEventListener('click', () => {
+                    if (activePresets.has('any_signal')) {
+                        const restoreTarget = viewHistory.get('any_signal') || null;
+                        viewHistory.delete('any_signal');
+                        activePresets.delete('any_signal');
+                        selectedIdx = null;
+                        render();
+                        if (restoreTarget) restoreMapView(restoreTarget);
+                        else fitBoundsToFiltered(applyFilters());
+                    } else {
+                        viewHistory.set('any_signal', snapshotMapView());
+                        activePresets.add('any_signal');
+                        selectedIdx = null;
+                        if (boundsRestricted) {
+                            boundsRestricted = false;
+                            syncBoundsBtnUI();
+                        }
+                        render();
+                        fitBoundsToFiltered(applyFilters());
+                    }
+                });
+            }
         }
 
         // Highlight the active sort column in the picks header. Also tags
@@ -4571,6 +4951,19 @@
                     // unnecessary work on a "no fresh hits" day.
                     if (freshPermitsByKey.size > 0) render();
                 });
+                // 3. Actionable Signals — daily-refreshed CKAN feeds joined to
+                //    parcels by tools/build_signals.py. Tiny (~50 KB), so
+                //    fetch on every load; the file rebuilds nightly on the
+                //    server.
+                fetch('data/signals.json', { cache: 'default' })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(s => {
+                        if (!s || !s.byParcelId) return;
+                        signalsByParcelId = new Map(Object.entries(s.byParcelId));
+                        signalsGeneratedAt = s.generatedAt || null;
+                        if (signalsByParcelId.size > 0) render();
+                    })
+                    .catch(() => {});
                 document.getElementById('search').addEventListener('input', e => {
                     searchQuery = e.target.value;
                     selectedIdx = null;

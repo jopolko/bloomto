@@ -28,6 +28,10 @@ Thumbs.db
 /tmp/bloomto-rebuild.log
 *.log
 
+# Cron-runtime artifacts (signals.json refresh wrapper)
+tools/.signals.lock
+tools/logs/
+
 # Local Claude Code state — per-machine, not for sharing
 .claude/settings.local.json
 .claude/scheduled_tasks.lock

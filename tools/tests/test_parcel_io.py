@@ -99,6 +99,7 @@ def _make_stats():
         "skippedNonBuildable": 0,
         "skippedInstitutional": 0,
         "skippedInstitutionalByCategory": {},
+        "skippedOsmLanduse": 0,
         "outsideTransitBuffer": 0,
         "abutsLaneway": 0,
         "nearRapidToCorridor": 0,

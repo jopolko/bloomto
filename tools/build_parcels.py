@@ -49,6 +49,7 @@ from tools.sources import (
     trca_floodplain as trca_src,
     ttc as ttc_src,
     osm_ttc_stations as ttc_stations_src,
+    osm_landuse as landuse_src,
     zoning as zoning_src,
 )
 
@@ -114,6 +115,7 @@ def _process_parcel(parcel_or_record) -> dict:
     neighborhoods = _W['neighborhoods']
     institutions_index = _W['institutions_index']
     ttc_station_index = _W['ttc_station_index']
+    landuse_index = _W['landuse_index']
     zone_index = _W['zone_index']
     multipliers = _W['multipliers']
     sixplex_index = _W['sixplex_index']
@@ -157,6 +159,13 @@ def _process_parcel(parcel_or_record) -> dict:
     # --- gate stage 3: TTC station ---
     if ttc_stations_src.is_ttc_station(parcel.geometry, ttc_station_index):
         return {'skip': 'ttc_station'}
+
+    # --- gate stage 3b: OSM landuse (parking / industrial / construction / brownfield) ---
+    # Replaces the dead Address Points USE_CODE path. Catches parcels that
+    # are physically a parking lot or industrial / brownfield / construction
+    # site even when zoning data alone classifies them as residential.
+    if landuse_src.is_landuse_excluded(parcel.geometry, landuse_index):
+        return {'skip': 'osm_landuse'}
 
     # --- per-parcel work ---
     zone_class = _lookup_zone_class(parcel, zone_tree, zone_classes)
@@ -772,6 +781,7 @@ def assemble_parcel_payload(
     heritage_index,
     institutions_index,
     ttc_station_index: STRtree,
+    landuse_index,
     flood_index,
     trca_index,
     rapidto_tree: STRtree,
@@ -827,6 +837,7 @@ def assemble_parcel_payload(
     stats_skipped_non_buildable = 0
     stats_skipped_institutional = 0
     stats_skipped_ttc_station = 0
+    stats_skipped_osm_landuse = 0
     stats_outside_transit_buffer = 0
     stats_abuts_laneway = 0
     stats_near_rapidto = 0
@@ -856,6 +867,7 @@ def assemble_parcel_payload(
         'neighborhoods': neighborhoods,
         'institutions_index': institutions_index,
         'ttc_station_index': ttc_station_index,
+        'landuse_index': landuse_index,
         'zone_index': zone_index,
         'multipliers': multipliers,
         'sixplex_index': sixplex_index,
@@ -899,6 +911,8 @@ def assemble_parcel_payload(
                 institutional_by_category[cat] = institutional_by_category.get(cat, 0) + 1
             elif reason == 'ttc_station':
                 stats_skipped_ttc_station += 1
+            elif reason == 'osm_landuse':
+                stats_skipped_osm_landuse += 1
             elif reason == 'non_buildable':
                 stats_skipped_non_buildable += 1
             elif reason == 'unparseable_geometry':
@@ -1071,6 +1085,7 @@ def assemble_parcel_payload(
             "skippedInstitutional": stats_skipped_institutional,
             "skippedInstitutionalByCategory": dict(institutional_by_category),
             "skippedTtcStation": stats_skipped_ttc_station,
+            "skippedOsmLanduse": stats_skipped_osm_landuse,
             "outsideTransitBuffer": stats_outside_transit_buffer,
             "abutsLaneway": stats_abuts_laneway,
             "nearRapidToCorridor": stats_near_rapidto,
@@ -1139,6 +1154,10 @@ def main(argv=None) -> int:
     t = _stage("compute TTC subway-station exclusion (buffered subway stops)")
     ttc_station_index = ttc_stations_src.compute_station_exclusion_index(cache)
     _done("TTC station exclusion", t)
+
+    t = _stage("compute OSM landuse exclusion (parking / industrial / construction / brownfield)")
+    landuse_index = landuse_src.compute_landuse_exclusion_index(cache)
+    _done("OSM landuse exclusion", t)
 
     t = _stage("compute basement-flooding study areas")
     flood_index = flood_src.compute_flood_index(cache)
@@ -1252,6 +1271,7 @@ def main(argv=None) -> int:
         heritage_index=heritage_index,
         institutions_index=institutions_index,
         ttc_station_index=ttc_station_index,
+        landuse_index=landuse_index,
         flood_index=flood_index,
         trca_index=trca_index,
         rapidto_tree=rapidto_tree,

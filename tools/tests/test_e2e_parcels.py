@@ -185,6 +185,7 @@ class ParcelE2ETests(unittest.TestCase):
             heritage_index=self.heritage_index,
             institutions_index=empty_institutions,
             ttc_station_index=empty_tree,
+            landuse_index=(empty_tree, []),
             flood_index=empty_flood,
             trca_index=empty_trca,
             rapidto_tree=empty_tree,
