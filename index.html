@@ -259,6 +259,13 @@
         .signal-violation {
             background: #fffbeb; color: #92400e; border-color: #fcd34d;
         }
+        /* Inline age tag — works on both row badges and detail-panel
+           cards. Slightly muted so the primary label reads first. */
+        .signal-age {
+            font-weight: 500;
+            opacity: 0.78;
+            font-variant-numeric: tabular-nums;
+        }
         /* Detail-panel "Owner activity" section — full per-record cards. */
         .signal-section-tag {
             display: inline-block; margin-left: 8px;
@@ -2446,6 +2453,27 @@
         //      localStorage. Pulls users back at their own cadence by
         //      diffing the current any-signal set against the snapshot
         //      stored on their last visit.
+        // Compact age tag for inline use in badges / detail rows.
+        // Tighter than relativeTimeFromIso — no "ago" suffix, no
+        // weeks-or-date branching. Tuned for at-a-glance scanning where
+        // a dev needs the order-of-magnitude only ("12d" vs "9 mo").
+        // Returns null for missing/unparseable.
+        function formatAge(iso) {
+            if (!iso) return null;
+            const t = Date.parse(iso);
+            if (isNaN(t)) return null;
+            const days = Math.max(0, Math.floor((Date.now() - t) / 86400000));
+            if (days === 0)  return 'today';
+            if (days === 1)  return '1 day';
+            if (days < 30)   return `${days}d`;
+            const months = Math.floor(days / 30);
+            if (months < 12) return `${months} mo`;
+            const years = Math.floor(days / 365);
+            const extraMonths = Math.floor((days - years * 365) / 30);
+            if (extraMonths === 0) return `${years} yr`;
+            return `${years}y ${extraMonths}mo`;
+        }
+
         function relativeTimeFromIso(iso) {
             if (!iso) return null;
             const t = Date.parse(iso);
@@ -2510,25 +2538,38 @@
             const s = getSignals(r);
             if (!s) return '';
             const parts = [];
+            // Inline age tag — a fresh permit reads radically different
+            // from a 10-month-old one, but they look identical without it.
+            // The age suffix is the at-a-glance "is this hot?" cue.
             if (s.severance) {
                 const sv = s.severance;
                 const desc = (sv.description || '').replace(/"/g, '&quot;').slice(0, 200);
                 const filed = sv.filedDate || '?';
+                const age = formatAge(sv.filedDate);
+                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
                 const lots = sv.lotsCreated ? ` · ${sv.lotsCreated} lots` : '';
-                parts.push(`<span class="signal-badge signal-severance" title="Severance application filed ${filed}${lots}. ${desc}">🔪 Severance</span>`);
+                parts.push(`<span class="signal-badge signal-severance" title="Severance application filed ${filed}${lots}. ${desc}">🔪 Severance${ageTag}</span>`);
             }
             if (s.demoPermit) {
                 const d = s.demoPermit;
                 const desc = (d.description || '').replace(/"/g, '&quot;').slice(0, 200);
                 const date = d.issuedDate || d.applicationDate || '?';
+                // Prefer issued date for age (more meaningful — that's
+                // when the clock to actual demolition starts), fall back
+                // to application date when never issued.
+                const ageSrc = d.issuedDate || d.applicationDate;
+                const age = formatAge(ageSrc);
+                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
                 const status = d.status ? ` · ${d.status}` : '';
-                parts.push(`<span class="signal-badge signal-demo" title="Demolition permit ${date}${status}. ${desc}">🔨 Demo permit</span>`);
+                parts.push(`<span class="signal-badge signal-demo" title="Demolition permit ${date}${status}. ${desc}">🔨 Demo permit${ageTag}</span>`);
             }
             if (s.violation) {
                 const v = s.violation;
                 const desc = (v.description || '').replace(/"/g, '&quot;').slice(0, 200);
                 const date = v.filedDate || '?';
-                parts.push(`<span class="signal-badge signal-violation" title="${v.status || 'Violation'} filed ${date}. ${desc}">⚠ ${v.status || 'Violation'}</span>`);
+                const age = formatAge(v.filedDate);
+                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
+                parts.push(`<span class="signal-badge signal-violation" title="${v.status || 'Violation'} filed ${date}. ${desc}">⚠ ${v.status || 'Violation'}${ageTag}</span>`);
             }
             return parts.length ? ` <span class="signal-badges">${parts.join('')}</span>` : '';
         }
@@ -2541,8 +2582,17 @@
             if (s.severance) {
                 const sv = s.severance;
                 const lots = sv.lotsCreated ? `<strong>${sv.lotsCreated}</strong> new lots` : 'lot subdivision';
-                const filed = sv.filedDate ? `Filed ${sv.filedDate}` : '';
-                const hearing = sv.hearingDate ? ` · Hearing ${sv.hearingDate}` : '';
+                const ageF = formatAge(sv.filedDate);
+                const ageH = formatAge(sv.hearingDate);
+                const filed = sv.filedDate
+                    ? `Filed ${sv.filedDate}${ageF ? ` <span class="signal-age">(${ageF})</span>` : ''}`
+                    : '';
+                const hearingTense = sv.hearingDate
+                    ? (Date.parse(sv.hearingDate) > Date.now() ? 'Hearing' : 'Heard')
+                    : '';
+                const hearing = sv.hearingDate
+                    ? ` · ${hearingTense} ${sv.hearingDate}${ageH ? ` <span class="signal-age">(${ageH})</span>` : ''}`
+                    : '';
                 const desc = escapeHtml(sv.description || '').slice(0, 400);
                 const url = sv.applicationUrl
                     ? ` · <a href="${escapeHtml(sv.applicationUrl)}" target="_blank" rel="noopener">View application ↗</a>`
@@ -2557,8 +2607,14 @@
             }
             if (s.demoPermit) {
                 const d = s.demoPermit;
-                const filed = d.applicationDate ? `Applied ${d.applicationDate}` : '';
-                const issued = d.issuedDate ? ` · Issued ${d.issuedDate}` : '';
+                const ageA = formatAge(d.applicationDate);
+                const ageI = formatAge(d.issuedDate);
+                const filed = d.applicationDate
+                    ? `Applied ${d.applicationDate}${ageA ? ` <span class="signal-age">(${ageA})</span>` : ''}`
+                    : '';
+                const issued = d.issuedDate
+                    ? ` · Issued ${d.issuedDate}${ageI ? ` <span class="signal-age">(${ageI})</span>` : ''}`
+                    : (d.applicationDate ? ` · <em>not yet issued</em>` : '');
                 const status = d.status ? ` · ${escapeHtml(d.status)}` : '';
                 const useChange = (d.currentUse || d.proposedUse)
                     ? `<div class="signal-block-meta"><strong>${escapeHtml(d.currentUse || '?')}</strong> → <strong>${escapeHtml(d.proposedUse || '?')}</strong></div>`
@@ -2576,17 +2632,28 @@
             }
             if (s.violation) {
                 const v = s.violation;
-                const filed = v.filedDate ? `Filed ${v.filedDate}` : '';
+                const age = formatAge(v.filedDate);
+                const filed = v.filedDate
+                    ? `Filed ${v.filedDate}${age ? ` <span class="signal-age">(${age})</span>` : ''}`
+                    : '';
                 const status = v.status ? ` · <strong>${escapeHtml(v.status)}</strong>` : '';
                 const subType = v.subType ? ` (${escapeHtml(v.subType)})` : '';
                 const work = v.work ? ` · ${escapeHtml(v.work)}` : '';
                 const desc = escapeHtml(v.description || '').slice(0, 400);
                 const more = v.extraCount ? ` · <em>+${v.extraCount} more on this lot</em>` : '';
+                // For violations specifically, an OLDER filing is a stronger
+                // motivation signal — a 9-month-outstanding Order Issued is
+                // a more distressed owner than one filed last week. Surface
+                // that read explicitly so devs don't dismiss old entries.
+                const ageNote = age && Date.parse(v.filedDate) < Date.now() - 180 * 86400000
+                    ? '<div class="signal-block-meta" style="color:#92400e;font-style:italic;">↑ outstanding for over 6 months — strongest motivated-seller signal</div>'
+                    : '';
                 blocks.push(`
                     <div class="signal-block signal-block-violation">
                         <div class="signal-block-head">⚠ ${escapeHtml(v.status || 'Violation')}${subType}</div>
                         <div class="signal-block-meta">${filed}${status}${work}${more}</div>
                         ${desc ? `<div class="signal-block-desc">${desc}</div>` : ''}
+                        ${ageNote}
                     </div>`);
             }
             return `
