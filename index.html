@@ -1068,6 +1068,11 @@
             max-height: calc(100vh - 360px);
             min-height: 480px;
             overflow-y: auto;
+            /* Always reserve scrollbar space inside .pick-list so row grid
+               widths are stable. Combined with `padding-right: var(--scrollbar-w)`
+               on .pick-header below, header columns line up with row columns
+               regardless of whether the scrollbar is currently showing. */
+            scrollbar-gutter: stable;
             padding: 0;
         }
         .pick-header,
@@ -1082,16 +1087,15 @@
                second iteration) which was leaving ~80px of whitespace
                on both sides of a centered table block. */
             grid-template-columns:
-                minmax(200px, 1fr)    /* Address — flex absorber */
+                minmax(200px, 1fr)    /* Address (incl. inline ★) — flex absorber */
                 104px                 /* Lot */
-                104px                 /* Footprint */
+                120px                 /* Existing (footprint + storeys) */
                 64px                  /* Built */
                 76px                  /* Subway */
                 76px                  /* Sixplex */
                 88px                  /* Permits — fits "Nbhd permits" without wrap */
                 60px                  /* Trees */
-                92px                  /* Saved $ */
-                26px;                 /* Star */
+                92px;                 /* Saved $ */
             align-items: stretch;
         }
         .pick-header {
@@ -1099,6 +1103,12 @@
             border-top: 1px solid var(--rule-strong);
             border-bottom: 1px solid var(--rule-strong);
             position: sticky; top: 0; z-index: 5;
+            /* Match the gutter that .pick-list reserves for its scrollbar so
+               header columns sit over the row columns. JS sets --scrollbar-w
+               once per page-load via measureScrollbarGutter(); falls back to
+               0 (no shift) on the rare browser without overflow:scroll. */
+            padding-right: var(--scrollbar-w, 0px);
+            box-sizing: border-box;
         }
         .pick-header > * {
             padding: 6px 8px;
@@ -1193,7 +1203,10 @@
             color: var(--ink-mute2);
             margin-left: 2px;
         }
-        /* Address column — flex flex-direction: column, left-aligned */
+        /* Address column — flex flex-direction: column, left-aligned.
+           Star sits inline with the address (.head-row) instead of in
+           its own grid column — the column header was unlabeled and
+           the dedicated 26px slot threw off visual alignment. */
         .pick .head {
             justify-content: flex-start;
             text-align: left;
@@ -1202,10 +1215,19 @@
             gap: 1px;
             padding: 8px 12px;
         }
+        .pick .head .head-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            min-width: 0;
+        }
+        .pick .head .head-row .star { flex-shrink: 0; }
         .pick .head .addr {
             font-size: 14px; font-weight: 600;
             color: var(--ink);
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            flex: 1; min-width: 0;
             max-width: 100%;
         }
         .pick .head .addr.addr-pending { color: var(--ink-mute2); font-style: italic; }
@@ -1254,12 +1276,13 @@
             .pick {
                 /* Mobile card layout 2026-05-06: dropped the leading 64px
                    "nz" column when the Score number left the wire-display.
-                   Now a plain 2-col header row + full-width cells/stack. */
-                grid-template-columns: 1fr 32px;
+                   2026-05-07: star moved inline with .addr (inside .head),
+                   so the header row is now a single full-width cell. */
+                grid-template-columns: 1fr;
                 grid-template-areas:
-                    "head  star"
-                    "cells cells"
-                    "stack stack";
+                    "head"
+                    "cells"
+                    "stack";
                 row-gap: 6px;
                 padding: 12px 14px;
                 align-items: start;
@@ -1278,7 +1301,6 @@
                 text-overflow: clip;
             }
             .pick > .head { grid-area: head; padding: 0 4px; }
-            .pick > .star { grid-area: star; align-self: start; }
             .pick > .stack-mini {
                 grid-area: stack; padding: 4px 8px;
                 font-size: 12px;
@@ -1317,7 +1339,7 @@
         }
         @media (max-width: 540px) {
             .pick {
-                grid-template-columns: 1fr 28px;
+                grid-template-columns: 1fr;
             }
         }
         /* Mobile cells wrapper — used only when the row needs to wrap stats
@@ -1983,14 +2005,13 @@
             <div class="pick-header" id="pick-header" role="row">
                 <button class="col-btn header-addr-label" data-sort="address" title="Sort alphabetically by address">PARCEL</button>
                 <button class="col-btn" data-sort="area" title="Sort by lot area (largest first)">Lot (m²)</button>
-                <button class="col-btn" data-sort="footprint" title="Sort by existing footprint, m² (smallest first)">Footprint (m²)</button>
+                <button class="col-btn" data-sort="footprint" title="Existing structure on the lot — footprint area (m²) and rough storey count (height ÷ 3, derived from 3D Massing). 'vacant' when no structure recorded. Sort: smallest footprint first.">Existing</button>
                 <button class="col-btn" data-sort="built" title="Sort by build year (oldest first)">Built</button>
                 <button class="col-btn" data-sort="subway" title="Sort by subway proximity (closest first)">Subway</button>
                 <button class="col-btn" data-sort="sixplex" title="Sixplex eligible — does this parcel qualify for as-of-right 6-plex? Yes only in T&EY District + Ward 23 (June 2025 carve-out). Sort: eligible first.">6-plex OK</button>
                 <button class="col-btn" data-sort="permits_nb" title="Permit activity in this parcel's neighborhood over the last 5 years (sample size). Sort: most first.">Nbhd permits</button>
                 <button class="col-btn" data-sort="trees" title="Sort by mature tree count (most first)">Trees</button>
                 <button class="col-btn header-stack-label" data-sort="savings" title="Bill 185 stacked incentive total ($200K DC waiver + $25K × parking stalls). Sort: highest first.">SAVED $</button>
-                <div></div>
             </div>
             <div id="picks" class="pick-list"></div>
         </section>
@@ -2051,6 +2072,22 @@
 
     <script>
     (function() {
+        // ---- Scrollbar gutter measurement ----
+        // .pick-list reserves a fixed scrollbar gutter via CSS (`scrollbar-gutter:
+        // stable`); .pick-header sits OUTSIDE that scroll container, so we shift
+        // its right edge inward by the same amount via `--scrollbar-w` so header
+        // columns align with row columns. Measured once: classic scrollbars are
+        // ~15-17px on Linux/WSL, ~15px on Windows, 0 on macOS overlay scrollbars
+        // (in which case the header shouldn't shift either — both match).
+        (function measureScrollbarGutter() {
+            const probe = document.createElement('div');
+            probe.style.cssText = 'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;visibility:hidden';
+            document.body.appendChild(probe);
+            const w = probe.offsetWidth - probe.clientWidth;
+            document.body.removeChild(probe);
+            document.documentElement.style.setProperty('--scrollbar-w', w + 'px');
+        })();
+
         // ---- Watchlist + recently-viewed (localStorage) ----
         // Stable parcel key: prefer parcelId; fall back to lat,lng (5-decimal,
         // matches the wire's COORD_DECIMALS) so unaddressed/no-PID parcels are
@@ -5036,7 +5073,20 @@
             const subDisplay = subM < 1000 ? `${subM}m` : `${(subM/1000).toFixed(1)}km`;
             const lotDisplay = r.lotAreaM2 != null ? `${r.lotAreaM2.toLocaleString()}` : '—';
             const fpM2 = Math.round((r.buildingCoverageRatio || 0) * (r.lotAreaM2 || 0));
-            const fpDisplay = fpM2 > 0 ? `${fpM2}` : 'vacant';
+            // Combined footprint + storey display (2026-05-07 user direction).
+            // Storeys ≈ height ÷ 3m. Single-primitive derivation; no synthesis.
+            // - "vacant"            when no recorded structure
+            // - "138m² · 3 fl"      footprint + estimated storeys
+            // - "—"                 missing data
+            const fpDisplay = (() => {
+                const h = r.existingMaxBuildingHeightM;
+                const hasH = h != null && h > 0;
+                if (fpM2 === 0 && !hasH) return 'vacant';
+                if (fpM2 === 0) return '—';
+                if (!hasH) return `${fpM2}m²`;
+                const storeys = Math.max(1, Math.round(h / 3));
+                return `${fpM2}m² · ${storeys} fl`;
+            })();
             const sxClass = r.sixplexEligible ? 'val-yes' : 'val-no';
             const sxText = r.sixplexEligible ? 'YES' : 'no';
             const solarClass = (r.solarScore != null && r.solarScore < 30) ? 'val-warn' : '';
@@ -5086,7 +5136,10 @@
             return `
                 <div class="pick ${rankClass(i)} ${heroClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
-                        <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${signalBadgesHtml(r)}</div>
+                        <div class="head-row">
+                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${signalBadgesHtml(r)}</div>
+                            <button class="star ${watched ? 'on' : ''}" data-action="star" aria-label="${watched ? 'Remove from saved' : 'Save to watchlist'}">${watched ? '★' : '☆'}</button>
+                        </div>
                         <div class="meta">${r.neighborhood}</div>
                         ${heroSubhead}
                     </div>
@@ -5100,7 +5153,6 @@
                         <div class="cell ${treesClass}" data-col="trees">${treesDisplay}</div>
                     </div>
                     <div class="stack-mini ${popSavings}" title="${stackText.replace(/<[^>]*>/g,'').replace(/"/g,'&quot;')}">${savings > 0 ? '~$' + Math.round(savings/1000) + 'K' : '—'}</div>
-                    <button class="star ${watched ? 'on' : ''}" data-action="star" aria-label="${watched ? 'Remove from saved' : 'Save to watchlist'}">${watched ? '★' : '☆'}</button>
                 </div>`;
         }
 
