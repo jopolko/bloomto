@@ -63,6 +63,7 @@ def _make_feature(*, address="100 Test St", score=80, lng=-79.4, lat=43.7,
         # 2026-05-05 architect / dev panel additions.
         "lotGeometry": {"longAxisM": 18.5, "shortAxisM": 6.2, "orientationDeg": 75.0},
         "neighborHeights": {"nAvgM": 6.5, "sAvgM": 9.0, "eAvgM": None, "wAvgM": 7.2},
+        "existingMaxBuildingHeightM": 7.5,
         "solarYieldKwhPerYr": 22000,
         "pvCapacityKwEstimate": 19.1,
         "sixplexBonusValueCad": None,

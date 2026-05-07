@@ -167,6 +167,15 @@ def _process_parcel(parcel_or_record) -> dict:
     if landuse_src.is_landuse_excluded(parcel.geometry, landuse_index):
         return {'skip': 'osm_landuse'}
 
+    # --- gate stage 3c: tall existing building (3D Massing) ---
+    # Excludes parcels already carrying a 5+ storey structure — apartment
+    # buildings and mid-rises where teardown economics fail vs the 4–6 unit
+    # multiplex envelope. Computed once, reused below for the wire field
+    # so the frontend can show "currently a 4-storey building" inline.
+    existing_max_h = _existing_max_building_height(parcel, massing_index)
+    if existing_max_h is not None and existing_max_h >= EXISTING_BUILDING_HEIGHT_THRESHOLD_M:
+        return {'skip': 'tall_existing_building'}
+
     # --- per-parcel work ---
     zone_class = _lookup_zone_class(parcel, zone_tree, zone_classes)
     max_units = zoning_src.lookup_multiplier(zone_class, multipliers)
@@ -376,6 +385,9 @@ def _process_parcel(parcel_or_record) -> dict:
                 'longAxisM': lo, 'shortAxisM': sh, 'orientationDeg': o,
             })(*_lot_geometry(parcel)),
             'neighborHeights': _neighbor_heights(rep_pt, massing_index),
+            'existingMaxBuildingHeightM': (
+                round(existing_max_h, 1) if existing_max_h is not None else None
+            ),
             'solarYieldKwhPerYr': int(round(max_kwh)) if max_kwh else 0,
             'pvCapacityKwEstimate': round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
             'sixplexBonusValueCad': None,
@@ -717,6 +729,51 @@ def _lot_geometry(parcel) -> tuple[float | None, float | None, float | None]:
 _NEIGHBOR_RADIUS_M = 30.0
 _NEIGHBOR_RADIUS_DEG = _NEIGHBOR_RADIUS_M / 111_000  # ≤1.4× over-bound for bbox query at 43°N
 
+# Existing-building height threshold for the multiplex-teardown gate.
+# 15m ≈ 5 storeys at 3m floor-to-floor. At/above this height the existing
+# structure is a real apartment building — teardown economics fail vs the
+# 4–6 plex Toronto multiplex by-law allows. Below this, the lot may carry
+# a 1–4 storey existing structure that's still a legitimate teardown
+# candidate. The 50% overlap requirement guards against picking up a
+# neighbour's tower that just clips this parcel's boundary.
+EXISTING_BUILDING_HEIGHT_THRESHOLD_M = 15.0
+EXISTING_BUILDING_OVERLAP_RATIO = 0.5
+
+
+def _existing_max_building_height(parcel, massing_index) -> float | None:
+    """Tallest 3D Massing building substantially overlapping this parcel.
+
+    Returns the `height_m` of the tallest building whose footprint is at
+    least `EXISTING_BUILDING_OVERLAP_RATIO` (50%) inside the parcel
+    polygon. Returns `None` when the parcel has no qualifying building
+    (vacant lot, narrow accessory structure, neighbour-clip-through).
+
+    Used for both the "too tall to teardown" hard-exclusion gate AND the
+    per-parcel `existingMaxBuildingHeightM` wire field surfaced to the
+    frontend so the dev can read existing structure scale at a glance.
+    """
+    tree, buildings = massing_index
+    parcel_geom = parcel.geometry
+    max_h: float | None = None
+    for idx in tree.query(parcel_geom):
+        b = buildings[idx]
+        if b.height_m is None:
+            continue
+        try:
+            inter = b.geometry.intersection(parcel_geom)
+            if inter.is_empty:
+                continue
+            bldg_area = b.geometry.area
+            if bldg_area <= 0:
+                continue
+            if inter.area / bldg_area < EXISTING_BUILDING_OVERLAP_RATIO:
+                continue
+        except Exception:
+            continue
+        if max_h is None or b.height_m > max_h:
+            max_h = b.height_m
+    return max_h
+
 
 def _neighbor_heights(rep_pt, massing_index) -> dict:
     """Average building height (m) within `_NEIGHBOR_RADIUS_M` of the parcel's
@@ -838,6 +895,7 @@ def assemble_parcel_payload(
     stats_skipped_institutional = 0
     stats_skipped_ttc_station = 0
     stats_skipped_osm_landuse = 0
+    stats_skipped_tall_building = 0
     stats_outside_transit_buffer = 0
     stats_abuts_laneway = 0
     stats_near_rapidto = 0
@@ -913,6 +971,8 @@ def assemble_parcel_payload(
                 stats_skipped_ttc_station += 1
             elif reason == 'osm_landuse':
                 stats_skipped_osm_landuse += 1
+            elif reason == 'tall_existing_building':
+                stats_skipped_tall_building += 1
             elif reason == 'non_buildable':
                 stats_skipped_non_buildable += 1
             elif reason == 'unparseable_geometry':
@@ -1086,6 +1146,7 @@ def assemble_parcel_payload(
             "skippedInstitutionalByCategory": dict(institutional_by_category),
             "skippedTtcStation": stats_skipped_ttc_station,
             "skippedOsmLanduse": stats_skipped_osm_landuse,
+            "skippedTallExistingBuilding": stats_skipped_tall_building,
             "outsideTransitBuffer": stats_outside_transit_buffer,
             "abutsLaneway": stats_abuts_laneway,
             "nearRapidToCorridor": stats_near_rapidto,

@@ -305,19 +305,66 @@
             margin-top: 5px; line-height: 1.45;
             font-style: italic;
         }
-        /* Today's spotlight — single pinned card at the top of the picks
-           list. Rotates daily via date-seed so visiting Tuesday sees a
-           different parcel than Monday. */
-        .spotlight-row {
-            border-left: 3px solid #d97706 !important;
-            background: linear-gradient(90deg, #fffbeb 0%, var(--surface) 30%) !important;
+        /* Daily picks strip — three real-signal cards above the listings:
+           Newest (entered elite since your last visit), Hottest (freshest
+           owner-activity signal), Underdog (high-incentive deal hiding
+           outside the top 10). Replaces the prior cosmetic spotlight. */
+        .daily-picks {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin: 8px 0 10px;
         }
-        .spotlight-banner {
-            font-size: 9px; font-weight: 700;
+        @media (max-width: 760px) {
+            .daily-picks { grid-template-columns: 1fr; }
+        }
+        .pick-card {
+            display: block;
+            text-align: left;
+            padding: 12px 14px;
+            border: 1px solid var(--rule);
+            border-radius: 8px;
+            background: linear-gradient(135deg, #fffbeb 0%, #ffffff 60%);
+            font-family: inherit;
+            cursor: pointer;
+            transition: border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+            min-width: 0; /* allow ellipsis inside grid track */
+        }
+        .pick-card:hover {
+            border-color: #d97706;
+            box-shadow: 0 2px 6px rgba(217, 119, 6, 0.14);
+        }
+        .pick-card:active { transform: scale(0.99); }
+        .pick-card-empty {
+            cursor: help;
+            opacity: 0.55;
+            background: var(--surface);
+        }
+        .pick-card-empty:hover { border-color: var(--rule); box-shadow: none; }
+        .pick-card-head {
+            font-size: 10px; font-weight: 800;
             color: #b45309;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
+        }
+        .pick-card-addr {
+            font-size: 14px; font-weight: 700;
+            color: var(--ink);
+            line-height: 1.2;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .pick-card-why {
+            font-size: 11px; font-weight: 500;
+            color: var(--ink-muted);
+            line-height: 1.35;
+            margin-top: 4px;
+        }
+        .pick-card-empty-msg {
+            font-size: 11px;
+            color: var(--ink-mute2);
+            line-height: 1.35;
+            font-style: italic;
         }
         /* Methodology drawer — collapsed by default. All the chrome (hero
            stats, data pedigree, recency stripe, pre-filter gates) lives in
@@ -951,10 +998,6 @@
         .pick:nth-child(even) { background: #f7f8fa; }
         .pick:hover { background: var(--tor-blue-soft); }
         .pick.selected { background: rgba(10, 76, 168, 0.10); }
-        .pick.spotlight-row {
-            border-left: 3px solid #d97706;
-            background: linear-gradient(90deg, #fffbeb 0%, transparent 50%) !important;
-        }
         /* stats-row wrapper: desktop = display:contents (cells flatten into
            the parent .pick grid as columns 3-10); mobile = display:grid
            (cells wrap into a 2-col sub-grid in the "cells" grid-area). */
@@ -1034,13 +1077,6 @@
         }
         .pick .star.on { color: #f59e0b; }
         .pick .star:hover { color: var(--tor-blue); }
-        /* Today's Spotlight banner — small accent inline with address */
-        .spotlight-banner {
-            font-size: 9px; font-weight: 700;
-            color: #b45309;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
 
         /* Mobile / narrow-desktop (≤1080px) — card layout. Bumped breakpoint
            from 900→1080 on 2026-05-06 because the desktop grid (now ~990px
@@ -1752,6 +1788,12 @@
             <!-- Stats line ("X matches · Y top-contender parcels...") survives
                  here for the filter feedback ("3,585 matches · ...") — slim. -->
             <div id="stats" class="text-xs text-gray-500 listings-stats">Loading parcels…</div>
+            <!-- Daily picks strip — three real-signal cards (newest /
+                 hottest / underdog) above the listings, replacing the
+                 prior date-hash spotlight. Populated by
+                 renderDailyPicksStrip(); hidden when none of the three
+                 have a qualifying parcel. -->
+            <div id="daily-picks" class="daily-picks" hidden></div>
             <div class="pick-header" id="pick-header" role="row">
                 <button class="col-btn header-addr-label" data-sort="address" title="Sort alphabetically by address">PARCEL</button>
                 <button class="col-btn" data-sort="area" title="Sort by lot area (largest first)">Lot (m²)</button>
@@ -1953,59 +1995,39 @@
         // when the chip-grid layout landed (uniform-width chips, no in-band
         // action buttons). The grid is filter primitives only.
         const PRESETS = [
-            // Chip set redesigned 2026-05-04: parcels-top.json is the elite
-            // set (score≥70, heritage-clear, TRCA-clear, lot≥350m², teardown-
-            // cheap, addressed — see tools/build_parcels_top.py ELITE_*
-            // constants). Universally-true gates are surfaced in the
-            // "Pre-filtered" banner; chips below are only those that
-            // DISCRIMINATE within the elite set.
+            // Chip set trimmed 2026-05-07: prior set had 12 chips covering
+            // overlapping concerns. Reduced to the 4 that meaningfully
+            // discriminate within the elite set + ★Saved (personal).
             //
-            // Within each theme group, chips are ordered by Attractiveness
-            // weight DESC so the most impactful filter for each kind of
-            // signal sits leftmost. Updated 2026-05-04 to match v0.7 weights.
+            // Removed:
+            //   rapidto, active_dev, corner — niche, predicates retired.
+            //   severance / demo_permit / violation — redundant with the
+            //       Hottest daily-pick card surfacing the freshest of each.
+            //   any_signal — promoted to a non-chip "internal" preset; the
+            //       money-hero "Owner activity" pill is the user-visible
+            //       affordance. Predicate stays so the pill keeps working.
 
             // ── Transit / location ──
             { id: 'subway',  label: 'Subway <500m',  tip: 'Within 500m of TTC subway — Bill 185 / By-law 569-2013 parking-waiver buffer ("major transit station area"). Tenant-demand premium signal.',
               fn: r => r.distSubwayM != null && r.distSubwayM < 500 },
-            { id: 'rapidto', label: 'RapidTO', tip: 'On Jane / Finch E / Dufferin / Lawrence E / Steeles W. TransformTO Action 6.1, funded delivery 2026-28.',
-              fn: r => r.nearRapidToCorridor === true },
 
             // ── Strategy / incentive eligibility ──
             { id: 'sixplex', label: 'Sixplex eligible', tip: 'Filter to parcels eligible for as-of-right 6-plex (vs the citywide 4-cap). Toronto multiplex by-law expansion (June 2025) — sixplex permitted in T&EY District + Ward 23 (Scarborough North).',
               fn: r => r.sixplexEligible === true },
             { id: 'postwar', label: 'Postwar', tip: '1945-60 build vintage — older detached / bungalow / split-level stock that suits teardown-and-rebuild multiplex economics. Note: HRSP/Greener Homes/HELP retrofit rebates flow to existing homeowners, NOT to the dev — they\'re a downstream signal for future buyers/tenants, not a savings line on your pro forma.',
               fn: r => r.postwarNeighborhood === true },
-            // Laneway chip removed 2026-05-06 — `abutsLaneway` alone is
-            // necessary but not sufficient for laneway-suite eligibility,
-            // and Bill 185 (2024) eliminated the parking-access rationale.
-            // Keep the wire field; revisit when we have lot-dim + footprint
-            // ground-truth to derive a real "buildable" signal.
-            { id: 'active_dev', label: 'Active', tip: 'Neighborhood has 10+ residential new-build / conversion permits in past 5 years (data signal, not a by-law).',
-              fn: r => (r.nbPermitSampleSize ?? 0) >= 10 },
             { id: 'tree_low', label: 'Trees', tip: 'No mature street trees ≥30cm DBH on lot frontage. Toronto Municipal Code Chapter 813 protection threshold.',
               fn: r => (r.matureTreeCount || 0) === 0 },
-
-            // ── Actionable Signals (daily-refreshed CKAN feeds) ──
-            // Filter to parcels where an owner is currently doing something
-            // with the property — strongest pre-listing / motivated-seller
-            // / lot-subdivision signals publicly available. Daily refresh
-            // via tools/build_signals.py (data/signals.json).
-            { id: 'severance', label: '🔪 Severance', tip: 'Active Committee of Adjustment Consent application — owner has formally applied to subdivide this lot. Filing fee paid (~$1,200), public hearing scheduled. Strongest pre-sale / pre-development signal: owner is preparing to either sell two lots or build on a smaller footprint. Daily-refreshed Toronto Open Data feed.',
-              fn: r => !!(getSignals(r)?.severance) },
-            { id: 'demo_permit', label: '🔨 Demo permit', tip: 'Active Demolition permit filed in the last 365 days. Either the owner is about to sell the cleared site (offer them land cost) or they are DIY-redeveloping (still a real-estate-active person to talk to). Pulled from Toronto Open Data daily.',
-              fn: r => !!(getSignals(r)?.demoPermit) },
-            { id: 'violation', label: '⚠ Violation', tip: 'Active Property Standards / Stop Work / Unsafe / Emergency Order from Municipal Licensing & Standards. Owner is under City pressure — strongest motivated-seller signal we have. Daily-refreshed; severity ranges from Notice (mild) to Emergency Order (immediate). Excludes commercial signage violations.',
-              fn: r => !!(getSignals(r)?.violation) },
-            { id: 'any_signal', label: '⚡ Any signal', tip: 'Any of the three actionable signals: severance application, demolition permit, or active enforcement order. The unified "owner is moving on this property" filter.',
-              fn: r => hasAnySignal(r) },
-
-            // ── Lot quality ──
-            { id: 'corner',  label: 'Corner', tip: 'Two-street frontage. Better access, more daylight, design flexibility for multi-unit massing.',
-              fn: r => r.cornerLot === true },
 
             // ── Personal — your watchlist ──
             { id: 'saved',   label: '★ Saved', tip: 'Filter to parcels you have starred. Stored in this browser only (localStorage).',
               fn: r => isWatched(r) },
+
+            // ── Internal (no chip rendered) — predicates registered so the
+            // money-hero "Owner activity" pill keeps working as a filter
+            // toggle. Marked `internal: true` so renderChips() skips them.
+            { id: 'any_signal', internal: true, label: 'Owner activity', tip: '',
+              fn: r => hasAnySignal(r) },
         ];
 
         // Minimal HTML escape for arbitrary text injected into innerHTML.
@@ -2796,27 +2818,206 @@
             return result;
         }
 
-        // ---- 2. Today's spotlight ----
-        // Same picks-list element rotates daily. Date-seeded pick from
-        // top-N. Same parcel for everyone visiting on the same date.
-        function _todayDateSeed() {
-            const d = new Date();
-            return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+        // ---- 2. Daily picks strip ----
+        // Three picks above the listings, each chosen by a real signal
+        // rather than a date hash. Replaces the prior cosmetic
+        // "Today's Spotlight" banner (which was just hash(date)%50 — no
+        // editorial logic, no quality signal).
+        //
+        //   newest:    parcel that just qualified for the elite set
+        //              since your last visit (localStorage-driven).
+        //   hottest:   parcel with the freshest CKAN signal — severance,
+        //              demo permit, or violation — by filing date.
+        //   underdog:  highest stacked Bill 185 incentive savings on a
+        //              parcel ranked outside the obvious top-10. The
+        //              high-leverage deal hiding in the long tail.
+        //
+        // All three derive from data already loaded — no extra fetch.
+        // Each can be null (sparse data, first-ever visit, etc.); the
+        // renderer skips empty cards rather than padding.
+
+        // localStorage snapshot for the "newest to your list" diff.
+        // Stored: array of elite parcelIds at last visit, plus the
+        // timestamp. On each visit, diff against the current elite set.
+        const ELITE_VISIT_KEY = 'bloomto:multiplex:elite-last-visit:v1';
+        function readEliteVisitSnapshot() {
+            try {
+                const raw = localStorage.getItem(ELITE_VISIT_KEY);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (!obj || !Array.isArray(obj.snapshot)) return null;
+                return obj;
+            } catch (e) { return null; }
         }
-        function _hashStr(s) {
-            let h = 0;
-            for (let i = 0; i < s.length; i++) {
-                h = ((h << 5) - h) + s.charCodeAt(i);
-                h |= 0;
+        function writeEliteVisitSnapshot(currentIds, atIso) {
+            try {
+                localStorage.setItem(ELITE_VISIT_KEY, JSON.stringify({
+                    snapshot: currentIds,
+                    at: atIso || new Date().toISOString(),
+                }));
+            } catch (e) { /* silent */ }
+        }
+        // Loaded ONCE at page load — same pattern as signals snapshot.
+        const _eliteVisitSnapshotOnLoad = readEliteVisitSnapshot();
+        let _eliteSnapshotWritten = false;
+
+        function _signalLatestDateForRow(r) {
+            const s = getSignals(r);
+            if (!s) return null;
+            const cands = [];
+            if (s.severance && s.severance.filedDate) cands.push(s.severance.filedDate);
+            if (s.demoPermit) {
+                if (s.demoPermit.issuedDate) cands.push(s.demoPermit.issuedDate);
+                else if (s.demoPermit.applicationDate) cands.push(s.demoPermit.applicationDate);
             }
-            return Math.abs(h);
+            if (s.violation && s.violation.filedDate) cands.push(s.violation.filedDate);
+            return cands.length ? cands.reduce((a, b) => a > b ? a : b) : null;
         }
-        function todaysSpotlight(rows) {
-            if (!rows || rows.length === 0) return null;
-            // Pick from top-50 (or fewer if list is shorter), date-seeded.
-            const pool = rows.slice(0, Math.min(50, rows.length));
-            const idx = _hashStr(_todayDateSeed()) % pool.length;
-            return pool[idx];
+        function _signalKindForRow(r) {
+            const s = getSignals(r);
+            if (!s) return null;
+            // Most-actionable first when more than one is set.
+            if (s.demoPermit) return { kind: 'demo', label: 'demo permit', dateField: s.demoPermit.issuedDate || s.demoPermit.applicationDate };
+            if (s.severance) return { kind: 'severance', label: 'severance application', dateField: s.severance.filedDate };
+            if (s.violation) return { kind: 'violation', label: 'enforcement order', dateField: s.violation.filedDate };
+            return null;
+        }
+
+        function computeDailyPicks(rows) {
+            if (!rows || rows.length === 0) return { newest: null, hottest: null, underdog: null };
+
+            // Newest — first row in `rows` whose parcelId isn't in the
+            // last-visit snapshot. Falls back to null on first-ever visit.
+            let newest = null;
+            const prev = _eliteVisitSnapshotOnLoad;
+            if (prev && prev.snapshot && prev.snapshot.length > 0) {
+                const old = new Set(prev.snapshot);
+                for (const r of rows) {
+                    if (!old.has(String(r.parcelId))) { newest = r; break; }
+                }
+                if (newest) {
+                    newest._pickWhy = `Just entered the elite list since your last visit on ${(new Date(prev.at)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}.`;
+                }
+            }
+            // Persist the current set on first render only.
+            if (!_eliteSnapshotWritten) {
+                writeEliteVisitSnapshot(rows.map(r => String(r.parcelId)), new Date().toISOString());
+                _eliteSnapshotWritten = true;
+            }
+
+            // Hottest — parcel with the most recent CKAN signal date.
+            // Ties broken by score desc.
+            let hottest = null;
+            let hottestDate = '';
+            let hottestScore = -1;
+            for (const r of rows) {
+                const d = _signalLatestDateForRow(r);
+                if (!d) continue;
+                if (d > hottestDate || (d === hottestDate && (r.score || 0) > hottestScore)) {
+                    hottest = r;
+                    hottestDate = d;
+                    hottestScore = r.score || 0;
+                }
+            }
+            if (hottest) {
+                const sk = _signalKindForRow(hottest);
+                const ago = relativeTimeFromIso(hottestDate);
+                hottest._pickWhy = sk
+                    ? `Freshest owner activity on the list — ${sk.label} ${ago || 'recently'}.`
+                    : 'Most recent owner-activity signal on the list.';
+            }
+
+            // Underdog — highest stacked savings on a parcel ranked
+            // outside the top 10. Surfaces high-leverage deals hiding
+            // beneath the obvious frontrunners.
+            let underdog = null;
+            let underdogSavings = -1;
+            const SKIP_TOP = 10;
+            const upper = Math.min(rows.length, 500);  // cap scan
+            for (let i = SKIP_TOP; i < upper; i++) {
+                const r = rows[i];
+                const sv = stackedSavingsFor(r).savings || 0;
+                if (sv > underdogSavings) {
+                    underdog = r;
+                    underdogSavings = sv;
+                    underdog._pickRank = i + 1;
+                }
+            }
+            if (underdog && underdogSavings > 0) {
+                const dollars = underdogSavings >= 1_000_000
+                    ? `$${(underdogSavings / 1_000_000).toFixed(2)}M`
+                    : `$${Math.round(underdogSavings / 1000)}K`;
+                underdog._pickWhy = `${dollars} of stacked Bill 185 incentives, but ranks #${underdog._pickRank} — the highest-leverage deal outside the obvious top 10.`;
+            } else {
+                underdog = null;
+            }
+
+            // Dedupe — if two slots collapsed onto the same parcel, drop
+            // the lower-priority one. Order: newest > hottest > underdog.
+            if (hottest && newest && parcelKey(hottest) === parcelKey(newest)) hottest = null;
+            if (underdog && newest && parcelKey(underdog) === parcelKey(newest)) underdog = null;
+            if (underdog && hottest && parcelKey(underdog) === parcelKey(hottest)) underdog = null;
+
+            return { newest, hottest, underdog };
+        }
+
+        function renderDailyPicksStrip(rows) {
+            const el = document.getElementById('daily-picks');
+            if (!el) return;
+            const picks = computeDailyPicks(rows);
+            const cards = [];
+            const slotMeta = [
+                {
+                    key: 'newest',
+                    icon: '✨',
+                    label: 'Newest',
+                    fallback: 'Just entered the elite list since your last visit. Visit again tomorrow to see what changed.',
+                    tip: 'Compares the current elite parcels to a snapshot from your last visit (stored in your browser only). The first parcel in the list that wasn\'t there before. First-ever visit shows nothing here — come back to see deltas.',
+                },
+                {
+                    key: 'hottest',
+                    icon: '🔥',
+                    label: 'Hottest',
+                    fallback: 'No fresh owner-activity signal on the current set.',
+                    tip: 'Parcel with the most recent severance application, demolition permit, or City enforcement order in the daily-refreshed signals layer. The owner is doing something with this property right now.',
+                },
+                {
+                    key: 'underdog',
+                    icon: '💎',
+                    label: 'Underdog',
+                    fallback: 'No high-savings parcel ranked outside the top 10.',
+                    tip: 'Highest stacked Bill 185 incentive total on a parcel ranked outside the top 10 by score. The high-leverage deal hiding beneath the obvious frontrunners — same dollar incentives, lower visibility, less competition.',
+                },
+            ];
+            for (const slot of slotMeta) {
+                const r = picks[slot.key];
+                if (!r) {
+                    cards.push(`<div class="pick-card pick-card-empty" title="${slot.tip}">
+                        <div class="pick-card-head">${slot.icon} ${slot.label}</div>
+                        <div class="pick-card-empty-msg">${slot.fallback}</div>
+                    </div>`);
+                    continue;
+                }
+                const wireAddr = (r.address && r.address !== 'None None') ? r.address : (resolvedAddress(r) || 'Unaddressed parcel');
+                const why = r._pickWhy || '';
+                const k = parcelKey(r);
+                cards.push(`<button type="button" class="pick-card" data-key="${escapeHtml(k)}" title="${escapeHtml(slot.tip)}">
+                    <div class="pick-card-head">${slot.icon} ${slot.label}</div>
+                    <div class="pick-card-addr">${escapeHtml(wireAddr)}</div>
+                    <div class="pick-card-why">${escapeHtml(why)}</div>
+                </button>`);
+            }
+            el.innerHTML = cards.join('');
+            el.hidden = false;
+            // Click → open detail for that parcel.
+            el.querySelectorAll('button.pick-card[data-key]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const k = btn.dataset.key;
+                    const r = pickRows.find(row => parcelKey(row) === k)
+                           || allRows.find(row => parcelKey(row) === k);
+                    if (r) openDetail(r);
+                });
+            });
         }
 
         // ---- 3. localStorage visit deltas ----
@@ -3379,6 +3580,20 @@
                 }).join('')
                 : '<div style="color:#9ca3af;font-size:12px">No notable considerations.</div>';
 
+            // Existing-build readout — surfaces the 3D Massing height so
+            // the dev knows what they'd be tearing down. Estimated storeys
+            // is height ÷ 3m floor-to-floor — a coarse approximation but
+            // good enough for "is this currently a 1-storey shop or a
+            // 4-storey rowhouse" at a glance.
+            const existingH = r.existingMaxBuildingHeightM;
+            const existingHtml = (() => {
+                if (existingH == null) {
+                    return '<div class="sub" style="color:#15803d">Vacant or no recorded structure</div>';
+                }
+                const storeys = Math.max(1, Math.round(existingH / 3));
+                return `<div class="sub">Currently <strong>${existingH.toFixed(1)} m</strong> (≈${storeys}-storey existing structure)</div>`;
+            })();
+
             return `
                 <section>
                     <div class="score-hero score-hero-netzero">
@@ -3386,6 +3601,7 @@
                         <div class="meat">
                             <div class="label">Lot area</div>
                             <div class="sub">${zoneLabel(r.zoneClass)} · ${zoneCapText(r)} · ${r.neighborhood}</div>
+                            ${existingHtml}
                         </div>
                     </div>
                 </section>
@@ -4295,7 +4511,10 @@
             // Each chip shows label + a parcel count: how many parcels are
             // visible when THIS chip is added to the current selection.
             // Counts respect search + institutional + bounds.
-            wrap.innerHTML = PRESETS.map(p => {
+            // Skip presets marked `internal: true` — predicate-only entries
+            // whose UI affordance lives elsewhere (e.g. the money-hero
+            // "Owner activity" pill toggles `any_signal` directly).
+            wrap.innerHTML = PRESETS.filter(p => !p.internal).map(p => {
                 const isActive = activePresets.has(p.id);
                 const count = countForPreset(p.id).toLocaleString();
                 const tipAttr = p.tip ? ` title="${p.tip.replace(/"/g, '&quot;')}"` : '';
@@ -4458,7 +4677,8 @@
         const PAGE_SIZE = 50;
         let renderedCount = 0;
         let pickRows = [];
-        let currentSpotlightKey = null;   // updated on each render() to drive .spotlight-row class
+        // Spotlight removed 2026-05-07 — replaced with the three-card daily
+        // picks strip rendered above the listings (renderDailyPicksStrip).
         let pickObserver = null;
 
         function pickRowHtml(r, i) {
@@ -4508,9 +4728,6 @@
                 ? `${totalText} · plus ${extras.join(', ')}`
                 : totalText;
 
-            const isSpotlight = currentSpotlightKey === k;
-            const spotClass = isSpotlight ? 'spotlight-row' : '';
-            const spotBanner = isSpotlight ? `<div class="spotlight-banner">Today's Spotlight · ${(new Date()).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}</div>` : '';
             const heroClass = i === 0 ? 'pick-hero' : '';
             // Hero-only subhead: ONLY signals that don't already have a
             // dedicated cell in the row (so the prose adds, doesn't repeat).
@@ -4533,9 +4750,8 @@
             const popSixplex = i === 0 && r.sixplexEligible ? 'cell-hero-pop' : '';
             const popSavings = i === 0 && savings > 0 ? 'cell-hero-pop' : '';
             return `
-                <div class="pick ${rankClass(i)} ${spotClass} ${heroClass}" data-i="${i}" data-key="${k}">
+                <div class="pick ${rankClass(i)} ${heroClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
-                        ${spotBanner}
                         <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${signalBadgesHtml(r)}</div>
                         <div class="meta">${r.neighborhood}</div>
                         ${heroSubhead}
@@ -4681,10 +4897,10 @@
             const list = document.getElementById('picks');
             pickRows = rows;
             renderedCount = 0;
-            // Compute today's spotlight from the currently-filtered set so
-            // it always points at a parcel that's actually visible.
-            const sp = todaysSpotlight(rows);
-            currentSpotlightKey = sp ? parcelKey(sp) : null;
+            // Three real-signal picks (newest / hottest / underdog) replace
+            // the prior date-hash spotlight. Re-rendered on every filter
+            // change so the picks reflect the current visible set.
+            renderDailyPicksStrip(rows);
             renderFreshTimestamp();
             list.innerHTML = '';
             if (pickObserver) { pickObserver.disconnect(); pickObserver = null; }

@@ -64,6 +64,9 @@ FEATURE_PROPERTIES = (
     # frontend) and the synthetic test fixtures.
     "lotGeometry",        # { longAxisM, shortAxisM, orientationDeg }
     "neighborHeights",    # { nAvgM, sAvgM, eAvgM, wAvgM }  (each may be None)
+    "existingMaxBuildingHeightM",  # float m or None — tallest 3D Massing
+                                   # building substantially overlapping the
+                                   # parcel; gates apartment-exclusion at 15m
     "solarYieldKwhPerYr",   # int kWh, the un-shadowed best-rooftop figure
     "pvCapacityKwEstimate", # float kW, derived from solarYieldKwhPerYr
     "sixplexBonusValueCad", # int CAD, or None when ineligible / no comp
@@ -100,6 +103,7 @@ REQUIRED_STATS_KEYS = frozenset({
     "skippedInstitutional",
     "skippedInstitutionalByCategory",
     "skippedOsmLanduse",
+    "skippedTallExistingBuilding",
     "outsideTransitBuffer",
     "abutsLaneway",
     "nearRapidToCorridor",
