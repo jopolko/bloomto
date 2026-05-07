@@ -44,6 +44,9 @@ KNOWN_FALSE_POSITIVES: list[tuple[str | None, str | None, str]] = [
     # ── Government / institutional buildings missed by city dataset ──
     (None,      "10 Armoury St",          "Ontario Court of Justice (2023 build, pre-dates Building Outlines refresh)"),
 
+    # ── Parking lots not fully tagged in OSM (asphalt > tagged polygon) ──
+    ("5404834", "13 Essex St",            "Fiesta Gardens supermarket parking complex (only 19% OSM-tagged)"),
+
     # ── TTC subway-station infrastructure ──
     (None,      "11 Bedford Rd",          "St. George station entrance"),
     (None,      "9 Bedford Rd",           "St. George station plaza"),
