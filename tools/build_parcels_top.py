@@ -66,6 +66,75 @@ CURATED_PATH_B_TOP_N = 200
 # protects against Massing data gaps).
 SHARED_MAX_FOOTPRINT_M2 = 500
 
+# ── Positive-residential gate (2026-05-07) ─────────────────────────────────
+# Up through 2026-05-07, every elite-passing parcel passed *negative*
+# filters ("not heritage, not TRCA, not too tall, not parking lot...").
+# That left an entire class of false positives — large vacant lots that
+# are actually school playing fields, municipal yards, parkettes, ROW
+# slivers — slipping through because no single negative filter caught
+# them. The structural fix flips the burden: a parcel only enters
+# elite if it AFFIRMATIVELY looks residential.
+#
+# A parcel passes the positive-residential check if either:
+#   (a) Has a building footprint (cover ≥ POSRES_MIN_COVER) — confirms
+#       a structure exists, AND lot is in normal residential range
+#       (≤ POSRES_MAX_LOT_AREA_M2); OR
+#   (b) Vacant (cover = 0) BUT lot ≤ POSRES_VACANT_MAX_LOT_AREA_M2
+#       (typical residential vacant). Bigger vacant lots are
+#       overwhelmingly institutional in Toronto's residential zones.
+#
+# Real multiplex teardown candidates fit (a). Genuine vacant residential
+# lots are rare in Toronto and almost always under 2000 m². Anything
+# larger and unbuilt is a school field, parkette, or municipal holding.
+POSRES_MIN_COVER = 0.05         # at least 5% lot covered by a structure
+POSRES_MAX_LOT_AREA_M2 = 5000   # above this is institutional even with a building
+POSRES_VACANT_MAX_LOT_AREA_M2 = 2000
+
+# ── Wealthy-enclave filter (2026-05-07) ────────────────────────────────────
+# Layer 2/3 multiplex devs (BloomTO's target cohort) operate $1–3M project
+# budgets. Forest Hill / Rosedale / Bridle Path / etc. have $4–10M land
+# costs alone — economically incompatible. Showing them wastes the dev's
+# time on parcels they structurally can't afford. The list below is the
+# conservative set of publicly-known Toronto wealthy enclaves; toggleable
+# via the "Show high-cost neighborhoods" UI affordance (frontend).
+WEALTHY_ENCLAVE_NEIGHBORHOODS = frozenset({
+    "Bridle Path-Sunnybrook-York Mills",
+    "Forest Hill North",
+    "Forest Hill South",
+    "Rosedale-Moore Park",
+    "Lawrence Park North",
+    "Lawrence Park South",
+    "Yonge-St.Clair",
+    "Yonge-Eglinton",
+    "Casa Loma",
+    "Hoggs Hollow",
+})
+
+
+def _passes_positive_residential(props: dict) -> bool:
+    """Affirmative check that the parcel looks like a residential lot.
+
+    Replaces "negative-only" filtering for the ELITE set. Returns False
+    for parcels that pass our binary eligibility gates but have the
+    structural signature of an institutional / municipal / parkette /
+    weird parcel — e.g. 9,000 m² lot with 0% building coverage.
+    """
+    cover = props.get("buildingCoverageRatio") or 0
+    lot_area = props.get("lotAreaM2") or 0
+    has_height = props.get("existingMaxBuildingHeightM") is not None
+    has_building = (cover >= POSRES_MIN_COVER) or has_height
+    if has_building:
+        # Even with a building, reject lots too big to be residential.
+        return lot_area <= POSRES_MAX_LOT_AREA_M2
+    # No building → only OK if the lot is in normal residential vacant
+    # range. Above 2000 m², a vacant residential lot is almost always
+    # institutional (park, school field, ROW, municipal yard).
+    return lot_area <= POSRES_VACANT_MAX_LOT_AREA_M2
+
+
+def _is_wealthy_enclave(props: dict) -> bool:
+    return (props.get("neighborhood") or "") in WEALTHY_ENCLAVE_NEIGHBORHOODS
+
 
 def _passes_shared(props: dict) -> bool:
     """Binary-gate eligibility shared by elite + broader.
@@ -220,18 +289,34 @@ def main():
         len(signal_pids) if signal_pids is not None else 0,
     )
 
+    # 2026-05-07 structural gates (apply to BOTH paths) — replace the
+    # whack-a-mole exclusion approach with affirmative inclusion criteria:
+    #   - Positive residential signature (building present in residential
+    #     range, OR vacant within residential lot-size norm)
+    #   - Not in a wealthy enclave (Forest Hill, Rosedale, etc. — economically
+    #     incompatible with layer 2/3 multiplex dev budgets)
+    eligible_after_structural = [
+        f for f in eligible_features
+        if _passes_positive_residential(f.get("properties") or {})
+        and not _is_wealthy_enclave(f.get("properties") or {})
+    ]
+    _log.info(
+        "structural gates:          %d → %d (positive-residential + non-enclave)",
+        len(eligible_features), len(eligible_after_structural),
+    )
+
     # Path A: all signal-bearing eligible parcels (uncapped — every one
     # has a story, count is naturally bounded by CKAN signal volume).
     path_a_features = [
-        f for f in eligible_features
+        f for f in eligible_after_structural
         if signal_pids is not None
         and str((f.get("properties") or {}).get("parcelId") or "") in signal_pids
     ]
     # Path B: sixplex-eligible AND lot ≥ CURATED_PATH_B_MIN_LOT_M2, capped
-    # at top-N by lot area desc. The eligible_features list is already
-    # sorted lot-area-desc upstream so a sliced take preserves that.
+    # at top-N by lot area desc. The eligible list is sorted lot-area-desc
+    # upstream so a sliced take preserves that ordering.
     path_b_pool = [
-        f for f in eligible_features
+        f for f in eligible_after_structural
         if ((f.get("properties") or {}).get("sixplexEligible") is True
             and ((f.get("properties") or {}).get("lotAreaM2") or 0) >= CURATED_PATH_B_MIN_LOT_M2)
     ]
@@ -239,17 +324,18 @@ def main():
 
     # Union, deduplicated by parcelId. Preserve overall ordering by lot
     # area desc (path A items get inserted in their lot-area position).
+    path_a_pids = {str((g.get("properties") or {}).get("parcelId") or "")
+                   for g in path_a_features}
+    path_b_pids = {str((g.get("properties") or {}).get("parcelId") or "")
+                   for g in path_b_features}
+    union_pids = path_a_pids | path_b_pids
     seen_pids = set()
     curated_features = []
-    for f in eligible_features:
+    for f in eligible_after_structural:
         pid = str((f.get("properties") or {}).get("parcelId") or "")
         if not pid or pid in seen_pids:
             continue
-        in_a = any(pid == str((g.get("properties") or {}).get("parcelId") or "")
-                   for g in path_a_features)
-        in_b = any(pid == str((g.get("properties") or {}).get("parcelId") or "")
-                   for g in path_b_features)
-        if in_a or in_b:
+        if pid in union_pids:
             curated_features.append(f)
             seen_pids.add(pid)
 
