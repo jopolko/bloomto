@@ -178,6 +178,20 @@ def _process_parcel(parcel_or_record) -> dict:
     heritage_status = _resolve_heritage_status(parcel, heritage_index, shared_claims)
     local_heritage_claims = set(shared_claims)
 
+    # Build the early-stats dict — these counters fire on EVERY parcel that
+    # got far enough to compute residential/sixplex/heritage, even if it
+    # later short-circuits via score_zero. Matches legacy sequential code
+    # which incremented these BEFORE the score-zero gate. Without this the
+    # parallel run reports 0 Part IV (because Part IV parcels score 0 →
+    # short-circuit → never counted).
+    early_stats = {
+        'residential': 1 if residential else 0,
+        'sixplex_eligible': 1 if sixplex_eligible else 0,
+        'heritage_part_iv': 1 if heritage_status == 'part_iv' else 0,
+        'heritage_part_v': 1 if heritage_status == 'part_v' else 0,
+        'heritage_listed': 1 if heritage_status == 'listed' else 0,
+    }
+
     rep_pt = parcel.geometry.representative_point()
     rep_coords = (rep_pt.x, rep_pt.y)
     dist_subway_m = _distance_to_nearest_stop_m(rep_coords, transit_subway_tree)
@@ -197,7 +211,13 @@ def _process_parcel(parcel_or_record) -> dict:
     outside_buffer = full_score['outsideTransitBuffer']
 
     if base_score == 0 and soft_s == 0 and not include_non_eligible:
-        return {'skip': 'score_zero'}
+        # Skip but carry the early stats (residential / sixplex / heritage
+        # tier) so the parent's counters match the legacy sequential code.
+        return {
+            'skip': 'score_zero',
+            'early_stats': early_stats,
+            'heritage_claims': local_heritage_claims,
+        }
 
     # Building coverage
     building_area_m2 = 0.0
@@ -216,7 +236,11 @@ def _process_parcel(parcel_or_record) -> dict:
     )
 
     if parcel.address is None and coverage == 0:
-        return {'skip': 'non_buildable'}
+        return {
+            'skip': 'non_buildable',
+            'early_stats': early_stats,
+            'heritage_claims': local_heritage_claims,
+        }
 
     aspect = _lot_aspect_ratio(parcel)
 
@@ -350,15 +374,11 @@ def _process_parcel(parcel_or_record) -> dict:
     }
 
     stats_delta = {
+        **early_stats,  # residential, sixplex_eligible, heritage_*
         'score_pos': 1 if base_score > 0 else 0,
-        'residential': 1 if residential else 0,
-        'sixplex_eligible': 1 if sixplex_eligible else 0,
         'corner': 1 if corner else 0,
         'postwar': 1 if postwar else 0,
         'bloom': 1 if bloom else 0,
-        'heritage_part_iv': 1 if heritage_status == 'part_iv' else 0,
-        'heritage_part_v': 1 if heritage_status == 'part_v' else 0,
-        'heritage_listed': 1 if heritage_status == 'listed' else 0,
         'outside_transit_buffer': 1 if (outside_buffer and soft_s > 0) else 0,
         'abuts_laneway': 1 if abuts_laneway else 0,
         'near_rapidto': 1 if near_rapidto else 0,
@@ -883,8 +903,22 @@ def assemble_parcel_payload(
                 stats_skipped_non_buildable += 1
             elif reason == 'unparseable_geometry':
                 stats_skipped_unparseable += 1
-            # 'score_zero' is the bulk of skips — not counted in any stat
-            # (matches the legacy sequential loop, which fell through silently)
+            # 'score_zero' is the bulk of skips — not counted in its own
+            # bucket (matches the legacy sequential loop, which fell through
+            # silently). BUT residential / sixplex / heritage counters DO
+            # need to fire because the legacy code incremented them BEFORE
+            # the score-zero gate. The skip result carries `early_stats` +
+            # `heritage_claims` for exactly that purpose.
+            es = result.get('early_stats')
+            if es:
+                stats_residential += es['residential']
+                stats_sixplex_eligible += es['sixplex_eligible']
+                stats_heritage_part_iv += es['heritage_part_iv']
+                stats_heritage_part_v += es['heritage_part_v']
+                stats_heritage_listed += es['heritage_listed']
+            hc = result.get('heritage_claims')
+            if hc:
+                claimed_heritage_indices |= hc
             continue
 
         # Keep path: feature + stats deltas + claims to merge
@@ -963,10 +997,19 @@ def assemble_parcel_payload(
             feat["properties"]["sixplexBonusValueCad"] = int(2 * comp["medianCostPerUnit"])
         # else: stays at the None placeholder set in the loop body above.
 
-    permits_unjoined_count = len(permit_index.permits) - len(permit_index.claimed)
+    # Multi-proc safe: count claimed permits from the merged
+    # `permits_claims_by_neighborhood` dict (which IS up-to-date in the
+    # parent), not from `permit_index.claimed` (whose mutations stay
+    # worker-local under fork-COW). For sequential runs the two are
+    # equivalent — `_W['claimed_heritage_indices']` is the parent set.
+    all_claimed_permits = set()
+    for claims in permits_claims_by_neighborhood.values():
+        all_claimed_permits.update(claims)
+    permits_joined_count = len(all_claimed_permits)
+    permits_unjoined_count = len(permit_index.permits) - permits_joined_count
     _log.info(
         "permits joined: %d address, 0 spatial fallback, %d unjoined",
-        len(permit_index.claimed), permits_unjoined_count,
+        permits_joined_count, permits_unjoined_count,
     )
 
     meta = {

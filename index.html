@@ -712,16 +712,16 @@
         .pick-header,
         .pick {
             display: grid;
-            /* Content-fit row with auto margins — centers the table block
-               inside the listings card on wide viewports. Column widths
-               bumped 2026-05-06 (~50px wider total) so headers don't
-               collide on standard desktop sizes. */
-            width: fit-content;
-            max-width: 100%;
-            margin-left: auto;
-            margin-right: auto;
+            /* Table fills 100% of the listings card. Address column is
+               the flex absorber — eats whatever slack is left after the
+               fixed numeric cells. On a 1280px viewport the table is
+               ~1230px wide; on a 700px viewport the address column
+               clamps to its 200px floor and numerics stay legible.
+               Reverted from `width: fit-content + margin auto` (2026-05-06
+               second iteration) which was leaving ~80px of whitespace
+               on both sides of a centered table block. */
             grid-template-columns:
-                minmax(200px, 380px)  /* Address — wider floor + max */
+                minmax(200px, 1fr)    /* Address — flex absorber */
                 104px                 /* Lot */
                 104px                 /* Footprint */
                 64px                  /* Built */
@@ -771,6 +771,21 @@
         .pick-header .col-btn:hover { background: #c8ced6; color: var(--tor-blue); }
         .pick-header .col-btn.sort-active { color: var(--tor-blue); }
         .pick-header .col-btn.sort-active::after { content: ' ↓'; }
+        .pick-header .col-btn.sort-active.sort-reversed::after { content: ' ↑'; }
+        /* Column highlight — applied to the chip-active or sort-active
+           column's header AND every cell in that column. Subtle blue tint
+           + bolder text directs the eye from the chip/header click to the
+           values that change because of it. */
+        .pick-header .col-btn.col-highlight {
+            background: rgba(10, 76, 168, 0.10);
+            color: var(--tor-blue);
+        }
+        .pick > .stats-row > .cell.col-highlight,
+        .pick > .stack-mini.col-highlight {
+            background: rgba(10, 76, 168, 0.06);
+            color: var(--tor-blue);
+            font-weight: 700;
+        }
 
         /* Rows */
         .pick {
@@ -1911,6 +1926,12 @@
         // Sort + bounds-restrict state. Sort drives picks-list order; bounds
         // restricts to the current map viewport (live update on pan/zoom).
         let sortBy = 'area';   // Default: lot area DESC — biggest opportunity first (city data only)
+        // Direction relative to each comparator's natural order. 'natural' is
+        // what the comparator returns (already encodes "biggest first" or
+        // "closest first" depending on the column's semantic). 'reversed'
+        // flips by negating cmp(a,b) — gives "smallest first" / "farthest first"
+        // without authoring a second comparator per column.
+        let sortDir = 'natural';
         let boundsRestricted = false;
         const SORT_OPTIONS = [
             { id: 'flags',         label: 'Most signals checked (broadest first)' },
@@ -3726,7 +3747,11 @@
                     || (r.neighborhood || '').toLowerCase().includes(q);
             });
             const cmp = SORT_COMPARATORS[sortBy] || SORT_COMPARATORS.score;
-            return filtered.slice().sort(cmp);
+            // sortDir 'natural' = comparator's encoded direction; 'reversed'
+            // negates the result so e.g. "Lot largest first" becomes "Lot
+            // smallest first" without authoring a parallel comparator.
+            const sign = sortDir === 'reversed' ? -1 : 1;
+            return filtered.slice().sort((a, b) => sign * cmp(a, b));
         }
 
         // Compute count for each preset given current OTHER active presets — so
@@ -4084,6 +4109,8 @@
             list.insertAdjacentHTML('beforeend', html);
             renderedCount = end;
             wirePickRowHandlers(list, start, end);
+            // Apply chip/sort column highlight to the newly-appended rows.
+            syncColumnHighlights();
             if (renderedCount < pickRows.length) {
                 list.insertAdjacentHTML('beforeend',
                     `<div id="picks-sentinel">Loading more (${pickRows.length - renderedCount} left)…</div>`);
@@ -4302,6 +4329,11 @@
             renderPicks(filtered);
             renderStats(filtered.length);
             renderMoneyHero(filtered);
+            // After picks render, mark cells in the chip-active or sort-
+            // active columns with `.col-highlight` so the eye follows the
+            // filter/sort to the relevant cells. Runs again after each
+            // lazy-loaded chunk in appendPickChunk.
+            syncColumnHighlights();
         }
 
         // Money-hero: dollar-leaning banner summarising the currently-loaded
@@ -4341,10 +4373,78 @@
             `;
         }
 
-        // Highlight the active sort column in the picks header.
+        // Highlight the active sort column in the picks header. Also tags
+        // the button with `.sort-reversed` so the ↓/↑ indicator flips.
         function syncColHeaderActive() {
             document.querySelectorAll('#pick-header .col-btn').forEach(b => {
-                b.classList.toggle('sort-active', b.dataset.sort === sortBy);
+                const isActive = b.dataset.sort === sortBy;
+                b.classList.toggle('sort-active', isActive);
+                b.classList.toggle('sort-reversed', isActive && sortDir === 'reversed');
+            });
+        }
+
+        // Map active filter chips → which row column should light up. Lets
+        // a click on the "Active" chip highlight the Nbhd permits column,
+        // "Sixplex eligible" → 6-plex OK column, etc. Chips with no
+        // dedicated column (RapidTO, Corner, Saved) are absent from the map.
+        const CHIP_TO_COL = {
+            subway: 'subway',
+            sixplex: 'sixplex',
+            postwar: 'built',
+            active_dev: 'permits',
+            tree_low: 'trees',
+        };
+
+        // Map sort keys → row column keys. data-sort values on the column
+        // header buttons don't always match the data-col on cells (the
+        // header sorts by `area` for the column that's data-col="lot",
+        // for example), so this bridges them.
+        const SORT_TO_COL = {
+            area: 'lot',
+            footprint: 'footprint',
+            built: 'built',
+            subway: 'subway',
+            sixplex: 'sixplex',
+            permits_nb: 'permits',
+            trees: 'trees',
+            // savings → stack-mini cell; address → .head; net_zero → no col
+        };
+
+        // Compute the set of column keys that should be highlighted right
+        // now. Sources: active filter chips + active sort.
+        function activeHighlightColumns() {
+            const cols = new Set();
+            for (const chipId of activePresets) {
+                const c = CHIP_TO_COL[chipId];
+                if (c) cols.add(c);
+            }
+            const sortCol = SORT_TO_COL[sortBy];
+            if (sortCol) cols.add(sortCol);
+            return cols;
+        }
+
+        // Apply `.col-highlight` to every cell + matching column header.
+        // Idempotent — call after render() and after each picks chunk lazy-
+        // loads so newly-rendered rows pick up the highlight too.
+        function syncColumnHighlights() {
+            const cols = activeHighlightColumns();
+            // Rows
+            document.querySelectorAll('#picks .pick > .stats-row > .cell').forEach(el => {
+                el.classList.toggle('col-highlight', cols.has(el.dataset.col));
+            });
+            // Saved $ cell — separate (.stack-mini, no data-col). Highlights
+            // when the savings sort is active.
+            const savingsActive = sortBy === 'savings';
+            document.querySelectorAll('#picks .pick > .stack-mini').forEach(el => {
+                el.classList.toggle('col-highlight', savingsActive);
+            });
+            // Headers — same set, but mapped from data-sort to col key.
+            document.querySelectorAll('#pick-header .col-btn').forEach(b => {
+                const sortKey = b.dataset.sort;
+                const colKey = SORT_TO_COL[sortKey];
+                const isSortActiveOnSavings = sortKey === 'savings' && savingsActive;
+                b.classList.toggle('col-highlight',
+                    (colKey && cols.has(colKey)) || isSortActiveOnSavings);
             });
         }
 
@@ -4476,14 +4576,28 @@
                     selectedIdx = null;
                     render();
                 });
-                // Column header click → sort by that column. Toggle off (back
-                // to default 'net_zero') if same column clicked twice. The
-                // standalone sort dropdown was removed 2026-05-06 — every
-                // sort the user needs is now a column click.
+                // Column header click cycle (2026-05-06):
+                //   1st click on column X     → sort by X, natural direction
+                //                                (e.g., lot biggest first,
+                //                                subway closest first)
+                //   2nd click on same column  → flip to reversed direction
+                //   3rd click on same column  → revert to default (area, natural)
+                //   click on a different col  → that col, natural direction
                 document.querySelectorAll('#pick-header .col-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const target = btn.dataset.sort;
-                        sortBy = (sortBy === target) ? 'area' : target;
+                        if (sortBy === target) {
+                            if (sortDir === 'natural') {
+                                sortDir = 'reversed';
+                            } else {
+                                // Third click — revert to default
+                                sortBy = 'area';
+                                sortDir = 'natural';
+                            }
+                        } else {
+                            sortBy = target;
+                            sortDir = 'natural';
+                        }
                         selectedIdx = null;
                         render();
                     });
