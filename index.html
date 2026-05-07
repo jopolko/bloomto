@@ -712,25 +712,25 @@
         .pick-header,
         .pick {
             display: grid;
-            /* No trailing 1fr spacer 2026-05-06. Row is content-fit width
-               (~990px). Centered within the listings card via auto margins
-               below — eliminates the empty "saved column" cosmetic that
-               read as oversized whitespace next to the star. */
+            /* Content-fit row with auto margins — centers the table block
+               inside the listings card on wide viewports. Column widths
+               bumped 2026-05-06 (~50px wider total) so headers don't
+               collide on standard desktop sizes. */
             width: fit-content;
             max-width: 100%;
             margin-left: auto;
             margin-right: auto;
             grid-template-columns:
-                minmax(160px, 320px)  /* Address — leading column 2026-05-06 after Score dropped */
-                100px                 /* Lot — promoted to default sort, slight bump */
-                96px                  /* Footprint */
-                58px                  /* Built */
-                68px                  /* Subway */
-                68px                  /* Sixplex */
-                68px                  /* Permits */
-                52px                  /* Trees */
-                84px                  /* Saved $ */
-                22px;                 /* Star — tightened 26→22 2026-05-06 */
+                minmax(200px, 380px)  /* Address — wider floor + max */
+                104px                 /* Lot */
+                104px                 /* Footprint */
+                64px                  /* Built */
+                76px                  /* Subway */
+                76px                  /* Sixplex */
+                88px                  /* Permits — fits "Nbhd permits" without wrap */
+                60px                  /* Trees */
+                92px                  /* Saved $ */
+                26px;                 /* Star */
             align-items: stretch;
         }
         .pick-header {
@@ -873,10 +873,13 @@
             letter-spacing: 0.06em;
         }
 
-        /* Mobile (<900px) — card layout. Each row is a self-contained card,
-           NZ score on left, address top-right, 2-col stat grid below, savings
-           line at bottom. No inner scroll, no horizontal anything. */
-        @media (max-width: 900px) {
+        /* Mobile / narrow-desktop (≤1080px) — card layout. Bumped breakpoint
+           from 900→1080 on 2026-05-06 because the desktop grid (now ~990px
+           total content) was getting squeezed on viewports between 900-1080
+           leaving collision between Permits / Trees / Saved $ headers.
+           Each row becomes a self-contained card: address top-row, 2-col
+           stat grid below, savings line at bottom. No inner scroll. */
+        @media (max-width: 1080px) {
             .pick-list {
                 max-height: none !important;
                 min-height: 0 !important;
@@ -884,14 +887,21 @@
             }
             .pick-header { display: none; }
             .pick {
-                grid-template-columns: 64px 1fr 32px;
+                /* Mobile card layout 2026-05-06: dropped the leading 64px
+                   "nz" column when the Score number left the wire-display.
+                   Now a plain 2-col header row + full-width cells/stack. */
+                grid-template-columns: 1fr 32px;
                 grid-template-areas:
-                    "nz   head   star"
-                    "nz   cells  cells"
-                    "nz   stack  stack";
+                    "head  star"
+                    "cells cells"
+                    "stack stack";
                 row-gap: 6px;
                 padding: 12px 14px;
                 align-items: start;
+                width: auto;
+                max-width: 100%;
+                margin-left: 0;
+                margin-right: 0;
             }
             .pick > * {
                 border-right: 0 !important;
@@ -902,7 +912,6 @@
                 overflow: visible;
                 text-overflow: clip;
             }
-            .pick > .nz { grid-area: nz; align-self: center; padding: 8px 4px; min-height: 60px; }
             .pick > .head { grid-area: head; padding: 0 4px; }
             .pick > .star { grid-area: star; align-self: start; }
             .pick > .stack-mini {
@@ -943,9 +952,8 @@
         }
         @media (max-width: 540px) {
             .pick {
-                grid-template-columns: 52px 1fr 28px;
+                grid-template-columns: 1fr 28px;
             }
-            .pick > .nz { font-size: 16px; min-height: 50px; }
         }
         /* Mobile cells wrapper — used only when the row needs to wrap stats
            into a 2-col grid below the address. JS adds .cells-mobile wrapper
