@@ -712,11 +712,14 @@
         .pick-header,
         .pick {
             display: grid;
-            /* Trailing 1fr "spacer" track absorbs slack on wide viewports
-               so the row fills 100% width AND the columns stay tight. The
-               spacer has no visible cell — it's just empty grid track at
-               the end after the star. Replaces the prior fit-content +
-               margin-auto trick which was misaligning header vs rows. */
+            /* No trailing 1fr spacer 2026-05-06. Row is content-fit width
+               (~990px). Centered within the listings card via auto margins
+               below — eliminates the empty "saved column" cosmetic that
+               read as oversized whitespace next to the star. */
+            width: fit-content;
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
             grid-template-columns:
                 minmax(160px, 320px)  /* Address — leading column 2026-05-06 after Score dropped */
                 100px                 /* Lot — promoted to default sort, slight bump */
@@ -727,8 +730,7 @@
                 68px                  /* Permits */
                 52px                  /* Trees */
                 84px                  /* Saved $ */
-                26px                  /* Star (tightened 34→26 2026-05-06) */
-                minmax(0, 1fr);       /* trailing spacer absorbs slack */
+                22px;                 /* Star — tightened 26→22 2026-05-06 */
             align-items: stretch;
         }
         .pick-header {
@@ -1523,7 +1525,7 @@
                 <p class="text-xs text-gray-600 mt-0.5">Toronto Multiplex picks, from <a href="https://open.toronto.ca/" target="_blank" rel="noopener" class="map-link">City of Toronto Open Data Portal</a></p>
             </div>
             <nav class="text-sm flex gap-4">
-                <a href="index.html" class="text-gray-600 hover:text-gray-900">← Neighborhoods</a>
+                <a href="neighborhoods.html" class="text-gray-600 hover:text-gray-900">Neighborhoods (v1.1)</a>
                 <a href="parcels.html" class="text-gray-600 hover:text-gray-900">Parcels table</a>
             </nav>
         </div>
