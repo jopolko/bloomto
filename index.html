@@ -226,6 +226,18 @@
         }
         .visit-badge.new { background: #2f6a4f; color: white; }
         .visit-badge.up  { background: #0a4ca8; color: white; padding: 1px 5px; }
+        .semi-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-left: 4px;
+            background: #ffedd5;
+            color: #9a3412;
+            cursor: help;
+        }
         /* Actionable Signals badges — one per active signal on a parcel.
            Distinct color per signal type so the eye picks them up at row scan. */
         .signal-badges { display: inline-flex; gap: 4px; margin-left: 6px; }
@@ -1436,6 +1448,18 @@
             transition: all 0.12s ease;
         }
         .detail-nearby:hover { background: rgba(47, 106, 79, 0.20); }
+        .detail-maps {
+            height: 32px; flex-shrink: 0;
+            padding: 0 12px;
+            border: none; background: rgba(10, 76, 168, 0.08);
+            border-radius: 8px; cursor: pointer; color: var(--tor-blue);
+            font-size: 13px; font-weight: 600; line-height: 32px;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-flex; align-items: center;
+            transition: all 0.12s ease;
+        }
+        .detail-maps:hover { background: rgba(10, 76, 168, 0.18); }
         /* Print-only header — populated dynamically when the panel opens
            and shown only in the print stylesheet below. */
         .print-header { display: none; }
@@ -1542,6 +1566,7 @@
         .pick .badges .b-shadowfree { background: #fef9c3; color: #854d0e; }
         .pick .badges .b-rebate { background: #ffe4e6; color: #9f1239; }
         .pick .badges .b-zerodrive { background: #d1fae5; color: #065f46; }
+        .pick .badges .b-attached { background: #ffedd5; color: #9a3412; }
 
         /* Reverse-geocoded address placeholder while we fetch */
         .pick .addr.addr-pending { color: #9ca3af; font-style: italic; font-weight: 500; }
@@ -1616,6 +1641,40 @@
             font-size: 11px; font-weight: 700;
             color: #4f9d7d; text-transform: uppercase; letter-spacing: 0.06em;
             margin-bottom: 8px;
+        }
+        /* Collapsible secondary sections (lot geometry, neighbour massing,
+           site context, TGS V4, goldmine badges). Closed by default to keep
+           the panel scrollable to the action buttons in the header without
+           burying the dev under tier-2 detail. The summary mimics the .h4
+           style so a closed details still scans as a section heading. */
+        .detail-body details {
+            margin: 8px 0;
+            border-top: 1px dashed rgba(47,106,79,0.20);
+            padding-top: 8px;
+        }
+        .detail-body details > summary {
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px; font-weight: 700;
+            color: #4f9d7d; text-transform: uppercase; letter-spacing: 0.06em;
+            cursor: pointer;
+            list-style: none;
+            padding: 4px 0;
+            user-select: none;
+        }
+        .detail-body details > summary::-webkit-details-marker { display: none; }
+        .detail-body details > summary::before {
+            content: '▸';
+            display: inline-block;
+            width: 14px;
+            font-size: 10px;
+            transition: transform 0.15s ease;
+            color: #9ca3af;
+        }
+        .detail-body details[open] > summary::before {
+            transform: rotate(90deg);
+        }
+        .detail-body details > *:not(summary) {
+            margin-top: 8px;
         }
         .score-hero {
             display: flex; align-items: center; gap: 16px;
@@ -1804,6 +1863,7 @@
             .detail-star,
             .detail-close,
             .detail-nearby,
+            .detail-maps,
             .detail-header .head-text,
             .ext-links a[target="_blank"]:not([href*="google.com/maps"]) {
                 display: none !important;
@@ -2041,7 +2101,7 @@
             </div>
             <div class="footer-section">
                 <span class="footer-label">Pre-filtered:</span>
-                residential · within 500m major transit · heritage-clear (Parts IV/V/Listed excluded) · TRCA-clear (O. Reg. 41/24 floodplain excluded) · lot ≥ 350 m² · existing footprint &lt; 500 m² · addressed · TTC station infrastructure excluded
+                residential · within 500m major transit · heritage-clear (Parts IV/V/Listed excluded) · TRCA-clear (O. Reg. 41/24 floodplain excluded) · lot ≥ 350 m² · existing footprint &lt; 500 m² · addressed · TTC station infrastructure excluded · detached or vacant only (semis available in the broader tier; row/townhouse excluded)
             </div>
             <p class="footer-section footer-meta" id="provenance"></p>
         </footer>
@@ -2063,6 +2123,7 @@
                 <div class="nb" id="detail-nb">—</div>
             </div>
             <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">📍 Nearby</button>
+            <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">🗺 Maps</a>
             <button class="detail-print" id="detail-print" aria-label="Save as PDF" title="Save this parcel as a one-page PDF (uses your browser's print dialog → 'Save as PDF')">⎙</button>
             <button class="detail-star" id="detail-star" aria-label="Save to watchlist">☆</button>
             <button class="detail-close" id="detail-close" aria-label="Close detail panel">✕</button>
@@ -2463,6 +2524,13 @@
             // Zero-Drive Zone: TTC subway (not streetcar) within 500m.
             if (r.distSubwayM != null && r.distSubwayM < ZERO_DRIVE_SUBWAY_M) {
                 out.push({ cls: 'b-zerodrive', label: 'Transit premium' });
+            }
+            // Semi-detached caution. Elite tier excludes attached entirely; this
+            // badge only ever appears on broader-tier rows where the dev opted
+            // in to seeing semis. Surfacing it on the row prevents the "I got
+            // excited about a 6-plex and then realised it's a semi" disappointment.
+            if (r.existingStructureType === 'semi') {
+                out.push({ cls: 'b-attached', label: 'Semi-detached' });
             }
             return out;
         }
@@ -3439,6 +3507,16 @@
             const cost = fp.declaredCost > 0 ? `· $${(fp.declaredCost/1000).toFixed(0)}K` : '';
             return `<span class="fresh-permit-badge" title="Permit ${fp.permitNum || ''} filed ${fp.applicationDate} for ${fp.unitsCreated} unit(s). Type: ${fp.permitType}. Declared cost: $${(fp.declaredCost||0).toLocaleString()}.">🔥 ${ago} ${cost}</span>`;
         }
+        function semiBadge(r) {
+            // Inline warn-orange chip on broader-tier rows where the parcel's
+            // current structure is semi-detached. Elite (default) excludes
+            // these entirely, so the chip only appears once the user has
+            // expanded into the broader cohort. Saves the dev from clicking
+            // through and discovering "oh, this isn't actually a clean
+            // multiplex play" only after they've started underwriting it.
+            if (r.existingStructureType !== 'semi') return '';
+            return `<span class="semi-badge" title="Semi-detached structure on this parcel — multiplex is by-law permitted but party-wall structural work and neighbour coordination materially raise the cost vs a detached teardown. Filtered out of the elite cover-list; surfaces here in the broader tier.">SEMI</span>`;
+        }
         function visitDeltaBadge(r) {
             const k = parcelKey(r);
             const d = visitDeltaByKey.get(k);
@@ -3718,6 +3796,8 @@
             if (!addr || addr === 'None None') out.push({ kind: 'caution', text: 'Unaddressed in source — verify civic address before pro forma' });
             if (r.inRegulatedArea) out.push({ kind: 'caution', text: 'Within TRCA Regulated Area (Ont. Reg. 41/24) — riverine floodplain / valley / wetland overlay. TRCA approval REQUIRED before any building permit; new residential rarely granted on regulated land. Hard buy/no-buy gate — verify with TRCA before pro forma.' });
             if (r.inFloodingStudyArea && !r.inRegulatedArea) out.push({ kind: 'caution', text: 'Within Toronto basement-flooding-study-area (combined-sewer service zone) — historical surcharge events affect insurance premiums + foundation drainage requirements at site-plan approval.' });
+            if (r.existingStructureType === 'semi') out.push({ kind: 'caution', text: 'Semi-detached — multiplex is permitted by-law but party-wall structural work + neighbour coordination materially raise the cost vs a detached teardown. Surfaced in the broader tier; the elite cover-list excludes attached structures.' });
+            if (r.existingStructureType === 'vacant') out.push({ kind: 'good', text: 'Vacant lot — no demolition cost; cleanest path to a 4-plex or sixplex rebuild' });
 
             return out;
         }
@@ -3962,12 +4042,25 @@
             // good enough for "is this currently a 1-storey shop or a
             // 4-storey rowhouse" at a glance.
             const existingH = r.existingMaxBuildingHeightM;
+            const structType = r.existingStructureType;
+            // Side-yard structure label appended after the height where present
+            // — gives the dev "1.5-storey detached" or "2.0-storey semi" at a
+            // glance. Detached and vacant are positive (green); semi flags as
+            // a caution; row/unknown shouldn't appear here under the elite
+            // gate but we render the label defensively.
+            const structSuffix = (() => {
+                if (!structType) return '';
+                if (structType === 'detached') return ' · <span style="color:#15803d;font-weight:600">detached</span>';
+                if (structType === 'semi')     return ' · <span style="color:#9a3412;font-weight:600">semi-detached</span>';
+                if (structType === 'row')      return ' · <span style="color:#9f1239;font-weight:600">row / townhouse</span>';
+                return '';
+            })();
             const existingHtml = (() => {
                 if (existingH == null) {
                     return '<div class="sub" style="color:#15803d">Vacant or no recorded structure</div>';
                 }
                 const storeys = Math.max(1, Math.round(existingH / 3));
-                return `<div class="sub">Currently <strong>${existingH.toFixed(1)} m</strong> (≈${storeys}-storey existing structure)</div>`;
+                return `<div class="sub">Currently <strong>${existingH.toFixed(1)} m</strong> (≈${storeys}-storey existing structure)${structSuffix}</div>`;
             })();
 
             return `
@@ -4199,8 +4292,8 @@
                     ${consHtml}
                 </section>
 
-                <section>
-                    <h4>Goldmine badges</h4>
+                <details>
+                    <summary>Goldmine badges</summary>
                     ${badges.map(b => {
                         const r = b.reason || '';
                         const cap = r ? r.charAt(0).toUpperCase() + r.slice(1) : '';
@@ -4210,10 +4303,10 @@
                             <span class="reason">${cap}</span>
                         </div>
                     `;}).join('')}
-                </section>
+                </details>
 
-                <section>
-                    <h4>Lot geometry</h4>
+                <details>
+                    <summary>Lot geometry</summary>
                     <div class="stat-grid">
                         <div class="k">Area</div><div class="v">${r.lotAreaM2 != null ? r.lotAreaM2.toLocaleString() + ' m²' : '—'}</div>
                         <div class="k">Long × short axis</div>
@@ -4230,11 +4323,11 @@
                         <div class="k">Built (nb. median)</div><div class="v">${builtYear}</div>
                         <div class="k">Parcel ID</div><div class="v" style="font-family:monospace;font-size:11px">${pidTxt}</div>
                     </div>
-                </section>
+                </details>
 
                 <!-- ── Tier 2: Architect site context ──────────────────────────── -->
-                <section>
-                    <h4>Neighbour massing context</h4>
+                <details>
+                    <summary>Neighbour massing context</summary>
                     ${(() => {
                         // Avg building height in each compass quadrant within
                         // 30m. South-side tallest = winter sun blocker. North-
@@ -4269,7 +4362,7 @@
                         </div>
                         <div style="font-size:10px;color:#9ca3af;margin-top:6px">Average building height (m) within 30 m of the parcel rep-point, binned by compass quadrant. South side highlighted because it&rsquo;s the primary winter-sun blocker.</div>`;
                     })()}
-                </section>
+                </details>
 
                 <section>
                     <h4>Transit</h4>
@@ -4318,8 +4411,8 @@
                     })()}
                 </section>
 
-                <section>
-                    <h4>Site context</h4>
+                <details>
+                    <summary>Site context</summary>
                     <div class="stat-grid">
                         <div class="k">Mature street trees on frontage</div>
                         <div class="v" style="${(r.matureTreeCount || 0) >= 3 ? 'color:#b45309' : ''}">${r.matureTreeCount || 0} (≥30 cm DBH — Tree Bylaw protected) · ${r.streetTreeCount || 0} total street trees</div>
@@ -4328,26 +4421,19 @@
                         <div class="k">Nearest bike lane</div>
                         <div class="v">${r.distBikeLaneM == null || r.distBikeLaneM >= 99000 ? '—' : r.distBikeLaneM + ' m'}</div>
                     </div>
-                </section>
+                </details>
 
-                <section>
-                    <h4>Solar yield &amp; PV capacity</h4>
-                    <div class="stat-grid">
-                        <div class="k" title="Best-rooftop annual solar yield, raw (un-shadowed). Recoverable from SolarTO's per-rooftop kWh dataset, intersected with this parcel polygon.">Annual yield (raw)</div>
-                        <div class="v" style="font-family:ui-monospace,Menlo,monospace">${fmtKwh(r.solarYieldKwhPerYr)}</div>
-                        <div class="k" title="Installable PV nameplate at Toronto-latitude rule of thumb (1 kW PV ≈ 1,150 kWh/yr south-facing, 30° tilt, unshaded).">Estimated PV capacity</div>
-                        <div class="v" style="font-family:ui-monospace,Menlo,monospace">${r.pvCapacityKwEstimate != null ? `~${r.pvCapacityKwEstimate.toFixed(1)} kW` : '—'}</div>
-                        <div class="k">Heritage status</div><div class="v">${heritageTier}</div>
-                    </div>
-                    <div style="font-size:10px;color:var(--ink-mute2);margin-top:8px;line-height:1.4">
-                        Yield is the un-shadowed P95-best rooftop within the lot — what the rebuild can capture
-                        if you eliminate the existing structure&rsquo;s shading constraints. Shadow-adjusted score
-                        (in parens above) reflects the existing building&rsquo;s context, not the developer&rsquo;s.
-                    </div>
-                </section>
+                <!-- Solar yield + PV capacity section deleted 2026-05-07: rooftop solar is
+                     a downstream construction decision for L2/3 multiplex devs, not a
+                     parcel-selection signal, and it was burying the action-relevant content
+                     below it. Heritage, which had been parked inside this section as a
+                     third stat row, is already surfaced in the Considerations narrative
+                     and the Underwriting snapshot As-of-right summary. The wire fields
+                     solarYieldKwhPerYr and pvCapacityKwEstimate stay on parcels.geojson
+                     in case the buyer-tier audience comes back into scope. -->
 
-                <section>
-                    <h4>TGS V4 compliance ceiling</h4>
+                <details>
+                    <summary>TGS V4 compliance ceiling</summary>
                     ${(() => {
                         const arch = tgsArchetypeFor(r.zoneClass);
                         if (!arch || !TGS_V4_TABLE[arch]) {
@@ -4383,16 +4469,7 @@
                             </div>
                         `;
                     })()}
-                </section>
-
-                <section>
-                    <h4>Open externally</h4>
-                    <div class="ext-links">
-                        <a target="_blank" rel="noopener" href="${googleMapsUrl(r)}">Google Maps ↗</a>
-                        <a target="_blank" rel="noopener" href="https://map.toronto.ca/maps/?searchAddress=${encodeURIComponent(addrTxt)}">Toronto Property Lookup ↗</a>
-                        <a target="_blank" rel="noopener" href="https://www.toronto.ca/wp-content/uploads/2017/11/8f43-cityplanning-Zoning-By-law-569-2013.pdf">Zoning By-law 569-2013 ↗</a>
-                    </div>
-                </section>
+                </details>
 
                 <section>
                     <h4>Sources</h4>
@@ -4403,12 +4480,12 @@
                             <li><strong>Zoning &amp; unit cap:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/zoning-by-law/" style="color:#2f6a4f">Zoning By-law 569-2013</a></li>
                             <li><strong>Heritage status:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/heritage-register/" style="color:#2f6a4f">Heritage Register</a></li>
                             <li><strong>Transit distances:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" style="color:#2f6a4f">TTC GTFS</a> (subway + streetcar stops)</li>
-                            <li><strong>Solar &amp; shadow:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/solarto/" style="color:#2f6a4f">SolarTO</a> rooftop kWh × shadow-adjustment from <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/3d-massing/" style="color:#2f6a4f">3D Massing</a></li>
+                            <li><strong>Existing structure height:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/3d-massing/" style="color:#2f6a4f">3D Massing</a></li>
                             <li><strong>Building footprint:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/topographic-mapping-building-outlines/" style="color:#2f6a4f">Building Outlines</a></li>
                             <li><strong>Corner-lot test:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/toronto-centreline-tcl/" style="color:#2f6a4f">Centreline (Streets)</a></li>
                         </ul>
                         <div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(47,106,79,0.15);color:#9ca3af">
-                            Score formula: <code style="font-size:10px">100 × residential × heritage_factor × transit_factor × unit_cap_factor</code>, with sliver gate at 100 m² minimum lot area. Not a permit pre-clearance — confirm with a planner before acting.
+                            Not a permit pre-clearance — every parcel is curation-tier eligible against the published by-law and incentive set, but confirm with a planner before acting.
                         </div>
                     </div>
                 </section>
@@ -4452,6 +4529,7 @@
             document.getElementById('detail-body').innerHTML = detailHtml(r);
             populatePrintHeader(r, initialTitle);
             updateDetailStarUI();
+            document.getElementById('detail-maps').href = googleMapsUrl(r);
             panel.hidden = false;
             // Trigger transition on next frame so the slide-in animates.
             requestAnimationFrame(() => {
@@ -4738,6 +4816,21 @@
             return ZONE_LABELS[code] || code;
         }
 
+        // Existing-structure side-yard classifier label. Five categories
+        // emitted by the ETL's _classify_existing_structure (build_parcels.py).
+        // Elite cohort = `detached` + `vacant` only; broader includes `semi`;
+        // `row` and `unknown` are excluded everywhere.
+        const STRUCTURE_LABELS = {
+            detached: 'Detached',
+            semi: 'Semi-detached',
+            row: 'Row / townhouse',
+            vacant: 'Vacant',
+            unknown: 'Unknown',
+        };
+        function structureLabel(t) {
+            return STRUCTURE_LABELS[t] || (t || 'Unknown');
+        }
+
         // Zones where `maxUnits` is the legal as-of-right multiplex floor
         // from the 2023 by-law amendment (and 2025 sixplex carve-out for
         // T&EY/Ward 23). For these we can honestly say "max N units".
@@ -4787,6 +4880,7 @@
                     ${r.inRegulatedArea ? `<tr><td>TRCA</td><td><span style="color:#b91c1c;font-weight:600">REGULATED — permit gate</span></td></tr>` : ''}
                     ${r.abutsLaneway ? `<tr><td>Laneway</td><td>abuts</td></tr>` : ''}
                     ${r.nearRapidToCorridor ? `<tr><td>RapidTO</td><td>on corridor</td></tr>` : ''}
+                    ${r.existingStructureType ? `<tr><td>Existing</td><td>${structureLabel(r.existingStructureType)}</td></tr>` : ''}
                     ${r.parcelId ? `<tr><td>Parcel ID</td><td><span style="font-family:monospace;font-size:11px">${String(r.parcelId).replace(/[<>&"']/g, '')}</span></td></tr>` : ''}
                 </table>
                 <div style="margin-top:8px">
@@ -5137,7 +5231,7 @@
                 <div class="pick ${rankClass(i)} ${heroClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
                         <div class="head-row">
-                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${signalBadgesHtml(r)}</div>
+                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${semiBadge(r)}${signalBadgesHtml(r)}</div>
                             <button class="star ${watched ? 'on' : ''}" data-action="star" aria-label="${watched ? 'Remove from saved' : 'Save to watchlist'}">${watched ? '★' : '☆'}</button>
                         </div>
                         <div class="meta">${r.neighborhood}</div>
