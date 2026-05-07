@@ -94,6 +94,40 @@ OVERPASS_QUERY = f"""
   way["amenity"="prison"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
   way["amenity"="university"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
   way["amenity"="college"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  // 2026-05-07 expansion: recreational + religious + education polygons
+  // missed by the city institutions feed. The institutions dataset uses
+  // POINT geometries (school center), so multi-parcel complexes
+  // (school + playing field + community centre on adjacent lots) only
+  // flag the parcel containing the point. The OTHER parcels (playing
+  // fields, side yards) appear as "vacant" lots — see 185 Close Ave
+  // (Parkdale Collegiate playing field) for a representative case.
+  way["amenity"="school"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["amenity"="kindergarten"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["amenity"="place_of_worship"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["amenity"="hospital"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["amenity"="library"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["amenity"="community_centre"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["amenity"="fire_station"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="school"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="kindergarten"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="religious"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="church"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="cathedral"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="chapel"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="mosque"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="synagogue"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["building"="temple"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="park"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="pitch"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="playground"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="stadium"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="sports_centre"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="recreation_ground"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["leisure"="track"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["landuse"="religious"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["landuse"="cemetery"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["landuse"="education"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["landuse"="recreation_ground"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
 );
 out body geom tags;
 """.strip()
@@ -116,6 +150,7 @@ def _classify(tags: dict) -> str | None:
     a = tags.get("amenity", "")
     b = tags.get("building", "")
     l = tags.get("landuse", "")
+    leisure = tags.get("leisure", "")
     if a in ("parking", "parking_space"):
         return "parking"
     if a in ("bus_garage", "taxi"):
@@ -128,8 +163,28 @@ def _classify(tags: dict) -> str | None:
         return "industrial"
     if l == "brownfield":
         return "brownfield"
-    if (b in ("government", "public", "hospital", "university", "college")
-            or a in ("courthouse", "townhall", "prison", "university", "college")):
+    # Institutional umbrella — government / hospital / university / college /
+    # courthouse / townhall / prison / school / kindergarten / place of
+    # worship / library / community centre / fire station / religious or
+    # education buildings + landuse, plus recreational polygons (parks,
+    # pitches, playgrounds, stadiums, sports centres, recreation grounds,
+    # tracks, cemeteries) which are non-buildable on the multiplex thesis.
+    if (b in (
+            "government", "public", "hospital", "university", "college",
+            "school", "kindergarten",
+            "religious", "church", "cathedral", "chapel",
+            "mosque", "synagogue", "temple",
+        )
+        or a in (
+            "courthouse", "townhall", "prison", "university", "college",
+            "school", "kindergarten", "place_of_worship", "hospital",
+            "library", "community_centre", "fire_station",
+        )
+        or l in ("religious", "cemetery", "education", "recreation_ground")
+        or leisure in (
+            "park", "pitch", "playground", "stadium",
+            "sports_centre", "recreation_ground", "track",
+        )):
         return "institutional"
     return None  # retail / commercial / office — kept for mainstreet teardowns
 
