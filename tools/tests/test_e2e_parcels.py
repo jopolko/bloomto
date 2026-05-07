@@ -255,6 +255,38 @@ class ParcelE2ETests(unittest.TestCase):
         self.assertIn("300 C St", addresses)
         self.assertNotIn("999 D St", addresses)
 
+    def test_existing_structure_type_detached_for_inside_building(self):
+        # Parcel A's synthetic building (a 20m × 20m square at -79.39995/43.70005)
+        # sits fully inside the 50m × 50m parcel with ≥5m clearance on every
+        # side, so the side-yard classifier should label it "detached".
+        payload = self._build()
+        feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
+        a = feats_by_addr["100 A St"]
+        self.assertEqual(a["properties"]["existingStructureType"], "detached")
+
+    def test_existing_structure_type_vacant_when_no_building(self):
+        # Parcel C has no building polygon nearby in the fixture (the building
+        # tree only contains the one polygon inside parcel A), so it must
+        # surface as "vacant".
+        payload = self._build()
+        feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
+        c = feats_by_addr["300 C St"]
+        self.assertEqual(c["properties"]["existingStructureType"], "vacant")
+
+    def test_existing_structure_type_semi_when_building_extends_past_one_side(self):
+        # Replace parcel A's contained building with one that crosses the
+        # eastern parcel boundary (party-wall semi pattern). The building's
+        # geometry extends from inside parcel A to ~10m past A's east edge.
+        # Side-yard test: east-side distance == 0 (building intersects),
+        # west-side distance ≈ 30m → classifier returns "semi".
+        wall_crossing = _square(-79.39965, 43.70015, 0.0003)  # extends east of A
+        self.building_geoms = [wall_crossing]
+        self.building_tree = STRtree([wall_crossing])
+        payload = self._build()
+        feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
+        a = feats_by_addr["100 A St"]
+        self.assertEqual(a["properties"]["existingStructureType"], "semi")
+
     def test_features_sorted_by_lot_area_desc(self):
         payload = self._build(include_non_eligible=True)
         areas = [f["properties"].get("lotAreaM2") or 0 for f in payload["features"]]
@@ -318,6 +350,33 @@ class ParcelE2ETests(unittest.TestCase):
         p1["meta"]["generatedAt"] = ""
         p2["meta"]["generatedAt"] = ""
         self.assertEqual(p1, p2)
+
+    def test_non_residential_zone_short_circuits_fsi_derivation(self):
+        # Zone class "E" (Employment) has multiplier=0 in zoning_multipliers.
+        # Even when the zone polygon carries a non-zero FSI_TOTAL (Employment
+        # polygons routinely do — FSI applies to commercial massing too),
+        # max_units must come back as 0 with rationale "non_residential".
+        # Without this gate, an FSI-bearing E polygon previously derived
+        # nonsense unit counts (e.g., 1,134 on an industrial parcel) and
+        # leaked into the broader cohort by setting residential=True.
+        from tools.sources.zoning import ZoneRecord
+        zone_polygon = self.zone_index[0].geometries[0]
+        e_record = ZoneRecord(
+            zone_class="E", zone_string="E (f2.86) (x100)",
+            units=None, fsi=2.86,  # non-zero FSI to trigger the bug path
+            min_lot_frontage_m=None, min_lot_area_m2=None,
+            coverage_max=None, pct_residential=None,
+        )
+        self.zone_index = (STRtree([zone_polygon]), [e_record])
+        # E has multiplier=0, so add it to the test fixture's multipliers.
+        self.multipliers = {"RD": 4, "E": 0}
+        payload = self._build(include_non_eligible=True)
+        feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
+        # Parcel A is now in zone E. Must surface as non-residential, not as
+        # an FSI-derived 2549-unit "Employment multiplex".
+        a = feats_by_addr["100 A St"]
+        self.assertEqual(a["properties"]["maxUnits"], 0)
+        self.assertFalse(a["properties"]["residential"])
 
     def test_unknown_zone_class_raises_loudly(self):
         # Replace the recognized "RD" zone label with an unrecognized "XXX".

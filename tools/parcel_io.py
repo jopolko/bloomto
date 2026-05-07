@@ -68,6 +68,10 @@ FEATURE_PROPERTIES = (
     "existingMaxBuildingHeightM",  # float m or None — tallest 3D Massing
                                    # building substantially overlapping the
                                    # parcel; gates apartment-exclusion at 15m
+    "existingStructureType",  # "detached" | "semi" | "row" | "vacant" | "unknown"
+                              # Side-yard clearance test on the parcel's two
+                              # longest exterior edges; "unknown" reserved for
+                              # degenerate geometry (irregular / multi-piece lots)
     "solarYieldKwhPerYr",   # int kWh, the un-shadowed best-rooftop figure
     "pvCapacityKwEstimate", # float kW, derived from solarYieldKwhPerYr
     "sixplexBonusValueCad", # int CAD, or None when ineligible / no comp
@@ -107,6 +111,7 @@ REQUIRED_STATS_KEYS = frozenset({
     "inRegulatedArea",
     "matureTrees",
     "sixplexEligible",
+    "existingStructureType",
 })
 
 LEGACY_STATS_KEY = "heritageFlagged"

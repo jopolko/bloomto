@@ -49,6 +49,15 @@ BROADER_TRANSIT_BUFFER_M = 1500
 BROADER_MIN_LOT_M2 = 250
 BROADER_MIN_MAX_UNITS = 3
 
+# Existing-structure gate (2026-05-07). Elite is "spicy" — only parcels where a
+# multiplex teardown is structurally clean (detached) or trivially feasible
+# (vacant). Broader extends to semis (badged in the UI for the niche dev with a
+# party-wall play). Row/townhouse and unknown are excluded everywhere — row
+# multiplex is non-economic (two party walls + ~14ft frontage); unknown means
+# the side-yard classifier failed and we'd rather drop than mislead.
+ELITE_STRUCTURE_TYPES = frozenset({"detached", "vacant"})
+BROADER_STRUCTURE_TYPES = frozenset({"detached", "vacant", "semi"})
+
 # Curated `parcels-top.json` Path B threshold (sixplex-eligible + comfortable
 # lot for 4–6 unit multiplex without site-fitting compromise). Chosen by user
 # direction 2026-05-07 — well above the by-law's ~360m² multiplex minimum.
@@ -223,6 +232,8 @@ def is_elite(props: dict) -> bool:
         return False
     if not props.get("residential", False):
         return False
+    if props.get("existingStructureType", "unknown") not in ELITE_STRUCTURE_TYPES:
+        return False
     return True
 
 
@@ -239,6 +250,8 @@ def is_broader(props: dict) -> bool:
     if _transit_distance_m(props) > BROADER_TRANSIT_BUFFER_M:
         return False
     if not props.get("residential", False):
+        return False
+    if props.get("existingStructureType", "unknown") not in BROADER_STRUCTURE_TYPES:
         return False
     return True
 

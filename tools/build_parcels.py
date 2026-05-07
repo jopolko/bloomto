@@ -28,7 +28,8 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from pyproj import Geod, Transformer
-from shapely.geometry import Point, box
+from shapely.geometry import LineString, Point, box
+from shapely.ops import transform as shp_transform
 from shapely.strtree import STRtree
 
 from tools import parcel_io, parcel_scoring, shadow_analysis
@@ -292,6 +293,9 @@ def _process_parcel(parcel_or_record) -> dict:
     else:
         solar_score = max(0, min(100, round(solar_raw * shadow_result.unshadowed_fraction)))
 
+    existing_structure_type = _classify_existing_structure(
+        parcel, building_tree, building_geoms,
+    )
     corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
     abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
     near_rapidto = _near_rapidto(parcel, rapidto_tree)
@@ -385,6 +389,7 @@ def _process_parcel(parcel_or_record) -> dict:
             'existingMaxBuildingHeightM': (
                 round(existing_max_h, 1) if existing_max_h is not None else None
             ),
+            'existingStructureType': existing_structure_type,
             'solarYieldKwhPerYr': int(round(max_kwh)) if max_kwh else 0,
             'pvCapacityKwEstimate': round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
             'sixplexBonusValueCad': None,
@@ -402,6 +407,7 @@ def _process_parcel(parcel_or_record) -> dict:
         'mature_trees': 1 if mature_tree_count > 0 else 0,
         'permits_address_join': permits_address_join,
         'permits_unjoined_per_parcel': 1 if permits_unjoined_per_parcel_bool else 0,
+        f'structure_{existing_structure_type}': 1,
     }
 
     return {
@@ -581,6 +587,19 @@ def _derive_max_units(zone_record, multipliers: dict[str, int], lot_area_m2: flo
     zone_class = zone_record.zone_class
     if not zone_class:
         return 0, "unzoned"
+    # 0. Non-residential zones short-circuit FIRST. Employment / Institutional /
+    #    Open Space / Utility classes have multipliers[zone] == 0 in the
+    #    zoning_multipliers.json table — they're not multiplex territory
+    #    regardless of what FSI_TOTAL the zoning polygon happens to carry
+    #    (Employment polygons carry FSI for commercial massing, not housing).
+    #    Without this guard, an 80,000 m² industrial lot at FSI 2.86 derives
+    #    2,549 "units" via step 2, marking it residential=True and leaking
+    #    into the broader-tier display. Verified on 2026-05-07 build:
+    #    701 Runnymede Rd (zone=E, maxU=1134), 3003 Danforth Ave (zone=CR,
+    #    maxU=2549, but CR genuinely is mixed-use so this case is fine),
+    #    a cluster of E/EL parcels on Unwin Ave.
+    if zone_class in multipliers and multipliers[zone_class] == 0:
+        return 0, "non_residential"
     # 1. Explicit UNITS in the by-law text
     if zone_record.units is not None and zone_record.units > 0:
         return zone_record.units, "by_law_units"
@@ -796,6 +815,17 @@ _NEIGHBOR_RADIUS_DEG = _NEIGHBOR_RADIUS_M / 111_000  # ≤1.4× over-bound for b
 EXISTING_BUILDING_HEIGHT_THRESHOLD_M = 18.0
 EXISTING_BUILDING_OVERLAP_RATIO = 0.5
 
+# Side-yard clearance threshold for the detached/semi/row classifier. Anything
+# under 0.4m is treated as "touching" (absorbs alignment noise between the
+# Building Outlines layer and Property Boundaries — both 5-decimal WGS84 GeoJSON,
+# ~1m worst-case digitization slop at this latitude).
+SIDE_YARD_CLEAR_M = 0.4
+# Buildings smaller than this are treated as outbuildings (sheds, single-car
+# detached garages bottom out around ~14 m²) and excluded from the classifier
+# so a backyard shed near the side fence doesn't drag a detached house down to
+# "semi". A typical Toronto bungalow footprint is 80-120 m².
+MIN_CLASSIFIER_BUILDING_M2 = 15.0
+
 
 def _existing_max_building_height(parcel, massing_index) -> float | None:
     """Tallest 3D Massing building substantially overlapping this parcel.
@@ -830,6 +860,91 @@ def _existing_max_building_height(parcel, massing_index) -> float | None:
         if max_h is None or b.height_m > max_h:
             max_h = b.height_m
     return max_h
+
+
+def _classify_existing_structure(parcel, building_tree, building_geoms) -> str:
+    """Classify the parcel by its existing structure's side-yard pattern.
+
+    Returns one of:
+      - "detached" : main building has clearance >= SIDE_YARD_CLEAR_M from
+                     both of the parcel's two longest exterior edges
+      - "semi"     : main building touches exactly one of those two sides
+      - "row"      : main building touches both sides
+      - "vacant"   : no building (>= MIN_CLASSIFIER_BUILDING_M2) intersects
+      - "unknown"  : parcel exterior is degenerate (<2 distinct edges) or
+                     projection failed
+
+    Algorithm: project parcel + intersecting buildings to UTM 17N (metres),
+    pick the largest intersecting building polygon as "the main structure"
+    (filtering sub-MIN_CLASSIFIER_BUILDING_M2 outbuildings), identify the
+    two longest exterior edges of the parcel as "side yards" (typical
+    Toronto rectangular lot has the short edges facing the street and lane
+    and the long edges facing neighbours), measure shapely.distance from
+    the main building to each side. A semi-detached pair shares one wall
+    along the parcel boundary, so the building polygon either touches that
+    side (zero distance) or extends beyond into the neighbouring parcel —
+    either way `distance() == 0`. Detached lots have a setback on both
+    sides; row/townhouse lots touch both.
+
+    Caveat: classification leans on the "two longest edges = side yards"
+    heuristic, which works on rectangular lots (>95% of Toronto residential)
+    but mis-identifies sides on pie-slice / corner / L-shaped parcels.
+    Those are tagged "unknown" downstream by `is_elite` / `is_broader` and
+    excluded from both tiers (we'd rather drop a true detached than mis-show
+    an attached as elite).
+    """
+    candidates = []
+    for idx in building_tree.query(parcel.geometry):
+        b = building_geoms[idx]
+        try:
+            if not parcel.geometry.intersects(b):
+                continue
+            inter = parcel.geometry.intersection(b)
+            if inter.is_empty:
+                continue
+            area_signed, _ = _GEOD.geometry_area_perimeter(inter)
+            if abs(area_signed) >= MIN_CLASSIFIER_BUILDING_M2:
+                candidates.append(b)
+        except Exception:
+            continue
+
+    if not candidates:
+        return "vacant"
+
+    try:
+        parcel_m = shp_transform(_LONLAT_TO_M.transform, parcel.geometry)
+        buildings_m = [shp_transform(_LONLAT_TO_M.transform, b) for b in candidates]
+    except Exception:
+        return "unknown"
+
+    # MultiPolygon parcels: take the largest piece. Rare but exists for
+    # parcels split by a watercourse or right-of-way.
+    if parcel_m.geom_type == "MultiPolygon":
+        parcel_m = max(parcel_m.geoms, key=lambda g: g.area)
+    if parcel_m.geom_type != "Polygon":
+        return "unknown"
+
+    coords = list(parcel_m.exterior.coords)
+    edges = []
+    for i in range(len(coords) - 1):
+        seg = LineString([coords[i], coords[i + 1]])
+        if seg.length > 0:
+            edges.append((seg.length, seg))
+    if len(edges) < 2:
+        return "unknown"
+    edges.sort(key=lambda x: x[0], reverse=True)
+    side_a = edges[0][1]
+    side_b = edges[1][1]
+
+    main_building_m = max(buildings_m, key=lambda g: g.area)
+    a_clear = main_building_m.distance(side_a) >= SIDE_YARD_CLEAR_M
+    b_clear = main_building_m.distance(side_b) >= SIDE_YARD_CLEAR_M
+
+    if a_clear and b_clear:
+        return "detached"
+    if a_clear or b_clear:
+        return "semi"
+    return "row"
 
 
 def _neighbor_heights(rep_pt, massing_index) -> dict:
@@ -965,6 +1080,9 @@ def assemble_parcel_payload(
     permits_claims_by_neighborhood: dict[str, list[int]] = {}
     stats_permits_address_join = 0
     stats_permits_unjoined_per_parcel = 0  # parcels with denominatorSource="no_joined_permits"
+    stats_structure_counts = {
+        "detached": 0, "semi": 0, "row": 0, "vacant": 0, "unknown": 0,
+    }
 
     # Build the worker state dict — every shared input the per-parcel loop
     # body needs. Both sequential and parallel paths use the same
@@ -1065,6 +1183,8 @@ def assemble_parcel_payload(
         stats_mature_trees += st['mature_trees']
         stats_permits_address_join += st['permits_address_join']
         stats_permits_unjoined_per_parcel += st['permits_unjoined_per_parcel']
+        for kind in stats_structure_counts:
+            stats_structure_counts[kind] += st.get(f'structure_{kind}', 0)
         # Merge per-worker claim sets so the parent's globally-deduplicated
         # views stay correct (heritage stats + permit aggregations).
         claimed_heritage_indices |= result['heritage_claims']
@@ -1197,6 +1317,7 @@ def assemble_parcel_payload(
             "inRegulatedArea": stats_in_regulated_area,
             "matureTrees": stats_mature_trees,
             "sixplexEligible": stats_sixplex_eligible,
+            "existingStructureType": dict(stats_structure_counts),
         },
     }
 

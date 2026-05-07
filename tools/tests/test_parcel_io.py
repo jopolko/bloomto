@@ -68,6 +68,7 @@ def _make_props(*, quality: str = "measured", solar_score=80,
         "lotGeometry": {"longAxisM": 18.5, "shortAxisM": 6.2, "orientationDeg": 75.0},
         "neighborHeights": {"nAvgM": 6.5, "sAvgM": 9.0, "eAvgM": None, "wAvgM": 7.2},
         "existingMaxBuildingHeightM": 7.5,
+        "existingStructureType": "detached",
         "solarYieldKwhPerYr": 22000,
         "pvCapacityKwEstimate": 19.1,
         "sixplexBonusValueCad": None,
@@ -107,6 +108,7 @@ def _make_stats():
         "inRegulatedArea": 0,
         "matureTrees": 0,
         "sixplexEligible": 0,
+        "existingStructureType": {"detached": 1, "semi": 0, "row": 0, "vacant": 0, "unknown": 0},
     }
 
 

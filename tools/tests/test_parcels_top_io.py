@@ -65,6 +65,7 @@ def _make_feature(*, address="100 Test St", lot_area_m2=500, lng=-79.4, lat=43.7
         "lotGeometry": {"longAxisM": 18.5, "shortAxisM": 6.2, "orientationDeg": 75.0},
         "neighborHeights": {"nAvgM": 6.5, "sAvgM": 9.0, "eAvgM": None, "wAvgM": 7.2},
         "existingMaxBuildingHeightM": 7.5,
+        "existingStructureType": "detached",
         "solarYieldKwhPerYr": 22000,
         "pvCapacityKwEstimate": 19.1,
         "sixplexBonusValueCad": None,
