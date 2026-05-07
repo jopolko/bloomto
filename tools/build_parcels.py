@@ -74,8 +74,13 @@ def _init_worker(state: dict) -> None:
     _W = state
 
 
-def _process_parcel(parcel) -> dict:
+def _process_parcel(parcel_or_record) -> dict:
     """Process one parcel, return a result dict the parent aggregates.
+
+    Accepts either a `Parcel` object (sequential path) OR a lightweight
+    record dict (multiprocessing path — parent streams cheap dicts so the
+    GEOS-heavy `shape()` + geodesic-area work parallelizes across workers
+    instead of bottlenecking the parent's iter_parcels generator).
 
     Pure read of `_W` (the shared state set by `_init_worker`). No outer
     state mutation — claims sets and stats counters are RETURNED, not
@@ -95,6 +100,16 @@ def _process_parcel(parcel) -> dict:
       in_flooding_area, in_regulated_area, mature_trees,
       permits_address_join (count, not bool), permits_unjoined_per_parcel
     """
+    # If we received a record dict from a parent's iter_parcel_records stream,
+    # materialize the Parcel here in the worker — this is the GEOS-heavy
+    # `shape()` + geodesic area work that we want parallelized.
+    if isinstance(parcel_or_record, dict):
+        parcel = zoning_src.parcel_from_record(parcel_or_record)
+        if parcel is None:
+            return {'skip': 'unparseable_geometry'}
+    else:
+        parcel = parcel_or_record
+
     nb_tree = _W['nb_tree']
     neighborhoods = _W['neighborhoods']
     institutions_index = _W['institutions_index']
@@ -378,7 +393,14 @@ def _iterate_parcels(parcels, *, workers: int, state: dict):
     # loaded indexes via COW, so the heavy state isn't re-pickled per worker.
     ctx = multiprocessing.get_context('fork')
     with ctx.Pool(workers, initializer=_init_worker, initargs=(state,)) as pool:
-        for result in pool.imap_unordered(_process_parcel, parcels, chunksize=200):
+        # chunksize=500: with 528K parcels and 8 workers, that's ~130 chunks
+        # per worker — coarse enough to keep pickle/IPC overhead under 5%,
+        # fine enough that the slowest worker doesn't stall the tail by more
+        # than ~1 chunk's worth of work. Decimal heuristic: rule of thumb is
+        # `total_items / (workers * 100)` ≈ 660; we round down to 500 to
+        # tighten tail latency on heterogeneous parcel work (shadow analysis
+        # cost varies 10× between dense urban vs vacant suburban lots).
+        for result in pool.imap_unordered(_process_parcel, parcels, chunksize=500):
             yield result
 
 DISTANCE_CAP_M = 5000.0
@@ -772,6 +794,7 @@ def assemble_parcel_payload(
 
     features = []
     stats_total = 0
+    stats_skipped_unparseable = 0
     stats_score_pos = 0
     stats_heritage_part_iv = 0
     stats_heritage_part_v = 0
@@ -840,11 +863,11 @@ def assemble_parcel_payload(
         'include_non_eligible': include_non_eligible,
     }
 
-    # Materialize parcels — multiprocessing.Pool.imap needs a finite iterable
-    # of picklable items. Generator from `iter_parcels()` is consumed once.
-    parcel_list = list(parcels) if workers > 1 else parcels
-
-    for result in _iterate_parcels(parcel_list, workers=workers, state=_worker_state):
+    # No materialization. Generators stream directly to the pool — workers
+    # spawn immediately and parsing+processing run in parallel. The 2026-05-06
+    # multiproc fast-path swaps `parcels` (eager Parcel objects) for cheap
+    # record dicts via `iter_parcel_records`; workers do the GEOS work.
+    for result in _iterate_parcels(parcels, workers=workers, state=_worker_state):
         stats_total += 1
         if 'skip' in result:
             reason = result['skip']
@@ -858,6 +881,8 @@ def assemble_parcel_payload(
                 stats_skipped_ttc_station += 1
             elif reason == 'non_buildable':
                 stats_skipped_non_buildable += 1
+            elif reason == 'unparseable_geometry':
+                stats_skipped_unparseable += 1
             # 'score_zero' is the bulk of skips — not counted in any stat
             # (matches the legacy sequential loop, which fell through silently)
             continue
@@ -999,6 +1024,7 @@ def assemble_parcel_payload(
             "bloom": stats_bloom,
             "skippedNoNeighborhood": stats_skipped_no_nb,
             "skippedNonBuildable": stats_skipped_non_buildable,
+            "skippedUnparseableGeometry": stats_skipped_unparseable,
             "skippedInstitutional": stats_skipped_institutional,
             "skippedInstitutionalByCategory": dict(institutional_by_category),
             "skippedTtcStation": stats_skipped_ttc_station,
@@ -1174,7 +1200,12 @@ def main(argv=None) -> int:
     # previously held all parcel geometries in memory at once.
     payload = assemble_parcel_payload(
         neighborhoods=neighborhoods,
-        parcels=zoning_src.iter_parcels(cache),
+        # Multiprocessing fast-path: stream cheap record dicts, let workers
+        # do the GEOS-heavy parsing in parallel. Sequential path uses the
+        # eager iter_parcels (already-materialized Parcel objects) since
+        # there's no benefit to deferring the work.
+        parcels=(zoning_src.iter_parcel_records(cache) if args.workers > 1
+                 else zoning_src.iter_parcels(cache)),
         heritage_index=heritage_index,
         institutions_index=institutions_index,
         ttc_station_index=ttc_station_index,
