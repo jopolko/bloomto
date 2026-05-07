@@ -722,6 +722,29 @@
             line-height: 1.3;
         }
         .signals-pill.active .signals-lab { color: var(--ink); font-weight: 600; }
+        /* Freshness microcopy — third line under the pill: pulsing live
+           dot, "refreshed Xh ago", optional "N new since last visit". */
+        .signals-fresh {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 11px;
+            color: var(--ink-mute2);
+            font-weight: 500;
+            margin-top: 4px;
+            letter-spacing: 0.02em;
+        }
+        .signals-fresh strong { color: #b45309; font-weight: 700; }
+        .signals-live-dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: #16a34a;
+            box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55);
+            animation: signals-live-pulse 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes signals-live-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
+            50%      { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+        }
         @media (max-width: 640px) {
             .money-hero { padding: 18px 18px; gap: 10px; }
             .money-hero .money-num { font-size: 38px; }
@@ -2412,6 +2435,74 @@
         function hasAnySignal(r) {
             const s = getSignals(r);
             return !!(s && (s.severance || s.demoPermit || s.violation));
+        }
+
+        // ── Freshness layer for the signals pill ──
+        // Two pieces:
+        //   1. Relative-time formatter for `signalsGeneratedAt` ("4h ago",
+        //      "23 min ago", "1 day ago"). Trust signal — tells the dev
+        //      the data IS recent, no clinical timestamp parsing needed.
+        //   2. Visit-delta counter — "3 new since Tue" — driven by
+        //      localStorage. Pulls users back at their own cadence by
+        //      diffing the current any-signal set against the snapshot
+        //      stored on their last visit.
+        function relativeTimeFromIso(iso) {
+            if (!iso) return null;
+            const t = Date.parse(iso);
+            if (isNaN(t)) return null;
+            const ms = Date.now() - t;
+            if (ms < 0) return 'just now';
+            const min = Math.floor(ms / 60000);
+            if (min < 1)  return 'just now';
+            if (min < 60) return `${min} min ago`;
+            const hr = Math.floor(min / 60);
+            if (hr < 24)  return `${hr}h ago`;
+            const day = Math.floor(hr / 24);
+            if (day === 1) return 'yesterday';
+            if (day < 7)  return `${day} days ago`;
+            const wk = Math.floor(day / 7);
+            if (wk < 5)   return `${wk}w ago`;
+            return new Date(t).toLocaleDateString('en-CA',
+                { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        // localStorage state for "since your last visit" diff.
+        const SIGNALS_VISIT_KEY = 'bloomto:multiplex:signals-last-visit:v1';
+        // { snapshot: [parcelId, ...], at: ISO } — taken from the *previous*
+        // visit. We diff the current any-signal set against `snapshot` to
+        // surface what's new. On each visit, after rendering, we write the
+        // current set as the next visit's snapshot.
+        function readSignalsVisitSnapshot() {
+            try {
+                const raw = localStorage.getItem(SIGNALS_VISIT_KEY);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                if (!obj || !Array.isArray(obj.snapshot)) return null;
+                return obj;
+            } catch (e) { return null; }
+        }
+        function writeSignalsVisitSnapshot(currentIds, atIso) {
+            try {
+                localStorage.setItem(SIGNALS_VISIT_KEY, JSON.stringify({
+                    snapshot: currentIds, at: atIso || new Date().toISOString(),
+                }));
+            } catch (e) { /* silent */ }
+        }
+        // The snapshot loaded ONCE at page load — held in module state so
+        // every subsequent re-render uses the same baseline (we only refresh
+        // the snapshot once the user actually leaves / next-loads). Without
+        // this, opening / closing a chip would zero-out the delta.
+        const _signalsVisitSnapshotOnLoad = readSignalsVisitSnapshot();
+        // Set true after we persist the new snapshot — only persist once
+        // per page load, after the first signals render.
+        let _signalsSnapshotWritten = false;
+
+        function computeNewSinceLastVisit(currentParcelIds) {
+            const prev = _signalsVisitSnapshotOnLoad;
+            if (!prev) return { count: null, since: null };  // first-ever visit
+            const old = new Set(prev.snapshot);
+            const newOnes = currentParcelIds.filter(pid => !old.has(pid));
+            return { count: newOnes.length, since: prev.at };
         }
         // Compact inline badges for the listing row — one per active signal.
         // Each carries a tooltip with the specific record context.
@@ -4713,13 +4804,55 @@
                     : `$${Math.round(total / 1_000).toLocaleString()}K`;
             const tier = broaderMode ? 'broader' : 'elite';
             const signalsActive = activePresets.has('any_signal');
+
+            // Freshness layer (only when we actually have signal data).
+            const refreshedAgo = relativeTimeFromIso(signalsGeneratedAt);
+            // Build the "all current signal parcelIds" set for the
+            // since-last-visit diff. We use the citywide-signals set, not
+            // the filtered set — otherwise toggling a chip would shift the
+            // delta. This is "what's new in the world" not "what's new in
+            // your current filter".
+            let visitDeltaHtml = '';
+            if (signalsByParcelId.size > 0) {
+                const allSignalPids = [...signalsByParcelId.keys()].sort();
+                const delta = computeNewSinceLastVisit(allSignalPids);
+                if (delta.count != null && delta.count > 0) {
+                    const since = delta.since
+                        ? `since ${relativeTimeFromIso(delta.since) || 'last visit'}`
+                        : 'since last visit';
+                    visitDeltaHtml = ` · <strong>${delta.count}</strong> new ${since}`;
+                }
+                // Persist the current set as the new snapshot — exactly once
+                // per page load. Subsequent re-renders (filter toggles, etc.)
+                // don't re-persist, so the user's "since last visit" anchor
+                // stays at their actual last visit until they reload.
+                if (!_signalsSnapshotWritten) {
+                    writeSignalsVisitSnapshot(allSignalPids, signalsGeneratedAt || new Date().toISOString());
+                    _signalsSnapshotWritten = true;
+                }
+            }
+            const freshnessLine = refreshedAgo
+                ? `<div class="signals-fresh"><span class="signals-live-dot" aria-hidden="true"></span>LIVE · refreshed ${refreshedAgo}${visitDeltaHtml}</div>`
+                : '';
+
+            // Read the window from signals.json meta if available; default to 12 mo.
+            const winDays = (window._signalsWindowDays || 365);
+            const winLabel = winDays === 365 ? '12 months'
+                : winDays === 90 ? '90 days'
+                : winDays === 30 ? '30 days'
+                : `${winDays} days`;
             const signalsHtml = signalsN > 0
                 ? `<button id="signals-pill" class="signals-pill ${signalsActive ? 'active' : ''}" type="button"
-                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} where the owner is currently doing something — active severance application, demolition permit, or City enforcement order. Three daily-refreshed Toronto Open Data feeds. Click again to clear.">
+                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} where the owner has done something with the property in the last ${winLabel} — severance application filed, demolition permit pulled, or City enforcement order issued. Three daily-refreshed Toronto Open Data feeds. Click again to clear.">
                        <div class="signals-num">${signalsN.toLocaleString()}</div>
-                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}owners moving · severance / demo / violation</div>
+                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}owners moving · last ${winLabel}</div>
+                       ${freshnessLine}
                    </button>`
-                : `<div class="signals-pill empty"><div class="signals-num">—</div><div class="signals-lab">no active signals on filtered parcels</div></div>`;
+                : `<div class="signals-pill empty">
+                       <div class="signals-num">—</div>
+                       <div class="signals-lab">no owner activity in last ${winLabel} on filtered parcels</div>
+                       ${freshnessLine}
+                   </div>`;
             el.innerHTML = `
                 <div>
                     <div class="money-num">${dollar}</div>
@@ -4961,6 +5094,13 @@
                         if (!s || !s.byParcelId) return;
                         signalsByParcelId = new Map(Object.entries(s.byParcelId));
                         signalsGeneratedAt = s.generatedAt || null;
+                        // Time window meta — exposed on `window` so renderMoneyHero
+                        // can read it without a global state plumbing change.
+                        // All three feeds share the same window now (post 2026-05-07
+                        // tightening), so just take whichever is present.
+                        const w = (s.windowDays || {});
+                        window._signalsWindowDays =
+                            w.demoPermits || w.violations || w.severances || 365;
                         if (signalsByParcelId.size > 0) render();
                     })
                     .catch(() => {});

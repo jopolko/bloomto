@@ -53,11 +53,17 @@ DEFAULT_OUT = PROJECT_ROOT / "data" / "signals.json"
 DEFAULT_TOP = PROJECT_ROOT / "data" / "parcels-top.json"
 DEFAULT_BROADER = PROJECT_ROOT / "data" / "parcels-broader.json"
 
-# Default lookback window. Severance applications stay active for years
-# until heard, so we don't usually want to filter them by `since_days`;
-# permits and violations decay, so 365d is a reasonable "still hot" window.
+# Default lookback window. All three signals filtered to the same 12-month
+# scope so the frontend pill can honestly say "owners moving in the last 12
+# months" without mixing time horizons.
+#
+# Why 365 for severance even though City keeps stale "active" applications
+# alive for years: a Consent application filed in 2015 that's still
+# technically open is overwhelmingly likely to be a zombie (planner stopped
+# pushing, never formally withdrew). Real dev signal is the recent filings.
 DEFAULT_SINCE_DAYS_PERMITS = 365
 DEFAULT_SINCE_DAYS_VIOLATIONS = 365
+DEFAULT_SINCE_DAYS_SEVERANCE = 365
 
 
 def _load_parcel_index(*paths: Path) -> tuple[dict, dict]:
@@ -185,11 +191,16 @@ def main():
         "--since-days-violations", type=int, default=DEFAULT_SINCE_DAYS_VIOLATIONS,
         help="filter violations to last N days (default 365)",
     )
+    parser.add_argument(
+        "--since-days-severance", type=int, default=DEFAULT_SINCE_DAYS_SEVERANCE,
+        help="filter severance applications by filing date — last N days (default 365)",
+    )
     args = parser.parse_args()
 
     today = date.today()
     permits_since = (today - timedelta(days=args.since_days_permits)).isoformat()
     violations_since = (today - timedelta(days=args.since_days_violations)).isoformat()
+    severance_since = (today - timedelta(days=args.since_days_severance)).isoformat()
 
     addr_index, _id_to_row = _load_parcel_index(args.top, args.broader)
     if not addr_index:
@@ -197,7 +208,7 @@ def main():
         return 1
 
     # Fetch the three CKAN feeds
-    severances = coa_src.fetch_severance_applications(args.cache)
+    severances = coa_src.fetch_severance_applications(args.cache, since_iso=severance_since)
     demos = demo_src.fetch_demo_permits(args.cache, since_iso=permits_since)
     violations = viol_src.fetch_property_violations(args.cache, since_iso=violations_since)
 
@@ -227,7 +238,7 @@ def main():
         "windowDays": {
             "demoPermits": args.since_days_permits,
             "violations": args.since_days_violations,
-            "severances": None,  # all open
+            "severances": args.since_days_severance,
         },
         "stats": {
             "severance": {
