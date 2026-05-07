@@ -95,9 +95,9 @@ def _process_parcel(parcel_or_record) -> dict:
        'permit_unjoined': bool}
 
     Stats deltas (always present in the keep path; absent in skip path):
-      score_pos, residential, sixplex_eligible, corner, postwar, bloom,
+      residential, sixplex_eligible, corner, postwar,
       heritage_part_iv, heritage_part_v, heritage_listed,
-      outside_transit_buffer, abuts_laneway, near_rapidto,
+      abuts_laneway, near_rapidto,
       in_flooding_area, in_regulated_area, mature_trees,
       permits_address_join (count, not bool), permits_unjoined_per_parcel
     """
@@ -198,10 +198,9 @@ def _process_parcel(parcel_or_record) -> dict:
 
     # Build the early-stats dict — these counters fire on EVERY parcel that
     # got far enough to compute residential/sixplex/heritage, even if it
-    # later short-circuits via score_zero. Matches legacy sequential code
-    # which incremented these BEFORE the score-zero gate. Without this the
-    # parallel run reports 0 Part IV (because Part IV parcels score 0 →
-    # short-circuit → never counted).
+    # later short-circuits via the eligibility gate. Without this the
+    # parallel run would report 0 Part IV (because Part IV parcels are
+    # filtered → never counted).
     early_stats = {
         'residential': 1 if residential else 0,
         'sixplex_eligible': 1 if sixplex_eligible else 0,
@@ -217,22 +216,20 @@ def _process_parcel(parcel_or_record) -> dict:
     dist_subway_streetcar_m = min(dist_subway_m, dist_streetcar_m)
     dist_bus_m = _distance_to_nearest_stop_m(rep_coords, transit_bus_tree)
 
-    full_score = parcel_scoring.compute_full_score(
-        residential=residential,
-        heritage_status=heritage_status,
-        dist_m=dist_subway_streetcar_m,
-        max_units=max_units,
-        area_m2=parcel.area_m2,
+    # Eligibility gates (replaces the prior synthesised score-zero gate).
+    # Each is a binary check on a city primitive; passing means the parcel
+    # is multiplex-eligible. Identical exclusion shape as before — the
+    # *combined* gate was previously expressed as `score == 0`.
+    is_eligible = (
+        residential
+        and heritage_status != 'part_iv'  # Part IV bars redevelopment outright
+        and dist_subway_streetcar_m is not None
+        and dist_subway_streetcar_m < ELIGIBLE_TRANSIT_BUFFER_M  # 1500m wide window
+        and parcel.area_m2 >= ELIGIBLE_MIN_LOT_AREA_M2
     )
-    base_score = full_score['score']
-    soft_s = full_score['softScore']
-    outside_buffer = full_score['outsideTransitBuffer']
-
-    if base_score == 0 and soft_s == 0 and not include_non_eligible:
-        # Skip but carry the early stats (residential / sixplex / heritage
-        # tier) so the parent's counters match the legacy sequential code.
+    if not is_eligible and not include_non_eligible:
         return {
-            'skip': 'score_zero',
+            'skip': 'not_eligible',
             'early_stats': early_stats,
             'heritage_claims': local_heritage_claims,
         }
@@ -327,14 +324,6 @@ def _process_parcel(parcel_or_record) -> dict:
         POSTWAR_BUILT_YEAR_MIN <= built_year <= POSTWAR_BUILT_YEAR_MAX
         and heritage_status is None
     )
-    bloom = parcel_scoring.bloom_flag(
-        heritage_status=heritage_status,
-        dist_subway_streetcar_m=dist_subway_streetcar_m,
-        lot_area_m2=parcel.area_m2,
-        sixplex_eligible=sixplex_eligible,
-        mature_tree_count=mature_tree_count,
-        in_regulated_area=in_regulated_area,
-    )
 
     feature = {
         'type': 'Feature',
@@ -348,9 +337,6 @@ def _process_parcel(parcel_or_record) -> dict:
         'properties': {
             'parcelId': parcel.parcel_id,
             'address': parcel.address,
-            'score': base_score,
-            'softScore': soft_s,
-            'outsideTransitBuffer': outside_buffer,
             'zoneClass': zone_class,
             'maxUnits': int(max_units),
             'residential': residential,
@@ -380,7 +366,6 @@ def _process_parcel(parcel_or_record) -> dict:
             'solarScore': solar_score,
             'solarShadowQuality': shadow_result.quality,
             'postwarNeighborhood': postwar,
-            'bloom': bloom,
             'lotGeometry': (lambda lo, sh, o: {
                 'longAxisM': lo, 'shortAxisM': sh, 'orientationDeg': o,
             })(*_lot_geometry(parcel)),
@@ -396,11 +381,8 @@ def _process_parcel(parcel_or_record) -> dict:
 
     stats_delta = {
         **early_stats,  # residential, sixplex_eligible, heritage_*
-        'score_pos': 1 if base_score > 0 else 0,
         'corner': 1 if corner else 0,
         'postwar': 1 if postwar else 0,
-        'bloom': 1 if bloom else 0,
-        'outside_transit_buffer': 1 if (outside_buffer and soft_s > 0) else 0,
         'abuts_laneway': 1 if abuts_laneway else 0,
         'near_rapidto': 1 if near_rapidto else 0,
         'in_flooding_area': 1 if in_flooding_area else 0,
@@ -447,6 +429,17 @@ def _iterate_parcels(parcels, *, workers: int, state: dict):
 DISTANCE_CAP_M = 5000.0
 POSTWAR_BUILT_YEAR_MIN = 1945
 POSTWAR_BUILT_YEAR_MAX = 1960
+
+# Eligibility gate constants (2026-05-07 — replaces synthesised
+# score/softScore filter). A parcel must be residential, not Part IV
+# heritage, within the wide transit window, and meet a minimum lot
+# size — every condition is a binary check on a city primitive, no
+# weighting. ELIGIBLE_TRANSIT_BUFFER_M is intentionally wide (matches
+# the prior softScore window): downstream `_passes_shared` in
+# build_parcels_top.py applies tighter binary gates for ELITE / BROADER
+# tiers.
+ELIGIBLE_TRANSIT_BUFFER_M = 1500
+ELIGIBLE_MIN_LOT_AREA_M2 = 100
 
 # Wire-format coordinate precision. At Toronto's latitude (~43.7°N), 5 decimals
 # resolves to roughly 1.1 m — far below parcel-edge resolution (median Toronto
@@ -882,21 +875,18 @@ def assemble_parcel_payload(
     features = []
     stats_total = 0
     stats_skipped_unparseable = 0
-    stats_score_pos = 0
     stats_heritage_part_iv = 0
     stats_heritage_part_v = 0
     stats_heritage_listed = 0
     stats_residential = 0
     stats_corner = 0
     stats_postwar = 0
-    stats_bloom = 0
     stats_skipped_no_nb = 0
     stats_skipped_non_buildable = 0
     stats_skipped_institutional = 0
     stats_skipped_ttc_station = 0
     stats_skipped_osm_landuse = 0
     stats_skipped_tall_building = 0
-    stats_outside_transit_buffer = 0
     stats_abuts_laneway = 0
     stats_near_rapidto = 0
     stats_in_flooding_area = 0
@@ -977,12 +967,11 @@ def assemble_parcel_payload(
                 stats_skipped_non_buildable += 1
             elif reason == 'unparseable_geometry':
                 stats_skipped_unparseable += 1
-            # 'score_zero' is the bulk of skips — not counted in its own
-            # bucket (matches the legacy sequential loop, which fell through
-            # silently). BUT residential / sixplex / heritage counters DO
-            # need to fire because the legacy code incremented them BEFORE
-            # the score-zero gate. The skip result carries `early_stats` +
-            # `heritage_claims` for exactly that purpose.
+            # 'not_eligible' is the bulk of skips — not counted in its own
+            # bucket. Residential / sixplex / heritage counters DO need to
+            # fire on these via the early_stats dict because the legacy
+            # behavior incremented them BEFORE the score-zero (now
+            # eligibility) gate.
             es = result.get('early_stats')
             if es:
                 stats_residential += es['residential']
@@ -998,16 +987,13 @@ def assemble_parcel_payload(
         # Keep path: feature + stats deltas + claims to merge
         features.append(result['feature'])
         st = result['stats']
-        stats_score_pos += st['score_pos']
         stats_residential += st['residential']
         stats_sixplex_eligible += st['sixplex_eligible']
         stats_corner += st['corner']
         stats_postwar += st['postwar']
-        stats_bloom += st['bloom']
         stats_heritage_part_iv += st['heritage_part_iv']
         stats_heritage_part_v += st['heritage_part_v']
         stats_heritage_listed += st['heritage_listed']
-        stats_outside_transit_buffer += st['outside_transit_buffer']
         stats_abuts_laneway += st['abuts_laneway']
         stats_near_rapidto += st['near_rapidto']
         stats_in_flooding_area += st['in_flooding_area']
@@ -1025,15 +1011,13 @@ def assemble_parcel_payload(
     # refactor). The legacy inline body is gone — single source of truth.
 
 
-    # Sort by max(score, softScore) so soft-only parcels (the >500m opt-in
-    # catchment, score=0 but softScore>0) appear in the top-N projection
-    # alongside in-buffer parcels — secondary key on score keeps in-buffer
-    # parcels first when softScore values tie.
+    # Default sort: lot area desc (replaces prior score-desc sort that
+    # used a synthesised composite). Bigger lots first — single primitive,
+    # multiplex-prospect signal (more land = more units = more revenue).
+    # Frontend may re-sort by any other primitive; this is just the
+    # canonical write-order.
     features.sort(
-        key=lambda f: (
-            max(f["properties"]["score"], f["properties"].get("softScore") or 0),
-            f["properties"]["score"],
-        ),
+        key=lambda f: f["properties"].get("lotAreaM2") or 0,
         reverse=True,
     )
 
@@ -1089,8 +1073,6 @@ def assemble_parcel_payload(
     meta = {
         "generatedAt": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "sourceVersions": dict(SOURCE_VERSIONS),
-        "scoreFormula": parcel_scoring.FORMULA_TEXT,
-        "bloomFormula": parcel_scoring.BLOOM_FORMULA_TEXT,
         "solarMethodology": parcel_scoring.SOLAR_METHODOLOGY_TEXT,
         "shadowAnalysis": {
             "sunAngles": list(shadow_analysis.REFERENCE_ANGLES),
@@ -1130,7 +1112,6 @@ def assemble_parcel_payload(
         },
         "stats": {
             "totalParcels": stats_total,
-            "scorePositive": stats_score_pos,
             "heritagePartIV": stats_heritage_part_iv,
             "heritagePartV": stats_heritage_part_v,
             "heritageListed": stats_heritage_listed,
@@ -1138,7 +1119,6 @@ def assemble_parcel_payload(
             "residential": stats_residential,
             "cornerLot": stats_corner,
             "postwar": stats_postwar,
-            "bloom": stats_bloom,
             "skippedNoNeighborhood": stats_skipped_no_nb,
             "skippedNonBuildable": stats_skipped_non_buildable,
             "skippedUnparseableGeometry": stats_skipped_unparseable,
@@ -1147,7 +1127,6 @@ def assemble_parcel_payload(
             "skippedTtcStation": stats_skipped_ttc_station,
             "skippedOsmLanduse": stats_skipped_osm_landuse,
             "skippedTallExistingBuilding": stats_skipped_tall_building,
-            "outsideTransitBuffer": stats_outside_transit_buffer,
             "abutsLaneway": stats_abuts_laneway,
             "nearRapidToCorridor": stats_near_rapidto,
             "inFloodingStudyArea": stats_in_flooding_area,
@@ -1369,12 +1348,12 @@ def main(argv=None) -> int:
     out_size_mb = args.out.stat().st_size / (1 << 20)
     elapsed = time.monotonic() - started
     _log.info(
-        "DONE: %d parcels (%d score>0, %d Part IV / %d Part V / %d Listed / %d unjoined, "
-        "%d residential, %d corner, %d postwar, %d bloom, %d skipped institutional) → %s | %.1f MB | %.1fs",
-        stats["totalParcels"], stats["scorePositive"],
+        "DONE: %d parcels (%d Part IV / %d Part V / %d Listed / %d unjoined, "
+        "%d residential, %d corner, %d postwar, %d skipped institutional) → %s | %.1f MB | %.1fs",
+        stats["totalParcels"],
         stats["heritagePartIV"], stats["heritagePartV"], stats["heritageListed"],
         stats["heritageUnjoined"],
-        stats["residential"], stats["cornerLot"], stats["postwar"], stats["bloom"],
+        stats["residential"], stats["cornerLot"], stats["postwar"],
         stats.get("skippedInstitutional", 0),
         args.out, out_size_mb, elapsed,
     )

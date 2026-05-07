@@ -2,11 +2,11 @@
 
 All fixtures are built inline (no committed binaries — same convention as
 `test_heritage.py`, `test_corner_lots.py`, etc.). The fixture set deliberately
-exercises every score / quality branch:
+exercises every eligibility / quality branch:
 
-  - parcel A: residential, near transit, has solar rooftop, no heritage      → score > 0, bloom-true
-  - parcel B: residential, near transit, has heritage point inside           → score == 0 (heritage gate)
-  - parcel C: residential, no transit nearby                                 → score == 0 (transit gate)
+  - parcel A: residential, near transit, has solar rooftop, no heritage      → eligible, kept
+  - parcel B: residential, near transit, has heritage point inside (Part IV) → ineligible (heritage gate)
+  - parcel C: residential, no transit nearby (~700m away)                    → eligible (within 1500m wide window), kept on wire
   - parcel D: outside any neighborhood                                       → skipped (counted in stats)
 """
 
@@ -217,82 +217,78 @@ class ParcelE2ETests(unittest.TestCase):
         # Should not raise.
         parcel_io.validate(payload)
 
-    def test_default_skips_score_zero_parcels(self):
+    def test_default_skips_ineligible_parcels(self):
         payload = self._build()
         addresses = [f["properties"]["address"] for f in payload["features"]]
-        # Parcel A should be present (eligible); parcel B (heritage Part IV)
-        # and D (outside neighborhood) should be skipped. Parcel C is ~700m
-        # from transit — in the soft range (500-1500m) — so it now stays
-        # on the wire with score=0, softScore>0, outsideTransitBuffer=true
-        # per the 2026-05-03 soft-transit-decay extension.
+        # Parcel A: residential, near transit, no heritage → eligible.
+        # Parcel B: Part IV heritage → blocked by eligibility gate.
+        # Parcel C: ~700m from transit — within the wide ELIGIBLE buffer
+        #   (1500m) so it stays on the wire; downstream projection will
+        #   apply the tighter 500m ELITE gate.
+        # Parcel D: outside neighborhood polygon → skipped before eligibility.
         self.assertIn("100 A St", addresses)
         self.assertNotIn("200 B St", addresses)
         self.assertIn("300 C St", addresses)
         self.assertNotIn("999 D St", addresses)
-        # Verify parcel C's wire shape: strict 0, soft positive, flagged outside.
-        c = next(f for f in payload["features"] if f["properties"]["address"] == "300 C St")
-        self.assertEqual(c["properties"]["score"], 0)
-        self.assertGreater(c["properties"]["softScore"], 0)
-        self.assertTrue(c["properties"]["outsideTransitBuffer"])
 
-    def test_include_non_eligible_keeps_score_zero_parcels(self):
+    def test_include_non_eligible_keeps_part_iv(self):
         payload = self._build(include_non_eligible=True)
         addresses = [f["properties"]["address"] for f in payload["features"]]
-        # B and C show up with score 0 (D still excluded — no neighborhood).
+        # B (Part IV) reappears; D still excluded (no neighborhood).
         self.assertIn("100 A St", addresses)
         self.assertIn("200 B St", addresses)
         self.assertIn("300 C St", addresses)
         self.assertNotIn("999 D St", addresses)
 
-    def test_features_sorted_by_score_desc(self):
+    def test_features_sorted_by_lot_area_desc(self):
         payload = self._build(include_non_eligible=True)
-        scores = [f["properties"]["score"] for f in payload["features"]]
-        self.assertEqual(scores, sorted(scores, reverse=True))
+        areas = [f["properties"].get("lotAreaM2") or 0 for f in payload["features"]]
+        self.assertEqual(areas, sorted(areas, reverse=True))
 
     def test_meta_has_expected_keys(self):
         payload = self._build()
         self.assertEqual(payload["type"], "FeatureCollection")
-        self.assertIn("scoreFormula", payload["meta"])
-        self.assertIn("bloomFormula", payload["meta"])
+        self.assertIn("solarMethodology", payload["meta"])
         self.assertIn("shadowAnalysis", payload["meta"])
         self.assertIn("stats", payload["meta"])
+        # Synthesised-formula meta keys removed 2026-05-07.
+        self.assertNotIn("scoreFormula", payload["meta"])
+        self.assertNotIn("bloomFormula", payload["meta"])
 
     def test_stats_count_skipped_no_neighborhood(self):
         payload = self._build(include_non_eligible=True)
         # Parcel D is outside the neighborhood polygon and should be counted as skipped.
         self.assertEqual(payload["meta"]["stats"]["skippedNoNeighborhood"], 1)
 
-    def test_parcel_a_is_bloom_when_multiplex_friction_clear(self):
-        # 2026-05-06: Bloom reframed from solar+subway to multiplex-friction-clear.
-        # Bloom requires: heritage clear + transit < 500m + lot ≥ 600m² +
-        # sixplexEligible + matureTreeCount == 0 + !inRegulatedArea.
-        # The synthetic Parcel A fixture has empty sixplex_district (so
-        # sixplexEligible=False), which means it cannot be Bloom under the
-        # new gate. Verify the structural inputs and the not-bloom result.
+    def test_parcel_a_no_heritage_when_friction_clear(self):
+        # Successor to the prior bloom test. Verify the city primitives that
+        # used to feed bloom are present + correct on parcel A. Bloom field
+        # itself was dropped 2026-05-07.
         payload = self._build()
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         a = feats_by_addr["100 A St"]
         self.assertIsNone(a["properties"]["heritageStatus"])
         self.assertLess(a["properties"]["distSubwayStreetcarM"], 500)
         self.assertFalse(a["properties"]["inRegulatedArea"])
-        # Synthetic fixture: not in sixplex district → not Bloom.
+        # Synthetic fixture: not in sixplex district.
         self.assertFalse(a["properties"]["sixplexEligible"])
-        self.assertFalse(a["properties"]["bloom"])
+        # Bloom field removed.
+        self.assertNotIn("bloom", a["properties"])
 
-    def test_part_iv_parcel_when_included_shows_status_and_score_zero(self):
+    def test_part_iv_parcel_when_included_shows_status(self):
         payload = self._build(include_non_eligible=True)
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         b = feats_by_addr["200 B St"]
         self.assertEqual(b["properties"]["heritageStatus"], "part_iv")
-        self.assertEqual(b["properties"]["score"], 0)
-        self.assertFalse(b["properties"]["bloom"])  # any heritage blocks bloom
+        # Score / bloom fields removed; verify they're not in the wire.
+        self.assertNotIn("score", b["properties"])
+        self.assertNotIn("bloom", b["properties"])
 
-    def test_parcel_c_no_transit_gets_score_zero(self):
+    def test_parcel_c_far_from_transit_records_distance(self):
         payload = self._build(include_non_eligible=True)
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         c = feats_by_addr["300 C St"]
-        self.assertEqual(c["properties"]["score"], 0)
-        # No major-transit within 500m → distSubwayStreetcarM should be large or capped.
+        # No major-transit within 500m → distSubwayStreetcarM should be large.
         self.assertGreaterEqual(c["properties"]["distSubwayStreetcarM"], 500)
 
     def test_postwar_neighborhood_flag_set_for_1955_hood(self):
@@ -319,30 +315,10 @@ class ParcelE2ETests(unittest.TestCase):
         self.assertIn("XXX", str(ctx.exception))
         self.assertIn("zoning_multipliers.json", str(ctx.exception))
 
-    def _baseline_score_for_parcel_a(self) -> int:
-        """Return parcel A's score with the default (null-heritage) fixture.
-
-        Parcel A's transit distance from the fixture streetcar/subway stop is
-        non-zero, so the baseline `transit_factor < 1.0` and the score is < 100.
-        This helper makes the Part V / Listed score assertions independent of
-        exact fixture geometry.
-        """
-        # Reset to the original null-heritage index so parcel A scores baseline.
-        self.heritage_index = _heritage_index(
-            points=[],
-            statuses=[],
-            addresses=[],
-            address_to_status={},
-        )
-        payload = self._build()
-        feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
-        return feats_by_addr["100 A St"]["properties"]["score"]
-
-    def test_part_v_parcel_score_is_half_of_baseline(self):
-        baseline = self._baseline_score_for_parcel_a()
-        # Replace the heritage index so parcel A is Part V (HCD friction).
-        # The point is placed inside parcel A; the address doesn't match so the
-        # join falls back to point-in-parcel.
+    def test_part_v_parcel_records_status(self):
+        # 2026-05-07 — score formula dropped. Heritage tier is now just a
+        # surfaced city primitive; downstream projections (build_parcels_top)
+        # use it as a binary "heritage clear" gate, not a score multiplier.
         a_pt = Point(-79.39998, 43.70025)  # inside parcel A
         self.heritage_index = _heritage_index(
             points=[a_pt],
@@ -354,17 +330,9 @@ class ParcelE2ETests(unittest.TestCase):
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         a = feats_by_addr["100 A St"]
         self.assertEqual(a["properties"]["heritageStatus"], "part_v")
-        # Score is round(baseline_raw × 0.5). Baseline is already rounded so
-        # there's a 1-int rounding tolerance versus computing from the raw
-        # transit_factor; allow a 1-unit slack for that edge.
-        expected = round(baseline * 0.5)
-        self.assertAlmostEqual(a["properties"]["score"], expected, delta=1)
-        # Bloom blocks any non-null status, even when other gates would pass.
-        self.assertFalse(a["properties"]["bloom"])
 
-    def test_listed_parcel_score_is_85_percent_of_baseline(self):
-        baseline = self._baseline_score_for_parcel_a()
-        a_pt = Point(-79.39998, 43.70025)  # inside parcel A
+    def test_listed_parcel_records_status(self):
+        a_pt = Point(-79.39998, 43.70025)
         self.heritage_index = _heritage_index(
             points=[a_pt],
             statuses=["listed"],
@@ -375,11 +343,8 @@ class ParcelE2ETests(unittest.TestCase):
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         a = feats_by_addr["100 A St"]
         self.assertEqual(a["properties"]["heritageStatus"], "listed")
-        expected = round(baseline * 0.85)
-        self.assertAlmostEqual(a["properties"]["score"], expected, delta=1)
-        self.assertFalse(a["properties"]["bloom"])
 
-    def test_part_iv_parcel_blocks_score_to_zero(self):
+    def test_part_iv_parcel_excluded_by_default(self):
         # Same as the Part V/Listed cases but Part IV → hard block.
         a_pt = Point(-79.39998, 43.70025)
         self.heritage_index = _heritage_index(
@@ -392,8 +357,11 @@ class ParcelE2ETests(unittest.TestCase):
         feats_by_addr = {f["properties"]["address"]: f for f in payload["features"]}
         a = feats_by_addr["100 A St"]
         self.assertEqual(a["properties"]["heritageStatus"], "part_iv")
-        self.assertEqual(a["properties"]["score"], 0)
-        self.assertFalse(a["properties"]["bloom"])
+        # In default-build mode (without include_non_eligible) Part IV
+        # is excluded by the eligibility gate. Verify here:
+        default = self._build()
+        default_addrs = [f["properties"]["address"] for f in default["features"]]
+        self.assertNotIn("100 A St", default_addrs)
 
     def test_address_join_takes_precedence_over_point_in_parcel(self):
         # The classic subdivision-edge case: a heritage record's address

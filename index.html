@@ -178,17 +178,7 @@
             background: var(--tor-blue-dk);
             border-color: var(--tor-blue-dk);
         }
-        .bloom-tier-pill {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 4px;
-            background: #2f6a4f;
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
+        /* .bloom-tier-pill removed 2026-05-07 with the bloom predicate. */
         /* Audience tags on stacked incentives — DEV (developer-only),
            BUYER (homebuyer-only), BOTH (overlap). Quick visual scan so a
            dev or buyer instantly sees which incentives apply to them. */
@@ -648,6 +638,60 @@
         }
         @media (max-width: 640px) {
             .tier-toggle { min-height: 44px; padding: 11px 16px; }
+        }
+        /* Magazine-header right-side action row — search + ★ Saved + tier
+           toggle. Replaces the prior chip strip + standalone search input.
+           On narrow desktop, wraps below the title. */
+        .magazine-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .search-input-compact {
+            min-height: 36px;
+            padding: 7px 12px;
+            font-size: 13px;
+            min-width: 220px;
+            flex: 0 1 260px;
+        }
+        @media (max-width: 640px) {
+            .magazine-actions { width: 100%; justify-content: stretch; }
+            .search-input-compact { flex: 1 1 100%; min-height: 44px; font-size: 15px; }
+        }
+        .saved-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 36px;
+            padding: 7px 12px;
+            background: var(--surface);
+            border: 1px solid var(--rule-strong);
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ink);
+            cursor: pointer;
+            transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+        }
+        .saved-toggle:hover {
+            background: rgba(245, 158, 11, 0.08);
+            border-color: #f59e0b;
+        }
+        .saved-toggle .saved-icon { font-size: 15px; line-height: 1; }
+        .saved-toggle.active {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: #f59e0b;
+            color: #b45309;
+        }
+        .saved-toggle.active .saved-icon { color: #f59e0b; }
+        .saved-toggle .saved-count {
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+        }
+        @media (max-width: 640px) {
+            .saved-toggle { min-height: 44px; }
         }
         /* Filter bar — uniform layout, no chip "dance" on resize. Desktop: CSS
            grid with auto-fill + minmax cells so chip widths snap to a column,
@@ -1879,31 +1923,52 @@
                  the BloomTO-score rip-out — permit count is a city number). -->
         </div>
         <section class="glass-card p-3 mb-4">
+            <!-- Magazine header — title + combined subtitle/stats, plus a
+                 small affordance row on the right (search, ★ saved, tier
+                 toggle). The chip strip + separate stats line + prominent
+                 search input were retired 2026-05-07 — sort + scan is the
+                 natural workflow; the kept search is for farm-area
+                 filtering only and stays small/quiet. -->
             <div class="magazine-header">
                 <div class="magazine-title-wrap">
                     <h2 class="magazine-title">Today's Top Multiplex Sites</h2>
-                    <div class="magazine-subtitle">Most off-market — a target list, not a buy list. Use it for direct outreach + Land Registry lookup.</div>
+                    <div class="magazine-subtitle">
+                        <strong>Most off-market</strong> — <span id="header-stats">loading…</span>.
+                        A target list, not a buy list — use it for direct outreach + Land Registry lookup.
+                    </div>
                     <span class="magazine-count">
                         <span id="list-count"></span>
                         <span id="fresh-timestamp" style="margin-left:6px;color:var(--ink-mute2)"></span>
                     </span>
                 </div>
-                <button id="tier-toggle" class="tier-toggle" type="button" aria-pressed="false" disabled>
-                    <span class="tier-toggle-icon">↓</span>
-                    <span class="tier-toggle-label">Loading…</span>
-                </button>
+                <div class="magazine-actions">
+                    <input id="search" class="search-input search-input-compact"
+                           placeholder="Filter by address / neighborhood…" type="text"
+                           aria-label="Filter by address or neighborhood"
+                           title="Type a street, neighborhood, or address fragment to scope the list. Searches across the entire elite set, not just visible rows.">
+                    <button id="saved-toggle" class="saved-toggle" type="button"
+                            aria-pressed="false"
+                            title="Toggle filter to your starred parcels. Star saved in this browser only.">
+                        <span class="saved-icon">☆</span>
+                        <span class="saved-count" hidden></span>
+                    </button>
+                    <button id="tier-toggle" class="tier-toggle" type="button" aria-pressed="false" disabled>
+                        <span class="tier-toggle-icon">↓</span>
+                        <span class="tier-toggle-label">Loading…</span>
+                    </button>
+                </div>
             </div>
-            <!-- Filters moved INTO the listings card 2026-05-06 — slim row
-                 with search + chips, no more separate filter card / "Filters
-                 none active" label / redundant stats line. -->
-            <div class="listings-filters">
-                <input id="search" class="search-input"
-                       placeholder="Search address or neighborhood…" type="text" aria-label="Search">
-                <div id="chips" class="chip-grid" role="group" aria-label="Filter presets"></div>
-            </div>
-            <!-- Stats line ("X matches · Y top-contender parcels...") survives
-                 here for the filter feedback ("3,585 matches · ...") — slim. -->
-            <div id="stats" class="text-xs text-gray-500 listings-stats">Loading parcels…</div>
+            <!-- Hidden chip container — the predicate registry still lives
+                 in `PRESETS`; we keep an empty DOM stub so renderChips() is
+                 safe to call (it short-circuits when there are no
+                 user-visible chips). The money-hero "Owner activity" pill
+                 + the inline ★ Saved button toggle the only two filters
+                 the user surfaces directly. -->
+            <div id="chips" hidden></div>
+            <!-- Stats stub — kept so renderStats() can still write the
+                 nearby-bar (set by the "Search nearby 500m" button on the
+                 detail panel). Hidden when empty. -->
+            <div id="stats" class="listings-stats" hidden></div>
             <!-- Freshness banner — surfaces what new owner-activity
                  signals landed since your last visit. Populated by
                  renderFreshnessBanner() each render; hidden when nothing
@@ -2248,41 +2313,12 @@
             return false;
         }
 
-        // Frontend Bloom — premium multiplex-friction-clear tier (2026-05-06).
-        // Reframed from "net-zero premium" to "premium multiplex":
-        //   * heritage-clear (no Part IV/V/Listed)
-        //   * walks-to-major-transit (combined subway∪streetcar < 500m,
-        //     matches TRANSIT_BUFFER_M / Bill 185 parking-waiver buffer)
-        //   * room for a real sixplex (lot ≥ 600 m²)
-        //   * sixplex-eligible district (T&EY + Ward 23, June 2025 carve-out)
-        //   * no Tree Bylaw friction (0 mature ≥30cm DBH protected trees)
-        //   * not TRCA-regulated
-        // Solar moved to its own "Solar Prime" bonus badge — relevant for
-        // green-spec devs but not core to multiplex feasibility.
-        // Visual variant adds Solar Prime so map dots / hero pop visually
-        // earn the brightest treatment. ~300/3797 elite (8%) = display, and
-        // a smaller subset for visual.
-        const BLOOM_TRANSIT_M = 500;
-        const BLOOM_MIN_LOT_M2 = 600;
-        const BLOOM_MAX_TREES = 0;
-        // Solar Prime badge — surfaces high-solar parcels independently of
-        // Bloom. ≥50 = top quartile of shadow-adjusted SolarTO scores.
-        const SOLAR_PRIME_SCORE = 50;
-        function displayBloom(r) {
-            return r.heritageStatus == null
-                && r.distSubwayStreetcarM != null
-                && r.distSubwayStreetcarM < BLOOM_TRANSIT_M
-                && (r.lotAreaM2 || 0) >= BLOOM_MIN_LOT_M2
-                && r.sixplexEligible === true
-                && (r.matureTreeCount || 0) <= BLOOM_MAX_TREES
-                && !r.inRegulatedArea;
-        }
-        function visualBloom(r) {
-            return displayBloom(r) && solarPrime(r);
-        }
-        function solarPrime(r) {
-            return r.solarScore != null && r.solarScore >= SOLAR_PRIME_SCORE;
-        }
+        // Bloom predicate + visualBloom helper removed 2026-05-07 per the
+        // "no synthesised composites" principle. Solar Prime bonus badge
+        // also retired — solarScore stays as a sortable city primitive
+        // but doesn't drive any badge / hero treatment.
+        function visualBloom(_r) { return false; }  // back-compat stub
+        function solarPrime(_r) { return false; }   // back-compat stub
 
         // Sort + bounds-restrict state. Sort drives picks-list order; bounds
         // restricts to the current map viewport (live update on pan/zoom).
@@ -2294,34 +2330,40 @@
         // without authoring a second comparator per column.
         let sortDir = 'natural';
         let boundsRestricted = false;
-        const SORT_OPTIONS = [
-            { id: 'flags',         label: 'Most signals checked (broadest first)' },
-            { id: 'net_zero',      label: 'Net-Zero Score (greenest first)' },
-            { id: 'score',         label: 'Legal viability (highest first)' },
-            { id: 'attract',       label: 'Deal score (best ROI first)' },
-            { id: 'permit_recent', label: 'Recent permit activity (most)' },
-            { id: 'permit_value',  label: 'Recent permit value (most)' },
-            { id: 'solar',         label: 'Solar (most sunlight)' },
+        // SORT_OPTIONS retired 2026-05-07 — the dropdown was already
+        // orphaned (no DOM target rendered the list); column-header
+        // click-sorts cover every primitive devs need. Keeping the
+        // SORT_COMPARATORS table since header buttons reference its keys.
+        const _SORT_OPTIONS_LEGACY = [
+            // 2026-05-07 — synthesised composites removed (Net-Zero Score,
+            // legal-viability score, Deal score, "flags counted" tally).
+            // Every option below is a sort by a single city-sourced
+            // primitive; default is `area`.
             { id: 'area',          label: 'Lot area (biggest)' },
+            { id: 'savings',       label: 'Stacked Bill 185 incentives (highest)' },
             { id: 'subway',        label: 'Subway proximity (closest)' },
             { id: 'streetcar',     label: 'Streetcar proximity (closest)' },
             { id: 'bus',           label: 'Bus proximity (closest)' },
             { id: 'bike',          label: 'Bike-lane proximity (closest)' },
             { id: 'units',         label: 'Max units (most allowed)' },
+            { id: 'sixplex',       label: 'Sixplex eligible (yes first)' },
+            { id: 'permits_nb',    label: 'Neighborhood permit velocity (most)' },
+            { id: 'permit_recent', label: 'Recent permit activity (most)' },
+            { id: 'permit_value',  label: 'Recent permit value (most)' },
+            { id: 'solar',         label: 'Solar (most sunlight)' },
+            { id: 'footprint',     label: 'Footprint (smallest — cheapest teardown)' },
             { id: 'coverage',      label: 'Coverage (least built — most headroom)' },
             { id: 'built',         label: 'Built year (oldest first)' },
+            { id: 'trees',         label: 'Mature trees (most first)' },
+            { id: 'address',       label: 'Address (alphabetical)' },
         ];
-        // Note: net_zero requires the function defined later (netZeroScore) —
-        // the comparator closes over it, so it resolves at call time, not parse time.
+        // 2026-05-07 — flagCount / netZeroScore comparators dropped (those
+        // were synthesised composites). Single-primitive sorts only.
         const SORT_COMPARATORS = {
-            flags:         (a, b) => (flagCount(b) - flagCount(a)) || (netZeroScore(b) - netZeroScore(a)),
-            net_zero:      (a, b) => netZeroScore(b) - netZeroScore(a),
             footprint:     (a, b) => ((a.buildingCoverageRatio || 0) * (a.lotAreaM2 || 0)) - ((b.buildingCoverageRatio || 0) * (b.lotAreaM2 || 0)),
-            sixplex:       (a, b) => (b.sixplexEligible ? 1 : 0) - (a.sixplexEligible ? 1 : 0) || (netZeroScore(b) - netZeroScore(a)),
+            sixplex:       (a, b) => (b.sixplexEligible ? 1 : 0) - (a.sixplexEligible ? 1 : 0) || ((b.lotAreaM2 || 0) - (a.lotAreaM2 || 0)),
             permits_nb:    (a, b) => (b.nbPermitSampleSize ?? 0) - (a.nbPermitSampleSize ?? 0),
             trees:         (a, b) => (b.matureTreeCount || 0) - (a.matureTreeCount || 0),
-            score:         (a, b) => (b.score || 0) - (a.score || 0),
-            attract:       (a, b) => attractivenessScore(b) - attractivenessScore(a),
             permit_recent: (a, b) => ((b.permits || {}).recentCount || 0) - ((a.permits || {}).recentCount || 0),
             permit_value:  (a, b) => ((b.permits || {}).recentValueTotal || 0) - ((a.permits || {}).recentValueTotal || 0),
             solar:         (a, b) => (b.solarScore ?? -1) - (a.solarScore ?? -1),
@@ -2585,6 +2627,24 @@
         function hasAnySignal(r) {
             const s = getSignals(r);
             return !!(s && (s.severance || s.demoPermit || s.violation || s.prelimZoning));
+        }
+
+        // Sync the ★ Saved toggle button (in the magazine-actions row)
+        // with the activePresets state and the watchlist count.
+        function syncSavedToggleUI() {
+            const btn = document.getElementById('saved-toggle');
+            if (!btn) return;
+            const active = activePresets.has('saved');
+            const count = (typeof watchlist !== 'undefined' && watchlist) ? watchlist.size : 0;
+            const icon = btn.querySelector('.saved-icon');
+            const countEl = btn.querySelector('.saved-count');
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            if (icon) icon.textContent = count > 0 ? '★' : '☆';
+            if (countEl) {
+                countEl.hidden = count === 0;
+                countEl.textContent = count > 0 ? `(${count})` : '';
+            }
         }
 
         // ── Freshness layer for the signals pill ──
@@ -3093,14 +3153,17 @@
             // Ties broken by score desc.
             let hottest = null;
             let hottestDate = '';
-            let hottestScore = -1;
+            let hottestArea = -1;
+            // Tie-break by lot area desc (the new default sort) when two
+            // parcels share the most-recent signal date.
             for (const r of rows) {
                 const d = _signalLatestDateForRow(r);
                 if (!d) continue;
-                if (d > hottestDate || (d === hottestDate && (r.score || 0) > hottestScore)) {
+                const area = r.lotAreaM2 || 0;
+                if (d > hottestDate || (d === hottestDate && area > hottestArea)) {
                     hottest = r;
                     hottestDate = d;
-                    hottestScore = r.score || 0;
+                    hottestArea = area;
                 }
             }
             if (hottest) {
@@ -3177,7 +3240,7 @@
                     icon: '💎',
                     label: 'Underdog',
                     fallback: 'No high-savings parcel ranked outside the top 10.',
-                    tip: 'Highest stacked Bill 185 incentive total on a parcel ranked outside the top 10 by score. The high-leverage deal hiding beneath the obvious frontrunners — same dollar incentives, lower visibility, less competition.',
+                    tip: 'Highest stacked Bill 185 incentive total on a parcel ranked outside the top 10 by the current sort. The high-leverage deal hiding beneath the obvious frontrunners — same dollar incentives, lower visibility, less competition.',
                 },
             ];
 
@@ -3186,7 +3249,7 @@
             const kpiFor = (slot, r) => {
                 if (!r) return '';
                 const lot = r.lotAreaM2 != null ? `${r.lotAreaM2.toLocaleString()} m²` : '—';
-                const score = r.score != null ? `<strong>${r.score}</strong>` : '—';
+                const units = r.maxUnits != null ? `<strong>${r.maxUnits}</strong>` : '—';
                 if (slot.key === 'underdog') {
                     const sv = stackedSavingsFor(r).savings || 0;
                     const dollars = sv >= 1_000_000 ? `$${(sv/1_000_000).toFixed(2)}M`
@@ -3202,12 +3265,12 @@
                     const kindLabel = sk ? sk.label : 'activity';
                     return `<div class="pick-card-kpis">
                         <span class="pick-card-kpi"><span class="kpi-num">${ago || '?'}</span><span class="kpi-lab">${kindLabel}</span></span>
-                        <span class="pick-card-kpi"><span class="kpi-num">${score}</span><span class="kpi-lab">score</span></span>
+                        <span class="pick-card-kpi"><span class="kpi-num">${units}</span><span class="kpi-lab">max units</span></span>
                     </div>`;
                 }
                 // newest
                 return `<div class="pick-card-kpis">
-                    <span class="pick-card-kpi"><span class="kpi-num">${score}</span><span class="kpi-lab">score</span></span>
+                    <span class="pick-card-kpi"><span class="kpi-num">${units}</span><span class="kpi-lab">max units</span></span>
                     <span class="pick-card-kpi"><span class="kpi-num">${lot}</span><span class="kpi-lab">lot</span></span>
                 </div>`;
             };
@@ -3386,7 +3449,16 @@
             { id: 'active',   fn: r => (r.nbPermitSampleSize ?? 0) >= 10 },
         ];
 
-        function flagCount(r) {
+        // 2026-05-07: flagCount, netZeroScore, attractivenessScore stubs.
+        // Original implementations were synthesised composites (Net-Zero
+        // composite, Deal score, "flags counted" tally). Per the trust-
+        // erosion principle, every weighted formula is gone. The functions
+        // remain as stubs returning neutral values so any leftover caller
+        // doesn't crash; the UI surfaces that read them have been excised.
+        function flagCount(_r) { return 0; }
+        function netZeroScore(_r) { return 0; }
+        function attractivenessScore(_r) { return 0; }
+        function _legacyFlagCount(r) {
             let n = 0;
             for (const f of FLAG_DEFINITIONS) {
                 try { if (f.fn(r)) n++; } catch (e) {}
@@ -3407,8 +3479,10 @@
         // (sort default, picks list, map ranking, detail panel headline).
         // Legal viability and Deal score remain as supporting numbers in the
         // detail panel — the data is transparent, the framing is net-zero.
-        function netZeroScore(r) {
-            // Hard gates — these caps signal "not really developable here."
+        function _legacyNetZeroScore(r) {
+            // Legacy synthesised composite — kept for git-blame archaeology.
+            // Stub above (returning 0) shadows this if both are present.
+            // Hard gates — these caps signaled "not really developable here."
             if (r.inRegulatedArea) {
                 return Math.min(20, Math.round((r.score || 0) * 0.20));
             }
@@ -3456,9 +3530,8 @@
             return Math.max(0, Math.min(100, Math.round(nz)));
         }
 
-        function attractivenessScore(r) {
-            // TRCA-regulated parcels: hard cap at 20 — building permit
-            // unlikely without TRCA approval. Dominates everything else.
+        function _legacyAttractivenessScore(r) {
+            // Legacy synthesised composite — stubbed above (returns 0).
             if (r.inRegulatedArea) return Math.min(20, Math.round((r.score || 0) * 0.2));
 
             let a = (r.score || 0) * 0.45;         // base: legal viability (slightly down to make room)
@@ -4482,10 +4555,10 @@
             toggleWatched(detailCurrent);
             updateDetailStarUI();
             // If actively filtered to Saved, full re-render so removed
-            // items disappear; otherwise just refresh the chip strip so
-            // the Saved chip's count stays accurate.
+            // items disappear; otherwise just refresh the saved-toggle
+            // count so it stays accurate.
             if (activePresets.has('saved')) render();
-            else renderChips();
+            else syncSavedToggleUI();
             // Update the in-list star state too without a full re-render.
             const k = parcelKey(detailCurrent);
             document.querySelectorAll(`.pick[data-key="${k}"] .star`).forEach(el => {
@@ -4530,12 +4603,11 @@
         const indexToMarker = new Map();   // row -> marker
 
         // ---- Helpers ----
-        function colorFor(r) {
-            if (visualBloom(r)) return '#ffd700';   // 🌸 gold (visual bloom only)
-            if (r.score >= 90)  return '#2f6a4f';   // dark green
-            if (r.score >= 70)  return '#7cb087';   // medium green
-            if (r.score >= 40)  return '#d6a857';   // amber (not in current dataset)
-            return '#9ca3af';                        // gray   (not in current dataset)
+        function colorFor(_r) {
+            // 2026-05-07 — score-driven gradient retired with the synthesised
+            // score. Map markers (when re-introduced) all share one neutral
+            // color; rank ordering surfaces "best" via list position not hue.
+            return '#2f6a4f';
         }
         function rankClass(i) {
             if (i === 0) return 'gold';
@@ -4608,10 +4680,7 @@
             const labels = { part_iv: 'Part IV', part_v: 'Part V', listed: 'Listed' };
             return `<span class="heritage-tag heritage-${h}">${labels[h] ?? h}</span>`;
         }
-        function scorePill(s) {
-            const cls = s >= 70 ? 'score-high' : s >= 40 ? 'score-mid' : 'score-low';
-            return `<span class="score-pill ${cls}">${s}</span>`;
-        }
+        // scorePill removed 2026-05-07 with the wire `score` field.
         // Toronto Zoning By-law 569-2013 zone-class names — the full legal
         // terms from the by-law itself. Format: "(CODE) Full Name". Replaces
         // the previous one-word marketing glosses (Mainstreet/Cornerstore/etc)
@@ -4671,7 +4740,6 @@
                 <div class="pop-sub">${r.neighborhood} · ${zoneLabel(r.zoneClass)}</div>
                 ${badgeRow}
                 <table>
-                    <tr><td>Score · Deal</td><td>${scorePill(r.score)}<span style="color:#6b7280;font-size:12px;margin-left:6px">deal ${attractivenessScore(r)}</span></td></tr>
                     <tr><td>Max units</td><td>${r.maxUnits}</td></tr>
                     <tr><td>Lot area</td><td>${r.lotAreaM2 == null ? '—' : r.lotAreaM2.toLocaleString() + ' m²'}</td></tr>
                     <tr><td>Built (nb. median)</td><td>${r.builtYear ? r.builtYear : '—'}</td></tr>
@@ -4700,10 +4768,11 @@
             }
             const filtered = allRows.filter(r => {
                 if (looksInstitutional(r)) return false;
-                // Outside-transit-buffer parcels (>500m) hidden by default —
-                // the suburban-multiplex set is captured in the wire's softScore
-                // for downstream specs but isn't surfaced here.
-                if (r.outsideTransitBuffer === true) return false;
+                // Transit-buffer filtering happens at the projection step
+                // now (build_parcels_top.py applies a 500m elite gate /
+                // 1500m broader gate before the file is shipped). The
+                // outsideTransitBuffer wire field was retired with the
+                // score/softScore drop on 2026-05-07.
                 if (bounds && !bounds.contains([r.lat, r.lng])) return false;
                 if (nearbyFilter && r.lat != null && r.lng != null) {
                     const d = haversineM(nearbyFilter.lat, nearbyFilter.lng, r.lat, r.lng);
@@ -4716,7 +4785,7 @@
                 return (r.address || '').toLowerCase().includes(q)
                     || (r.neighborhood || '').toLowerCase().includes(q);
             });
-            const cmp = SORT_COMPARATORS[sortBy] || SORT_COMPARATORS.score;
+            const cmp = SORT_COMPARATORS[sortBy] || SORT_COMPARATORS.area;
             // sortDir 'natural' = comparator's encoded direction; 'reversed'
             // negates the result so e.g. "Lot largest first" becomes "Lot
             // smallest first" without authoring a parallel comparator.
@@ -4741,7 +4810,6 @@
             let n = 0;
             for (const r of allRows) {
                 if (looksInstitutional(r)) continue;
-                if (r.outsideTransitBuffer === true) continue;
                 if (myFn && !myFn(r)) continue;
                 let ok = true;
                 for (const fn of otherFns) { if (!fn(r)) { ok = false; break; } }
@@ -4786,6 +4854,10 @@
                 const tipAttr = p.tip ? ` title="${p.tip.replace(/"/g, '&quot;')}"` : '';
                 return `<button class="chip ${isActive ? 'active' : ''}" data-id="${p.id}" aria-pressed="${isActive}"${tipAttr}>${p.label} <span style="opacity:0.7;font-weight:500">(${count})</span></button>`;
             }).join('');
+            // The chip row is hidden 2026-05-07 — but renderChips is still
+            // called on every render() to keep counts/state in sync if we
+            // ever resurface chips. Re-bind handlers in case the wrap is
+            // not hidden in some state.
             wrap.querySelectorAll('.chip[data-id]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const id = btn.dataset.id;
@@ -4954,12 +5026,9 @@
             const addrClass = cachedAddr ? 'addr' : 'addr addr-pending';
             const k = parcelKey(r);
             const watched = isWatched(r);
-            // Headline number on the row is the legal-viability `score`
-            // (city-sourced: residential × heritage × transit × unit-cap).
-            // Replaces the previous synthesised Net-Zero composite per
-            // 2026-05-06 product pivot — devs trust city primitives, not
-            // proprietary weights.
-            const headlineScore = r.score ?? 0;
+            // 2026-05-07 — `headlineScore` removed with the score field.
+            // Row layout's primary anchor is the address; size + position
+            // ranking surfaces "best" (default sort: lot area desc).
 
             // Stat-grid cells — same 8 columns, same order, every row.
             // Eye scans column-N down the list instead of decoding each row.
@@ -5001,7 +5070,6 @@
             // popped via .cell-hero-pop instead of restated here.
             const heroSubhead = i === 0 ? (() => {
                 const bits = [];
-                if (visualBloom(r)) bits.push('🌸 Bloom-tier');
                 if (r.cornerLot) bits.push('Corner lot');
                 if (r.postwarNeighborhood) bits.push('Postwar vintage');
                 return bits.length
@@ -5132,11 +5200,12 @@
                         if (detailCurrent && parcelKey(detailCurrent) === parcelKey(r)) {
                             updateDetailStarUI();
                         }
-                        // Keep the Saved chip's count fresh; full render only
-                        // when actively filtering by saved (otherwise the row
-                        // we just toggled would vanish out from under us).
+                        // Keep the ★ Saved toggle count fresh; full render
+                        // only when actively filtering by saved (otherwise
+                        // the row we just toggled would vanish out from
+                        // under us).
                         if (activePresets.has('saved')) render();
-                        else renderChips();
+                        else syncSavedToggleUI();
                     });
                 }
             }
@@ -5202,26 +5271,40 @@
         }
 
         function renderStats(filteredCount) {
-            const stats = document.getElementById('stats');
+            // Combined stats fold into the magazine-subtitle (`#header-stats`)
+            // — the standalone stats line was retired 2026-05-07. The legacy
+            // `#stats` div remains as a host for the slide-in nearby-bar
+            // banner the parcel-detail "Search nearby 500m" button toggles.
             const total = payload.totalAvailable;
-            const inFile = payload.topN;
-            const nearbyHtml = nearbyFilter
-                ? `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM}m of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Clear nearby filter">✕</button></div>`
-                : '';
             const cityWide = (payload && payload.totalParcels) || TORONTO_PARCEL_TOTAL;
             const cityWideRounded = Math.round(cityWide / 1000) + 'K';
-            stats.innerHTML = nearbyHtml +
-                `<strong>${filteredCount.toLocaleString()}</strong> matches · ` +
-                `${total.toLocaleString()} top-contender parcels in the loaded set ` +
-                `<span style="color:#9ca3af">(filtered from ~${cityWideRounded} citywide via the gates above)</span>`;
-            const clearBtn = document.getElementById('nearby-clear');
-            if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
-                    nearbyFilter = null;
-                    selectedIdx = null;
-                    render();
-                    fitBoundsToFiltered(applyFilters());
-                });
+            const headerStats = document.getElementById('header-stats');
+            if (headerStats) {
+                if (filteredCount === total) {
+                    headerStats.textContent =
+                        `${total.toLocaleString()} top-contender parcels filtered from ~${cityWideRounded} citywide`;
+                } else {
+                    headerStats.textContent =
+                        `${filteredCount.toLocaleString()} matches · ${total.toLocaleString()} top-contenders filtered from ~${cityWideRounded} citywide`;
+                }
+            }
+            const stats = document.getElementById('stats');
+            if (!stats) return;
+            if (nearbyFilter) {
+                stats.hidden = false;
+                stats.innerHTML = `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM}m of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Clear nearby filter">✕</button></div>`;
+                const clearBtn = document.getElementById('nearby-clear');
+                if (clearBtn) {
+                    clearBtn.addEventListener('click', () => {
+                        nearbyFilter = null;
+                        selectedIdx = null;
+                        render();
+                        fitBoundsToFiltered(applyFilters());
+                    });
+                }
+            } else {
+                stats.hidden = true;
+                stats.innerHTML = '';
             }
         }
 
@@ -5315,6 +5398,7 @@
 
         function render() {
             renderChips();
+            syncSavedToggleUI();
             renderTargets();
             syncTileActiveState();
             syncColHeaderActive();
@@ -5629,6 +5713,32 @@
                 eliteRows = p.rows;
                 // Wire the tier toggle now that elite is loaded.
                 document.getElementById('tier-toggle').addEventListener('click', toggleTier);
+                // ★ Saved toggle — replaces the prior chip-grid 'saved' chip.
+                // Same predicate (activePresets.has('saved')); wires the
+                // pill UI state on every render.
+                document.getElementById('saved-toggle').addEventListener('click', () => {
+                    const id = 'saved';
+                    if (activePresets.has(id)) {
+                        const restoreTarget = viewHistory.get(id) || null;
+                        viewHistory.delete(id);
+                        activePresets.delete(id);
+                        selectedIdx = null;
+                        render();
+                        if (restoreTarget) restoreMapView(restoreTarget);
+                        else fitBoundsToFiltered(applyFilters());
+                    } else {
+                        viewHistory.set(id, snapshotMapView());
+                        activePresets.add(id);
+                        selectedIdx = null;
+                        if (boundsRestricted) {
+                            boundsRestricted = false;
+                            syncBoundsBtnUI();
+                        }
+                        render();
+                        fitBoundsToFiltered(applyFilters());
+                    }
+                });
+                syncSavedToggleUI();
                 syncTierToggleUI();
                 // ── Freshness layer kickoff ──
                 // 1. Visit-delta from localStorage — synchronous, cheap.

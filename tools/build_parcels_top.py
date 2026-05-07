@@ -28,52 +28,58 @@ logging.basicConfig(
 _log = logging.getLogger("bloomto.build_parcels_top")
 
 
-# Two-tier elite system (2026-05-04 user direction: focused-by-default with
-# depth-on-demand — the magazine reading pattern). Default view = ELITE
-# (cover article). Toggle = BROADER (back-half browse — every candidate the
-# user might still want to consider). Tunable here in one place.
-ELITE_MIN_SCORE = 70
+# Two-tier projection (2026-05-07 binary-gate redesign — replaces the prior
+# synthesised `score >= 70` threshold). Every gate is a direct check on a
+# city primitive; passing means the parcel is multiplex-eligible. Tunable
+# here in one place.
+#
+# ELITE: tighter gate (transit ≤500m, max_units ≥4, lot ≥350m²) — the
+#        cover-list of slam-dunk multiplex candidates.
+# BROADER: looser gate (transit ≤1500m, max_units ≥3, lot ≥250m²) — every
+#          candidate a dev might still want to flip through.
+#
+# Both share the binary friction-clear gates (heritage clear, TRCA clear,
+# RA/RAC excluded, sane footprint, addressed).
+
+ELITE_TRANSIT_BUFFER_M = 500
 ELITE_MIN_LOT_M2 = 350
+ELITE_MIN_MAX_UNITS = 4
 
-BROADER_MIN_SCORE = 60       # opens score 60-69 parcels (3-unit zones, 250-400m transit)
-BROADER_MIN_LOT_M2 = 250     # opens inner-city T&EY small-lot multiplex (sixplex territory)
+BROADER_TRANSIT_BUFFER_M = 1500
+BROADER_MIN_LOT_M2 = 250
+BROADER_MIN_MAX_UNITS = 3
 
-# Both tiers share these gates (so the broader set still respects buy/no-buy).
-# 500 m² is roughly the upper bound of a typical Toronto detached / duplex /
-# triplex existing structure. Above this, the existing build is most likely
-# a small apartment / mid-rise commercial / plaza — too costly to teardown
-# vs what a 4-plex or 6-plex would replace it with. NOT an "8-plex" — there
-# is no such category in Toronto's multiplex by-law (citywide cap is 4u,
-# T&EY/Ward 23 cap is 6u as of June 2025). The 500 m² is a footprint
-# heuristic, not a unit-count target.
+# Curated `parcels-top.json` Path B threshold (sixplex-eligible + comfortable
+# lot for 4–6 unit multiplex without site-fitting compromise). Chosen by user
+# direction 2026-05-07 — well above the by-law's ~360m² multiplex minimum.
+CURATED_PATH_B_MIN_LOT_M2 = 500
+# Path B top-N cap. Sixplex-eligible territory (T&EY District + Ward 23) is
+# larger than it intuitively feels — full Path B uncapped at 500m² lot is
+# ~1,800 parcels, more than the curated front needs. Capping by lot area
+# desc gives the dev "the biggest sixplex-eligible lots that are also above
+# the 500m² floor." Single-primitive cut, defensible.
+CURATED_PATH_B_TOP_N = 200
+
+# 500 m² footprint upper bound — see prior comments. Existing structure
+# above this is most likely apartment/mid-rise (would have been caught by
+# the ETL's 15m height gate too, but the footprint check belt-and-braces
+# protects against Massing data gaps).
 SHARED_MAX_FOOTPRINT_M2 = 500
 
 
 def _passes_shared(props: dict) -> bool:
-    """Gates true for both tiers — heritage-clear, TRCA-clear, addressed,
-    teardown-cheap. The score and lot thresholds differentiate elite vs
-    broader.
+    """Binary-gate eligibility shared by elite + broader.
 
-    Footprint sanity gate (added 2026-05-04): reject 0 < footprint < 30 m².
-    This range almost always means the Building Outlines dataset is missing
-    the actual structure (digitization gap) — a 13 m² "shed" on a 1,500 m²
-    addressed lot is far more likely a data error than a real vacant-with-
-    shed configuration. Truly vacant lots (footprint = 0) are kept.
+    Heritage clear, TRCA clear, addressed, RA/RAC excluded, footprint sane.
+    None of these are weighted; each is a direct check on a city primitive.
     """
     if props.get("heritageStatus") is not None:
         return False
     if props.get("inRegulatedArea"):
         return False
-    # RA / RAC zoning excluded 2026-05-06: pure-residential apartment zones
-    # (20+ units per lot per zoning_multipliers.json) are not multiplex
-    # territory. A dev evaluating these lots will build a small apartment,
-    # not a 4-6 unit multiplex — different product, different financing,
-    # different audience. The wire was surfacing RA parcels with normal-
-    # looking civic addresses (e.g., 2439 Finch Ave W = vacant RA lot,
-    # Humbermede neighborhood with 4 permits in 5 years = dead market) and
-    # devs were asking why apartment land showed up as multiplex picks.
-    # CR / CRE / CL stay — those mainstreet mixed-use lots are real
-    # multiplex teardowns (single-storey storefront → 6-plex above retail).
+    # RA / RAC zoning excluded: pure-residential apartment zones (20+ units
+    # per lot) are not multiplex territory — different product, different
+    # audience. CR / CRE / CL stay (mainstreet mixed-use teardowns).
     if props.get("zoneClass") in ("RA", "RAC"):
         return False
     cover = props.get("buildingCoverageRatio") or 0
@@ -82,8 +88,9 @@ def _passes_shared(props: dict) -> bool:
     if footprint >= SHARED_MAX_FOOTPRINT_M2:
         return False
     if 0 < footprint < 30:
-        # Suspect: tiny accessory structure with no real building. Either a
-        # data gap or a true vacant-with-shed (rare). Drop either way.
+        # Building Outlines digitization gap — a 13 m² "shed" on a 1500 m²
+        # addressed lot is more likely a data error than a real vacant-with-
+        # shed configuration.
         return False
     addr = props.get("address") or ""
     if not addr or addr == "None None":
@@ -91,26 +98,45 @@ def _passes_shared(props: dict) -> bool:
     return True
 
 
+def _transit_distance_m(props: dict) -> float:
+    """Closest transit distance — subway or streetcar, whichever is nearer."""
+    sub = props.get("distSubwayStreetcarM")
+    if sub is None:
+        sub = min(
+            props.get("distSubwayM") or 99999,
+            props.get("distStreetcarM") or 99999,
+        )
+    return sub if sub is not None else 99999
+
+
 def is_elite(props: dict) -> bool:
-    """Cover-article tier — slam-dunk multiplex candidates."""
+    """Cover-list tier — slam-dunk multiplex candidates. All gates binary."""
     if not _passes_shared(props):
         return False
-    if (props.get("score") or 0) < ELITE_MIN_SCORE:
-        return False
     if (props.get("lotAreaM2") or 0) < ELITE_MIN_LOT_M2:
+        return False
+    if (props.get("maxUnits") or 0) < ELITE_MIN_MAX_UNITS:
+        return False
+    if _transit_distance_m(props) > ELITE_TRANSIT_BUFFER_M:
+        return False
+    if not props.get("residential", False):
         return False
     return True
 
 
 def is_broader(props: dict) -> bool:
     """Back-half tier — every candidate worth flipping through. Strict
-    superset of `is_elite` (the elite are a subset of the broader set).
+    superset of `is_elite` (elite is a subset of broader).
     """
     if not _passes_shared(props):
         return False
-    if (props.get("score") or 0) < BROADER_MIN_SCORE:
-        return False
     if (props.get("lotAreaM2") or 0) < BROADER_MIN_LOT_M2:
+        return False
+    if (props.get("maxUnits") or 0) < BROADER_MIN_MAX_UNITS:
+        return False
+    if _transit_distance_m(props) > BROADER_TRANSIT_BUFFER_M:
+        return False
+    if not props.get("residential", False):
         return False
     return True
 
@@ -150,7 +176,7 @@ def main():
         (geojson.get("meta") or {}).get("stats", {}).get("totalParcels")
     )
     _log.info(
-        "loaded %d features (already sorted by max(score, softScore) desc); "
+        "loaded %d features (already sorted by lot area desc); "
         "citywide total = %s",
         total_in, total_citywide,
     )
@@ -164,27 +190,83 @@ def main():
                   payload["topN"], args.out, out_size_kb)
         return 0
 
-    elite_features = [f for f in features if is_elite(f.get("properties") or {})]
+    eligible_features = [f for f in features if is_elite(f.get("properties") or {})]
     broader_features = [f for f in features if is_broader(f.get("properties") or {})]
     _log.info(
-        "elite filter:   %d → %d (score>=%d, lot>=%dm², heritage-clear, TRCA-clear, "
-        "footprint<%dm², addressed)",
-        total_in, len(elite_features),
-        ELITE_MIN_SCORE, ELITE_MIN_LOT_M2, SHARED_MAX_FOOTPRINT_M2,
+        "eligible (broader subset): %d → %d (lot>=%dm², max_units>=%d, "
+        "transit<=%dm, heritage-clear, TRCA-clear, footprint<%dm², addressed)",
+        total_in, len(eligible_features),
+        ELITE_MIN_LOT_M2, ELITE_MIN_MAX_UNITS, ELITE_TRANSIT_BUFFER_M,
+        SHARED_MAX_FOOTPRINT_M2,
     )
     _log.info(
-        "broader filter: %d → %d (score>=%d, lot>=%dm²; superset of elite)",
+        "broader filter:            %d → %d (lot>=%dm², max_units>=%d, "
+        "transit<=%dm; superset of eligible)",
         total_in, len(broader_features),
-        BROADER_MIN_SCORE, BROADER_MIN_LOT_M2,
+        BROADER_MIN_LOT_M2, BROADER_MIN_MAX_UNITS, BROADER_TRANSIT_BUFFER_M,
     )
 
-    elite_payload = parcels_top_io.make_payload(
-        elite_features, args.top_n, total_citywide=total_citywide,
+    # ── Curated `parcels-top.json` (~250 picks, two-path union) ──
+    # Path A: parcel has at least one active CKAN owner-activity signal
+    #         (severance / demoPermit / violation / prelimZoning).
+    # Path B: sixplexEligible AND lotAreaM2 >= CURATED_PATH_B_MIN_LOT_M2.
+    # Union produces the curated front of the listings — every parcel has
+    # a labeled "why it's here" reason. Falls back to Path B only when
+    # data/signals.json is absent (first-ever rebuild).
+    signal_pids = _load_signal_pids(Path("data/signals.json"))
+    _log.info(
+        "curation: signals layer %s · %d signal-bearing parcelIds",
+        "loaded" if signal_pids is not None else "absent (Path B only)",
+        len(signal_pids) if signal_pids is not None else 0,
     )
-    parcels_top_io.write_atomic(elite_payload, args.out)
-    elite_kb = args.out.stat().st_size / 1024
-    _log.info("DONE elite:   %d rows → %s | %.0f KB",
-              elite_payload["topN"], args.out, elite_kb)
+
+    # Path A: all signal-bearing eligible parcels (uncapped — every one
+    # has a story, count is naturally bounded by CKAN signal volume).
+    path_a_features = [
+        f for f in eligible_features
+        if signal_pids is not None
+        and str((f.get("properties") or {}).get("parcelId") or "") in signal_pids
+    ]
+    # Path B: sixplex-eligible AND lot ≥ CURATED_PATH_B_MIN_LOT_M2, capped
+    # at top-N by lot area desc. The eligible_features list is already
+    # sorted lot-area-desc upstream so a sliced take preserves that.
+    path_b_pool = [
+        f for f in eligible_features
+        if ((f.get("properties") or {}).get("sixplexEligible") is True
+            and ((f.get("properties") or {}).get("lotAreaM2") or 0) >= CURATED_PATH_B_MIN_LOT_M2)
+    ]
+    path_b_features = path_b_pool[:CURATED_PATH_B_TOP_N]
+
+    # Union, deduplicated by parcelId. Preserve overall ordering by lot
+    # area desc (path A items get inserted in their lot-area position).
+    seen_pids = set()
+    curated_features = []
+    for f in eligible_features:
+        pid = str((f.get("properties") or {}).get("parcelId") or "")
+        if not pid or pid in seen_pids:
+            continue
+        in_a = any(pid == str((g.get("properties") or {}).get("parcelId") or "")
+                   for g in path_a_features)
+        in_b = any(pid == str((g.get("properties") or {}).get("parcelId") or "")
+                   for g in path_b_features)
+        if in_a or in_b:
+            curated_features.append(f)
+            seen_pids.add(pid)
+
+    overlap = len({str((g.get("properties") or {}).get("parcelId") or "") for g in path_a_features}
+                  & {str((g.get("properties") or {}).get("parcelId") or "") for g in path_b_features})
+    _log.info(
+        "curation union: %d unique picks (%d Path A signal · %d Path B sixplex+lot · %d both)",
+        len(curated_features), len(path_a_features), len(path_b_features), overlap,
+    )
+
+    curated_payload = parcels_top_io.make_payload(
+        curated_features, args.top_n, total_citywide=total_citywide,
+    )
+    parcels_top_io.write_atomic(curated_payload, args.out)
+    curated_kb = args.out.stat().st_size / 1024
+    _log.info("DONE curated: %d rows → %s | %.0f KB",
+              curated_payload["topN"], args.out, curated_kb)
 
     broader_payload = parcels_top_io.make_payload(
         broader_features, args.top_n, total_citywide=total_citywide,
@@ -194,6 +276,22 @@ def main():
     _log.info("DONE broader: %d rows → %s | %.0f KB",
               broader_payload["topN"], args.out_broader, broader_kb)
     return 0
+
+
+def _load_signal_pids(signals_path: Path) -> set | None:
+    """Read `data/signals.json` if present and return the set of parcelIds
+    with any active signal. Returns `None` when the file is missing
+    (first-ever rebuild) — caller falls back to Path B only.
+    """
+    if not signals_path.exists():
+        return None
+    try:
+        payload = json.loads(signals_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        _log.warning("signals.json present but unreadable (%s) — Path B only", e)
+        return None
+    by_pid = payload.get("byParcelId") or {}
+    return {str(pid) for pid, signals in by_pid.items() if signals}
 
 
 if __name__ == "__main__":

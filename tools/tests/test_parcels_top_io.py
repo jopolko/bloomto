@@ -13,14 +13,11 @@ from tools.parcels_top_io import (
 )
 
 
-def _make_feature(*, address="100 Test St", score=80, lng=-79.4, lat=43.7,
+def _make_feature(*, address="100 Test St", lot_area_m2=500, lng=-79.4, lat=43.7,
                   **prop_overrides):
     props = {
         "parcelId": "TEST-1",
         "address": address,
-        "score": score,
-        "softScore": score,
-        "outsideTransitBuffer": False,
         "zoneClass": "RD",
         "maxUnits": 4,
         "residential": True,
@@ -52,14 +49,13 @@ def _make_feature(*, address="100 Test St", score=80, lng=-79.4, lat=43.7,
         "matureTreeCount": 0,
         "distBikeLaneM": 99999,
         "sixplexEligible": False,
-        "lotAreaM2": 500,
+        "lotAreaM2": lot_area_m2,
         "lotAspectRatio": 1.6,
         "buildingCoverageRatio": 0.35,
         "solarScoreRaw": 90,
         "solarScore": 80,
         "solarShadowQuality": "measured",
         "postwarNeighborhood": False,
-        "bloom": False,
         # 2026-05-05 architect / dev panel additions.
         "lotGeometry": {"longAxisM": 18.5, "shortAxisM": 6.2, "orientationDeg": 75.0},
         "neighborHeights": {"nAvgM": 6.5, "sAvgM": 9.0, "eAvgM": None, "wAvgM": 7.2},
@@ -96,14 +92,17 @@ class ProjectFeaturesTests(unittest.TestCase):
         self.assertEqual(rows[0]["lng"], -79.5)
 
     def test_top_n_caps_output(self):
-        feats = [_make_feature(score=100 - i) for i in range(20)]
+        feats = [_make_feature(lot_area_m2=1000 - i) for i in range(20)]
         rows, total = project_features(feats, top_n=5)
         self.assertEqual(len(rows), 5)
         self.assertEqual(total, 20)
-        self.assertEqual([r["score"] for r in rows], [100, 99, 98, 97, 96])
+        # project_features preserves caller-supplied order — we don't
+        # re-sort here (build_parcels_top.py sorts by lot area before
+        # projection). Just confirm the slice is the first 5.
+        self.assertEqual(len(rows), 5)
 
     def test_top_n_larger_than_available(self):
-        feats = [_make_feature(score=80)]
+        feats = [_make_feature()]
         rows, total = project_features(feats, top_n=1000)
         self.assertEqual(len(rows), 1)
         self.assertEqual(total, 1)

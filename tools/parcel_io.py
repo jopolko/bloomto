@@ -25,9 +25,6 @@ from pathlib import Path
 FEATURE_PROPERTIES = (
     "parcelId",
     "address",
-    "score",
-    "softScore",
-    "outsideTransitBuffer",
     "zoneClass",
     "maxUnits",
     "residential",
@@ -57,7 +54,6 @@ FEATURE_PROPERTIES = (
     "solarScore",
     "solarShadowQuality",
     "postwarNeighborhood",
-    "bloom",
     # ── 2026-05-05 architect / dev panel ──
     # Nested objects: keys validated as a presence check. Sub-key contracts
     # live in `parcels_top_io.project_features()` (which flattens for the
@@ -75,8 +71,6 @@ FEATURE_PROPERTIES = (
 META_KEYS = (
     "generatedAt",
     "sourceVersions",
-    "scoreFormula",
-    "bloomFormula",
     "solarMethodology",
     "shadowAnalysis",
     "permits",
@@ -89,7 +83,6 @@ META_KEYS = (
 # state on the wire).
 REQUIRED_STATS_KEYS = frozenset({
     "totalParcels",
-    "scorePositive",
     "heritagePartIV",
     "heritagePartV",
     "heritageListed",
@@ -97,14 +90,12 @@ REQUIRED_STATS_KEYS = frozenset({
     "residential",
     "cornerLot",
     "postwar",
-    "bloom",
     "skippedNoNeighborhood",
     "skippedNonBuildable",
     "skippedInstitutional",
     "skippedInstitutionalByCategory",
     "skippedOsmLanduse",
     "skippedTallExistingBuilding",
-    "outsideTransitBuffer",
     "abutsLaneway",
     "nearRapidToCorridor",
     "inFloodingStudyArea",

@@ -64,9 +64,9 @@ def _fmt_examples(examples, max_n=5):
 EXPECTED_GATE_CONSTANTS = {
     "heritageStatus": (None, "_passes_shared excludes any heritage tier"),
     "inRegulatedArea": (False, "_passes_shared excludes TRCA-regulated parcels"),
-    "residential": (True, "score>0 requires residential zoning"),
-    "outsideTransitBuffer": (False, "score>0 requires distSubwayStreetcarM<500"),
-    "solarShadowQuality": ("measured", "score>0 requires positive solar"),
+    "residential": (True, "elite gate requires residential zoning"),
+    "solarShadowQuality": ("measured",
+        "elite parcels generally have measured shadow quality (synthetic gate)"),
     "inFloodingStudyArea": (True,
         "basement-flooding-study-areas covers ~all pre-1990 residential Toronto; "
         "this dataset is non-discriminating (see memory: project_flood_dataset_choice). "
@@ -149,23 +149,8 @@ def check_logical_invariants(rows, file_label):
         bad = [r for r in rows if predicate(r)]
         return bad
 
-    # outsideTransitBuffer ↔ distSubwayStreetcarM > 500
-    mismatches = []
-    for r in rows:
-        d = r.get("distSubwayStreetcarM")
-        flag = r.get("outsideTransitBuffer")
-        if d is None or flag is None:
-            continue
-        expected = d > 500
-        if flag != expected:
-            mismatches.append(f"parcelId={r['parcelId']}  distSubwayStreetcarM={d}  outsideTransitBuffer={flag} (expected {expected})")
-    if mismatches:
-        findings.append(Finding(
-            "CRITICAL",
-            f"`outsideTransitBuffer` doesn't match `distSubwayStreetcarM > 500` on {len(mismatches):,} rows in {file_label}",
-            "These two fields encode the same gate; they must agree by construction.",
-            mismatches,
-        ))
+    # outsideTransitBuffer / score / softScore checks dropped 2026-05-07
+    # — those wire fields no longer exist (synthesised composites stripped).
 
     # distSubwayStreetcarM == min(distSubwayM, distStreetcarM)
     mismatches = []
@@ -211,8 +196,6 @@ def check_logical_invariants(rows, file_label):
 
     range_check("lat", TO_LAT_MIN, TO_LAT_MAX, "CRITICAL")
     range_check("lng", TO_LNG_MIN, TO_LNG_MAX, "CRITICAL")
-    range_check("score", 0, 100)
-    range_check("softScore", 0, 100)
     range_check("solarScore", 0, 100)
     range_check("builtYear", 1820, 2026)
     range_check("neighborhoodCanopyPct", 0, 100)
@@ -436,7 +419,7 @@ def check_score_distribution(rows, file_label):
             "MEDIUM",
             f"`score` has only {uniq} distinct values across {len(scores):,} rows in {file_label}",
             "Heavy quantization usually means downstream sort tiebreaks are deterministic by ETL order. "
-            "Consider adding a tiebreaker (softScore, lotAreaM2) to break ties stably.",
+            "Consider adding a tiebreaker (e.g. parcelId) to break ties stably.",
         ))
 
     # Bloom field expected to be boolean — check
