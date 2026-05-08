@@ -1106,6 +1106,7 @@
                 76px                  /* Subway */
                 76px                  /* Sixplex */
                 88px                  /* Permits — fits "Nbhd permits" without wrap */
+                56px                  /* Hot — days since latest signal/permit */
                 60px                  /* Trees */
                 92px;                 /* Saved $ */
             align-items: stretch;
@@ -2062,6 +2063,7 @@
                 <button class="col-btn" data-sort="subway" title="Sort by subway proximity (closest first)">Subway</button>
                 <button class="col-btn" data-sort="sixplex" title="Sixplex eligible — does this parcel qualify for as-of-right 6-plex? Yes only in T&EY District + Ward 23 (June 2025 carve-out). Sort: eligible first.">6-plex OK</button>
                 <button class="col-btn" data-sort="permits_nb" title="Permit activity in this parcel's neighborhood over the last 5 years (sample size). Sort: most first.">Nbhd permits</button>
+                <button class="col-btn" data-sort="activity" title="Days since the latest activity signal on this parcel — most-recent of (a) on-lot building permit, or (b) active CKAN signal (severance / demolition permit / property-standards violation, last 12 months). '—' if neither. Sort: freshest first.">Hot</button>
                 <button class="col-btn" data-sort="trees" title="Sort by mature tree count (most first)">Trees</button>
                 <button class="col-btn header-stack-label" data-sort="savings" title="Bill 185 stacked incentive total ($200K DC waiver + $25K × parking stalls). Sort: highest first.">SAVED $</button>
             </div>
@@ -2470,6 +2472,9 @@
             // by maxUnits >= 4). Replaces the old 'attract' comparator
             // (Deal score, BloomTO composite) on the Saved $ column.
             savings:       (a, b) => stackedSavingsFor(b).savings - stackedSavingsFor(a).savings,
+            // Hot — days since latest activity on the parcel itself (most-recent
+            // of on-lot permit + CKAN signal). Smallest days = freshest = top.
+            activity:      (a, b) => (latestActivityDays(a) ?? 1e9) - (latestActivityDays(b) ?? 1e9),
             // 2026-05-07 — neighborhood-level activity & affordability signals
             // pulled from NPP 2021 + permit aggregation. Surface these as
             // sortable dimensions so a dev can rank by "where stuff is
@@ -3229,6 +3234,29 @@
             if (s.violation && s.violation.filedDate) cands.push(s.violation.filedDate);
             if (s.prelimZoning && s.prelimZoning.applicationDate) cands.push(s.prelimZoning.applicationDate);
             return cands.length ? cands.reduce((a, b) => a > b ? a : b) : null;
+        }
+        // Days since the latest activity signal on this parcel — most-recent
+        // of (a) the parcel's on-lot building permit (`permitsRecentMostRecentDate`,
+        // baked into parcels-top.json by build_parcels.py) or (b) any active
+        // CKAN signal date from signals.json (severance / demo permit /
+        // violation / prelim zoning, all within last 12 months). Returns null
+        // when neither source has a date — those parcels are pure structural
+        // picks with no recency evidence.
+        function latestActivityDate(r) {
+            const candidates = [];
+            const onLot = r.permitsRecentMostRecentDate;
+            if (onLot) candidates.push(onLot);
+            const sigDate = _signalLatestDateForRow(r);
+            if (sigDate) candidates.push(sigDate);
+            if (!candidates.length) return null;
+            return candidates.reduce((a, b) => a > b ? a : b);
+        }
+        function latestActivityDays(r) {
+            const iso = latestActivityDate(r);
+            if (!iso) return null;
+            const t = Date.parse(iso);
+            if (isNaN(t)) return null;
+            return Math.max(0, Math.floor((Date.now() - t) / 86400000));
         }
         function _signalKindForRow(r) {
             const s = getSignals(r);
@@ -5346,6 +5374,15 @@
                         <div class="cell ${popSubway}" data-col="subway">${subDisplayShort}</div>
                         <div class="cell ${sxClass} ${popSixplex}" data-col="sixplex">${sxText}</div>
                         <div class="cell" data-col="permits">${permitsDisplay}</div>
+                        ${(() => {
+                            const days = latestActivityDays(r);
+                            if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
+                            // Color-code by recency: <30d red, 30-90d orange,
+                            // 90-365d neutral, >1y muted.
+                            const cls = days < 30 ? 'val-warn' : days < 90 ? '' : days < 365 ? '' : 'val-no';
+                            const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
+                            return `<div class="cell ${cls}" data-col="activity">${display}</div>`;
+                        })()}
                         <div class="cell ${treesClass}" data-col="trees">${treesDisplay}</div>
                     </div>
                     <div class="stack-mini ${popSavings}" title="${stackText.replace(/<[^>]*>/g,'').replace(/"/g,'&quot;')}">${savings > 0 ? '~$' + Math.round(savings/1000) + 'K' : '—'}</div>
@@ -5806,6 +5843,7 @@
             subway: 'subway',
             sixplex: 'sixplex',
             permits_nb: 'permits',
+            activity: 'activity',
             trees: 'trees',
             // savings → stack-mini cell; address → .head; net_zero → no col
         };
