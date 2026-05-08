@@ -302,8 +302,19 @@ def is_elite(props: dict) -> bool:
         return False
     if not props.get("residential", False):
         return False
-    if props.get("existingStructureType", "unknown") not in ELITE_STRUCTURE_TYPES:
+    structure_type = props.get("existingStructureType", "unknown")
+    if structure_type not in ELITE_STRUCTURE_TYPES:
         return False
+    # 2026-05-08 — elite requires city-record-verified structure type.
+    # Classifier-derived "detached" parcels (heuristic ~82 % accuracy) are
+    # downgraded to broader so the "spicy elite" promise becomes "every
+    # elite pick has a Toronto building-permit STRUCTURE_TYPE record on
+    # its address." Vacant parcels are exempt — there's no structure to
+    # verify and the source for vacant is the deterministic absence of a
+    # Building-Outline polygon, not a heuristic guess.
+    if structure_type != "vacant":
+        if props.get("existingStructureSource") != "permit":
+            return False
     return True
 
 
