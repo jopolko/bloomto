@@ -2780,6 +2780,20 @@
             return `${years}y ${extraMonths}mo`;
         }
 
+        // Day-precision age helper for the NEWEST card so the dev sees the
+        // actual freshness in days. "9 mo" reads as marketing-vague; "274 days
+        // ago" reads as data-precise — and at a glance it's clear whether the
+        // freshest activity is genuinely fresh (<60d) or stale.
+        function formatDaysAgo(iso) {
+            if (!iso) return null;
+            const t = Date.parse(iso);
+            if (isNaN(t)) return null;
+            const days = Math.max(0, Math.floor((Date.now() - t) / 86400000));
+            if (days === 0) return 'today';
+            if (days === 1) return '1 day ago';
+            return `${days} days ago`;
+        }
+
         function relativeTimeFromIso(iso) {
             if (!iso) return null;
             const t = Date.parse(iso);
@@ -3249,7 +3263,11 @@
                     if (!old.has(String(r.parcelId))) { newest = r; break; }
                 }
                 if (newest) {
-                    newest._pickWhy = `Just entered the cover-list since your last visit on ${(new Date(prev.at)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}.`;
+                    const visitDays = Math.max(0, Math.floor((Date.now() - Date.parse(prev.at)) / 86400000));
+                    const visitDaysText = visitDays === 0 ? 'earlier today'
+                                        : visitDays === 1 ? '1 day ago'
+                                        : `${visitDays} days ago`;
+                    newest._pickWhy = `Just entered the cover-list since your last visit ${visitDaysText}.`;
                 }
             }
             // First-visit fallback. Uses sync wire data (`permitsRecentMostRecentDate`,
@@ -3276,10 +3294,11 @@
                     }
                 }
                 if (bestRow) {
-                    const ago = (typeof formatAge === 'function') ? formatAge(bestDate) : '';
-                    const agoText = ago ? `${ago}` : 'recently';
+                    const agoText = (typeof formatDaysAgo === 'function')
+                        ? (formatDaysAgo(bestDate) || 'recently')
+                        : 'recently';
                     newest = bestRow;
-                    newest._pickWhy = `Most recent on-lot permit in the cover-list — filed ${agoText}. On future visits this slot tracks new entries to the cover-list since you were last here.`;
+                    newest._pickWhy = `Most recent on-lot permit on a non-signal cover-list parcel — filed ${agoText}. (Active demolition / severance / violation parcels go to HOTTEST.) On future visits this slot tracks new entries to the cover-list since you were last here.`;
                     newest._pickIsFirstVisitFallback = true;
                 } else {
                     // No permit data either — pick the first non-signal-bearing
