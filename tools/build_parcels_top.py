@@ -137,6 +137,27 @@ WEALTHY_ENCLAVE_NEIGHBORHOODS = frozenset({
 WEALTHY_ESTATE_MIN_LOT_M2 = 2000
 WEALTHY_ESTATE_MAX_COVERAGE = 0.15
 
+# ── Mansion filter (2026-05-08) ────────────────────────────────────────────
+# Catches wealthy-area mansions that the wealthy-estate filter misses (lot
+# under 2000 m² + coverage above 15 %) and that the neighborhood-value gate
+# misses ($2 M median is too high to catch gentrified-with-mansions areas
+# like Annex / Humewood-Cedarvale / The Beaches).
+#
+# Combined signal: a 1,200 m² gross floor area (footprint × storeys ≈
+# height/3) on a parcel in a neighborhood with $1 M+ average dwelling value.
+# Both signals together — big building AND wealthy area — cleanly separate
+# mansions from genuine multiplex teardowns. A 1,200 m² floor area on a
+# normal lot is structurally a 5-storey big-house — not a 4-plex teardown
+# target. The neighborhood avg-value gate confirms the area can sustain
+# mansion pricing.
+#
+# Verified 2026-05-08: caught the user-flagged 39 Glen Oak Dr (East End-
+# Danforth, $4M+ mansion) plus 17 similar parcels including 1 Bastedo Ave
+# (Woodbine Corridor), Annex 5 Admiral Rd / 16 Howland Ave, four Humewood-
+# Cedarvale parcels, three Dufferin Grove Rusholme Rd parcels.
+MANSION_MIN_FLOOR_AREA_M2 = 1200
+MANSION_MIN_NB_AVG_DWELLING_VALUE = 1_000_000
+
 # ── Dwelling-value gate (2026-05-07 evening) ───────────────────────────────
 # Direct-affordability threshold from NPP 2021 owner-reported median dwelling
 # value. Catches whole neighborhoods whose median home price exceeds the L2/3
@@ -226,6 +247,27 @@ def _looks_like_wealthy_estate(props: dict) -> bool:
     )
 
 
+def _looks_like_mansion(props: dict) -> bool:
+    """Big-building-in-wealthy-area signature: gross floor area (footprint
+    × storeys) ≥ 1,200 m² AND neighborhood avg-dwelling-value ≥ $1 M.
+    Catches mansions that the wealthy-estate filter misses (smaller lot,
+    higher coverage) and that the $2 M median-value gate misses (gentrified
+    mid-tier neighborhoods like Annex / Humewood-Cedarvale / The Beaches).
+    """
+    cov = props.get("buildingCoverageRatio") or 0
+    lot = props.get("lotAreaM2") or 0
+    height = props.get("existingMaxBuildingHeightM") or 0
+    if cov <= 0 or lot <= 0 or height <= 0:
+        return False
+    storeys = max(1, round(height / 3))
+    floor_area = cov * lot * storeys
+    nb_avg_val = props.get("nbAvgDwellingValue") or 0
+    return (
+        floor_area >= MANSION_MIN_FLOOR_AREA_M2
+        and nb_avg_val >= MANSION_MIN_NB_AVG_DWELLING_VALUE
+    )
+
+
 def _passes_shared(props: dict) -> bool:
     """Binary-gate eligibility shared by elite + broader.
 
@@ -259,6 +301,11 @@ def _passes_shared(props: dict) -> bool:
     # (2,593 m² · 8.3 % cov) plus the St.Andrew-Windfields / Kingsway /
     # Bedford Park clusters that the named-enclave list misses.
     if _looks_like_wealthy_estate(props):
+        return False
+    # Mansion filter — big-building-in-wealthy-area. Catches what the
+    # estate filter misses (smaller lot, higher coverage) and what the
+    # $2M median-value gate misses (gentrified mid-tier areas).
+    if _looks_like_mansion(props):
         return False
     # Named-enclave filter (2026-05-07 evening — moved from curated-only
     # path into the shared gate so broader inherits it too). Previously the
