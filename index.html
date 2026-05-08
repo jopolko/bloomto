@@ -5693,14 +5693,14 @@
                 : `${winDays} days`;
             const signalsHtml = signalsN > 0
                 ? `<button id="signals-pill" class="signals-pill ${signalsActive ? 'active' : ''}" type="button"
-                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} where the owner has done something with the property in the last ${winLabel} — severance application filed, demolition permit pulled, or City enforcement order issued. Three daily-refreshed Toronto Open Data feeds. Click again to clear.">
+                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} carrying at least one active CKAN owner-activity signal in the last ${winLabel} — Committee of Adjustment severance application, building demolition permit, or City property-standards / unsafe / stop-work order. Three daily-refreshed Toronto Open Data feeds, address-joined to parcels by tools/build_signals.py. Click again to clear.">
                        <div class="signals-num">${signalsN.toLocaleString()}</div>
-                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}owners moving · last ${winLabel}</div>
+                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}parcels w/ active severance / demo / violation filings · last ${winLabel}</div>
                        ${freshnessLine}
                    </button>`
                 : `<div class="signals-pill empty">
                        <div class="signals-num">—</div>
-                       <div class="signals-lab">no owner activity in last ${winLabel} on filtered parcels</div>
+                       <div class="signals-lab">no severance / demo / violation filings on cohort in last ${winLabel}</div>
                        ${freshnessLine}
                    </div>`;
             el.innerHTML = `
