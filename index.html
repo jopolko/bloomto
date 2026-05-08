@@ -3274,18 +3274,15 @@
             // baked into parcels-top.json by build_parcels.py) so the card populates
             // on the very first render — independent of the async CKAN fresh-permits
             // fetch which may fail on local dev or return zero matches in elite parcels.
-            // Three rules for the fallback so all three cards stay populated:
-            //   (1) Skip signal-bearing parcels — those go to HOTTEST naturally;
-            //       claiming them would cause the dedup at the bottom of this
-            //       function to null out HOTTEST.
-            //   (2) Prefer parcel with most-recent on-lot permit.
-            //   (3) Else featured pick: first row that isn't already a HOTTEST
-            //       candidate, framed as "starter pick while you build a watchlist."
+            // Picks the absolute freshest on-lot permit in the cohort, period —
+            // no signal-exclusion. If HOTTEST would have wanted the same parcel,
+            // HOTTEST falls back to the next-freshest signal-bearing parcel below.
+            // First-visit only; deeper inspection (row badges, detail panel)
+            // makes the signal/permit distinction clear.
             if (!newest) {
                 let bestRow = null;
                 let bestDate = '';
                 for (const r of rows) {
-                    if (hasAnySignal(r)) continue;  // leave for HOTTEST
                     const d = r.permitsRecentMostRecentDate;
                     if (!d) continue;
                     if (d > bestDate) {
@@ -3297,19 +3294,22 @@
                     const agoText = (typeof formatDaysAgo === 'function')
                         ? (formatDaysAgo(bestDate) || 'recently')
                         : 'recently';
+                    const valTotal = bestRow.permitsRecentValueTotal || 0;
+                    const dollar = valTotal >= 1_000_000
+                        ? `$${(valTotal/1_000_000).toFixed(1)}M`
+                        : valTotal >= 1000
+                            ? `$${Math.round(valTotal/1000)}K`
+                            : '';
+                    const valFrag = dollar ? ` · ${dollar} declared cost` : '';
                     newest = bestRow;
-                    newest._pickWhy = `Most recent on-lot permit on a non-signal cover-list parcel — filed ${agoText}. (Active demolition / severance / violation parcels go to HOTTEST.) On future visits this slot tracks new entries to the cover-list since you were last here.`;
+                    newest._pickWhy = `Freshest building permit on the list — filed ${agoText}${valFrag}.`;
                     newest._pickIsFirstVisitFallback = true;
-                } else {
-                    // No permit data either — pick the first non-signal-bearing
-                    // row in current sort order. Same exclusion principle so
-                    // HOTTEST/UNDERDOG keep their candidates.
-                    const featured = rows.find(r => !hasAnySignal(r)) || rows[0];
-                    if (featured) {
-                        newest = featured;
-                        newest._pickWhy = `Featured pick from the current cover-list. On future visits this slot tracks what's joined the list since you were last here.`;
-                        newest._pickIsFirstVisitFallback = true;
-                    }
+                } else if (rows.length > 0) {
+                    // No permit data on any cover-list parcel — pick top row as
+                    // a featured starter so the card never greys.
+                    newest = rows[0];
+                    newest._pickWhy = `Featured pick from the current cover-list. On future visits this slot tracks what's joined the list since you were last here.`;
+                    newest._pickIsFirstVisitFallback = true;
                 }
             }
             // Persist the current set on first render only.
@@ -3318,14 +3318,15 @@
                 _eliteSnapshotWritten = true;
             }
 
-            // Hottest — parcel with the most recent CKAN signal date.
-            // Ties broken by score desc.
+            // Hottest — parcel with the most recent CKAN signal date,
+            // EXCLUDING whichever parcel NEWEST already claimed (so we don't
+            // dedup-null this card). Ties broken by lot area desc.
             let hottest = null;
             let hottestDate = '';
             let hottestArea = -1;
-            // Tie-break by lot area desc (the new default sort) when two
-            // parcels share the most-recent signal date.
+            const newestKey = newest ? parcelKey(newest) : null;
             for (const r of rows) {
+                if (newestKey && parcelKey(r) === newestKey) continue;
                 const d = _signalLatestDateForRow(r);
                 if (!d) continue;
                 const area = r.lotAreaM2 || 0;
