@@ -2470,6 +2470,13 @@
             // by maxUnits >= 4). Replaces the old 'attract' comparator
             // (Deal score, BloomTO composite) on the Saved $ column.
             savings:       (a, b) => stackedSavingsFor(b).savings - stackedSavingsFor(a).savings,
+            // 2026-05-07 — neighborhood-level activity & affordability signals
+            // pulled from NPP 2021 + permit aggregation. Surface these as
+            // sortable dimensions so a dev can rank by "where stuff is
+            // actually getting built" or "cheaper hoods first."
+            nbhd_permit_rate: (a, b) => (b.nbPermitsPer1kDwellings ?? 0) - (a.nbPermitsPer1kDwellings ?? 0),
+            nbhd_value:       (a, b) => (a.nbMedDwellingValue ?? 0) - (b.nbMedDwellingValue ?? 0),
+            nbhd_income:      (a, b) => (a.nbMedHouseholdIncome ?? 0) - (b.nbMedHouseholdIncome ?? 0),
         };
         // neighborhood name → heatPump readiness % (from data/neighborhoods.json),
         // populated on boot. Used by the Rebate Rocket badge.
@@ -3245,29 +3252,36 @@
                     newest._pickWhy = `Just entered the cover-list since your last visit on ${(new Date(prev.at)).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}.`;
                 }
             }
-            // First-visit fallback: freshest permit on any current elite parcel.
-            // Uses the same `freshPermitsByKey` layer that drives the inline 🔥
-            // permit badge on the picks list, so first-visit users see the
-            // exact kind of signal they'll be tracking on subsequent visits.
-            if (!newest && freshPermitsByKey && freshPermitsByKey.size > 0) {
+            // First-visit fallback. Uses sync wire data (`permitsRecentMostRecentDate`,
+            // baked into parcels-top.json by build_parcels.py) so the card populates
+            // on the very first render — independent of the async CKAN fresh-permits
+            // fetch which may fail on local dev or return zero matches in elite parcels.
+            // Two-step fallback ladder so we always show something useful:
+            //   (1) prefer an elite parcel with the most-recent on-lot permit
+            //   (2) else featured pick: top-row of the current sort, with copy
+            //       framing it as "while you build your watchlist"
+            if (!newest) {
                 let bestRow = null;
                 let bestDate = '';
                 for (const r of rows) {
-                    const fp = freshPermitsByKey.get(parcelKey(r));
-                    if (!fp || !fp.applicationDate) continue;
-                    if (fp.applicationDate > bestDate) {
-                        bestDate = fp.applicationDate;
+                    const d = r.permitsRecentMostRecentDate;
+                    if (!d) continue;
+                    if (d > bestDate) {
+                        bestDate = d;
                         bestRow = r;
                     }
                 }
                 if (bestRow) {
-                    const fp = freshPermitsByKey.get(parcelKey(bestRow));
-                    const ago = fp.daysAgo === 0 ? 'today'
-                              : fp.daysAgo === 1 ? 'yesterday'
-                              : `${fp.daysAgo} days ago`;
-                    const units = fp.unitsCreated > 0 ? `${fp.unitsCreated}-unit ` : '';
+                    const ago = (typeof formatAge === 'function') ? formatAge(bestDate) : '';
+                    const agoText = ago ? `${ago}` : 'recently';
                     newest = bestRow;
-                    newest._pickWhy = `${units}permit filed ${ago} on a current cover-list parcel. Come back — this slot will track new entries to the cover-list since your last visit.`;
+                    newest._pickWhy = `Most recent on-lot permit in the cover-list — filed ${agoText}. On future visits this slot tracks new entries to the cover-list since you were last here.`;
+                    newest._pickIsFirstVisitFallback = true;
+                } else if (rows.length > 0) {
+                    // No permit data at all — still populate so the card never
+                    // greys out. Pick the top row in current sort order.
+                    newest = rows[0];
+                    newest._pickWhy = `Featured pick from the current cover-list. On future visits this slot tracks what's joined the list since you were last here.`;
                     newest._pickIsFirstVisitFallback = true;
                 }
             }
@@ -4433,6 +4447,53 @@
                         <div style="font-size:11px;color:#9ca3af;margin-top:6px">Declared construction cost — not market sale price. Source: <a class="map-link" target="_blank" rel="noopener" href="https://www.toronto.ca/services-payments/building-construction/building-permits/">Toronto Building Permits (CKAN)</a>.</div>`;
                     })()}
                 </section>
+
+                <details open>
+                    <summary>Neighborhood context (NPP 2021)</summary>
+                    ${(() => {
+                        const incMed = r.nbMedHouseholdIncome || 0;
+                        const incAvg = r.nbAvgHouseholdIncome || 0;
+                        const valMed = r.nbMedDwellingValue || 0;
+                        const valAvg = r.nbAvgDwellingValue || 0;
+                        const permitRate = r.nbPermitsPer1kDwellings || 0;
+                        if (!incMed && !valMed && !permitRate) {
+                            return '<div style="font-size:12px;color:#9ca3af">Neighborhood context not available — fallback name or census suppression.</div>';
+                        }
+                        const fmt$ = v => v >= 1_000_000 ? `$${(v/1_000_000).toFixed(2)}M`
+                                       : v >= 1000 ? `$${Math.round(v/1000)}K`
+                                       : `$${v}`;
+                        // Activity bucket — relative to citywide avg of ~2/1k
+                        const actLabel = permitRate >= 5 ? 'hot market'
+                                       : permitRate >= 2 ? 'active'
+                                       : permitRate >= 1 ? 'moderate'
+                                       : permitRate > 0 ? 'quiet'
+                                       : 'no recent activity';
+                        const actColor = permitRate >= 5 ? '#16a34a'
+                                       : permitRate >= 2 ? '#15803d'
+                                       : permitRate >= 1 ? '#65a30d'
+                                       : permitRate > 0 ? '#a16207'
+                                       : '#9ca3af';
+                        const valIncRatio = (valMed && incMed) ? valMed/incMed : 0;
+                        const ratioNote = valIncRatio >= 20 ? ' <span style="color:#9a3412">(extreme — old wealth, low declared income)</span>'
+                                        : valIncRatio >= 15 ? ' <span style="color:#b45309">(high — wealthy)</span>'
+                                        : '';
+                        return `<div class="stat-grid">
+                            <div class="k">Median household income</div>
+                            <div class="v">${fmt$(incMed)} <span class="muted">· avg ${fmt$(incAvg)}</span></div>
+                            <div class="k">Median dwelling value</div>
+                            <div class="v">${fmt$(valMed)} <span class="muted">· avg ${fmt$(valAvg)}</span></div>
+                            <div class="k">Value / income ratio</div>
+                            <div class="v">${valIncRatio ? valIncRatio.toFixed(1) + '×' : '—'}${ratioNote}</div>
+                            <div class="k">Permit rate per 1k dwellings</div>
+                            <div class="v" style="color:${actColor};font-weight:600">${permitRate.toFixed(2)} <span style="font-weight:400">— ${actLabel}</span></div>
+                        </div>
+                        <div style="font-size:10px;color:#9ca3af;margin-top:6px;line-height:1.4">
+                            Per-neighborhood from NPP 2021 (2020 income/value data) and
+                            building permits joined to parcels. Permit rate counts last-5-yr
+                            permits with ≥1 unit created. Citywide median permit rate ≈ 2/1k.
+                        </div>`;
+                    })()}
+                </details>
 
                 <details>
                     <summary>Site context</summary>
