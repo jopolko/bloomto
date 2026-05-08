@@ -293,9 +293,21 @@ def _process_parcel(parcel_or_record) -> dict:
     else:
         solar_score = max(0, min(100, round(solar_raw * shadow_result.unshadowed_fraction)))
 
-    existing_structure_type = _classify_existing_structure(
-        parcel, building_tree, building_geoms,
-    )
+    # Structure type — permit-derived (ground truth) when available, else
+    # cross-boundary classifier (heuristic, ~82% accuracy).
+    permit_struct_type = None
+    if normalized_addr := (
+        heritage_src.normalize_address(parcel.address) if parcel.address else ""
+    ):
+        permit_struct_type = _W['permit_structure_type_by_addr'].get(normalized_addr)
+    if permit_struct_type:
+        existing_structure_type = permit_struct_type
+        existing_structure_source = "permit"
+    else:
+        existing_structure_type = _classify_existing_structure(
+            parcel, building_tree, building_geoms,
+        )
+        existing_structure_source = "classifier" if existing_structure_type != "vacant" else "vacant"
     corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
     abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
     near_rapidto = _near_rapidto(parcel, rapidto_tree)
@@ -390,6 +402,7 @@ def _process_parcel(parcel_or_record) -> dict:
                 round(existing_max_h, 1) if existing_max_h is not None else None
             ),
             'existingStructureType': existing_structure_type,
+            'existingStructureSource': existing_structure_source,
             'solarYieldKwhPerYr': int(round(max_kwh)) if max_kwh else 0,
             'pvCapacityKwEstimate': round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
             'sixplexBonusValueCad': None,
@@ -1072,6 +1085,7 @@ def assemble_parcel_payload(
     built_year_by_name: dict[str, int],
     permit_index,
     permit_freshness_cutoff,
+    permit_structure_type_by_addr: dict,
     bike_tree: STRtree,
     bike_lines: list,
     street_tree_index,
@@ -1162,6 +1176,7 @@ def assemble_parcel_payload(
         'bike_lines': bike_lines,
         'street_tree_index': street_tree_index,
         'permit_index': permit_index,
+        'permit_structure_type_by_addr': permit_structure_type_by_addr,
         'permit_freshness_cutoff': permit_freshness_cutoff,
         'nb_canopy_by_name': nb_canopy_by_name,
         'built_year_by_name': built_year_by_name,
@@ -1487,6 +1502,7 @@ def main(argv=None) -> int:
 
     t = _stage("load Toronto building permits (residential new-build / conversion)")
     permit_index = permits_src.compute_permits(cache)
+    permit_structure_type_by_addr = permits_src.build_structure_type_index(cache)
     permit_freshness_cutoff = permits_src.freshness_cutoff()
     _done("permits", t)
 
@@ -1557,6 +1573,7 @@ def main(argv=None) -> int:
         centreline_index=centreline_index,
         built_year_by_name=built_year_by_name,
         permit_index=permit_index,
+        permit_structure_type_by_addr=permit_structure_type_by_addr,
         permit_freshness_cutoff=permit_freshness_cutoff,
         bike_tree=bike_tree,
         bike_lines=bike_lines,

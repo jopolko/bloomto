@@ -69,9 +69,13 @@ FEATURE_PROPERTIES = (
                                    # building substantially overlapping the
                                    # parcel; gates apartment-exclusion at 15m
     "existingStructureType",  # "detached" | "semi" | "row" | "vacant" | "unknown"
-                              # Side-yard clearance test on the parcel's two
-                              # longest exterior edges; "unknown" reserved for
-                              # degenerate geometry (irregular / multi-piece lots)
+                              # Cross-boundary classifier OR permit-derived
+                              # ground truth (Toronto Building Permits CSV
+                              # STRUCTURE_TYPE column, ~32% coverage on elite).
+    "existingStructureSource", # "permit" | "classifier" | "vacant"
+                               # Tells the dev whether the structure-type
+                               # label is ground truth (city permit record)
+                               # or our cross-boundary classifier guess.
     "solarYieldKwhPerYr",   # int kWh, the un-shadowed best-rooftop figure
     "pvCapacityKwEstimate", # float kW, derived from solarYieldKwhPerYr
     "sixplexBonusValueCad", # int CAD, or None when ineligible / no comp

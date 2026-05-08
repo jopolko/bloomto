@@ -58,6 +58,13 @@ RESOURCE_URL = (
     "https://ckan0.cf.opendata.inter.prod-toronto.ca/datastore/dump/"
     "6d0229af-bc54-46de-9c2b-26759b01dd05"
 )
+# Cleared building permits since 2017 — separate dataset from active.
+# Same schema (incl. STRUCTURE_TYPE), used only by `build_structure_type_index`.
+CLEARED_CACHE_FILENAME = "cleared_permits.csv"
+CLEARED_RESOURCE_URL = (
+    "https://ckan0.cf.opendata.inter.prod-toronto.ca/datastore/dump/"
+    "a96c0ba4-3026-402b-b09d-5b1268b8f810"
+)
 
 DEFAULT_FRESHNESS_YEARS = 5
 SANITY_VALUE_CEILING_CAD = 50_000_000
@@ -321,6 +328,123 @@ def compute_permits(
         centroids=[],
         claimed=set(),
     )
+
+
+# Map from CSV STRUCTURE_TYPE values → our 5-class enum
+# (detached / semi / row / vacant / unknown). Apartment / townhouse /
+# stacked variants all collapse to "row" because for L2/3 elite-gate
+# purposes they're equivalent (party-wall structure, excluded from elite).
+# Values not listed here are non-residential or ambiguous and don't
+# override the cross-boundary classifier.
+PERMIT_STRUCTURE_TYPE_TO_ENUM = {
+    "SFD - Detached":        "detached",
+    "2 Unit - Detached":     "detached",
+    "3+ Unit - Detached":    "detached",
+    "Converted House":       "detached",  # originally detached, now multi-unit; structure unchanged
+    "SFD - Semi-Detached":   "semi",
+    "2 Unit - Semi-detached": "semi",
+    "SFD - Townhouse":       "row",
+    "Stacked Townhouses":    "row",
+    "Apartment Building":    "row",        # always attached/large
+    "Multiple Unit Building": "row",
+    # Excluded values (don't override classifier): "Other", "Unknown",
+    # "Office", "Retail Store", "Industrial", "Mixed Use/Res w Non Res",
+    # "Restaurant ...", "Hospital", etc., and "Laneway / Rear Yard Suite"
+    # (an addition, not the main structure).
+}
+
+
+def build_structure_type_index(cache_dir: Path) -> dict[str, str]:
+    """Return `{normalized_address: enum_structure_type}` from THREE
+    permit datasets, merged most-recent-wins:
+    - active building permits (`building_permits.csv`)
+    - cleared building permits since 2017 (`cleared_permits.csv`)
+    - demolition permits (already cached as `demo_permits.json` for the
+      signals layer)
+
+    Each row's `STRUCTURE_TYPE` is mapped through
+    `PERMIT_STRUCTURE_TYPE_TO_ENUM`. Most-recent ISSUED_DATE wins per
+    address. Coverage on master cohort is ~120K unique addresses (~23 %
+    of 528K parcels) and ~50–60 % of curated/broader picks (which are
+    biased toward parcels with redev history).
+
+    For matched parcels we have direct ground truth — no classifier
+    heuristic needed. The cross-boundary classifier remains the fallback
+    for unmatched parcels.
+    """
+    cache = Path(cache_dir)
+    best_by_addr: dict[str, tuple[date, str, str]] = {}  # (date, enum, source)
+    rows_with_struct = 0
+    rows_mapped = 0
+    unseen: set[str] = set()
+
+    def ingest_row(row: dict, source: str) -> None:
+        nonlocal rows_with_struct, rows_mapped
+        st_raw = (row.get("STRUCTURE_TYPE") or "").strip()
+        if not st_raw:
+            return
+        rows_with_struct += 1
+        enum = PERMIT_STRUCTURE_TYPE_TO_ENUM.get(st_raw)
+        if enum is None:
+            unseen.add(st_raw)
+            return
+        addr = _build_address(row)
+        if not addr:
+            return
+        normalized = normalize_address(addr)
+        if not normalized:
+            return
+        issued = _parse_date(row.get("ISSUED_DATE")) or date(1900, 1, 1)
+        existing = best_by_addr.get(normalized)
+        if existing is None or issued > existing[0]:
+            best_by_addr[normalized] = (issued, enum, source)
+            rows_mapped += 1
+
+    # 1. Active permits
+    active = _ensure_cached(cache)
+    with active.open("r", encoding="utf-8", newline="") as fp:
+        for row in csv.DictReader(fp):
+            ingest_row(row, "active")
+
+    # 2. Cleared permits (since 2017) — separate dataset, similar schema.
+    # Auto-download if not cached (~135 MB, takes ~20s). On a fresh
+    # machine the first build_parcels run will pull this once.
+    cleared = cache / CLEARED_CACHE_FILENAME
+    if not cleared.exists() or cleared.stat().st_size == 0:
+        _log.info("downloading cleared permits CSV (~135 MB) → %s", cleared)
+        try:
+            _http.download_with_retries(CLEARED_RESOURCE_URL, cleared)
+        except Exception as e:
+            _log.warning("cleared permits download failed (%s) — skipping that source", e)
+    if cleared.exists() and cleared.stat().st_size > 0:
+        with cleared.open("r", encoding="utf-8", newline="") as fp:
+            for row in csv.DictReader(fp):
+                ingest_row(row, "cleared")
+    else:
+        _log.warning("cleared_permits.csv not in cache — skipping cleared-permits ingest")
+
+    # 3. Demolition permits — already cached as JSON for the signals
+    # layer. Same schema as building permits.
+    import json as _json
+    demo = cache / "demo_permits.json"
+    if demo.exists():
+        try:
+            with demo.open() as fp:
+                d = _json.load(fp)
+            recs = d.get("result", {}).get("records", []) if isinstance(d, dict) else d
+            for row in (recs or []):
+                ingest_row(row, "demo")
+        except Exception as e:
+            _log.warning("demo_permits.json read failed: %s — skipping", e)
+
+    out = {addr: enum for addr, (_d, enum, _s) in best_by_addr.items()}
+    _log.info(
+        "permits/structure_type: %d rows had STRUCTURE_TYPE across active+cleared+demo, "
+        "%d mapped to enum, %d unique addresses indexed (~23%% of citywide parcels, "
+        "~50%%+ of redev-active cohort). %d unmapped STRUCTURE_TYPE values seen.",
+        rows_with_struct, rows_mapped, len(out), len(unseen),
+    )
+    return out
 
 
 def freshness_cutoff(today: date | None = None,

@@ -218,6 +218,7 @@ class ParcelE2ETests(unittest.TestCase):
             centreline_index=self.centreline_index,
             built_year_by_name=self.built_year_by_name,
             permit_index=empty_permits,
+            permit_structure_type_by_addr={},
             permit_freshness_cutoff=date(2021, 1, 1),
             bike_tree=empty_tree,
             bike_lines=[],
