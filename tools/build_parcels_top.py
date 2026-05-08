@@ -305,15 +305,18 @@ def is_elite(props: dict) -> bool:
     structure_type = props.get("existingStructureType", "unknown")
     if structure_type not in ELITE_STRUCTURE_TYPES:
         return False
-    # 2026-05-08 — elite requires city-record-verified structure type.
-    # Classifier-derived "detached" parcels (heuristic ~82 % accuracy) are
-    # downgraded to broader so the "spicy elite" promise becomes "every
-    # elite pick has a Toronto building-permit STRUCTURE_TYPE record on
-    # its address." Vacant parcels are exempt — there's no structure to
-    # verify and the source for vacant is the deterministic absence of a
-    # Building-Outline polygon, not a heuristic guess.
+    # 2026-05-08 — elite requires ground-truth-grade structure type.
+    # Two acceptable sources:
+    #   "permit" — Toronto building-permit STRUCTURE_TYPE record (city-
+    #              recorded, highest confidence; ~32% citywide coverage)
+    #   "osm"    — OpenStreetMap volunteer-mapped `building=*` tag
+    #              (~12% citywide additional coverage; 96% agreement
+    #               with permits where they overlap)
+    # Cross-boundary classifier (~82 % accuracy heuristic) is downgraded
+    # to broader. Vacant parcels exempt — no structure to verify, source
+    # is deterministic absence of a Building-Outline polygon.
     if structure_type != "vacant":
-        if props.get("existingStructureSource") != "permit":
+        if props.get("existingStructureSource") not in ("permit", "osm"):
             return False
     return True
 

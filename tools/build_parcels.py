@@ -51,6 +51,7 @@ from tools.sources import (
     ttc as ttc_src,
     osm_ttc_stations as ttc_stations_src,
     osm_landuse as landuse_src,
+    osm_buildings as osm_src,
     zoning as zoning_src,
 )
 
@@ -293,16 +294,36 @@ def _process_parcel(parcel_or_record) -> dict:
     else:
         solar_score = max(0, min(100, round(solar_raw * shadow_result.unshadowed_fraction)))
 
-    # Structure type — permit-derived (ground truth) when available, else
-    # cross-boundary classifier (heuristic, ~82% accuracy).
+    # Structure type — three-tier waterfall:
+    #   1. Permit-derived (city building-permit STRUCTURE_TYPE record) — ~32 %
+    #      coverage citywide, ~43 % of curated. Highest confidence.
+    #   2. OSM-derived (OpenStreetMap `building=*` tag, volunteer-mapped) —
+    #      ~12 % citywide additional coverage, complementary to permits
+    #      (4 % overlap). 96 % agreement with permits where they overlap.
+    #   3. Cross-boundary classifier fallback — ~82 % accuracy heuristic,
+    #      always available.
     permit_struct_type = None
-    if normalized_addr := (
+    osm_struct_type = None
+    norm_addr = (
         heritage_src.normalize_address(parcel.address) if parcel.address else ""
-    ):
-        permit_struct_type = _W['permit_structure_type_by_addr'].get(normalized_addr)
+    )
+    if norm_addr:
+        permit_struct_type = _W['permit_structure_type_by_addr'].get(norm_addr)
     if permit_struct_type:
         existing_structure_type = permit_struct_type
         existing_structure_source = "permit"
+    elif parcel.address:
+        osm_struct_type = osm_src.lookup_osm_structure(
+            parcel.address, _W['osm_structure_type_by_addr'],
+        )
+        if osm_struct_type:
+            existing_structure_type = osm_struct_type
+            existing_structure_source = "osm"
+        else:
+            existing_structure_type = _classify_existing_structure(
+                parcel, building_tree, building_geoms,
+            )
+            existing_structure_source = "classifier" if existing_structure_type != "vacant" else "vacant"
     else:
         existing_structure_type = _classify_existing_structure(
             parcel, building_tree, building_geoms,
@@ -1086,6 +1107,7 @@ def assemble_parcel_payload(
     permit_index,
     permit_freshness_cutoff,
     permit_structure_type_by_addr: dict,
+    osm_structure_type_by_addr: dict,
     bike_tree: STRtree,
     bike_lines: list,
     street_tree_index,
@@ -1177,6 +1199,7 @@ def assemble_parcel_payload(
         'street_tree_index': street_tree_index,
         'permit_index': permit_index,
         'permit_structure_type_by_addr': permit_structure_type_by_addr,
+        'osm_structure_type_by_addr': osm_structure_type_by_addr,
         'permit_freshness_cutoff': permit_freshness_cutoff,
         'nb_canopy_by_name': nb_canopy_by_name,
         'built_year_by_name': built_year_by_name,
@@ -1503,6 +1526,7 @@ def main(argv=None) -> int:
     t = _stage("load Toronto building permits (residential new-build / conversion)")
     permit_index = permits_src.compute_permits(cache)
     permit_structure_type_by_addr = permits_src.build_structure_type_index(cache)
+    osm_structure_type_by_addr = osm_src.build_osm_structure_type_index(cache)
     permit_freshness_cutoff = permits_src.freshness_cutoff()
     _done("permits", t)
 
@@ -1574,6 +1598,7 @@ def main(argv=None) -> int:
         built_year_by_name=built_year_by_name,
         permit_index=permit_index,
         permit_structure_type_by_addr=permit_structure_type_by_addr,
+        osm_structure_type_by_addr=osm_structure_type_by_addr,
         permit_freshness_cutoff=permit_freshness_cutoff,
         bike_tree=bike_tree,
         bike_lines=bike_lines,
