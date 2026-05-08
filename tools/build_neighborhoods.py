@@ -70,6 +70,35 @@ def _done(label: str, started_at: float) -> None:
     _log.info("  %s done in %.1fs", label, time.monotonic() - started_at)
 
 
+def _aggregate_permits_by_neighborhood(parcels_path: Path) -> dict[str, int]:
+    """Sum unit-creating residential permits per neighborhood from
+    `data/parcels.geojson`. Each parcel feature carries a `permits` object
+    whose `recentCount` is the count of last-5-yr permits with `unitsCreated
+    >= 1` (per `tools/build_parcels.py` filter). Aggregating gives a per-
+    neighborhood "redevelopment activity" signal for the frontend's sort
+    dimension and detail-panel readout. Returns `{}` when parcels.geojson is
+    absent (first-ever build, or when `build_neighborhoods.py` is run alone).
+    """
+    if not parcels_path.exists():
+        _log.warning("permits aggregate: %s not found — emitting zeros", parcels_path)
+        return {}
+    from collections import defaultdict
+    counts: dict[str, int] = defaultdict(int)
+    with parcels_path.open(encoding="utf-8") as fp:
+        data = json.load(fp)
+    for feat in data.get("features", []):
+        p = feat.get("properties") or {}
+        nb = p.get("neighborhood")
+        if not nb:
+            continue
+        recent = (p.get("permits") or {}).get("recentCount", 0) or 0
+        if recent > 0:
+            counts[nb] += recent
+    _log.info("permits aggregate: %d permits across %d neighborhoods",
+              sum(counts.values()), len(counts))
+    return dict(counts)
+
+
 def assemble_payload(
     neighborhoods,
     heat_pump,
@@ -83,6 +112,11 @@ def assemble_payload(
     *,
     fallbacks_by_source,
     weights=None,
+    income_med=None,
+    income_avg=None,
+    dwelling_med=None,
+    dwelling_avg=None,
+    permits_recent=None,
 ):
     """Build the `{meta, neighborhoods}` payload (no I/O).
 
@@ -103,7 +137,7 @@ def assemble_payload(
             potential=e_potential,
             weights=weights,
         )
-        entries.append({
+        entry = {
             "name": n.name,
             "lat": n.centroid_lat,
             "lng": n.centroid_lng,
@@ -116,7 +150,28 @@ def assemble_payload(
             "builtYear": built_year.get(n.name, 0),
             "existing": e_existing,
             "potential": e_potential,
-        })
+        }
+        # 2026-05-07 evening — household income, dwelling value, and unit-creating
+        # permit rate per 1k dwellings. Optional — only present when the caller
+        # passes the dicts. Wire fields keyed `nb*` so the frontend lookup map
+        # follows the same convention as `nbHeatPump` / `nbPermitMedianCostPerUnit`.
+        if income_med is not None:
+            entry["medHouseholdIncome"] = income_med.get(n.name, 0)
+        if income_avg is not None:
+            entry["avgHouseholdIncome"] = income_avg.get(n.name, 0)
+        if dwelling_med is not None:
+            entry["medDwellingValue"] = dwelling_med.get(n.name, 0)
+        if dwelling_avg is not None:
+            entry["avgDwellingValue"] = dwelling_avg.get(n.name, 0)
+        if permits_recent is not None:
+            recent = permits_recent.get(n.name, 0)
+            entry["permitsRecentCount"] = recent
+            # Per-1000-dwellings rate. `existing` is the NPP 2021 occupied-
+            # private-dwelling count (drawn into `existing` upstream).
+            entry["permitsPer1kDwellings"] = (
+                round(recent / e_existing * 1000, 2) if e_existing else 0.0
+            )
+        entries.append(entry)
 
     entries.sort(key=lambda e: e["score"], reverse=True)
 
@@ -175,6 +230,18 @@ def main(argv=None) -> int:
     built_year, existing, fallbacks["census"] = census_src.compute_census(neighborhoods, cache)
     _done("census", t)
 
+    t = _stage("compute household income (NPP 2021)")
+    income_med, income_avg, fallbacks["census_income"] = census_src.compute_household_income(neighborhoods, cache)
+    _done("household income", t)
+
+    t = _stage("compute dwelling value (NPP 2021)")
+    dwelling_med, dwelling_avg, fallbacks["census_dwelling"] = census_src.compute_dwelling_value(neighborhoods, cache)
+    _done("dwelling value", t)
+
+    t = _stage("aggregate unit-creating permits per neighborhood (parcels.geojson)")
+    permits_recent = _aggregate_permits_by_neighborhood(PROJECT_ROOT / "data" / "parcels.geojson")
+    _done("permits aggregate", t)
+
     t = _stage("compute transit (TTC GTFS)")
     transit, fallbacks["ttc"] = ttc_src.compute_transit(neighborhoods, cache)
     _done("transit", t)
@@ -204,6 +271,11 @@ def main(argv=None) -> int:
         walk=walk,
         fallbacks_by_source=fallbacks,
         weights=weights,
+        income_med=income_med,
+        income_avg=income_avg,
+        dwelling_med=dwelling_med,
+        dwelling_avg=dwelling_avg,
+        permits_recent=permits_recent,
     )
     _done("assemble", t)
 

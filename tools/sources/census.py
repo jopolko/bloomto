@@ -33,6 +33,27 @@ PERIOD_UNIVERSE_LABEL = (
     "Total - Occupied private dwellings by period of construction - 25% sample data"
 )
 
+# Household income rows (NPP 2021 reports both median and average per-household
+# total income for 2020). 2026-05-07 audit found the curated cohort already
+# spans the income distribution honestly; we surface these so the frontend can
+# sort + filter on real data instead of structural heuristics. Average is the
+# better wealth-detector than median in mansion-bearing neighborhoods because
+# avg/median ratio captures wealth concentration (Bridle Path: avg=$519K vs
+# median=$222K, ratio 2.34 → mansions diluted by hospital staff & seniors).
+HH_MEDIAN_INCOME_LABEL = "Median total income of household in 2020 ($)"
+HH_AVERAGE_INCOME_LABEL = "Average total income of household in 2020 ($)"
+
+# Owner-reported dwelling value (NPP 2021). Direct affordability signal —
+# Toronto-wide range $500K (Flemingdon, Thorncliffe) to $3M (Bridle Path,
+# Forest Hill S). Per-parcel teardown lot cost ≈ 0.5–0.8 × neighborhood
+# median dwelling value, so a $2M-median hood is structurally outside the
+# L2/3 dev's $1–3M project envelope. Caveats: owner self-report (slightly
+# noisy), 2020 baseline (Toronto values now ~+15-20% nominal), median in
+# mixed hoods blends condos with freehold so the metric understates real
+# teardown lot cost in condo-heavy pockets like Moss Park / Regent Park.
+DWELLING_MEDIAN_VALUE_LABEL = "Median value of dwellings ($)"
+DWELLING_AVERAGE_VALUE_LABEL = "Average value of dwellings ($)"
+
 # Bracket label → midpoint year. Order matters: oldest → newest, for the cumulative scan
 # in `_resolve_built_year`. The 1955 midpoint for the open-ended "1960 or before" bracket
 # is a pragmatic stand-in (see README); only used by neighborhoods whose median dwelling
@@ -227,6 +248,114 @@ def compute_census(neighborhoods: list[Neighborhood], cache_dir: Path
     return built_year_by_name, existing_by_name, fallback_names
 
 
+def _pull_paired_dollar_rows(neighborhoods: list[Neighborhood], cache_dir: Path,
+                             median_label: str, avg_label: str, log_tag: str
+                             ) -> tuple[dict[str, int], dict[str, int], list[str]]:
+    """Generic puller for any (median, average) dollar pair from NPP 2021.
+
+    Used by both `compute_household_income` and `compute_dwelling_value` —
+    same XLSX, same alias map, same per-nbhd column lookup. Returns
+    `(median_by_name, avg_by_name, fallback_names)` keyed on AREA_NAME.
+    Names with suppressed/missing data get 0 and appear in `fallback_names`.
+    """
+    cached = _ensure_cached(Path(cache_dir))
+    area_names = {n.name for n in neighborhoods}
+
+    wb = load_workbook(cached, read_only=True, data_only=True)
+    if SHEET_NAME not in wb.sheetnames:
+        wb.close()
+        raise RuntimeError(f"sheet {SHEET_NAME!r} not found in {cached.name}")
+    ws = wb[SHEET_NAME]
+
+    needed = {median_label, avg_label}
+    header_row: tuple | None = None
+    rows_by_label: dict[str, tuple] = {}
+    for idx, row in enumerate(ws.iter_rows(values_only=True), start=1):
+        if idx == 1:
+            header_row = row
+            continue
+        if row[0] is None:
+            continue
+        label = str(row[0]).strip()
+        if label in needed and label not in rows_by_label:
+            rows_by_label[label] = row
+            if len(rows_by_label) == len(needed):
+                break
+    wb.close()
+
+    if header_row is None:
+        raise RuntimeError("XLSX has no header row")
+    missing = needed - rows_by_label.keys()
+    if missing:
+        raise RuntimeError(f"required {log_tag} row labels missing in census XLSX: {sorted(missing)}")
+
+    col_to_canonical: dict[int, str] = {}
+    for col_idx, xlsx_name in enumerate(header_row):
+        if col_idx == 0 or xlsx_name is None:
+            continue
+        canonical = _xlsx_header_to_canonical(str(xlsx_name), area_names)
+        if canonical is not None:
+            col_to_canonical[col_idx] = canonical
+
+    median_row = rows_by_label[median_label]
+    avg_row = rows_by_label[avg_label]
+
+    median_by_name: dict[str, int] = {}
+    avg_by_name: dict[str, int] = {}
+    fallback_names: list[str] = []
+
+    for col_idx, name in col_to_canonical.items():
+        m = median_row[col_idx]
+        a = avg_row[col_idx]
+        if m and a:
+            median_by_name[name] = int(m)
+            avg_by_name[name] = int(a)
+        else:
+            fallback_names.append(name)
+
+    for nb in neighborhoods:
+        if nb.name not in median_by_name:
+            median_by_name[nb.name] = 0
+            avg_by_name[nb.name] = 0
+            if nb.name not in fallback_names:
+                fallback_names.append(nb.name)
+
+    _log.info("census/%s: %d nbhds with data, %d fallbacks", log_tag,
+              sum(1 for v in median_by_name.values() if v > 0),
+              len(fallback_names))
+    return median_by_name, avg_by_name, sorted(set(fallback_names))
+
+
+def compute_household_income(neighborhoods: list[Neighborhood], cache_dir: Path
+                             ) -> tuple[dict[str, int], dict[str, int], list[str]]:
+    """Returns `(median_hh_income, avg_hh_income, fallback_names)` keyed on
+    AREA_NAME. Income is per-household total (2020), CAD, from NPP 2021.
+
+    Note: average is more useful than median for wealth detection in mansion-
+    bearing hoods because the avg/median ratio captures wealth concentration
+    (Bridle Path: avg=$519K vs median=$222K, ratio 2.34 — mansions diluted by
+    Sunnybrook hospital staff and senior residences).
+    """
+    return _pull_paired_dollar_rows(
+        neighborhoods, cache_dir,
+        HH_MEDIAN_INCOME_LABEL, HH_AVERAGE_INCOME_LABEL, "income",
+    )
+
+
+def compute_dwelling_value(neighborhoods: list[Neighborhood], cache_dir: Path
+                           ) -> tuple[dict[str, int], dict[str, int], list[str]]:
+    """Returns `(median_dwelling_value, avg_dwelling_value, fallback_names)`
+    keyed on AREA_NAME. Owner-reported dwelling value (2020), CAD, from NPP
+    2021. Direct affordability signal — used as the L2/3-dev wealth filter
+    in `build_parcels_top.py`. See DWELLING_MEDIAN_VALUE_LABEL header
+    comment for caveats (owner self-report, 2020 baseline, condo blending).
+    """
+    return _pull_paired_dollar_rows(
+        neighborhoods, cache_dir,
+        DWELLING_MEDIAN_VALUE_LABEL, DWELLING_AVERAGE_VALUE_LABEL, "dwelling-value",
+    )
+
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                         format="%(asctime)s %(levelname)s %(message)s")
@@ -237,3 +366,11 @@ if __name__ == "__main__":
     print(f"built_year: {len(by)} entries; sample: {list(by.items())[:3]}")
     print(f"existing:   {len(ex)} entries; sample: {list(ex.items())[:3]}")
     print(f"fallbacks:  {len(fb)} {fb[:5]}{'...' if len(fb) > 5 else ''}")
+    inc_med, inc_avg, fb2 = compute_household_income(nbs, cache)
+    print(f"income med: {len(inc_med)} entries; sample: {list(inc_med.items())[:3]}")
+    print(f"income avg: {len(inc_avg)} entries; sample: {list(inc_avg.items())[:3]}")
+    print(f"income fb:  {len(fb2)}")
+    val_med, val_avg, fb3 = compute_dwelling_value(nbs, cache)
+    print(f"value med:  {len(val_med)} entries; sample: {list(val_med.items())[:3]}")
+    print(f"value avg:  {len(val_avg)} entries; sample: {list(val_avg.items())[:3]}")
+    print(f"value fb:   {len(fb3)}")

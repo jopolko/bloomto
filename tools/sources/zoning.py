@@ -391,7 +391,11 @@ def compute_potential(neighborhoods: list[Neighborhood],
     multipliers = _load_multipliers()
     _log.info("zoning: loaded %d zone-class multipliers", len(multipliers))
 
-    zone_tree, zone_classes = load_zone_index(cache)
+    # `load_zone_index` returns `(STRtree, list[ZoneRecord])` after the FSI
+    # envelope refactor (2026-05-07). For neighborhood-rollup `compute_potential`
+    # we only need the high-level zone class string — extract it from each record.
+    zone_tree, zone_records = load_zone_index(cache)
+    zone_classes = [r.zone_class for r in zone_records]
 
     polygons = [n.polygon for n in neighborhoods]
     nb_tree = STRtree(polygons)
