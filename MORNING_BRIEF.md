@@ -102,5 +102,25 @@ sudo chown -R john:www-data /var/www/html/bloomto/
 ## Tree state
 
 - `git status` clean (data files gitignored — they're regenerable from ETL)
-- 23 commits ahead of `origin/main`
-- About to `git push origin main` per your "up to date here and on github by morning" instruction
+- **24 commits ahead of `origin/main`**
+- ⚠ **`git push` blocked on missing GitHub credentials** — no SSH key under `~/.ssh/`, no PAT in `~/.git-credentials`, no `gh auth` token. Could not push autonomously.
+
+To push when you wake (any of these):
+
+```bash
+# Option 1: gh CLI auth (easiest if you have GitHub login on this machine)
+gh auth login
+git push origin main
+
+# Option 2: SSH key (set up once, push forever)
+ssh-keygen -t ed25519 -C "your_email@example.com"
+# add the .pub key to https://github.com/settings/keys
+git remote set-url origin git@github.com:jopolko/bloomto.git
+git push origin main
+
+# Option 3: HTTPS with PAT (if you already have a token in 1Password etc.)
+git push origin main
+# (will prompt for username + PAT as password)
+```
+
+Sorry for the punt — I should have asked about credentials before promising "github by morning." The work is committed and clean locally, just one `git push` away.
