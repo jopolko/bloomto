@@ -137,6 +137,21 @@ WEALTHY_ENCLAVE_NEIGHBORHOODS = frozenset({
 WEALTHY_ESTATE_MIN_LOT_M2 = 2000
 WEALTHY_ESTATE_MAX_COVERAGE = 0.15
 
+# ── Dwelling-value gate (2026-05-07 evening) ───────────────────────────────
+# Direct-affordability threshold from NPP 2021 owner-reported median dwelling
+# value. Catches whole neighborhoods whose median home price exceeds the L2/3
+# dev's lot-acquisition envelope. At $2.0M median, the lot alone is ~$1.5–1.8M
+# — that's half the L2/3 dev's $1–3M project budget gone before any
+# construction. Filter targets:
+#   - 6 hoods at $2.0M median: Bridle Path, Forest Hill S, St.Andrew-Windfields,
+#     Bedford Park-Nortown, Lawrence Park S, Forest Hill N
+#   - Catches St.Andrew-Windfields cleanly (income filter missed it: avg $220K,
+#     below the $250K cut, but median dwelling $2.4M)
+#   - Catches Forest Hill N where median income ($90K) was misleadingly low
+#     because the polygon includes Eglinton condo renters
+# Zero curated parcel impact at $2.0M (verified by audit before commit).
+DWELLING_VALUE_CEILING_CAD = 2_000_000
+
 
 def _passes_positive_residential(props: dict) -> bool:
     """Affirmative check that the parcel looks like a residential lot.
@@ -245,6 +260,22 @@ def _passes_shared(props: dict) -> bool:
     # Bedford Park clusters that the named-enclave list misses.
     if _looks_like_wealthy_estate(props):
         return False
+    # Named-enclave filter (2026-05-07 evening — moved from curated-only
+    # path into the shared gate so broader inherits it too). Previously the
+    # broader cohort had Forest Hill / Casa Loma / Rosedale parcels in it
+    # because the enclave gate only fired during curation; now both elite
+    # and broader exclude these.
+    if _is_wealthy_enclave(props):
+        return False
+    # Dwelling-value gate — neighborhoods whose median home price exceeds
+    # the L2/3 dev's lot-acquisition envelope. Property is annotated with
+    # `nbMedDwellingValue` upstream (in main(), via neighborhoods.json
+    # lookup). Treat 0 / missing as pass-through so a missing data row
+    # doesn't silently exclude a parcel — fallback nbhds keep their
+    # existing structural-filter coverage.
+    nb_med_value = props.get("nbMedDwellingValue") or 0
+    if nb_med_value > DWELLING_VALUE_CEILING_CAD:
+        return False
     return True
 
 
@@ -322,6 +353,43 @@ def main():
     geojson = json.loads(args.in_path.read_text(encoding="utf-8"))
     features = geojson["features"]
     total_in = len(features)
+
+    # 2026-05-07 evening — annotate each feature with per-neighborhood
+    # context (income, dwelling value, permit rate per 1k dwellings) from
+    # data/neighborhoods.json. The wealth gate in `_passes_shared` reads
+    # `nbMedDwellingValue` from props directly, so this annotation must
+    # happen BEFORE is_elite / is_broader filtering. Frontend also reads
+    # the same fields via `parcels_top_io.project_features` for the detail
+    # panel + sort dimensions.
+    nbhds_path = Path("data/neighborhoods.json")
+    nb_lookup: dict[str, dict] = {}
+    if nbhds_path.exists():
+        nb_payload = json.loads(nbhds_path.read_text(encoding="utf-8"))
+        for n in nb_payload.get("neighborhoods", []):
+            nb_lookup[n["name"]] = n
+        _log.info(
+            "annotating: %d neighborhoods loaded from %s "
+            "(income, dwelling value, permits per 1k dwellings)",
+            len(nb_lookup), nbhds_path,
+        )
+    else:
+        _log.warning(
+            "neighborhoods.json not found at %s — wealth filter will pass-through "
+            "everything (treats nbMedDwellingValue as 0)", nbhds_path,
+        )
+
+    # Mutate each feature's props in place. `0` for missing data so the
+    # wealth filter's `> CEILING` comparison falls open (pass-through),
+    # not closed (silent exclusion of fallback nbhds).
+    for f in features:
+        p = f.setdefault("properties", {})
+        nb = nb_lookup.get(p.get("neighborhood")) or {}
+        p["nbMedHouseholdIncome"] = nb.get("medHouseholdIncome", 0)
+        p["nbAvgHouseholdIncome"] = nb.get("avgHouseholdIncome", 0)
+        p["nbMedDwellingValue"] = nb.get("medDwellingValue", 0)
+        p["nbAvgDwellingValue"] = nb.get("avgDwellingValue", 0)
+        p["nbPermitsPer1kDwellings"] = nb.get("permitsPer1kDwellings", 0)
+
     # Citywide total (every parcel processed, not just score-positive ones)
     # — sourced from the master GeoJSON's meta. The frontend uses this for
     # the "filtered from ~N citywide" copy so the figure stays current as
@@ -374,19 +442,17 @@ def main():
         len(signal_pids) if signal_pids is not None else 0,
     )
 
-    # 2026-05-07 structural gates (apply to BOTH paths) — replace the
-    # whack-a-mole exclusion approach with affirmative inclusion criteria:
-    #   - Positive residential signature (building present in residential
-    #     range, OR vacant within residential lot-size norm)
-    #   - Not in a wealthy enclave (Forest Hill, Rosedale, etc. — economically
-    #     incompatible with layer 2/3 multiplex dev budgets)
+    # 2026-05-07 evening: wealthy-enclave + dwelling-value gates moved into
+    # _passes_shared so broader inherits them too. The remaining structural
+    # gate here is positive-residential — that one stays curated-only because
+    # it would over-cut broader (vacant-on-big-lot is sometimes a real
+    # multiplex play in broader, less so in curated).
     eligible_after_structural = [
         f for f in eligible_features
         if _passes_positive_residential(f.get("properties") or {})
-        and not _is_wealthy_enclave(f.get("properties") or {})
     ]
     _log.info(
-        "structural gates:          %d → %d (positive-residential + non-enclave)",
+        "structural gates:          %d → %d (positive-residential)",
         len(eligible_features), len(eligible_after_structural),
     )
 

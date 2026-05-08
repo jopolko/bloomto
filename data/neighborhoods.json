@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-05-01T23:45:13Z",
+    "generatedAt": "2026-05-07T23:58:24Z",
     "sourceVersions": {
       "neighborhoods": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/fc443770-ef0a-4025-9c2c-2cb558bfab00/resource/0719053b-28b7-48ea-b863-068823a93aaa/download/neighbourhoods-4326.geojson",
       "solar_to": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/304aaee3-11cb-41c4-96a3-adef31f63ed5/resource/f5f37d23-85c9-4af8-b8a5-369523778f93/download/solarto-map-4326.csv",
@@ -47,7 +47,13 @@
       "bike": 77,
       "builtYear": 1995,
       "existing": 3300,
-      "potential": 10666
+      "potential": 10660,
+      "medHouseholdIncome": 222000,
+      "avgHouseholdIncome": 519500,
+      "medDwellingValue": 3000000,
+      "avgDwellingValue": 3820000,
+      "permitsRecentCount": 20,
+      "permitsPer1kDwellings": 6.06
     },
     {
       "name": "St.Andrew-Windfields",
@@ -61,7 +67,13 @@
       "bike": 15,
       "builtYear": 1970,
       "existing": 6345,
-      "potential": 16586
+      "potential": 16584,
+      "medHouseholdIncome": 118000,
+      "avgHouseholdIncome": 220600,
+      "medDwellingValue": 2400000,
+      "avgDwellingValue": 2576000,
+      "permitsRecentCount": 29,
+      "permitsPer1kDwellings": 4.57
     },
     {
       "name": "Bathurst Manor",
@@ -75,7 +87,13 @@
       "bike": 92,
       "builtYear": 1970,
       "existing": 6060,
-      "potential": 15606
+      "potential": 15716,
+      "medHouseholdIncome": 92000,
+      "avgHouseholdIncome": 116800,
+      "medDwellingValue": 1200000,
+      "avgDwellingValue": 1235000,
+      "permitsRecentCount": 15,
+      "permitsPer1kDwellings": 2.48
     },
     {
       "name": "Bayview Woods-Steeles",
@@ -89,7 +107,13 @@
       "bike": 57,
       "builtYear": 1970,
       "existing": 4755,
-      "potential": 14280
+      "potential": 14324,
+      "medHouseholdIncome": 93000,
+      "avgHouseholdIncome": 122600,
+      "medDwellingValue": 1250000,
+      "avgDwellingValue": 1388000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Edenbridge-Humber Valley",
@@ -103,7 +127,13 @@
       "bike": 97,
       "builtYear": 1970,
       "existing": 6285,
-      "potential": 12577
+      "potential": 12720,
+      "medHouseholdIncome": 100000,
+      "avgHouseholdIncome": 197600,
+      "medDwellingValue": 1700000,
+      "avgDwellingValue": 1900000,
+      "permitsRecentCount": 2,
+      "permitsPer1kDwellings": 0.32
     },
     {
       "name": "Princess-Rosethorn",
@@ -117,7 +147,13 @@
       "bike": 55,
       "builtYear": 1955,
       "existing": 3900,
-      "potential": 14444
+      "potential": 14444,
+      "medHouseholdIncome": 162000,
+      "avgHouseholdIncome": 235600,
+      "medDwellingValue": 1700000,
+      "avgDwellingValue": 1840000,
+      "permitsRecentCount": 2,
+      "permitsPer1kDwellings": 0.51
     },
     {
       "name": "Banbury-Don Mills",
@@ -131,7 +167,13 @@
       "bike": 100,
       "builtYear": 1970,
       "existing": 12215,
-      "potential": 19997
+      "potential": 19968,
+      "medHouseholdIncome": 91000,
+      "avgHouseholdIncome": 144600,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1518000,
+      "permitsRecentCount": 3,
+      "permitsPer1kDwellings": 0.25
     },
     {
       "name": "Stonegate-Queensway",
@@ -145,7 +187,13 @@
       "bike": 76,
       "builtYear": 1955,
       "existing": 10515,
-      "potential": 32808
+      "potential": 32808,
+      "medHouseholdIncome": 104000,
+      "avgHouseholdIncome": 154600,
+      "medDwellingValue": 1300000,
+      "avgDwellingValue": 1438000,
+      "permitsRecentCount": 40,
+      "permitsPer1kDwellings": 3.8
     },
     {
       "name": "Eringate-Centennial-West Deane",
@@ -159,7 +207,13 @@
       "bike": 100,
       "builtYear": 1970,
       "existing": 6840,
-      "potential": 19772
+      "potential": 19772,
+      "medHouseholdIncome": 108000,
+      "avgHouseholdIncome": 127400,
+      "medDwellingValue": 990000,
+      "avgDwellingValue": 950000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "High Park-Swansea",
@@ -173,7 +227,13 @@
       "bike": 100,
       "builtYear": 1955,
       "existing": 10450,
-      "potential": 19464
+      "potential": 19464,
+      "medHouseholdIncome": 101000,
+      "avgHouseholdIncome": 160600,
+      "medDwellingValue": 1200000,
+      "avgDwellingValue": 1424000,
+      "permitsRecentCount": 39,
+      "permitsPer1kDwellings": 3.73
     },
     {
       "name": "Morningside Heights",
@@ -187,7 +247,13 @@
       "bike": 100,
       "builtYear": 2003,
       "existing": 6530,
-      "potential": 23910
+      "potential": 23892,
+      "medHouseholdIncome": 117000,
+      "avgHouseholdIncome": 127000,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 929000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "West Rouge",
@@ -201,7 +267,13 @@
       "bike": 88,
       "builtYear": 1985,
       "existing": 7025,
-      "potential": 22956
+      "potential": 22952,
+      "medHouseholdIncome": 108000,
+      "avgHouseholdIncome": 131200,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 915000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Bayview Village",
@@ -215,7 +287,13 @@
       "bike": 48,
       "builtYear": 2003,
       "existing": 10455,
-      "potential": 11147
+      "potential": 11144,
+      "medHouseholdIncome": 83000,
+      "avgHouseholdIncome": 107700,
+      "medDwellingValue": 750000,
+      "avgDwellingValue": 1138000,
+      "permitsRecentCount": 24,
+      "permitsPer1kDwellings": 2.3
     },
     {
       "name": "Rosedale-Moore Park",
@@ -229,7 +307,13 @@
       "bike": 100,
       "builtYear": 1970,
       "existing": 9880,
-      "potential": 17144
+      "potential": 17144,
+      "medHouseholdIncome": 122000,
+      "avgHouseholdIncome": 334000,
+      "medDwellingValue": 2000000,
+      "avgDwellingValue": 2656000,
+      "permitsRecentCount": 10,
+      "permitsPer1kDwellings": 1.01
     },
     {
       "name": "The Beaches",
@@ -243,7 +327,13 @@
       "bike": 80,
       "builtYear": 1955,
       "existing": 9430,
-      "potential": 25248
+      "potential": 25248,
+      "medHouseholdIncome": 116000,
+      "avgHouseholdIncome": 197200,
+      "medDwellingValue": 1500000,
+      "avgDwellingValue": 1608000,
+      "permitsRecentCount": 40,
+      "permitsPer1kDwellings": 4.24
     },
     {
       "name": "Willowridge-Martingrove-Richview",
@@ -257,7 +347,13 @@
       "bike": 9,
       "builtYear": 1970,
       "existing": 8600,
-      "potential": 21627
+      "potential": 21748,
+      "medHouseholdIncome": 92000,
+      "avgHouseholdIncome": 113400,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1093000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Bedford Park-Nortown",
@@ -271,7 +367,13 @@
       "bike": 15,
       "builtYear": 1970,
       "existing": 8340,
-      "potential": 27916
+      "potential": 27916,
+      "medHouseholdIncome": 135000,
+      "avgHouseholdIncome": 266000,
+      "medDwellingValue": 2260000,
+      "avgDwellingValue": 2370000,
+      "permitsRecentCount": 35,
+      "permitsPer1kDwellings": 4.2
     },
     {
       "name": "Newtonbrook East",
@@ -285,7 +387,13 @@
       "bike": 21,
       "builtYear": 1985,
       "existing": 6165,
-      "potential": 13965
+      "potential": 13956,
+      "medHouseholdIncome": 80000,
+      "avgHouseholdIncome": 109400,
+      "medDwellingValue": 1500000,
+      "avgDwellingValue": 1412000,
+      "permitsRecentCount": 12,
+      "permitsPer1kDwellings": 1.95
     },
     {
       "name": "Guildwood",
@@ -299,7 +407,13 @@
       "bike": 58,
       "builtYear": 1970,
       "existing": 3930,
-      "potential": 11385
+      "potential": 11384,
+      "medHouseholdIncome": 102000,
+      "avgHouseholdIncome": 121800,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 949000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Morningside",
@@ -313,7 +427,13 @@
       "bike": 64,
       "builtYear": 1970,
       "existing": 5875,
-      "potential": 11505
+      "potential": 11612,
+      "medHouseholdIncome": 85000,
+      "avgHouseholdIncome": 98200,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 784000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Islington",
@@ -327,7 +447,13 @@
       "bike": 42,
       "builtYear": 1970,
       "existing": 9285,
-      "potential": 19879
+      "potential": 20000,
+      "medHouseholdIncome": 102000,
+      "avgHouseholdIncome": 147800,
+      "medDwellingValue": 1100000,
+      "avgDwellingValue": 1252000,
+      "permitsRecentCount": 31,
+      "permitsPer1kDwellings": 3.34
     },
     {
       "name": "York University Heights",
@@ -341,7 +467,13 @@
       "bike": 100,
       "builtYear": 1970,
       "existing": 10345,
-      "potential": 19236
+      "potential": 19324,
+      "medHouseholdIncome": 76000,
+      "avgHouseholdIncome": 87500,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 731000,
+      "permitsRecentCount": 9,
+      "permitsPer1kDwellings": 0.87
     },
     {
       "name": "Humber Summit",
@@ -355,7 +487,13 @@
       "bike": 24,
       "builtYear": 1970,
       "existing": 3930,
-      "potential": 20048
+      "potential": 20048,
+      "medHouseholdIncome": 80000,
+      "avgHouseholdIncome": 94900,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 834000,
+      "permitsRecentCount": 8,
+      "permitsPer1kDwellings": 2.04
     },
     {
       "name": "East Willowdale",
@@ -369,7 +507,13 @@
       "bike": 23,
       "builtYear": 1995,
       "existing": 5610,
-      "potential": 16268
+      "potential": 16268,
+      "medHouseholdIncome": 95000,
+      "avgHouseholdIncome": 136600,
+      "medDwellingValue": 2000000,
+      "avgDwellingValue": 1964000,
+      "permitsRecentCount": 35,
+      "permitsPer1kDwellings": 6.24
     },
     {
       "name": "Parkwoods-O'Connor Hills",
@@ -383,7 +527,13 @@
       "bike": 0,
       "builtYear": 1970,
       "existing": 5050,
-      "potential": 12126
+      "potential": 12148,
+      "medHouseholdIncome": 98000,
+      "avgHouseholdIncome": 131200,
+      "medDwellingValue": 1400000,
+      "avgDwellingValue": 1410000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Cliffcrest",
@@ -397,7 +547,13 @@
       "bike": 67,
       "builtYear": 1970,
       "existing": 5875,
-      "potential": 18336
+      "potential": 18388,
+      "medHouseholdIncome": 92000,
+      "avgHouseholdIncome": 117800,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1139000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Forest Hill South",
@@ -411,7 +567,13 @@
       "bike": 55,
       "builtYear": 1970,
       "existing": 5075,
-      "potential": 10308
+      "potential": 10308,
+      "medHouseholdIncome": 109000,
+      "avgHouseholdIncome": 284400,
+      "medDwellingValue": 3000000,
+      "avgDwellingValue": 3456000,
+      "permitsRecentCount": 30,
+      "permitsPer1kDwellings": 5.91
     },
     {
       "name": "O'Connor-Parkview",
@@ -425,7 +587,33 @@
       "bike": 75,
       "builtYear": 1970,
       "existing": 7460,
-      "potential": 16941
+      "potential": 17128,
+      "medHouseholdIncome": 77000,
+      "avgHouseholdIncome": 105500,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1154000,
+      "permitsRecentCount": 13,
+      "permitsPer1kDwellings": 1.74
+    },
+    {
+      "name": "Golfdale-Cedarbrae-Woburn",
+      "lat": 43.760023,
+      "lng": -79.219998,
+      "score": 50,
+      "heatPump": 42,
+      "canopy": 31,
+      "walk": 28,
+      "transit": 59,
+      "bike": 49,
+      "builtYear": 1970,
+      "existing": 8830,
+      "potential": 20472,
+      "medHouseholdIncome": 77000,
+      "avgHouseholdIncome": 90500,
+      "medDwellingValue": 870000,
+      "avgDwellingValue": 865000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "West Hill",
@@ -439,7 +627,13 @@
       "bike": 100,
       "builtYear": 1970,
       "existing": 10175,
-      "potential": 20224
+      "potential": 20472,
+      "medHouseholdIncome": 76000,
+      "avgHouseholdIncome": 90200,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 777000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Centennial Scarborough",
@@ -453,7 +647,13 @@
       "bike": 20,
       "builtYear": 1985,
       "existing": 4420,
-      "potential": 19025
+      "potential": 19024,
+      "medHouseholdIncome": 134000,
+      "avgHouseholdIncome": 155000,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1072000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Lawrence Park South",
@@ -467,7 +667,13 @@
       "bike": 44,
       "builtYear": 1955,
       "existing": 5790,
-      "potential": 17844
+      "potential": 17844,
+      "medHouseholdIncome": 162000,
+      "avgHouseholdIncome": 365600,
+      "medDwellingValue": 2200000,
+      "avgDwellingValue": 2490000,
+      "permitsRecentCount": 47,
+      "permitsPer1kDwellings": 8.12
     },
     {
       "name": "Annex",
@@ -481,7 +687,13 @@
       "bike": 80,
       "builtYear": 1970,
       "existing": 16325,
-      "potential": 25976
+      "potential": 25976,
+      "medHouseholdIncome": 85000,
+      "avgHouseholdIncome": 184000,
+      "medDwellingValue": 1500000,
+      "avgDwellingValue": 1938000,
+      "permitsRecentCount": 36,
+      "permitsPer1kDwellings": 2.21
     },
     {
       "name": "Rockcliffe-Smythe",
@@ -495,7 +707,13 @@
       "bike": 72,
       "builtYear": 1970,
       "existing": 9035,
-      "potential": 34005
+      "potential": 34104,
+      "medHouseholdIncome": 69000,
+      "avgHouseholdIncome": 87300,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 825000,
+      "permitsRecentCount": 23,
+      "permitsPer1kDwellings": 2.55
     },
     {
       "name": "Hillcrest Village",
@@ -509,7 +727,13 @@
       "bike": 40,
       "builtYear": 1970,
       "existing": 6385,
-      "potential": 17358
+      "potential": 17452,
+      "medHouseholdIncome": 86000,
+      "avgHouseholdIncome": 105900,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 1006000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Humber Heights-Westmount",
@@ -523,7 +747,13 @@
       "bike": 27,
       "builtYear": 1970,
       "existing": 4110,
-      "potential": 8483
+      "potential": 8692,
+      "medHouseholdIncome": 85000,
+      "avgHouseholdIncome": 123100,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1052000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Thistletown-Beaumond Heights",
@@ -537,7 +767,13 @@
       "bike": 17,
       "builtYear": 1970,
       "existing": 3245,
-      "potential": 11070
+      "potential": 11136,
+      "medHouseholdIncome": 86000,
+      "avgHouseholdIncome": 101300,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 964000,
+      "permitsRecentCount": 16,
+      "permitsPer1kDwellings": 4.93
     },
     {
       "name": "West Humber-Clairville",
@@ -551,7 +787,13 @@
       "bike": 75,
       "builtYear": 1985,
       "existing": 10700,
-      "potential": 24991
+      "potential": 24988,
+      "medHouseholdIncome": 92000,
+      "avgHouseholdIncome": 104500,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 831000,
+      "permitsRecentCount": 26,
+      "permitsPer1kDwellings": 2.43
     },
     {
       "name": "Bendale-Glen Andrew",
@@ -565,21 +807,13 @@
       "bike": 59,
       "builtYear": 1985,
       "existing": 7415,
-      "potential": 11924
-    },
-    {
-      "name": "Golfdale-Cedarbrae-Woburn",
-      "lat": 43.760023,
-      "lng": -79.219998,
-      "score": 49,
-      "heatPump": 42,
-      "canopy": 31,
-      "walk": 28,
-      "transit": 59,
-      "bike": 49,
-      "builtYear": 1970,
-      "existing": 8830,
-      "potential": 20211
+      "potential": 11920,
+      "medHouseholdIncome": 74500,
+      "avgHouseholdIncome": 86400,
+      "medDwellingValue": 695000,
+      "avgDwellingValue": 725000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Birchcliffe-Cliffside",
@@ -593,7 +827,13 @@
       "bike": 44,
       "builtYear": 1955,
       "existing": 9620,
-      "potential": 27175
+      "potential": 27160,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 131400,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1105000,
+      "permitsRecentCount": 37,
+      "permitsPer1kDwellings": 3.85
     },
     {
       "name": "Cabbagetown-South St.James Town",
@@ -607,7 +847,33 @@
       "bike": 69,
       "builtYear": 1970,
       "existing": 6200,
-      "potential": 8924
+      "potential": 8924,
+      "medHouseholdIncome": 76500,
+      "avgHouseholdIncome": 120000,
+      "medDwellingValue": 950000,
+      "avgDwellingValue": 1153000,
+      "permitsRecentCount": 4,
+      "permitsPer1kDwellings": 0.65
+    },
+    {
+      "name": "Victoria Village",
+      "lat": 43.72849,
+      "lng": -79.314874,
+      "score": 49,
+      "heatPump": 56,
+      "canopy": 28,
+      "walk": 20,
+      "transit": 66,
+      "bike": 54,
+      "builtYear": 1970,
+      "existing": 7275,
+      "potential": 10608,
+      "medHouseholdIncome": 68000,
+      "avgHouseholdIncome": 84900,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 841000,
+      "permitsRecentCount": 18,
+      "permitsPer1kDwellings": 2.47
     },
     {
       "name": "Leaside-Bennington",
@@ -621,7 +887,13 @@
       "bike": 52,
       "builtYear": 1955,
       "existing": 6435,
-      "potential": 26395
+      "potential": 26392,
+      "medHouseholdIncome": 148000,
+      "avgHouseholdIncome": 284400,
+      "medDwellingValue": 2000000,
+      "avgDwellingValue": 2036000,
+      "permitsRecentCount": 42,
+      "permitsPer1kDwellings": 6.53
     },
     {
       "name": "Markland Wood",
@@ -635,7 +907,33 @@
       "bike": 25,
       "builtYear": 1970,
       "existing": 4220,
-      "potential": 9316
+      "potential": 9316,
+      "medHouseholdIncome": 105000,
+      "avgHouseholdIncome": 148600,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 1007000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
+    },
+    {
+      "name": "Kingsview Village-The Westway",
+      "lat": 43.698993,
+      "lng": -79.547863,
+      "score": 49,
+      "heatPump": 72,
+      "canopy": 26,
+      "walk": 26,
+      "transit": 55,
+      "bike": 13,
+      "builtYear": 1970,
+      "existing": 7785,
+      "potential": 13052,
+      "medHouseholdIncome": 79000,
+      "avgHouseholdIncome": 99400,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 828000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Highland Creek",
@@ -649,7 +947,13 @@
       "bike": 15,
       "builtYear": 1985,
       "existing": 3790,
-      "potential": 16892
+      "potential": 16880,
+      "medHouseholdIncome": 120000,
+      "avgHouseholdIncome": 135000,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1137000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Milliken",
@@ -663,7 +967,13 @@
       "bike": 92,
       "builtYear": 1985,
       "existing": 7585,
-      "potential": 22280
+      "potential": 22412,
+      "medHouseholdIncome": 81000,
+      "avgHouseholdIncome": 95000,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 822000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Agincourt South-Malvern West",
@@ -677,7 +987,13 @@
       "bike": 29,
       "builtYear": 1985,
       "existing": 8895,
-      "potential": 18128
+      "potential": 18148,
+      "medHouseholdIncome": 79500,
+      "avgHouseholdIncome": 93600,
+      "medDwellingValue": 750000,
+      "avgDwellingValue": 799000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Bendale South",
@@ -691,35 +1007,53 @@
       "bike": 27,
       "builtYear": 1955,
       "existing": 3355,
-      "potential": 10850
+      "potential": 10868,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 105100,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 915000,
+      "permitsRecentCount": 5,
+      "permitsPer1kDwellings": 1.49
     },
     {
-      "name": "Victoria Village",
-      "lat": 43.72849,
-      "lng": -79.314874,
-      "score": 48,
-      "heatPump": 56,
-      "canopy": 28,
-      "walk": 20,
-      "transit": 66,
-      "bike": 54,
+      "name": "L'Amoreaux West",
+      "lat": 43.792248,
+      "lng": -79.323064,
+      "score": 47,
+      "heatPump": 62,
+      "canopy": 21,
+      "walk": 32,
+      "transit": 68,
+      "bike": 20,
       "builtYear": 1970,
-      "existing": 7275,
-      "potential": 10465
+      "existing": 8295,
+      "potential": 12844,
+      "medHouseholdIncome": 72500,
+      "avgHouseholdIncome": 92300,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 860000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
-      "name": "Kingsview Village-The Westway",
-      "lat": 43.698993,
-      "lng": -79.547863,
-      "score": 48,
-      "heatPump": 72,
-      "canopy": 26,
-      "walk": 26,
-      "transit": 55,
-      "bike": 13,
+      "name": "Woburn North",
+      "lat": 43.773177,
+      "lng": -79.236815,
+      "score": 47,
+      "heatPump": 52,
+      "canopy": 20,
+      "walk": 25,
+      "transit": 82,
+      "bike": 46,
       "builtYear": 1970,
-      "existing": 7785,
-      "potential": 12436
+      "existing": 9825,
+      "potential": 14368,
+      "medHouseholdIncome": 74500,
+      "avgHouseholdIncome": 86500,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 718000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Fort York-Liberty Village",
@@ -733,7 +1067,13 @@
       "bike": 75,
       "builtYear": 2013,
       "existing": 12415,
-      "potential": 12415
+      "potential": 12415,
+      "medHouseholdIncome": 94000,
+      "avgHouseholdIncome": 112300,
+      "medDwellingValue": 695000,
+      "avgDwellingValue": 735000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Lambton Baby Point",
@@ -747,7 +1087,13 @@
       "bike": 47,
       "builtYear": 1955,
       "existing": 3105,
-      "potential": 9567
+      "potential": 9600,
+      "medHouseholdIncome": 103000,
+      "avgHouseholdIncome": 165600,
+      "medDwellingValue": 1450000,
+      "avgDwellingValue": 1576000,
+      "permitsRecentCount": 5,
+      "permitsPer1kDwellings": 1.61
     },
     {
       "name": "North Riverdale",
@@ -761,7 +1107,13 @@
       "bike": 44,
       "builtYear": 1955,
       "existing": 4900,
-      "potential": 14864
+      "potential": 14864,
+      "medHouseholdIncome": 108000,
+      "avgHouseholdIncome": 173200,
+      "medDwellingValue": 1510000,
+      "avgDwellingValue": 1616000,
+      "permitsRecentCount": 20,
+      "permitsPer1kDwellings": 4.08
     },
     {
       "name": "East End-Danforth",
@@ -775,7 +1127,33 @@
       "bike": 35,
       "builtYear": 1955,
       "existing": 9500,
-      "potential": 25788
+      "potential": 25788,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 121700,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1089000,
+      "permitsRecentCount": 16,
+      "permitsPer1kDwellings": 1.68
+    },
+    {
+      "name": "Don Valley Village",
+      "lat": 43.783294,
+      "lng": -79.353644,
+      "score": 47,
+      "heatPump": 59,
+      "canopy": 26,
+      "walk": 34,
+      "transit": 52,
+      "bike": 35,
+      "builtYear": 1970,
+      "existing": 10235,
+      "potential": 14404,
+      "medHouseholdIncome": 83000,
+      "avgHouseholdIncome": 99100,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 959000,
+      "permitsRecentCount": 6,
+      "permitsPer1kDwellings": 0.59
     },
     {
       "name": "Newtonbrook West",
@@ -789,7 +1167,13 @@
       "bike": 20,
       "builtYear": 1970,
       "existing": 9090,
-      "potential": 18044
+      "potential": 18220,
+      "medHouseholdIncome": 79000,
+      "avgHouseholdIncome": 95300,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1182000,
+      "permitsRecentCount": 20,
+      "permitsPer1kDwellings": 2.2
     },
     {
       "name": "Englemount-Lawrence",
@@ -803,7 +1187,13 @@
       "bike": 31,
       "builtYear": 1970,
       "existing": 8160,
-      "potential": 13719
+      "potential": 13728,
+      "medHouseholdIncome": 78000,
+      "avgHouseholdIncome": 125200,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1334000,
+      "permitsRecentCount": 28,
+      "permitsPer1kDwellings": 3.43
     },
     {
       "name": "Glenfield-Jane Heights",
@@ -817,7 +1207,33 @@
       "bike": 22,
       "builtYear": 1970,
       "existing": 10000,
-      "potential": 32081
+      "potential": 32328,
+      "medHouseholdIncome": 70500,
+      "avgHouseholdIncome": 84200,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 749000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
+    },
+    {
+      "name": "Black Creek",
+      "lat": 43.76489,
+      "lng": -79.52198,
+      "score": 47,
+      "heatPump": 69,
+      "canopy": 15,
+      "walk": 28,
+      "transit": 70,
+      "bike": 35,
+      "builtYear": 1970,
+      "existing": 7230,
+      "potential": 9892,
+      "medHouseholdIncome": 65000,
+      "avgHouseholdIncome": 74700,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 653000,
+      "permitsRecentCount": 2,
+      "permitsPer1kDwellings": 0.28
     },
     {
       "name": "East L'Amoreaux",
@@ -831,35 +1247,13 @@
       "bike": 53,
       "builtYear": 1970,
       "existing": 7205,
-      "potential": 13008
-    },
-    {
-      "name": "L'Amoreaux West",
-      "lat": 43.792248,
-      "lng": -79.323064,
-      "score": 46,
-      "heatPump": 62,
-      "canopy": 21,
-      "walk": 32,
-      "transit": 68,
-      "bike": 20,
-      "builtYear": 1970,
-      "existing": 8295,
-      "potential": 12420
-    },
-    {
-      "name": "Woburn North",
-      "lat": 43.773177,
-      "lng": -79.236815,
-      "score": 46,
-      "heatPump": 52,
-      "canopy": 20,
-      "walk": 25,
-      "transit": 82,
-      "bike": 46,
-      "builtYear": 1970,
-      "existing": 9825,
-      "potential": 14207
+      "potential": 13244,
+      "medHouseholdIncome": 85000,
+      "avgHouseholdIncome": 96700,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 779000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Humber Bay Shores",
@@ -873,7 +1267,13 @@
       "bike": 65,
       "builtYear": 2008,
       "existing": 13330,
-      "potential": 13330
+      "potential": 13330,
+      "medHouseholdIncome": 85000,
+      "avgHouseholdIncome": 110700,
+      "medDwellingValue": 670000,
+      "avgDwellingValue": 748000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Casa Loma",
@@ -887,7 +1287,33 @@
       "bike": 58,
       "builtYear": 1970,
       "existing": 5810,
-      "potential": 7939
+      "potential": 7932,
+      "medHouseholdIncome": 103000,
+      "avgHouseholdIncome": 270400,
+      "medDwellingValue": 2000000,
+      "avgDwellingValue": 2446000,
+      "permitsRecentCount": 22,
+      "permitsPer1kDwellings": 3.79
+    },
+    {
+      "name": "Tam O'Shanter-Sullivan",
+      "lat": 43.780131,
+      "lng": -79.302917,
+      "score": 46,
+      "heatPump": 50,
+      "canopy": 24,
+      "walk": 32,
+      "transit": 66,
+      "bike": 30,
+      "builtYear": 1970,
+      "existing": 10350,
+      "potential": 17308,
+      "medHouseholdIncome": 76500,
+      "avgHouseholdIncome": 93000,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 859000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Steeles",
@@ -901,7 +1327,13 @@
       "bike": 54,
       "builtYear": 1985,
       "existing": 7865,
-      "potential": 19116
+      "potential": 19344,
+      "medHouseholdIncome": 80000,
+      "avgHouseholdIncome": 95700,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 877000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "South Riverdale",
@@ -915,7 +1347,13 @@
       "bike": 100,
       "builtYear": 1955,
       "existing": 12710,
-      "potential": 31600
+      "potential": 31580,
+      "medHouseholdIncome": 100000,
+      "avgHouseholdIncome": 135400,
+      "medDwellingValue": 1070000,
+      "avgDwellingValue": 1153000,
+      "permitsRecentCount": 32,
+      "permitsPer1kDwellings": 2.52
     },
     {
       "name": "Greenwood-Coxwell",
@@ -929,21 +1367,13 @@
       "bike": 33,
       "builtYear": 1955,
       "existing": 6035,
-      "potential": 19932
-    },
-    {
-      "name": "Don Valley Village",
-      "lat": 43.783294,
-      "lng": -79.353644,
-      "score": 46,
-      "heatPump": 59,
-      "canopy": 26,
-      "walk": 34,
-      "transit": 52,
-      "bike": 35,
-      "builtYear": 1970,
-      "existing": 10235,
-      "potential": 14030
+      "potential": 19932,
+      "medHouseholdIncome": 93000,
+      "avgHouseholdIncome": 119100,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1083000,
+      "permitsRecentCount": 32,
+      "permitsPer1kDwellings": 5.3
     },
     {
       "name": "Kingsway South",
@@ -957,21 +1387,13 @@
       "bike": 27,
       "builtYear": 1955,
       "existing": 3470,
-      "potential": 11237
-    },
-    {
-      "name": "Black Creek",
-      "lat": 43.76489,
-      "lng": -79.52198,
-      "score": 46,
-      "heatPump": 69,
-      "canopy": 15,
-      "walk": 28,
-      "transit": 70,
-      "bike": 35,
-      "builtYear": 1970,
-      "existing": 7230,
-      "potential": 9485
+      "potential": 11236,
+      "medHouseholdIncome": 184000,
+      "avgHouseholdIncome": 316000,
+      "medDwellingValue": 2000000,
+      "avgDwellingValue": 2044000,
+      "permitsRecentCount": 17,
+      "permitsPer1kDwellings": 4.9
     },
     {
       "name": "Agincourt North",
@@ -985,7 +1407,13 @@
       "bike": 38,
       "builtYear": 1970,
       "existing": 9090,
-      "potential": 22603
+      "potential": 22696,
+      "medHouseholdIncome": 84000,
+      "avgHouseholdIncome": 97100,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 807000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Humewood-Cedarvale",
@@ -999,21 +1427,13 @@
       "bike": 37,
       "builtYear": 1955,
       "existing": 6335,
-      "potential": 20316
-    },
-    {
-      "name": "Tam O'Shanter-Sullivan",
-      "lat": 43.780131,
-      "lng": -79.302917,
-      "score": 45,
-      "heatPump": 50,
-      "canopy": 24,
-      "walk": 32,
-      "transit": 66,
-      "bike": 30,
-      "builtYear": 1970,
-      "existing": 10350,
-      "potential": 16854
+      "potential": 20316,
+      "medHouseholdIncome": 83000,
+      "avgHouseholdIncome": 146200,
+      "medDwellingValue": 1740000,
+      "avgDwellingValue": 1848000,
+      "permitsRecentCount": 21,
+      "permitsPer1kDwellings": 3.31
     },
     {
       "name": "Flemingdon Park",
@@ -1027,7 +1447,13 @@
       "bike": 75,
       "builtYear": 1970,
       "existing": 8190,
-      "potential": 8190
+      "potential": 8190,
+      "medHouseholdIncome": 70000,
+      "avgHouseholdIncome": 79700,
+      "medDwellingValue": 500000,
+      "avgDwellingValue": 518500,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Lansing-Westgate",
@@ -1041,7 +1467,13 @@
       "bike": 35,
       "builtYear": 1985,
       "existing": 6555,
-      "potential": 11844
+      "potential": 11844,
+      "medHouseholdIncome": 98000,
+      "avgHouseholdIncome": 152400,
+      "medDwellingValue": 1500000,
+      "avgDwellingValue": 1530000,
+      "permitsRecentCount": 31,
+      "permitsPer1kDwellings": 4.73
     },
     {
       "name": "Mount Olive-Silverstone-Jamestown",
@@ -1055,7 +1487,13 @@
       "bike": 35,
       "builtYear": 1970,
       "existing": 9745,
-      "potential": 10293
+      "potential": 10816,
+      "medHouseholdIncome": 76500,
+      "avgHouseholdIncome": 86200,
+      "medDwellingValue": 600000,
+      "avgDwellingValue": 681000,
+      "permitsRecentCount": 12,
+      "permitsPer1kDwellings": 1.23
     },
     {
       "name": "Dovercourt Village",
@@ -1069,7 +1507,13 @@
       "bike": 40,
       "builtYear": 1955,
       "existing": 5310,
-      "potential": 16384
+      "potential": 16384,
+      "medHouseholdIncome": 87000,
+      "avgHouseholdIncome": 111500,
+      "medDwellingValue": 1200000,
+      "avgDwellingValue": 1274000,
+      "permitsRecentCount": 41,
+      "permitsPer1kDwellings": 7.72
     },
     {
       "name": "Wychwood",
@@ -1083,7 +1527,13 @@
       "bike": 33,
       "builtYear": 1955,
       "existing": 5770,
-      "potential": 13656
+      "potential": 13656,
+      "medHouseholdIncome": 86000,
+      "avgHouseholdIncome": 129800,
+      "medDwellingValue": 1200000,
+      "avgDwellingValue": 1390000,
+      "permitsRecentCount": 22,
+      "permitsPer1kDwellings": 3.81
     },
     {
       "name": "Wexford/Maryvale",
@@ -1097,7 +1547,13 @@
       "bike": 21,
       "builtYear": 1955,
       "existing": 10260,
-      "potential": 28419
+      "potential": 28460,
+      "medHouseholdIncome": 82000,
+      "avgHouseholdIncome": 98700,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 920000,
+      "permitsRecentCount": 16,
+      "permitsPer1kDwellings": 1.56
     },
     {
       "name": "Trinity-Bellwoods",
@@ -1111,7 +1567,13 @@
       "bike": 36,
       "builtYear": 1955,
       "existing": 6840,
-      "potential": 22460
+      "potential": 22460,
+      "medHouseholdIncome": 92000,
+      "avgHouseholdIncome": 133000,
+      "medDwellingValue": 1400000,
+      "avgDwellingValue": 1448000,
+      "permitsRecentCount": 45,
+      "permitsPer1kDwellings": 6.58
     },
     {
       "name": "Thorncliffe Park",
@@ -1125,7 +1587,13 @@
       "bike": 25,
       "builtYear": 1970,
       "existing": 7065,
-      "potential": 7065
+      "potential": 7065,
+      "medHouseholdIncome": 67000,
+      "avgHouseholdIncome": 76600,
+      "medDwellingValue": 500000,
+      "avgDwellingValue": 585000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Humbermede",
@@ -1139,7 +1607,13 @@
       "bike": 30,
       "builtYear": 1970,
       "existing": 5680,
-      "potential": 15420
+      "potential": 15420,
+      "medHouseholdIncome": 77500,
+      "avgHouseholdIncome": 88400,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 791000,
+      "permitsRecentCount": 4,
+      "permitsPer1kDwellings": 0.7
     },
     {
       "name": "Downsview",
@@ -1153,7 +1627,13 @@
       "bike": 60,
       "builtYear": 1970,
       "existing": 6980,
-      "potential": 13135
+      "potential": 13168,
+      "medHouseholdIncome": 82000,
+      "avgHouseholdIncome": 97600,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 952000,
+      "permitsRecentCount": 7,
+      "permitsPer1kDwellings": 1.0
     },
     {
       "name": "Fenside-Parkwoods",
@@ -1167,7 +1647,13 @@
       "bike": 6,
       "builtYear": 1970,
       "existing": 8145,
-      "potential": 14374
+      "potential": 14528,
+      "medHouseholdIncome": 78000,
+      "avgHouseholdIncome": 93600,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 832000,
+      "permitsRecentCount": 1,
+      "permitsPer1kDwellings": 0.12
     },
     {
       "name": "Mount Pleasant East",
@@ -1181,7 +1667,13 @@
       "bike": 28,
       "builtYear": 1955,
       "existing": 7170,
-      "potential": 20112
+      "potential": 20112,
+      "medHouseholdIncome": 110000,
+      "avgHouseholdIncome": 184200,
+      "medDwellingValue": 1510000,
+      "avgDwellingValue": 1632000,
+      "permitsRecentCount": 31,
+      "permitsPer1kDwellings": 4.32
     },
     {
       "name": "Moss Park",
@@ -1195,7 +1687,13 @@
       "bike": 45,
       "builtYear": 2003,
       "existing": 13290,
-      "potential": 13290
+      "potential": 13290,
+      "medHouseholdIncome": 65000,
+      "avgHouseholdIncome": 96800,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 865000,
+      "permitsRecentCount": 5,
+      "permitsPer1kDwellings": 0.38
     },
     {
       "name": "Woodbine Corridor",
@@ -1209,7 +1707,13 @@
       "bike": 12,
       "builtYear": 1955,
       "existing": 5235,
-      "potential": 15336
+      "potential": 15336,
+      "medHouseholdIncome": 97000,
+      "avgHouseholdIncome": 131000,
+      "medDwellingValue": 1100000,
+      "avgDwellingValue": 1145000,
+      "permitsRecentCount": 13,
+      "permitsPer1kDwellings": 2.48
     },
     {
       "name": "Pleasant View",
@@ -1223,7 +1727,13 @@
       "bike": 8,
       "builtYear": 1970,
       "existing": 5440,
-      "potential": 23307
+      "potential": 23428,
+      "medHouseholdIncome": 89000,
+      "avgHouseholdIncome": 106300,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 917000,
+      "permitsRecentCount": 5,
+      "permitsPer1kDwellings": 0.92
     },
     {
       "name": "Yorkdale-Glen Park",
@@ -1237,7 +1747,13 @@
       "bike": 9,
       "builtYear": 1970,
       "existing": 6835,
-      "potential": 14336
+      "potential": 14336,
+      "medHouseholdIncome": 79000,
+      "avgHouseholdIncome": 95700,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 1003000,
+      "permitsRecentCount": 42,
+      "permitsPer1kDwellings": 6.14
     },
     {
       "name": "Rexdale-Kipling",
@@ -1251,7 +1767,13 @@
       "bike": 28,
       "builtYear": 1955,
       "existing": 3945,
-      "potential": 10241
+      "potential": 10252,
+      "medHouseholdIncome": 77000,
+      "avgHouseholdIncome": 90000,
+      "medDwellingValue": 890000,
+      "avgDwellingValue": 867000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Pelmo Park-Humberlea",
@@ -1265,7 +1787,13 @@
       "bike": 28,
       "builtYear": 1970,
       "existing": 3915,
-      "potential": 12108
+      "potential": 12108,
+      "medHouseholdIncome": 100000,
+      "avgHouseholdIncome": 114200,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 922000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Bay-Cloverhill",
@@ -1279,7 +1807,13 @@
       "bike": 31,
       "builtYear": 2008,
       "existing": 10585,
-      "potential": 10585
+      "potential": 10585,
+      "medHouseholdIncome": 58400,
+      "avgHouseholdIncome": 94000,
+      "medDwellingValue": 760000,
+      "avgDwellingValue": 995000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Oakdale-Beverley Heights",
@@ -1293,7 +1827,13 @@
       "bike": 32,
       "builtYear": 1970,
       "existing": 7655,
-      "potential": 19084
+      "potential": 19168,
+      "medHouseholdIncome": 71500,
+      "avgHouseholdIncome": 89600,
+      "medDwellingValue": 940000,
+      "avgDwellingValue": 961000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Palmerston-Little Italy",
@@ -1307,7 +1847,13 @@
       "bike": 47,
       "builtYear": 1955,
       "existing": 6180,
-      "potential": 16872
+      "potential": 16872,
+      "medHouseholdIncome": 88000,
+      "avgHouseholdIncome": 131800,
+      "medDwellingValue": 1500000,
+      "avgDwellingValue": 1672000,
+      "permitsRecentCount": 55,
+      "permitsPer1kDwellings": 8.9
     },
     {
       "name": "Old East York",
@@ -1321,7 +1867,13 @@
       "bike": 29,
       "builtYear": 1955,
       "existing": 3730,
-      "potential": 12924
+      "potential": 12924,
+      "medHouseholdIncome": 96000,
+      "avgHouseholdIncome": 126700,
+      "medDwellingValue": 1200000,
+      "avgDwellingValue": 1257000,
+      "permitsRecentCount": 22,
+      "permitsPer1kDwellings": 5.9
     },
     {
       "name": "Runnymede-Bloor West Village",
@@ -1335,7 +1887,13 @@
       "bike": 16,
       "builtYear": 1955,
       "existing": 3840,
-      "potential": 21840
+      "potential": 21840,
+      "medHouseholdIncome": 138000,
+      "avgHouseholdIncome": 179000,
+      "medDwellingValue": 1370000,
+      "avgDwellingValue": 1392000,
+      "permitsRecentCount": 10,
+      "permitsPer1kDwellings": 2.6
     },
     {
       "name": "Roncesvalles",
@@ -1349,7 +1907,13 @@
       "bike": 33,
       "builtYear": 1955,
       "existing": 6785,
-      "potential": 16424
+      "potential": 16424,
+      "medHouseholdIncome": 88000,
+      "avgHouseholdIncome": 124000,
+      "medDwellingValue": 1300000,
+      "avgDwellingValue": 1352000,
+      "permitsRecentCount": 36,
+      "permitsPer1kDwellings": 5.31
     },
     {
       "name": "Westminster-Branson",
@@ -1363,7 +1927,13 @@
       "bike": 43,
       "builtYear": 1970,
       "existing": 10035,
-      "potential": 10035
+      "potential": 10035,
+      "medHouseholdIncome": 76000,
+      "avgHouseholdIncome": 92800,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 795000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Elms-Old Rexdale",
@@ -1377,7 +1947,13 @@
       "bike": 39,
       "builtYear": 1970,
       "existing": 3195,
-      "potential": 7816
+      "potential": 7904,
+      "medHouseholdIncome": 82000,
+      "avgHouseholdIncome": 94600,
+      "medDwellingValue": 755000,
+      "avgDwellingValue": 720000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Junction-Wallace Emerson",
@@ -1391,7 +1967,13 @@
       "bike": 41,
       "builtYear": 1970,
       "existing": 10180,
-      "potential": 20756
+      "potential": 20756,
+      "medHouseholdIncome": 84000,
+      "avgHouseholdIncome": 103700,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1006000,
+      "permitsRecentCount": 37,
+      "permitsPer1kDwellings": 3.63
     },
     {
       "name": "Forest Hill North",
@@ -1405,7 +1987,13 @@
       "bike": 43,
       "builtYear": 1970,
       "existing": 5245,
-      "potential": 8172
+      "potential": 8172,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 170200,
+      "medDwellingValue": 2100000,
+      "avgDwellingValue": 2136000,
+      "permitsRecentCount": 15,
+      "permitsPer1kDwellings": 2.86
     },
     {
       "name": "Clanton Park",
@@ -1419,7 +2007,13 @@
       "bike": 16,
       "builtYear": 1995,
       "existing": 7155,
-      "potential": 13485
+      "potential": 13496,
+      "medHouseholdIncome": 88000,
+      "avgHouseholdIncome": 124500,
+      "medDwellingValue": 1100000,
+      "avgDwellingValue": 1216000,
+      "permitsRecentCount": 45,
+      "permitsPer1kDwellings": 6.29
     },
     {
       "name": "Henry Farm",
@@ -1433,7 +2027,13 @@
       "bike": 24,
       "builtYear": 2013,
       "existing": 8510,
-      "potential": 8510
+      "potential": 8510,
+      "medHouseholdIncome": 79500,
+      "avgHouseholdIncome": 91100,
+      "medDwellingValue": 600000,
+      "avgDwellingValue": 733000,
+      "permitsRecentCount": 2,
+      "permitsPer1kDwellings": 0.24
     },
     {
       "name": "Malvern East",
@@ -1447,7 +2047,13 @@
       "bike": 1,
       "builtYear": 1985,
       "existing": 8565,
-      "potential": 17694
+      "potential": 17812,
+      "medHouseholdIncome": 85000,
+      "avgHouseholdIncome": 97700,
+      "medDwellingValue": 675000,
+      "avgDwellingValue": 659000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Clairlea-Birchmount",
@@ -1461,7 +2067,13 @@
       "bike": 23,
       "builtYear": 1970,
       "existing": 9400,
-      "potential": 22971
+      "potential": 22996,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 104500,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 871000,
+      "permitsRecentCount": 53,
+      "permitsPer1kDwellings": 5.64
     },
     {
       "name": "Mount Dennis",
@@ -1475,7 +2087,13 @@
       "bike": 25,
       "builtYear": 1970,
       "existing": 5055,
-      "potential": 13377
+      "potential": 13652,
+      "medHouseholdIncome": 70500,
+      "avgHouseholdIncome": 81700,
+      "medDwellingValue": 650000,
+      "avgDwellingValue": 683000,
+      "permitsRecentCount": 5,
+      "permitsPer1kDwellings": 0.99
     },
     {
       "name": "Kensington-Chinatown",
@@ -1489,7 +2107,13 @@
       "bike": 36,
       "builtYear": 1985,
       "existing": 9520,
-      "potential": 14408
+      "potential": 14404,
+      "medHouseholdIncome": 62000,
+      "avgHouseholdIncome": 91600,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 960000,
+      "permitsRecentCount": 25,
+      "permitsPer1kDwellings": 2.63
     },
     {
       "name": "South Parkdale",
@@ -1503,7 +2127,13 @@
       "bike": 63,
       "builtYear": 1970,
       "existing": 11285,
-      "potential": 11285
+      "potential": 11285,
+      "medHouseholdIncome": 57200,
+      "avgHouseholdIncome": 76300,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 976000,
+      "permitsRecentCount": 16,
+      "permitsPer1kDwellings": 1.42
     },
     {
       "name": "Long Branch",
@@ -1517,7 +2147,13 @@
       "bike": 72,
       "builtYear": 1970,
       "existing": 5290,
-      "potential": 12728
+      "potential": 12728,
+      "medHouseholdIncome": 83000,
+      "avgHouseholdIncome": 109100,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1088000,
+      "permitsRecentCount": 34,
+      "permitsPer1kDwellings": 6.43
     },
     {
       "name": "Mimico-Queensway",
@@ -1531,7 +2167,13 @@
       "bike": 41,
       "builtYear": 1970,
       "existing": 7875,
-      "potential": 31212
+      "potential": 31212,
+      "medHouseholdIncome": 84000,
+      "avgHouseholdIncome": 111800,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1055000,
+      "permitsRecentCount": 43,
+      "permitsPer1kDwellings": 5.46
     },
     {
       "name": "Lawrence Park North",
@@ -1545,7 +2187,13 @@
       "bike": 28,
       "builtYear": 1955,
       "existing": 5460,
-      "potential": 20680
+      "potential": 20680,
+      "medHouseholdIncome": 168000,
+      "avgHouseholdIncome": 268400,
+      "medDwellingValue": 1800000,
+      "avgDwellingValue": 1902000,
+      "permitsRecentCount": 36,
+      "permitsPer1kDwellings": 6.59
     },
     {
       "name": "Corso Italia-Davenport",
@@ -1559,7 +2207,13 @@
       "bike": 3,
       "builtYear": 1955,
       "existing": 5215,
-      "potential": 16712
+      "potential": 16712,
+      "medHouseholdIncome": 94000,
+      "avgHouseholdIncome": 117300,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1127000,
+      "permitsRecentCount": 41,
+      "permitsPer1kDwellings": 7.86
     },
     {
       "name": "Junction Area",
@@ -1573,7 +2227,13 @@
       "bike": 22,
       "builtYear": 1955,
       "existing": 6035,
-      "potential": 16384
+      "potential": 16380,
+      "medHouseholdIncome": 96000,
+      "avgHouseholdIncome": 119300,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1129000,
+      "permitsRecentCount": 34,
+      "permitsPer1kDwellings": 5.63
     },
     {
       "name": "University",
@@ -1587,7 +2247,13 @@
       "bike": 38,
       "builtYear": 1955,
       "existing": 3240,
-      "potential": 7168
+      "potential": 7168,
+      "medHouseholdIncome": 80000,
+      "avgHouseholdIncome": 130200,
+      "medDwellingValue": 1400000,
+      "avgDwellingValue": 1472000,
+      "permitsRecentCount": 25,
+      "permitsPer1kDwellings": 7.72
     },
     {
       "name": "Playter Estates-Danforth",
@@ -1601,7 +2267,13 @@
       "bike": 26,
       "builtYear": 1955,
       "existing": 3645,
-      "potential": 9932
+      "potential": 9932,
+      "medHouseholdIncome": 87000,
+      "avgHouseholdIncome": 147400,
+      "medDwellingValue": 1510000,
+      "avgDwellingValue": 1604000,
+      "permitsRecentCount": 9,
+      "permitsPer1kDwellings": 2.47
     },
     {
       "name": "Woodbine-Lumsden",
@@ -1615,7 +2287,13 @@
       "bike": 20,
       "builtYear": 1955,
       "existing": 3375,
-      "potential": 11396
+      "potential": 11396,
+      "medHouseholdIncome": 96000,
+      "avgHouseholdIncome": 116500,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1029000,
+      "permitsRecentCount": 23,
+      "permitsPer1kDwellings": 6.81
     },
     {
       "name": "Danforth East York",
@@ -1629,7 +2307,13 @@
       "bike": 26,
       "builtYear": 1955,
       "existing": 6950,
-      "potential": 24728
+      "potential": 24728,
+      "medHouseholdIncome": 101000,
+      "avgHouseholdIncome": 130400,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1130000,
+      "permitsRecentCount": 36,
+      "permitsPer1kDwellings": 5.18
     },
     {
       "name": "Willowdale West",
@@ -1643,7 +2327,53 @@
       "bike": 0,
       "builtYear": 1995,
       "existing": 7835,
-      "potential": 11216
+      "potential": 11216,
+      "medHouseholdIncome": 76500,
+      "avgHouseholdIncome": 105700,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 1185000,
+      "permitsRecentCount": 18,
+      "permitsPer1kDwellings": 2.3
+    },
+    {
+      "name": "Broadview North",
+      "lat": 43.688825,
+      "lng": -79.355629,
+      "score": 39,
+      "heatPump": 7,
+      "canopy": 39,
+      "walk": 47,
+      "transit": 32,
+      "bike": 55,
+      "builtYear": 1970,
+      "existing": 5275,
+      "potential": 9084,
+      "medHouseholdIncome": 68500,
+      "avgHouseholdIncome": 93900,
+      "medDwellingValue": 1100000,
+      "avgDwellingValue": 1189000,
+      "permitsRecentCount": 6,
+      "permitsPer1kDwellings": 1.14
+    },
+    {
+      "name": "Etobicoke West Mall",
+      "lat": 43.645063,
+      "lng": -79.568939,
+      "score": 39,
+      "heatPump": 63,
+      "canopy": 21,
+      "walk": 34,
+      "transit": 27,
+      "bike": 10,
+      "builtYear": 1970,
+      "existing": 4725,
+      "potential": 5752,
+      "medHouseholdIncome": 84000,
+      "avgHouseholdIncome": 97900,
+      "medDwellingValue": 600000,
+      "avgDwellingValue": 740000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Yonge-Bay Corridor",
@@ -1657,7 +2387,13 @@
       "bike": 42,
       "builtYear": 2008,
       "existing": 7460,
-      "potential": 7460
+      "potential": 7460,
+      "medHouseholdIncome": 68500,
+      "avgHouseholdIncome": 99800,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 932000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Malvern West",
@@ -1671,7 +2407,13 @@
       "bike": 6,
       "builtYear": 1970,
       "existing": 5110,
-      "potential": 13040
+      "potential": 13168,
+      "medHouseholdIncome": 88000,
+      "avgHouseholdIncome": 99000,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 684000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Scarborough Village",
@@ -1685,7 +2427,13 @@
       "bike": 24,
       "builtYear": 1970,
       "existing": 5950,
-      "potential": 7128
+      "potential": 7376,
+      "medHouseholdIncome": 71500,
+      "avgHouseholdIncome": 88700,
+      "medDwellingValue": 624000,
+      "avgDwellingValue": 785000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "St Lawrence-East Bayfront-The Islands",
@@ -1699,7 +2447,13 @@
       "bike": 100,
       "builtYear": 2008,
       "existing": 18790,
-      "potential": 18790
+      "potential": 18790,
+      "medHouseholdIncome": 87000,
+      "avgHouseholdIncome": 118600,
+      "medDwellingValue": 755000,
+      "avgDwellingValue": 845000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Harbourfront-CityPlace",
@@ -1713,7 +2467,13 @@
       "bike": 47,
       "builtYear": 2008,
       "existing": 16555,
-      "potential": 16555
+      "potential": 16555,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 110200,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 768000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Oakwood Village",
@@ -1727,7 +2487,13 @@
       "bike": 28,
       "builtYear": 1955,
       "existing": 8635,
-      "potential": 46760
+      "potential": 46760,
+      "medHouseholdIncome": 77000,
+      "avgHouseholdIncome": 102500,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1104000,
+      "permitsRecentCount": 71,
+      "permitsPer1kDwellings": 8.22
     },
     {
       "name": "Yonge-Eglinton",
@@ -1741,7 +2507,13 @@
       "bike": 38,
       "builtYear": 1970,
       "existing": 5995,
-      "potential": 11032
+      "potential": 11032,
+      "medHouseholdIncome": 94000,
+      "avgHouseholdIncome": 167000,
+      "medDwellingValue": 1800000,
+      "avgDwellingValue": 1878000,
+      "permitsRecentCount": 14,
+      "permitsPer1kDwellings": 2.34
     },
     {
       "name": "Blake-Jones",
@@ -1755,7 +2527,13 @@
       "bike": 25,
       "builtYear": 1955,
       "existing": 3105,
-      "potential": 8832
+      "potential": 8832,
+      "medHouseholdIncome": 86000,
+      "avgHouseholdIncome": 120500,
+      "medDwellingValue": 1150000,
+      "avgDwellingValue": 1178000,
+      "permitsRecentCount": 15,
+      "permitsPer1kDwellings": 4.83
     },
     {
       "name": "Danforth",
@@ -1769,7 +2547,13 @@
       "bike": 35,
       "builtYear": 1955,
       "existing": 3910,
-      "potential": 13992
+      "potential": 13992,
+      "medHouseholdIncome": 98000,
+      "avgHouseholdIncome": 137600,
+      "medDwellingValue": 1200000,
+      "avgDwellingValue": 1185000,
+      "permitsRecentCount": 23,
+      "permitsPer1kDwellings": 5.88
     },
     {
       "name": "Dufferin Grove",
@@ -1783,7 +2567,13 @@
       "bike": 57,
       "builtYear": 1955,
       "existing": 5270,
-      "potential": 10764
+      "potential": 10764,
+      "medHouseholdIncome": 78000,
+      "avgHouseholdIncome": 100600,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1237000,
+      "permitsRecentCount": 37,
+      "permitsPer1kDwellings": 7.02
     },
     {
       "name": "Rustic",
@@ -1797,35 +2587,13 @@
       "bike": 0,
       "builtYear": 1970,
       "existing": 3520,
-      "potential": 7519
-    },
-    {
-      "name": "Broadview North",
-      "lat": 43.688825,
-      "lng": -79.355629,
-      "score": 38,
-      "heatPump": 7,
-      "canopy": 39,
-      "walk": 47,
-      "transit": 32,
-      "bike": 55,
-      "builtYear": 1970,
-      "existing": 5275,
-      "potential": 8636
-    },
-    {
-      "name": "Etobicoke West Mall",
-      "lat": 43.645063,
-      "lng": -79.568939,
-      "score": 38,
-      "heatPump": 63,
-      "canopy": 21,
-      "walk": 34,
-      "transit": 27,
-      "bike": 10,
-      "builtYear": 1970,
-      "existing": 4725,
-      "potential": 5697
+      "potential": 7552,
+      "medHouseholdIncome": 64000,
+      "avgHouseholdIncome": 83500,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1069000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Downtown Yonge East",
@@ -1839,7 +2607,13 @@
       "bike": 16,
       "builtYear": 2003,
       "existing": 11055,
-      "potential": 11055
+      "potential": 11055,
+      "medHouseholdIncome": 69500,
+      "avgHouseholdIncome": 96300,
+      "medDwellingValue": 750000,
+      "avgDwellingValue": 820000,
+      "permitsRecentCount": 1,
+      "permitsPer1kDwellings": 0.09
     },
     {
       "name": "Wellington Place",
@@ -1853,7 +2627,13 @@
       "bike": 36,
       "builtYear": 2013,
       "existing": 17070,
-      "potential": 17070
+      "potential": 17070,
+      "medHouseholdIncome": 90000,
+      "avgHouseholdIncome": 124500,
+      "medDwellingValue": 740000,
+      "avgDwellingValue": 851000,
+      "permitsRecentCount": 1,
+      "permitsPer1kDwellings": 0.06
     },
     {
       "name": "Weston",
@@ -1867,7 +2647,13 @@
       "bike": 31,
       "builtYear": 1970,
       "existing": 7920,
-      "potential": 14916
+      "potential": 15004,
+      "medHouseholdIncome": 64500,
+      "avgHouseholdIncome": 80500,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 824000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Maple Leaf",
@@ -1881,7 +2667,13 @@
       "bike": 0,
       "builtYear": 1970,
       "existing": 3605,
-      "potential": 10090
+      "potential": 10112,
+      "medHouseholdIncome": 82000,
+      "avgHouseholdIncome": 105700,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1125000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Yonge-Doris",
@@ -1895,7 +2687,13 @@
       "bike": 0,
       "builtYear": 2003,
       "existing": 9845,
-      "potential": 9845
+      "potential": 9845,
+      "medHouseholdIncome": 73000,
+      "avgHouseholdIncome": 88300,
+      "medDwellingValue": 685000,
+      "avgDwellingValue": 701000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Caledonia-Fairbank",
@@ -1909,7 +2707,13 @@
       "bike": 10,
       "builtYear": 1955,
       "existing": 3710,
-      "potential": 24028
+      "potential": 24028,
+      "medHouseholdIncome": 87000,
+      "avgHouseholdIncome": 102500,
+      "medDwellingValue": 950000,
+      "avgDwellingValue": 964000,
+      "permitsRecentCount": 41,
+      "permitsPer1kDwellings": 11.05
     },
     {
       "name": "New Toronto",
@@ -1923,7 +2727,13 @@
       "bike": 64,
       "builtYear": 1970,
       "existing": 5275,
-      "potential": 18047
+      "potential": 18032,
+      "medHouseholdIncome": 68500,
+      "avgHouseholdIncome": 92700,
+      "medDwellingValue": 950000,
+      "avgDwellingValue": 1006000,
+      "permitsRecentCount": 27,
+      "permitsPer1kDwellings": 5.12
     },
     {
       "name": "Eglinton East",
@@ -1937,7 +2747,13 @@
       "bike": 6,
       "builtYear": 1970,
       "existing": 8195,
-      "potential": 9992
+      "potential": 10244,
+      "medHouseholdIncome": 73500,
+      "avgHouseholdIncome": 85300,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 718000,
+      "permitsRecentCount": 10,
+      "permitsPer1kDwellings": 1.22
     },
     {
       "name": "Kennedy Park",
@@ -1951,7 +2767,13 @@
       "bike": 0,
       "builtYear": 1970,
       "existing": 6585,
-      "potential": 13470
+      "potential": 13596,
+      "medHouseholdIncome": 69000,
+      "avgHouseholdIncome": 83200,
+      "medDwellingValue": 750000,
+      "avgDwellingValue": 743000,
+      "permitsRecentCount": 28,
+      "permitsPer1kDwellings": 4.25
     },
     {
       "name": "Church-Wellesley",
@@ -1965,7 +2787,13 @@
       "bike": 6,
       "builtYear": 1995,
       "existing": 14670,
-      "potential": 14670
+      "potential": 14670,
+      "medHouseholdIncome": 60400,
+      "avgHouseholdIncome": 79300,
+      "medDwellingValue": 750000,
+      "avgDwellingValue": 811000,
+      "permitsRecentCount": 1,
+      "permitsPer1kDwellings": 0.07
     },
     {
       "name": "Etobicoke City Centre",
@@ -1979,7 +2807,13 @@
       "bike": 22,
       "builtYear": 2008,
       "existing": 11925,
-      "potential": 11925
+      "potential": 11925,
+      "medHouseholdIncome": 83000,
+      "avgHouseholdIncome": 97400,
+      "medDwellingValue": 600000,
+      "avgDwellingValue": 721000,
+      "permitsRecentCount": 7,
+      "permitsPer1kDwellings": 0.59
     },
     {
       "name": "Regent Park",
@@ -1993,7 +2827,13 @@
       "bike": 30,
       "builtYear": 2013,
       "existing": 6110,
-      "potential": 6110
+      "potential": 6110,
+      "medHouseholdIncome": 65500,
+      "avgHouseholdIncome": 83400,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 801000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "Alderwood",
@@ -2007,7 +2847,13 @@
       "bike": 25,
       "builtYear": 1955,
       "existing": 4785,
-      "potential": 28328
+      "potential": 28328,
+      "medHouseholdIncome": 106000,
+      "avgHouseholdIncome": 129000,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1130000,
+      "permitsRecentCount": 17,
+      "permitsPer1kDwellings": 3.55
     },
     {
       "name": "Ionview",
@@ -2021,7 +2867,13 @@
       "bike": 28,
       "builtYear": 1970,
       "existing": 4965,
-      "potential": 9313
+      "potential": 9312,
+      "medHouseholdIncome": 74500,
+      "avgHouseholdIncome": 85200,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 804000,
+      "permitsRecentCount": 7,
+      "permitsPer1kDwellings": 1.41
     },
     {
       "name": "West Queen West",
@@ -2035,7 +2887,13 @@
       "bike": 37,
       "builtYear": 1995,
       "existing": 7700,
-      "potential": 7700
+      "potential": 7700,
+      "medHouseholdIncome": 101000,
+      "avgHouseholdIncome": 136400,
+      "medDwellingValue": 760000,
+      "avgDwellingValue": 890000,
+      "permitsRecentCount": 8,
+      "permitsPer1kDwellings": 1.04
     },
     {
       "name": "Briar Hill-Belgravia",
@@ -2049,7 +2907,13 @@
       "bike": 28,
       "builtYear": 1970,
       "existing": 5940,
-      "potential": 20658
+      "potential": 20900,
+      "medHouseholdIncome": 81000,
+      "avgHouseholdIncome": 96800,
+      "medDwellingValue": 810000,
+      "avgDwellingValue": 851000,
+      "permitsRecentCount": 28,
+      "permitsPer1kDwellings": 4.71
     },
     {
       "name": "Oakridge",
@@ -2063,7 +2927,13 @@
       "bike": 17,
       "builtYear": 1970,
       "existing": 5315,
-      "potential": 8830
+      "potential": 8928,
+      "medHouseholdIncome": 60000,
+      "avgHouseholdIncome": 72200,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 780000,
+      "permitsRecentCount": 25,
+      "permitsPer1kDwellings": 4.7
     },
     {
       "name": "Beechborough-Greenbrook",
@@ -2077,7 +2947,13 @@
       "bike": 3,
       "builtYear": 1970,
       "existing": 2570,
-      "potential": 6804
+      "potential": 6804,
+      "medHouseholdIncome": 62400,
+      "avgHouseholdIncome": 79500,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 970000,
+      "permitsRecentCount": 4,
+      "permitsPer1kDwellings": 1.56
     },
     {
       "name": "Keelesdale-Eglinton West",
@@ -2091,7 +2967,13 @@
       "bike": 8,
       "builtYear": 1970,
       "existing": 4385,
-      "potential": 23888
+      "potential": 23888,
+      "medHouseholdIncome": 77000,
+      "avgHouseholdIncome": 92300,
+      "medDwellingValue": 850000,
+      "avgDwellingValue": 848000,
+      "permitsRecentCount": 33,
+      "permitsPer1kDwellings": 7.53
     },
     {
       "name": "Taylor-Massey",
@@ -2105,7 +2987,13 @@
       "bike": 39,
       "builtYear": 1970,
       "existing": 6010,
-      "potential": 6010
+      "potential": 6010,
+      "medHouseholdIncome": 68500,
+      "avgHouseholdIncome": 79100,
+      "medDwellingValue": 540000,
+      "avgDwellingValue": 658000,
+      "permitsRecentCount": 9,
+      "permitsPer1kDwellings": 1.5
     },
     {
       "name": "High Park North",
@@ -2119,7 +3007,13 @@
       "bike": 27,
       "builtYear": 1970,
       "existing": 11100,
-      "potential": 13156
+      "potential": 13156,
+      "medHouseholdIncome": 83000,
+      "avgHouseholdIncome": 118400,
+      "medDwellingValue": 1300000,
+      "avgDwellingValue": 1354000,
+      "permitsRecentCount": 20,
+      "permitsPer1kDwellings": 1.8
     },
     {
       "name": "Little Portugal",
@@ -2133,7 +3027,13 @@
       "bike": 30,
       "builtYear": 1985,
       "existing": 7890,
-      "potential": 13328
+      "potential": 13328,
+      "medHouseholdIncome": 86000,
+      "avgHouseholdIncome": 110900,
+      "medDwellingValue": 1000000,
+      "avgDwellingValue": 1084000,
+      "permitsRecentCount": 37,
+      "permitsPer1kDwellings": 4.69
     },
     {
       "name": "Weston-Pelham Park",
@@ -2147,7 +3047,13 @@
       "bike": 10,
       "builtYear": 1955,
       "existing": 4195,
-      "potential": 11768
+      "potential": 11768,
+      "medHouseholdIncome": 81000,
+      "avgHouseholdIncome": 94700,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 905000,
+      "permitsRecentCount": 14,
+      "permitsPer1kDwellings": 3.34
     },
     {
       "name": "Avondale",
@@ -2161,7 +3067,13 @@
       "bike": 7,
       "builtYear": 2008,
       "existing": 6995,
-      "potential": 6995
+      "potential": 6995,
+      "medHouseholdIncome": 84000,
+      "avgHouseholdIncome": 102700,
+      "medDwellingValue": 680000,
+      "avgDwellingValue": 802000,
+      "permitsRecentCount": 9,
+      "permitsPer1kDwellings": 1.29
     },
     {
       "name": "Brookhaven-Amesbury",
@@ -2175,7 +3087,13 @@
       "bike": 2,
       "builtYear": 1970,
       "existing": 6395,
-      "potential": 11752
+      "potential": 11840,
+      "medHouseholdIncome": 73000,
+      "avgHouseholdIncome": 89400,
+      "medDwellingValue": 900000,
+      "avgDwellingValue": 883000,
+      "permitsRecentCount": 13,
+      "permitsPer1kDwellings": 2.03
     },
     {
       "name": "Dorset Park",
@@ -2189,7 +3107,13 @@
       "bike": 0,
       "builtYear": 1970,
       "existing": 8720,
-      "potential": 12390
+      "potential": 12724,
+      "medHouseholdIncome": 79000,
+      "avgHouseholdIncome": 89700,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 683000,
+      "permitsRecentCount": 1,
+      "permitsPer1kDwellings": 0.11
     },
     {
       "name": "Yonge-St.Clair",
@@ -2203,7 +3127,13 @@
       "bike": 16,
       "builtYear": 1970,
       "existing": 7210,
-      "potential": 7210
+      "potential": 7210,
+      "medHouseholdIncome": 94000,
+      "avgHouseholdIncome": 204800,
+      "medDwellingValue": 1740000,
+      "avgDwellingValue": 1938000,
+      "permitsRecentCount": 3,
+      "permitsPer1kDwellings": 0.42
     },
     {
       "name": "South Eglinton-Davisville",
@@ -2217,7 +3147,13 @@
       "bike": 6,
       "builtYear": 1995,
       "existing": 13185,
-      "potential": 13185
+      "potential": 13185,
+      "medHouseholdIncome": 80000,
+      "avgHouseholdIncome": 103500,
+      "medDwellingValue": 800000,
+      "avgDwellingValue": 977000,
+      "permitsRecentCount": 7,
+      "permitsPer1kDwellings": 0.53
     },
     {
       "name": "North Toronto",
@@ -2231,7 +3167,13 @@
       "bike": 5,
       "builtYear": 1995,
       "existing": 9430,
-      "potential": 9430
+      "potential": 9430,
+      "medHouseholdIncome": 70000,
+      "avgHouseholdIncome": 85400,
+      "medDwellingValue": 700000,
+      "avgDwellingValue": 793000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     },
     {
       "name": "North St.James Town",
@@ -2245,7 +3187,13 @@
       "bike": 11,
       "builtYear": 1970,
       "existing": 9525,
-      "potential": 9525
+      "potential": 9525,
+      "medHouseholdIncome": 59200,
+      "avgHouseholdIncome": 74100,
+      "medDwellingValue": 750000,
+      "avgDwellingValue": 830000,
+      "permitsRecentCount": 0,
+      "permitsPer1kDwellings": 0.0
     }
   ]
 }
