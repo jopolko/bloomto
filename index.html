@@ -3256,14 +3256,18 @@
             // baked into parcels-top.json by build_parcels.py) so the card populates
             // on the very first render — independent of the async CKAN fresh-permits
             // fetch which may fail on local dev or return zero matches in elite parcels.
-            // Two-step fallback ladder so we always show something useful:
-            //   (1) prefer an elite parcel with the most-recent on-lot permit
-            //   (2) else featured pick: top-row of the current sort, with copy
-            //       framing it as "while you build your watchlist"
+            // Three rules for the fallback so all three cards stay populated:
+            //   (1) Skip signal-bearing parcels — those go to HOTTEST naturally;
+            //       claiming them would cause the dedup at the bottom of this
+            //       function to null out HOTTEST.
+            //   (2) Prefer parcel with most-recent on-lot permit.
+            //   (3) Else featured pick: first row that isn't already a HOTTEST
+            //       candidate, framed as "starter pick while you build a watchlist."
             if (!newest) {
                 let bestRow = null;
                 let bestDate = '';
                 for (const r of rows) {
+                    if (hasAnySignal(r)) continue;  // leave for HOTTEST
                     const d = r.permitsRecentMostRecentDate;
                     if (!d) continue;
                     if (d > bestDate) {
@@ -3277,12 +3281,16 @@
                     newest = bestRow;
                     newest._pickWhy = `Most recent on-lot permit in the cover-list — filed ${agoText}. On future visits this slot tracks new entries to the cover-list since you were last here.`;
                     newest._pickIsFirstVisitFallback = true;
-                } else if (rows.length > 0) {
-                    // No permit data at all — still populate so the card never
-                    // greys out. Pick the top row in current sort order.
-                    newest = rows[0];
-                    newest._pickWhy = `Featured pick from the current cover-list. On future visits this slot tracks what's joined the list since you were last here.`;
-                    newest._pickIsFirstVisitFallback = true;
+                } else {
+                    // No permit data either — pick the first non-signal-bearing
+                    // row in current sort order. Same exclusion principle so
+                    // HOTTEST/UNDERDOG keep their candidates.
+                    const featured = rows.find(r => !hasAnySignal(r)) || rows[0];
+                    if (featured) {
+                        newest = featured;
+                        newest._pickWhy = `Featured pick from the current cover-list. On future visits this slot tracks what's joined the list since you were last here.`;
+                        newest._pickIsFirstVisitFallback = true;
+                    }
                 }
             }
             // Persist the current set on first render only.
