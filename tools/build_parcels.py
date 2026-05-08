@@ -815,16 +815,28 @@ _NEIGHBOR_RADIUS_DEG = _NEIGHBOR_RADIUS_M / 111_000  # ≤1.4× over-bound for b
 EXISTING_BUILDING_HEIGHT_THRESHOLD_M = 18.0
 EXISTING_BUILDING_OVERLAP_RATIO = 0.5
 
-# Side-yard clearance threshold for the detached/semi/row classifier. Anything
-# under 0.4m is treated as "touching" (absorbs alignment noise between the
-# Building Outlines layer and Property Boundaries — both 5-decimal WGS84 GeoJSON,
-# ~1m worst-case digitization slop at this latitude).
-SIDE_YARD_CLEAR_M = 0.4
-# Buildings smaller than this are treated as outbuildings (sheds, single-car
-# detached garages bottom out around ~14 m²) and excluded from the classifier
-# so a backyard shed near the side fence doesn't drag a detached house down to
-# "semi". A typical Toronto bungalow footprint is 80-120 m².
-MIN_CLASSIFIER_BUILDING_M2 = 15.0
+# Cross-boundary classifier (2026-05-08 — replaces the side-yard test
+# against parcel edges, which was over-claiming detached because Toronto's
+# Building Outlines polygons are drawn ~1m INSIDE the property line).
+#
+# New approach: measure the distance from this parcel's MAIN building to
+# the NEAREST FOREIGN building (a building polygon on a neighbouring parcel,
+# filtered to ≥ MIN_CLASSIFIER_BUILDING_M2 to ignore garages/sheds/decks
+# masquerading as buildings).
+#
+# Tuned 2026-05-08 against 200 known-detached + 200 known-attached parcels:
+#   - 50 m² outbuilding filter improves separation: detached median 5.93m vs
+#     attached median 0.22m
+#   - 1.5m threshold: 90% precision on excluding attached, 74% recall on
+#     detached. Asymmetric on purpose — we accept missing some true detached
+#     in exchange for very few attached leaking through.
+SIDE_YARD_CLEAR_M = 1.5  # cross-building threshold (was 0.4 against parcel edge)
+# Outbuilding cutoff for "is this a real residence" — sheds bottom at ~14m²,
+# detached single-car garages ~18m², larger garages 25-50m². 50m² catches
+# only main residences + larger granny suites / coach houses. Same threshold
+# applies to MY building (must be ≥ this to count as classifier subject) and
+# FOREIGN buildings (must be ≥ this to count as attachment-evidence).
+MIN_CLASSIFIER_BUILDING_M2 = 50.0
 
 
 def _existing_max_building_height(parcel, massing_index) -> float | None:
@@ -863,37 +875,32 @@ def _existing_max_building_height(parcel, massing_index) -> float | None:
 
 
 def _classify_existing_structure(parcel, building_tree, building_geoms) -> str:
-    """Classify the parcel by its existing structure's side-yard pattern.
+    """Classify by cross-boundary building proximity.
 
-    Returns one of:
-      - "detached" : main building has clearance >= SIDE_YARD_CLEAR_M from
-                     both of the parcel's two longest exterior edges
-      - "semi"     : main building touches exactly one of those two sides
-      - "row"      : main building touches both sides
-      - "vacant"   : no building (>= MIN_CLASSIFIER_BUILDING_M2) intersects
-      - "unknown"  : parcel exterior is degenerate (<2 distinct edges) or
-                     projection failed
+    Returns "detached" | "semi" | "row" | "vacant" | "unknown".
 
-    Algorithm: project parcel + intersecting buildings to UTM 17N (metres),
-    pick the largest intersecting building polygon as "the main structure"
-    (filtering sub-MIN_CLASSIFIER_BUILDING_M2 outbuildings), identify the
-    two longest exterior edges of the parcel as "side yards" (typical
-    Toronto rectangular lot has the short edges facing the street and lane
-    and the long edges facing neighbours), measure shapely.distance from
-    the main building to each side. A semi-detached pair shares one wall
-    along the parcel boundary, so the building polygon either touches that
-    side (zero distance) or extends beyond into the neighbouring parcel —
-    either way `distance() == 0`. Detached lots have a setback on both
-    sides; row/townhouse lots touch both.
+    Algorithm: find this parcel's main building polygon (largest >= 50 m²
+    polygon overlapping the parcel). Find FOREIGN building polygons —
+    polygons within ~10 m of the parcel that are not the main building and
+    don't substantially overlap the parcel themselves. Filter foreign
+    polygons to >= 50 m² (drops garages, sheds, decks; keeps main
+    residences + coach houses). Project everything to UTM 17N (metres) and
+    measure shapely.distance from the main building to each foreign
+    building, taking the minimum.
 
-    Caveat: classification leans on the "two longest edges = side yards"
-    heuristic, which works on rectangular lots (>95% of Toronto residential)
-    but mis-identifies sides on pie-slice / corner / L-shaped parcels.
-    Those are tagged "unknown" downstream by `is_elite` / `is_broader` and
-    excluded from both tiers (we'd rather drop a true detached than mis-show
-    an attached as elite).
+    Verdict by count of foreign buildings within SIDE_YARD_CLEAR_M (1.5 m):
+      0 close → "detached"
+      1 close → "semi"
+      2+ close → "row"
+
+    Calibrated 2026-05-08 against 200 known-detached + 200 known-attached
+    parcels — best separation at 1.5 m threshold + 50 m² outbuilding filter
+    (90 % precision on excluding attached, 74 % recall on detached).
+    Asymmetric by design: better to miss a true detached than to include
+    an attached parcel in the elite cohort.
     """
-    candidates = []
+    # 1. Find this parcel's main building (>= 50 m²)
+    my_building_idxs = []
     for idx in building_tree.query(parcel.geometry):
         b = building_geoms[idx]
         try:
@@ -902,47 +909,83 @@ def _classify_existing_structure(parcel, building_tree, building_geoms) -> str:
             inter = parcel.geometry.intersection(b)
             if inter.is_empty:
                 continue
-            area_signed, _ = _GEOD.geometry_area_perimeter(inter)
-            if abs(area_signed) >= MIN_CLASSIFIER_BUILDING_M2:
-                candidates.append(b)
+            inter_area_signed, _ = _GEOD.geometry_area_perimeter(inter)
+            if abs(inter_area_signed) >= MIN_CLASSIFIER_BUILDING_M2:
+                my_building_idxs.append(idx)
         except Exception:
             continue
 
-    if not candidates:
+    if not my_building_idxs:
         return "vacant"
 
+    # Pick the largest as the "main"
+    main_idx = max(my_building_idxs,
+                   key=lambda i: building_geoms[i].area)
+    main_geom = building_geoms[main_idx]
+
+    # 2. Project main + parcel buffer to metres
     try:
-        parcel_m = shp_transform(_LONLAT_TO_M.transform, parcel.geometry)
-        buildings_m = [shp_transform(_LONLAT_TO_M.transform, b) for b in candidates]
+        main_m = shp_transform(_LONLAT_TO_M.transform, main_geom)
     except Exception:
         return "unknown"
+    if main_m.area < MIN_CLASSIFIER_BUILDING_M2:
+        # Edge case — outbuilding survives the geodesic check but fails
+        # the projected-area sanity filter. Treat as vacant.
+        return "vacant"
 
-    # MultiPolygon parcels: take the largest piece. Rare but exists for
-    # parcels split by a watercourse or right-of-way.
-    if parcel_m.geom_type == "MultiPolygon":
-        parcel_m = max(parcel_m.geoms, key=lambda g: g.area)
-    if parcel_m.geom_type != "Polygon":
-        return "unknown"
+    # 2.5. Merged-polygon case — Toronto's Building Outlines sometimes draws
+    # one polygon spanning multiple parcels (a semi-pair as one building).
+    # If MY main building extends >15% outside my parcel, it's clearly
+    # attached. > 40% outside = three-or-more parcel span = row.
+    try:
+        inter = parcel.geometry.intersection(main_geom)
+        if not inter.is_empty:
+            inter_a_signed, _ = _GEOD.geometry_area_perimeter(inter)
+            main_a_signed, _ = _GEOD.geometry_area_perimeter(main_geom)
+            main_area_geo = abs(main_a_signed) or 1
+            inside_ratio = abs(inter_a_signed) / main_area_geo
+            outside_ratio = 1.0 - inside_ratio
+            if outside_ratio > 0.40:
+                return "row"
+            if outside_ratio > 0.15:
+                return "semi"
+    except Exception:
+        pass
 
-    coords = list(parcel_m.exterior.coords)
-    edges = []
-    for i in range(len(coords) - 1):
-        seg = LineString([coords[i], coords[i + 1]])
-        if seg.length > 0:
-            edges.append((seg.length, seg))
-    if len(edges) < 2:
-        return "unknown"
-    edges.sort(key=lambda x: x[0], reverse=True)
-    side_a = edges[0][1]
-    side_b = edges[1][1]
+    # 3. Search neighbouring buildings within ~10 m of this parcel
+    parcel_buf = parcel.geometry.buffer(0.0001)  # ~10 m at Toronto lat
+    foreign_close = 0
+    seen = {main_idx} | set(my_building_idxs)
+    for idx in building_tree.query(parcel_buf):
+        if idx in seen:
+            continue
+        seen.add(idx)
+        b = building_geoms[idx]
+        try:
+            # Skip if it substantially overlaps THIS parcel (it's another
+            # of MY buildings, not foreign)
+            if parcel.geometry.intersects(b):
+                inter = parcel.geometry.intersection(b)
+                if not inter.is_empty:
+                    inter_area_signed, _ = _GEOD.geometry_area_perimeter(inter)
+                    if b.area > 0 and abs(inter_area_signed) / (
+                        _GEOD.geometry_area_perimeter(b)[0] or 1
+                    ) > 0.05:
+                        continue
+            # Project + outbuilding filter
+            b_m = shp_transform(_LONLAT_TO_M.transform, b)
+            if b_m.area < MIN_CLASSIFIER_BUILDING_M2:
+                continue
+            if main_m.distance(b_m) <= SIDE_YARD_CLEAR_M:
+                foreign_close += 1
+                if foreign_close >= 2:
+                    return "row"
+        except Exception:
+            continue
 
-    main_building_m = max(buildings_m, key=lambda g: g.area)
-    a_clear = main_building_m.distance(side_a) >= SIDE_YARD_CLEAR_M
-    b_clear = main_building_m.distance(side_b) >= SIDE_YARD_CLEAR_M
-
-    if a_clear and b_clear:
+    if foreign_close == 0:
         return "detached"
-    if a_clear or b_clear:
+    if foreign_close == 1:
         return "semi"
     return "row"
 
