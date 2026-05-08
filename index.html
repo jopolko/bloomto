@@ -4113,11 +4113,22 @@
             // glance. Detached and vacant are positive (green); semi flags as
             // a caution; row/unknown shouldn't appear here under the elite
             // gate but we render the label defensively.
+            // Source marker — "permit" = ground-truth from a Toronto building-
+            // permit STRUCTURE_TYPE record (high confidence); "classifier" = our
+            // cross-boundary heuristic (~82% accuracy, 90% precision excluding
+            // attached). Surfacing this lets the dev know whether to verify on
+            // Street View before underwriting.
+            const structSource = r.existingStructureSource || 'classifier';
+            const sourceTag = structSource === 'permit'
+                ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="Ground truth from a city building-permit STRUCTURE_TYPE record on this address.">✓ city permit record</span>'
+                : structSource === 'vacant'
+                    ? ''
+                    : ' <span style="font-size:10px;color:#9ca3af;font-weight:500" title="Heuristic — cross-boundary building-distance classifier. Verify on Street View before relying on this for underwriting.">est.</span>';
             const structSuffix = (() => {
                 if (!structType) return '';
-                if (structType === 'detached') return ' · <span style="color:#15803d;font-weight:600">detached</span>';
-                if (structType === 'semi')     return ' · <span style="color:#9a3412;font-weight:600">semi-detached</span>';
-                if (structType === 'row')      return ' · <span style="color:#9f1239;font-weight:600">row / townhouse</span>';
+                if (structType === 'detached') return ` · <span style="color:#15803d;font-weight:600">detached</span>${sourceTag}`;
+                if (structType === 'semi')     return ` · <span style="color:#9a3412;font-weight:600">semi-detached</span>${sourceTag}`;
+                if (structType === 'row')      return ` · <span style="color:#9f1239;font-weight:600">row / townhouse</span>${sourceTag}`;
                 return '';
             })();
             const existingHtml = (() => {
@@ -4965,7 +4976,13 @@
                     ${r.inRegulatedArea ? `<tr><td>TRCA</td><td><span style="color:#b91c1c;font-weight:600">REGULATED — permit gate</span></td></tr>` : ''}
                     ${r.abutsLaneway ? `<tr><td>Laneway</td><td>abuts</td></tr>` : ''}
                     ${r.nearRapidToCorridor ? `<tr><td>RapidTO</td><td>on corridor</td></tr>` : ''}
-                    ${r.existingStructureType ? `<tr><td>Existing</td><td>${structureLabel(r.existingStructureType)}</td></tr>` : ''}
+                    ${r.existingStructureType ? `<tr><td>Existing</td><td>${structureLabel(r.existingStructureType)}${
+                        r.existingStructureSource === 'permit'
+                            ? ' <span style="font-size:10px;color:#15803d" title="Ground truth from city building-permit STRUCTURE_TYPE record">✓</span>'
+                            : (r.existingStructureType === 'detached' || r.existingStructureType === 'semi' || r.existingStructureType === 'row')
+                                ? ' <span style="font-size:10px;color:#9ca3af" title="Estimated by cross-boundary classifier — verify on Street View">est.</span>'
+                                : ''
+                    }</td></tr>` : ''}
                     ${r.parcelId ? `<tr><td>Parcel ID</td><td><span style="font-family:monospace;font-size:11px">${String(r.parcelId).replace(/[<>&"']/g, '')}</span></td></tr>` : ''}
                 </table>
                 <div style="margin-top:8px">
