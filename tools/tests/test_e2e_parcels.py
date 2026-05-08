@@ -220,6 +220,7 @@ class ParcelE2ETests(unittest.TestCase):
             permit_index=empty_permits,
             permit_structure_type_by_addr={},
             osm_structure_type_by_addr={},
+            tax_exempt_addrs=set(),
             permit_freshness_cutoff=date(2021, 1, 1),
             bike_tree=empty_tree,
             bike_lines=[],

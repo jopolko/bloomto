@@ -102,6 +102,7 @@ def _make_stats():
         "skippedInstitutional": 0,
         "skippedInstitutionalByCategory": {},
         "skippedOsmLanduse": 0,
+        "skippedTaxExempt": 0,
         "skippedTallExistingBuilding": 0,
         "abutsLaneway": 0,
         "nearRapidToCorridor": 0,

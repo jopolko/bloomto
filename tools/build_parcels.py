@@ -52,6 +52,7 @@ from tools.sources import (
     osm_ttc_stations as ttc_stations_src,
     osm_landuse as landuse_src,
     osm_buildings as osm_src,
+    tax_exemptions as tax_exempt_src,
     zoning as zoning_src,
 )
 
@@ -168,6 +169,15 @@ def _process_parcel(parcel_or_record) -> dict:
     # site even when zoning data alone classifies them as residential.
     if landuse_src.is_landuse_excluded(parcel.geometry, landuse_index):
         return {'skip': 'osm_landuse'}
+
+    # --- gate stage 3d: tax-exempt institutional address ---
+    # Catches Royal Canadian Legion halls, registered charities, city-
+    # owned community facilities, universities, etc. — institutional uses
+    # whose zoning permits residential redevelopment but which won't sell
+    # to a multiplex dev. 677 unique addresses citywide; the gate is
+    # address-join (parcel.address normalized → exempt set lookup).
+    if tax_exempt_src.is_tax_exempt(parcel.address, _W['tax_exempt_addrs']):
+        return {'skip': 'tax_exempt'}
 
     # --- gate stage 3c: tall existing building (3D Massing) ---
     # Excludes parcels already carrying a 5+ storey structure — apartment
@@ -1108,6 +1118,7 @@ def assemble_parcel_payload(
     permit_freshness_cutoff,
     permit_structure_type_by_addr: dict,
     osm_structure_type_by_addr: dict,
+    tax_exempt_addrs: set,
     bike_tree: STRtree,
     bike_lines: list,
     street_tree_index,
@@ -1144,6 +1155,7 @@ def assemble_parcel_payload(
     stats_skipped_institutional = 0
     stats_skipped_ttc_station = 0
     stats_skipped_osm_landuse = 0
+    stats_skipped_tax_exempt = 0
     stats_skipped_tall_building = 0
     stats_abuts_laneway = 0
     stats_near_rapidto = 0
@@ -1200,6 +1212,7 @@ def assemble_parcel_payload(
         'permit_index': permit_index,
         'permit_structure_type_by_addr': permit_structure_type_by_addr,
         'osm_structure_type_by_addr': osm_structure_type_by_addr,
+        'tax_exempt_addrs': tax_exempt_addrs,
         'permit_freshness_cutoff': permit_freshness_cutoff,
         'nb_canopy_by_name': nb_canopy_by_name,
         'built_year_by_name': built_year_by_name,
@@ -1224,6 +1237,8 @@ def assemble_parcel_payload(
                 stats_skipped_ttc_station += 1
             elif reason == 'osm_landuse':
                 stats_skipped_osm_landuse += 1
+            elif reason == 'tax_exempt':
+                stats_skipped_tax_exempt += 1
             elif reason == 'tall_existing_building':
                 stats_skipped_tall_building += 1
             elif reason == 'non_buildable':
@@ -1391,6 +1406,7 @@ def assemble_parcel_payload(
             "skippedInstitutionalByCategory": dict(institutional_by_category),
             "skippedTtcStation": stats_skipped_ttc_station,
             "skippedOsmLanduse": stats_skipped_osm_landuse,
+            "skippedTaxExempt": stats_skipped_tax_exempt,
             "skippedTallExistingBuilding": stats_skipped_tall_building,
             "abutsLaneway": stats_abuts_laneway,
             "nearRapidToCorridor": stats_near_rapidto,
@@ -1527,6 +1543,7 @@ def main(argv=None) -> int:
     permit_index = permits_src.compute_permits(cache)
     permit_structure_type_by_addr = permits_src.build_structure_type_index(cache)
     osm_structure_type_by_addr = osm_src.build_osm_structure_type_index(cache)
+    tax_exempt_addrs = tax_exempt_src.build_exempt_address_set(cache)
     permit_freshness_cutoff = permits_src.freshness_cutoff()
     _done("permits", t)
 
@@ -1599,6 +1616,7 @@ def main(argv=None) -> int:
         permit_index=permit_index,
         permit_structure_type_by_addr=permit_structure_type_by_addr,
         osm_structure_type_by_addr=osm_structure_type_by_addr,
+        tax_exempt_addrs=tax_exempt_addrs,
         permit_freshness_cutoff=permit_freshness_cutoff,
         bike_tree=bike_tree,
         bike_lines=bike_lines,

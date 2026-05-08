@@ -108,6 +108,7 @@ REQUIRED_STATS_KEYS = frozenset({
     "skippedInstitutional",
     "skippedInstitutionalByCategory",
     "skippedOsmLanduse",
+    "skippedTaxExempt",
     "skippedTallExistingBuilding",
     "abutsLaneway",
     "nearRapidToCorridor",
