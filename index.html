@@ -1100,15 +1100,19 @@
                on both sides of a centered table block. */
             grid-template-columns:
                 minmax(200px, 1fr)    /* Address (incl. inline ★) — flex absorber */
+                64px                  /* Hot — days since latest signal/permit */
                 104px                 /* Lot */
                 120px                 /* Existing (footprint + storeys) */
                 64px                  /* Built */
                 76px                  /* Subway */
                 76px                  /* Sixplex */
                 88px                  /* Permits — fits "Nbhd permits" without wrap */
-                56px                  /* Hot — days since latest signal/permit */
-                60px                  /* Trees */
-                92px;                 /* Saved $ */
+                60px;                 /* Trees */
+                /* SAVED $ column removed 2026-05-08 — derivable from maxUnits
+                   + sixplex eligibility ($200K DC waiver + $25K × maxUnits
+                   parking elimination per Bill 185). Per-pick number is in
+                   the detail panel's Financial Upside section; cohort
+                   aggregate stays prominent in the money hero. */
             align-items: stretch;
         }
         .pick-header {
@@ -2075,15 +2079,14 @@
             <div id="daily-picks" class="daily-picks" hidden></div>
             <div class="pick-header" id="pick-header" role="row">
                 <button class="col-btn header-addr-label" data-sort="address" title="Sort alphabetically by address">PARCEL</button>
+                <button class="col-btn" data-sort="activity" title="Days since the latest activity signal on this parcel — most-recent of (a) on-lot building permit, or (b) active CKAN signal (severance / demolition permit / property-standards violation, last 12 months). '—' if neither. Sort: freshest first. (Default sort.)">Hot</button>
                 <button class="col-btn" data-sort="area" title="Sort by lot area (largest first)">Lot (m²)</button>
                 <button class="col-btn" data-sort="footprint" title="Existing structure on the lot — footprint area (m²) and rough storey count (height ÷ 3, derived from 3D Massing). 'vacant' when no structure recorded. Sort: smallest footprint first.">Existing</button>
                 <button class="col-btn" data-sort="built" title="Sort by build year (oldest first)">Built</button>
                 <button class="col-btn" data-sort="subway" title="Sort by subway proximity (closest first)">Subway</button>
                 <button class="col-btn" data-sort="sixplex" title="Sixplex eligible — does this parcel qualify for as-of-right 6-plex? Yes only in T&EY District + Ward 23 (June 2025 carve-out). Sort: eligible first.">6-plex OK</button>
                 <button class="col-btn" data-sort="permits_nb" title="Permit activity in this parcel's neighborhood over the last 5 years (sample size). Sort: most first.">Nbhd permits</button>
-                <button class="col-btn" data-sort="activity" title="Days since the latest activity signal on this parcel — most-recent of (a) on-lot building permit, or (b) active CKAN signal (severance / demolition permit / property-standards violation, last 12 months). '—' if neither. Sort: freshest first.">Hot</button>
                 <button class="col-btn" data-sort="trees" title="Sort by mature tree count (most first)">Trees</button>
-                <button class="col-btn header-stack-label" data-sort="savings" title="Bill 185 stacked incentive total ($200K DC waiver + $25K × parking stalls). Sort: highest first.">SAVED $</button>
             </div>
             <div id="picks" class="pick-list"></div>
         </section>
@@ -5402,6 +5405,17 @@
                         <div class="meta">${r.neighborhood}</div>
                         ${heroSubhead}
                     </div>
+                    ${(() => {
+                        const days = latestActivityDays(r);
+                        if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
+                        // Color-code by recency: <30d hot, 30-90d warm,
+                        // 90-365d neutral, >1y muted. Hot picks get a 🔥
+                        // prefix to draw the eye on the default sort.
+                        const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
+                        const prefix = days < 30 ? '🔥' : '';
+                        const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
+                        return `<div class="cell ${cls}" data-col="activity">${prefix}${display}</div>`;
+                    })()}
                     <div class="stats-row">
                         <div class="cell" data-col="lot">${lotDisplay}</div>
                         <div class="cell" data-col="footprint">${fpDisplay}</div>
@@ -5409,20 +5423,8 @@
                         <div class="cell ${popSubway}" data-col="subway">${subDisplayShort}</div>
                         <div class="cell ${sxClass} ${popSixplex}" data-col="sixplex">${sxText}</div>
                         <div class="cell" data-col="permits">${permitsDisplay}</div>
-                        ${(() => {
-                            const days = latestActivityDays(r);
-                            if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
-                            // Color-code by recency: <30d hot, 30-90d warm,
-                            // 90-365d neutral, >1y muted. Hot picks get a 🔥
-                            // prefix to draw the eye on the default sort.
-                            const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
-                            const prefix = days < 30 ? '🔥' : '';
-                            const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
-                            return `<div class="cell ${cls}" data-col="activity">${prefix}${display}</div>`;
-                        })()}
                         <div class="cell ${treesClass}" data-col="trees">${treesDisplay}</div>
                     </div>
-                    <div class="stack-mini ${popSavings}" title="${stackText.replace(/<[^>]*>/g,'').replace(/"/g,'&quot;')}">${savings > 0 ? '~$' + Math.round(savings/1000) + 'K' : '—'}</div>
                 </div>`;
         }
 
@@ -5817,7 +5819,7 @@
             el.innerHTML = `
                 <div>
                     <div class="money-num">${dollar}</div>
-                    <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · DC waiver + parking minimums eliminated. <em>HST + GST rebates not yet stacked.</em></div>
+                    <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · <strong>typically $300K–$400K per pick</strong> ($200K DC waiver + $25K × max units parking elimination). <em>HST + GST rebates not yet stacked.</em></div>
                 </div>
                 ${signalsHtml}
             `;
