@@ -3404,6 +3404,30 @@
                     ? `Freshest owner activity on the list — ${sk.label} ${ago || 'recently'}.`
                     : 'Most recent owner-activity signal on the list.';
             }
+            // Fallback when no CKAN signals are joined to the cohort
+            // (signals.json missing / not yet deployed / empty after a fresh
+            // build). Pick the freshest on-lot permit AFTER newest, so the
+            // card always populates. Without this the HOTTEST slot greys
+            // any time signals.json is unavailable — including the period
+            // between a static-file deploy and the next signals refresh.
+            if (!hottest) {
+                let bestRow = null;
+                let bestDate = '';
+                for (const r of rows) {
+                    if (newestKey && parcelKey(r) === newestKey) continue;
+                    const d = r.permitsRecentMostRecentDate;
+                    if (!d) continue;
+                    if (d > bestDate) { bestDate = d; bestRow = r; }
+                }
+                if (bestRow) {
+                    const ago = (typeof formatDaysAgo === 'function')
+                        ? (formatDaysAgo(bestDate) || 'recently')
+                        : 'recently';
+                    hottest = bestRow;
+                    hottest._pickWhy = `Freshest building permit on the list after the cover pick — filed ${ago}.`;
+                    hottest._pickIsPermitFallback = true;
+                }
+            }
 
             // Underdog — highest stacked savings on a parcel ranked
             // outside the top 10. Surfaces high-leverage deals hiding
