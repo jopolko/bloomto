@@ -3283,6 +3283,27 @@
             if (s.prelimZoning) return { kind: 'prelimZoning', label: 'zoning inquiry', dateField: s.prelimZoning.applicationDate };
             return null;
         }
+        // Which source produced the most-recent date on this parcel? Drives
+        // the Hot-column icon so the dev knows AT A GLANCE which kind of
+        // activity is firing — demo permit (most actionable, teardown lined
+        // up), severance (subdivision in motion), violation (owner has a
+        // fix-it order), zoning inquiry (someone pre-flighted the zone), or
+        // an on-lot building permit (owner is doing work themselves). The
+        // CKAN-signal kind wins ties — those are the actively-tracked
+        // dev-interest signals; on-lot permits are background noise.
+        const _ACTIVITY_ICONS = { demo: '🔨', severance: '🔪', violation: '⚠', prelimZoning: '📋', permit: '🔧' };
+        const _ACTIVITY_LABELS = { demo: 'demo permit', severance: 'severance', violation: 'violation', prelimZoning: 'zoning inquiry', permit: 'owner permit' };
+        function latestActivitySource(r) {
+            const onLot = r.permitsRecentMostRecentDate || null;
+            const sig = _signalKindForRow(r);
+            const sigDate = sig ? sig.dateField : null;
+            let kind = null;
+            if (sigDate && onLot) kind = sigDate >= onLot ? sig.kind : 'permit';
+            else if (sigDate)     kind = sig.kind;
+            else if (onLot)       kind = 'permit';
+            if (!kind) return null;
+            return { kind, icon: _ACTIVITY_ICONS[kind] || '🔥', label: _ACTIVITY_LABELS[kind] || 'activity' };
+        }
 
         function computeDailyPicks(rows) {
             if (!rows || rows.length === 0) return { newest: null, hottest: null, underdog: null };
@@ -5389,12 +5410,21 @@
                         const days = latestActivityDays(r);
                         if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
                         // Color-code by recency: <30d hot, 30-90d warm,
-                        // 90-365d neutral, >1y muted. Hot picks get a 🔥
-                        // prefix to draw the eye on the default sort.
+                        // 90-365d neutral, >1y muted. The icon identifies
+                        // WHAT made it hot (demo / severance / violation /
+                        // zoning inquiry / owner permit) so the eye picks
+                        // up the *kind* of activity at a scan, not just
+                        // the freshness. Within the 12-month signal window
+                        // we always show the source icon; older activity
+                        // suppresses the icon (signal already aged out).
                         const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
-                        const prefix = days < 30 ? '🔥' : '';
+                        const src = latestActivitySource(r);
                         const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
-                        return `<div class="cell ${cls}" data-col="activity">${prefix}${display}</div>`;
+                        const icon = (src && days < 365) ? src.icon : '';
+                        const tip = src
+                            ? `${src.label} · ${display} ago`
+                            : `Latest activity ${display} ago`;
+                        return `<div class="cell ${cls}" data-col="activity" title="${tip}">${icon ? `${icon} ` : ''}${display}</div>`;
                     })()}
                     <div class="stats-row">
                         <div class="cell" data-col="lot">${lotDisplay}</div>
