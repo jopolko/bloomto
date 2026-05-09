@@ -352,18 +352,34 @@ def is_elite(props: dict) -> bool:
     structure_type = props.get("existingStructureType", "unknown")
     if structure_type not in ELITE_STRUCTURE_TYPES:
         return False
-    # 2026-05-08 — elite requires ground-truth-grade structure type.
-    # Two acceptable sources:
-    #   "permit" — Toronto building-permit STRUCTURE_TYPE record (city-
-    #              recorded, highest confidence; ~32% citywide coverage)
-    #   "osm"    — OpenStreetMap volunteer-mapped `building=*` tag
-    #              (~12% citywide additional coverage; 96% agreement
-    #               with permits where they overlap)
-    # Cross-boundary classifier (~82 % accuracy heuristic) is downgraded
-    # to broader. Vacant parcels exempt — no structure to verify, source
-    # is deterministic absence of a Building-Outline polygon.
+    # 2026-05-09 — elite requires ground-truth-grade structure type.
+    # Acceptable sources for non-vacant parcels:
+    #   "permit"         — Toronto building-permit STRUCTURE_TYPE record
+    #                      (city-recorded, ~32% citywide coverage)
+    #   "osm"            — OpenStreetMap volunteer-mapped `building=*` tag
+    #                      (~12% additional coverage, 96% agreement w/ permits)
+    #   "address_points" — Toronto Address Points spatial join
+    #                      (city-recorded address registry)
+    #   "classifier" + AP=1 — heuristic detached + Address Points dataset
+    #                      confirms exactly 1 dwelling on the parcel polygon.
+    #                      The AP=1 ground-truth flips the source from
+    #                      "guess" to "city has registered exactly 1 address
+    #                      here" — bulletproof on the no-shared-walls /
+    #                      no-shared-addresses question. Lifts coverage in
+    #                      suburban wards where permit data is sparse;
+    #                      addresses the central-Toronto bias previously
+    #                      caused by the strict permit/osm gate (86% of
+    #                      elite was clustering in T&EY + Ward 23).
+    # Vacant parcels exempt — no structure to verify, source is
+    # deterministic absence of a Building-Outline polygon.
     if structure_type != "vacant":
-        if props.get("existingStructureSource") not in ("permit", "osm"):
+        src = props.get("existingStructureSource")
+        ap = int(props.get("addressPointCount") or 0)
+        if src in ("permit", "osm", "address_points"):
+            pass  # ground-truth-source ok
+        elif src == "classifier" and structure_type == "detached" and ap == 1:
+            pass  # AP=1 confirmation upgrades classifier-detached to elite
+        else:
             return False
     return True
 

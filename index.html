@@ -1118,6 +1118,139 @@
         }
         .footer-section a:hover { text-decoration: underline; }
         .footer-meta { font-style: italic; }
+        /* Methodology disclosure — collapsed by default. Renders the
+           algorithm in pseudo-mathematical notation (real Unicode, no
+           dependency). Designed to be screenshot-worthy: tight typography,
+           monospace numerics, set-builder notation. */
+        .methodology-details {
+            margin-bottom: 14px;
+        }
+        .methodology-summary {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            user-select: none;
+        }
+        .methodology-summary::-webkit-details-marker { display: none; }
+        .methodology-summary::before {
+            content: '▸';
+            color: var(--ink-mute2);
+            font-size: 10px;
+            transition: transform 0.15s ease;
+            display: inline-block;
+        }
+        .methodology-details[open] .methodology-summary::before {
+            transform: rotate(90deg);
+        }
+        .methodology-hint {
+            font-size: 11px;
+            color: var(--ink-mute2);
+            font-style: italic;
+        }
+        .methodology-body {
+            margin-top: 12px;
+            padding: 16px 18px;
+            background: #f7faf8;
+            border: 1px solid var(--rule);
+            border-left: 3px solid var(--cot-green);
+            border-radius: 4px;
+        }
+        .formula-block {
+            font-family: var(--font-serif);
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--ink);
+            margin-bottom: 14px;
+        }
+        .formula-line {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .formula-label {
+            min-width: 88px;
+            font-style: italic;
+            color: var(--cot-green);
+            font-weight: 700;
+        }
+        .formula-eq {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: var(--ink-mute2);
+            font-style: normal;
+        }
+        .formula-rhs {
+            font-variant-numeric: tabular-nums;
+            font-style: normal;
+        }
+        .formula-rhs em {
+            font-style: italic;
+            color: var(--tor-blue);
+        }
+        .formula-rhs sub, .formula-rhs sup {
+            font-size: 10px;
+            color: var(--ink-mute2);
+        }
+        .formula-gates {
+            margin: 4px 0 8px 88px;
+            font-size: 12px;
+            color: var(--ink-muted);
+            line-height: 2;
+            font-style: normal;
+        }
+        .gate {
+            display: inline-block;
+            padding: 1px 4px;
+            margin-right: 4px;
+            font-style: normal;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 11px;
+            color: var(--ink);
+        }
+        .gate abbr {
+            text-decoration: underline dotted;
+            cursor: help;
+        }
+        .formula-result strong {
+            color: var(--cot-green);
+            font-size: 15px;
+        }
+        .formula-result small { color: var(--ink-mute2); font-size: 11px; }
+        .formula-stack {
+            margin-top: 8px;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .datasets-grid {
+            border-top: 1px solid var(--rule);
+            padding-top: 12px;
+        }
+        .datasets-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--ink-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+        .datasets-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 4px 14px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 11px;
+            color: var(--ink-muted);
+        }
+        .datasets-list li::before {
+            content: '·  ';
+            color: var(--cot-green);
+        }
 
         .magazine-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -2202,10 +2335,71 @@
              the methodology can scroll for it; the first screen carries
              only the money hero + listings. -->
         <footer class="page-footer">
-            <div class="footer-section">
-                <span class="footer-label">17 city datasets fused:</span>
-                Property Boundaries · Zoning By-law 569-2013 · Heritage Register · SolarTO · 3D Massing · Building Outlines · Toronto Centreline · TTC GTFS · Forest &amp; Land Cover · NPP 2021 · Cycling Network · Basement Flooding Study Areas · TRCA Reg 41/24 · RapidTO Corridors · Building Permits · Street Tree Data · Community Council Boundaries
-            </div>
+            <details class="methodology-details">
+                <summary class="methodology-summary">
+                    <span class="footer-label">Methodology</span>
+                    <span class="methodology-hint">click to see the algorithm + 27 source datasets</span>
+                </summary>
+                <div class="methodology-body">
+                    <div class="formula-block">
+                        <div class="formula-line">
+                            <span class="formula-label">ELITE</span>
+                            <span class="formula-eq">=</span>
+                            <span class="formula-rhs">{ <em>p</em> ∈ Toronto.parcels<sub>n=528,397</sub> &nbsp;|&nbsp; <em>p</em> satisfies all 11 gates }</span>
+                        </div>
+                        <div class="formula-gates">
+                            <span class="gate">¬institutional(<em>p</em>)</span>
+                            <span class="gate">∧ ¬tax_exempt(<em>p</em>)</span>
+                            <span class="gate">∧ ¬tall_existing(<em>p</em>)</span>
+                            <span class="gate">∧ ¬OSM_landuse_excl(<em>p</em>)</span>
+                            <br>
+                            <span class="gate">∧ structure(<em>p</em>) ∈ { detached, vacant }</span>
+                            <span class="gate">∧ source(<em>p</em>) ∈ { permit, osm, address_points, classifier+<abbr title="address-point count = 1 — city has registered exactly 1 address on the parcel polygon, no shared addresses">AP<sub>=1</sub></abbr> }</span>
+                            <br>
+                            <span class="gate">∧ heritage(<em>p</em>) = ∅</span>
+                            <span class="gate">∧ nbhd_median_value(<em>p</em>) ≤ $2M</span>
+                            <span class="gate">∧ transit(<em>p</em>) ≤ 500m</span>
+                            <span class="gate">∧ lot_area(<em>p</em>) ≥ 350m²</span>
+                            <span class="gate">∧ residential(<em>p</em>) = true</span>
+                        </div>
+                        <div class="formula-line formula-result">
+                            <span class="formula-label">|ELITE|</span>
+                            <span class="formula-eq">=</span>
+                            <span class="formula-rhs"><strong id="formula-elite-count">…</strong> &nbsp;<small>(<span id="formula-pct">…</span>% of <em>n</em>)</small></span>
+                        </div>
+                        <div class="formula-line formula-sort">
+                            <span class="formula-label">order</span>
+                            <span class="formula-eq">=</span>
+                            <span class="formula-rhs">sort<sub>desc</sub>( max(activity_dateⱼ) <sub>j ∈ {permit, severance, demo, violation, ZPR}</sub> )</span>
+                        </div>
+                        <div class="formula-stack">
+                            <span class="formula-label">$ stacked</span>
+                            <span class="formula-eq">=</span>
+                            <span class="formula-rhs">Σ <sub><em>p</em> ∈ ELITE</sub> [ $200K · DC_waiver(<em>p</em>) + $25K · max_units(<em>p</em>) · parking_elim(<em>p</em>) ]</span>
+                        </div>
+                    </div>
+                    <div class="datasets-grid">
+                        <div class="datasets-label">Inputs (27 sources):</div>
+                        <ul class="datasets-list">
+                            <li>Property Boundaries</li><li>Zoning By-law 569-2013</li>
+                            <li>Heritage Register</li><li>3D Massing</li>
+                            <li>Building Outlines</li><li>Building Permits — Active</li>
+                            <li>Building Permits — Cleared</li><li>Demolition Permits</li>
+                            <li>Property Standards Violations</li><li>CoA Severance Applications</li>
+                            <li>Preliminary Zoning Reviews</li><li>Toronto Centreline</li>
+                            <li>RapidTO Corridors</li><li>Sixplex District (T&amp;EY + Ward 23)</li>
+                            <li>Address Points</li><li>Tax Exemptions Roll</li>
+                            <li>Institutions × 10</li><li>SolarTO</li>
+                            <li>Forest &amp; Land Cover</li><li>Street Tree Data</li>
+                            <li>Cycling Network</li><li>TTC GTFS</li>
+                            <li>TTC Subway Entrances</li><li>Basement Flooding Study Areas</li>
+                            <li>TRCA Reg 41/24 Floodplain</li>
+                            <li>OpenStreetMap (buildings, landuse, TTC)</li>
+                            <li>StatsCan NPP 2021 Census</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
             <div class="footer-section">
                 <span class="footer-label">Regulatory anchors:</span>
                 <a target="_blank" rel="noopener" href="https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185">Bill 185</a> (parking minimums + DC waiver ≤6 units, Jan 2025) ·
@@ -6174,6 +6368,15 @@
                     const formatted = formatLastUpdated(p.generatedAt);
                     lastUpdEl.textContent = formatted || 'recently';
                     if (p.generatedAt) lastUpdEl.title = `Cohort built ${p.generatedAt}`;
+                }
+                // Methodology formula counts — fill |ELITE| from the loaded payload.
+                const fmCount = document.getElementById('formula-elite-count');
+                const fmPct   = document.getElementById('formula-pct');
+                if (fmCount && p.totalAvailable != null) {
+                    fmCount.textContent = p.totalAvailable.toLocaleString();
+                }
+                if (fmPct && p.totalAvailable != null && p.totalParcels) {
+                    fmPct.textContent = (p.totalAvailable / p.totalParcels * 100).toFixed(2);
                 }
                 // Wire the tier toggle now that elite is loaded.
                 document.getElementById('tier-toggle').addEventListener('click', toggleTier);
