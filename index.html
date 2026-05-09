@@ -5105,18 +5105,29 @@
                 </details>
 
                 <section>
-                    <h4>Sources</h4>
+                    <h4>Sources for this parcel</h4>
                     <div style="font-size:11px;color:#6b7280;line-height:1.55">
-                        Every number on this page comes from <a target="_blank" rel="noopener" href="https://open.toronto.ca/" style="color:#2f6a4f;text-decoration:none;font-weight:500">Toronto Open Data</a>:
+                        Every number on this page comes from <a target="_blank" rel="noopener" href="https://open.toronto.ca/" style="color:#2f6a4f;text-decoration:none;font-weight:500">Toronto Open Data</a>, OpenStreetMap, or StatsCan:
                         <ul style="margin:6px 0 0 0;padding-left:18px;list-style:disc">
-                            <li><strong>Lot geometry &amp; address:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/property-boundaries/" style="color:#2f6a4f">Property Boundaries</a></li>
+                            <li><strong>Lot geometry &amp; PARCELID:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/property-boundaries/" style="color:#2f6a4f">Property Boundaries</a></li>
+                            <li><strong>Address points / true-detached:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/address-points-municipal-toronto-one-address-repository/" style="color:#2f6a4f">Address Points (One Address Repository)</a></li>
                             <li><strong>Zoning &amp; unit cap:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/zoning-by-law/" style="color:#2f6a4f">Zoning By-law 569-2013</a></li>
+                            <li><strong>Sixplex carve-out:</strong> Toronto City Council 2025.PH13.4 (T&amp;EY District + Ward 23, June 2025)</li>
                             <li><strong>Heritage status:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/heritage-register/" style="color:#2f6a4f">Heritage Register</a></li>
-                            <li><strong>Transit distances:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" style="color:#2f6a4f">TTC GTFS</a> (subway + streetcar stops)</li>
-                            <li><strong>Existing structure height:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/3d-massing/" style="color:#2f6a4f">3D Massing</a></li>
-                            <li><strong>Building footprint:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/topographic-mapping-building-outlines/" style="color:#2f6a4f">Building Outlines</a></li>
-                            <li><strong>Corner-lot test:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/toronto-centreline-tcl/" style="color:#2f6a4f">Centreline (Streets)</a></li>
+                            <li><strong>Existing structure type:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-active-permits/" style="color:#2f6a4f">Building Permits</a> (STRUCTURE_TYPE column) + <a target="_blank" rel="noopener" href="https://www.openstreetmap.org/" style="color:#2f6a4f">OpenStreetMap</a> building tags</li>
+                            <li><strong>Existing height &amp; footprint:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/3d-massing/" style="color:#2f6a4f">3D Massing</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/topographic-mapping-building-outlines/" style="color:#2f6a4f">Building Outlines</a></li>
+                            <li><strong>Transit distances:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" style="color:#2f6a4f">TTC GTFS</a> (subway, streetcar, bus stops) + TTC Subway Entrances shapefile</li>
+                            <li><strong>Corner-lot &amp; laneway:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/toronto-centreline-tcl/" style="color:#2f6a4f">Centreline (Streets &amp; Lanes)</a></li>
+                            <li><strong>Permit history (this address):</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-active-permits/" style="color:#2f6a4f">Active Permits</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-cleared-permits/" style="color:#2f6a4f">Cleared Permits</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-demolitions/" style="color:#2f6a4f">Demo Permits</a></li>
+                            <li><strong>Owner-activity signals:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/committee-of-adjustment-applications/" style="color:#2f6a4f">CoA Severance Applications</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/property-standards-orders/" style="color:#2f6a4f">Property Standards / Enforcement Orders</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/preliminary-zoning-reviews/" style="color:#2f6a4f">Preliminary Zoning Reviews</a></li>
+                            <li><strong>Tax-exempt institutional filter:</strong> Toronto retired Tax Exemptions Roll</li>
+                            <li><strong>Neighborhood income &amp; dwelling value:</strong> <a target="_blank" rel="noopener" href="https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/index.cfm" style="color:#2f6a4f">StatsCan 2021 Census</a> via Toronto NPP</li>
+                            <li><strong>Solar &amp; canopy context:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/solar-rooftop-tool/" style="color:#2f6a4f">SolarTO</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/forest-and-land-cover/" style="color:#2f6a4f">Forest &amp; Land Cover</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/street-tree-data/" style="color:#2f6a4f">Street Tree Data</a></li>
+                            <li><strong>Flood / TRCA overlays:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/basement-flooding-study-areas/" style="color:#2f6a4f">Basement Flooding Study Areas</a> + TRCA Reg 41/24</li>
                         </ul>
+                        <div style="margin-top:6px;color:#9ca3af">
+                            Full 27-source inventory + the curation algorithm itself: see <strong>Methodology</strong> in the page footer.
+                        </div>
                         <div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(47,106,79,0.15);color:#9ca3af">
                             Not a permit pre-clearance — every parcel is curation-tier eligible against the published by-law and incentive set, but confirm with a planner before acting.
                         </div>
