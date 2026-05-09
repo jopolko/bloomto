@@ -921,28 +921,30 @@
             background: linear-gradient(135deg, #f0f7f2 0%, #ffffff 60%, #fff7ed 100%);
             border: 1px solid var(--rule);
             border-radius: 8px;
-            padding: 28px 32px;
-            margin-bottom: 16px;
+            padding: 14px 24px;
+            margin-bottom: 12px;
             display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 24px;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 28px;
             flex-wrap: wrap;
             box-shadow: 0 2px 8px rgba(47, 106, 79, 0.06);
         }
         .money-hero .money-num {
-            font-size: 56px;
+            font-size: 44px;
             font-weight: 800;
             color: var(--cot-green);
             letter-spacing: -0.03em;
             font-variant-numeric: tabular-nums;
             line-height: 1;
+            flex: 0 0 auto;
         }
         .money-hero .money-lab {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--ink-muted);
             line-height: 1.45;
-            max-width: 50ch;
+            flex: 1 1 0;
+            min-width: 0;
         }
         .money-hero .money-lab strong { color: var(--ink); font-weight: 600; }
         .signals-pill {
@@ -5867,11 +5869,13 @@
                     ? `$${(total / 1_000_000).toFixed(0)}M`
                     : `$${Math.round(total / 1_000).toLocaleString()}K`;
             const tier = broaderMode ? 'broader' : 'elite';
+            // Two-column billboard 2026-05-08: $ number left, explanation
+            // right (was: stacked left-only with empty right space after the
+            // signals pill moved out). Fills the billboard horizontally so
+            // the explanation reads alongside the number, not under it.
             el.innerHTML = `
-                <div>
-                    <div class="money-num">${dollar}</div>
-                    <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · <strong>typically $300K–$400K per pick</strong> ($200K DC waiver + $25K × max units parking elimination). <em>HST + GST rebates not yet stacked.</em></div>
-                </div>
+                <div class="money-num">${dollar}</div>
+                <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · <strong>typically $300K–$400K per pick</strong> ($200K DC waiver + $25K × max units parking elimination). <em>HST + GST rebates not yet stacked.</em></div>
             `;
         }
 
