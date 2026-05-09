@@ -34,6 +34,7 @@ from shapely.strtree import STRtree
 
 from tools import parcel_io, parcel_scoring, shadow_analysis
 from tools.sources import (
+    address_points as ap_src,
     building_outlines as bo_src,
     building_permits as permits_src,
     census as census_src,
@@ -304,7 +305,24 @@ def _process_parcel(parcel_or_record) -> dict:
     else:
         solar_score = max(0, min(100, round(solar_raw * shadow_result.unshadowed_fraction)))
 
-    # Structure type — three-tier waterfall:
+    # Address-points spatial query — done up-front because the count is
+    # surfaced as its own wire field (`addressPointCount`) regardless of
+    # whether it overrides anything below. AP=1 + structure=detached →
+    # frontend "True Detached" badge. AP≥2 → "multi-unit existing" signal
+    # (separate from structure type).
+    address_points_index = _W.get('address_points_index')
+    address_point_count = 0
+    ap_attached_verdict: str | None = None
+    if address_points_index is not None and parcel.geometry is not None:
+        ap_records = ap_src.points_in_parcel(address_points_index, parcel.geometry)
+        # Distinct addresses (a parcel can host duplicate point records for
+        # the same address — e.g., front-door + side-door — which we don't
+        # want to double-count).
+        distinct = {pt.address_full.upper().strip() for pt in ap_records}
+        address_point_count = len(distinct)
+        ap_attached_verdict, _ = ap_src.classify_attachment_from_points(ap_records)
+
+    # Structure type — four-tier waterfall:
     #   1. Permit-derived (city building-permit STRUCTURE_TYPE record) — ~32 %
     #      coverage citywide, ~43 % of curated. Highest confidence.
     #   2. OSM-derived (OpenStreetMap `building=*` tag, volunteer-mapped) —
@@ -312,6 +330,13 @@ def _process_parcel(parcel_or_record) -> dict:
     #      (4 % overlap). 96 % agreement with permits where they overlap.
     #   3. Cross-boundary classifier fallback — ~82 % accuracy heuristic,
     #      always available.
+    #   4. Address-points override (added 2026-05-09): when the classifier
+    #      verdict is in play (no permit/OSM ground truth) AND the parcel
+    #      polygon contains ≥2 distinct address points, flip the verdict
+    #      with high confidence — multiple municipal addresses on one
+    #      polygon is near-deterministic for attached housing. Source flips
+    #      to "address_points". Conservative: never overrides permit/OSM,
+    #      never overrides "vacant".
     permit_struct_type = None
     osm_struct_type = None
     norm_addr = (
@@ -339,6 +364,11 @@ def _process_parcel(parcel_or_record) -> dict:
             parcel, building_tree, building_geoms,
         )
         existing_structure_source = "classifier" if existing_structure_type != "vacant" else "vacant"
+    # Address-points override (only applies to classifier-derived rows).
+    if (existing_structure_source == "classifier"
+            and ap_attached_verdict is not None):
+        existing_structure_type = ap_attached_verdict
+        existing_structure_source = "address_points"
     corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
     abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
     near_rapidto = _near_rapidto(parcel, rapidto_tree)
@@ -434,6 +464,7 @@ def _process_parcel(parcel_or_record) -> dict:
             ),
             'existingStructureType': existing_structure_type,
             'existingStructureSource': existing_structure_source,
+            'addressPointCount': int(address_point_count),
             'solarYieldKwhPerYr': int(round(max_kwh)) if max_kwh else 0,
             'pvCapacityKwEstimate': round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
             'sixplexBonusValueCad': None,
@@ -452,6 +483,9 @@ def _process_parcel(parcel_or_record) -> dict:
         'permits_address_join': permits_address_join,
         'permits_unjoined_per_parcel': 1 if permits_unjoined_per_parcel_bool else 0,
         f'structure_{existing_structure_type}': 1,
+        # 1 iff the address-points override actually flipped this parcel's
+        # structure verdict (was classifier, now address_points).
+        'address_point_flip': 1 if existing_structure_source == "address_points" else 0,
     }
 
     return {
@@ -1118,6 +1152,7 @@ def assemble_parcel_payload(
     permit_freshness_cutoff,
     permit_structure_type_by_addr: dict,
     osm_structure_type_by_addr: dict,
+    address_points_index,
     tax_exempt_addrs: set,
     bike_tree: STRtree,
     bike_lines: list,
@@ -1174,6 +1209,7 @@ def assemble_parcel_payload(
     stats_structure_counts = {
         "detached": 0, "semi": 0, "row": 0, "vacant": 0, "unknown": 0,
     }
+    stats_address_point_flips = 0
 
     # Build the worker state dict — every shared input the per-parcel loop
     # body needs. Both sequential and parallel paths use the same
@@ -1212,6 +1248,7 @@ def assemble_parcel_payload(
         'permit_index': permit_index,
         'permit_structure_type_by_addr': permit_structure_type_by_addr,
         'osm_structure_type_by_addr': osm_structure_type_by_addr,
+        'address_points_index': address_points_index,
         'tax_exempt_addrs': tax_exempt_addrs,
         'permit_freshness_cutoff': permit_freshness_cutoff,
         'nb_canopy_by_name': nb_canopy_by_name,
@@ -1281,6 +1318,7 @@ def assemble_parcel_payload(
         stats_permits_unjoined_per_parcel += st['permits_unjoined_per_parcel']
         for kind in stats_structure_counts:
             stats_structure_counts[kind] += st.get(f'structure_{kind}', 0)
+        stats_address_point_flips += st.get('address_point_flip', 0)
         # Merge per-worker claim sets so the parent's globally-deduplicated
         # views stay correct (heritage stats + permit aggregations).
         claimed_heritage_indices |= result['heritage_claims']
@@ -1415,6 +1453,7 @@ def assemble_parcel_payload(
             "matureTrees": stats_mature_trees,
             "sixplexEligible": stats_sixplex_eligible,
             "existingStructureType": dict(stats_structure_counts),
+            "addressPointFlips": int(stats_address_point_flips),
         },
     }
 
@@ -1547,6 +1586,10 @@ def main(argv=None) -> int:
     permit_freshness_cutoff = permits_src.freshness_cutoff()
     _done("permits", t)
 
+    t = _stage("load Address Points (Toronto One Address Repository, ~525K records)")
+    address_points_index = ap_src.build_address_points_index(cache)
+    _done("address points", t)
+
     t = _stage("load cycling network (per-parcel distance index)")
     bike_tree, bike_lines = cycling_src.load_cycling_index(cache)
     _done("cycling index", t)
@@ -1616,6 +1659,7 @@ def main(argv=None) -> int:
         permit_index=permit_index,
         permit_structure_type_by_addr=permit_structure_type_by_addr,
         osm_structure_type_by_addr=osm_structure_type_by_addr,
+        address_points_index=address_points_index,
         tax_exempt_addrs=tax_exempt_addrs,
         permit_freshness_cutoff=permit_freshness_cutoff,
         bike_tree=bike_tree,

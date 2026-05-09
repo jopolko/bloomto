@@ -253,6 +253,37 @@
             color: #9a3412;
             cursor: help;
         }
+        /* Bulletproof-detached gold star — strongest positive structural
+           signal a row can carry. Subtle green to read as "verified" not
+           "marketing". */
+        .true-detached-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            margin-left: 4px;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            cursor: help;
+        }
+        /* Existing-multi-unit signal — neutral blue; could be opportunity
+           (existing rental income) or complication (more demolition cost).
+           Dev decides on click-through. */
+        .multi-unit-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin-left: 4px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            cursor: help;
+        }
         /* Actionable Signals badges — one per active signal on a parcel.
            Distinct color per signal type so the eye picks them up at row scan. */
         .signal-badges { display: inline-flex; gap: 4px; margin-left: 6px; }
@@ -2100,7 +2131,7 @@
                 <div class="magazine-title-wrap">
                     <h2 class="magazine-title">Today's hot list — sixplex &amp; multiplex picks</h2>
                     <div class="magazine-subtitle">
-                        <strong>86 % sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · <span id="header-stats">loading…</span>
+                        Pre-filtered: <strong>detached or vacant</strong> only · <strong>heritage-free</strong> · non-institutional · non-tax-exempt · <strong>86 % sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · <span id="header-stats">loading…</span>
                     </div>
                     <span class="magazine-count">
                         <span id="list-count"></span>
@@ -3779,6 +3810,29 @@
             if (r.existingStructureType !== 'semi') return '';
             return `<span class="semi-badge" title="Semi-detached structure on this parcel — multiplex is by-law permitted but party-wall structural work and neighbour coordination materially raise the cost vs a detached teardown. Filtered out of the elite cover-list; surfaces here in the broader tier.">SEMI</span>`;
         }
+        // "True Detached" — bulletproof signal: ground-truth structure source
+        // (city permit OR OSM) calls this parcel detached AND the municipal
+        // address-points dataset has exactly one address inside the parcel
+        // polygon (no shared walls, no shared addresses, no hidden basement
+        // suite registered). The dev's gold-mine row.
+        function trueDetachedBadge(r) {
+            const t = r.existingStructureType;
+            const s = r.existingStructureSource;
+            const ap = r.addressPointCount;
+            if (t !== 'detached') return '';
+            if (s !== 'permit' && s !== 'osm') return '';
+            if (ap !== 1) return '';
+            return `<span class="true-detached-badge" title="Bulletproof detached: city permit/OSM record + Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite. The dev's gold-mine row.">✓ TRUE DETACHED</span>`;
+        }
+        // "Multi-unit" — parcel polygon contains ≥2 distinct municipal address
+        // points. Often signals a registered basement suite, laneway suite,
+        // or duplex conversion the permit data didn't catch. Value-add
+        // potential: existing rental income vs raw teardown play.
+        function multiUnitAddressBadge(r) {
+            const ap = r.addressPointCount;
+            if (!ap || ap < 2) return '';
+            return `<span class="multi-unit-badge" title="${ap} distinct municipal address points fall inside this parcel polygon — likely an existing duplex / basement suite / laneway suite registered with the City. Adds existing-rental-income value vs a clean teardown.">${ap} UNITS</span>`;
+        }
         function visitDeltaBadge(r) {
             const k = parcelKey(r);
             const d = visitDeltaByKey.get(k);
@@ -4318,14 +4372,33 @@
             const structSource = r.existingStructureSource || 'classifier';
             const sourceTag = structSource === 'permit'
                 ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="Ground truth from a city building-permit STRUCTURE_TYPE record on this address.">✓ city permit record</span>'
-                : structSource === 'vacant'
-                    ? ''
-                    : ' <span style="font-size:10px;color:#9ca3af;font-weight:500" title="Heuristic — cross-boundary building-distance classifier. Verify on Street View before relying on this for underwriting.">est.</span>';
+                : structSource === 'osm'
+                    ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="OpenStreetMap building tag — volunteer-mapped, 96% agreement with permits where they overlap.">✓ OSM record</span>'
+                    : structSource === 'address_points'
+                    ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="Inferred from Toronto Address Points — multiple distinct municipal addresses fall inside the parcel polygon. Strong attached-housing signal.">✓ address-points</span>'
+                    : structSource === 'vacant'
+                        ? ''
+                        : ' <span style="font-size:10px;color:#9ca3af;font-weight:500" title="Heuristic — cross-boundary building-distance classifier. Verify on Street View before relying on this for underwriting.">est.</span>';
+            // Address-point line — surfaced inline after the structure type so
+            // the dev sees the "True Detached" or "multi-unit existing"
+            // verdict in the same Lot section. ap=0 stays silent (pre-rebuild
+            // wire data has no field).
+            const apCount = r.addressPointCount;
+            const apLine = (apCount == null || apCount === 0) ? '' : (() => {
+                if (apCount === 1 && structType === 'detached'
+                    && (structSource === 'permit' || structSource === 'osm')) {
+                    return ` · <span style="color:#15803d;font-weight:600" title="Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite.">✓ true detached</span>`;
+                }
+                if (apCount === 1) {
+                    return ` · <span style="color:var(--ink-mute2);font-size:11px">1 address on parcel</span>`;
+                }
+                return ` · <span style="color:#1d4ed8;font-weight:600" title="${apCount} distinct municipal address points fall inside this parcel polygon — likely an existing duplex / basement suite / laneway suite registered with the City.">${apCount} addresses on parcel</span>`;
+            })();
             const structSuffix = (() => {
                 if (!structType) return '';
-                if (structType === 'detached') return ` · <span style="color:#15803d;font-weight:600">detached</span>${sourceTag}`;
-                if (structType === 'semi')     return ` · <span style="color:#9a3412;font-weight:600">semi-detached</span>${sourceTag}`;
-                if (structType === 'row')      return ` · <span style="color:#9f1239;font-weight:600">row / townhouse</span>${sourceTag}`;
+                if (structType === 'detached') return ` · <span style="color:#15803d;font-weight:600">detached</span>${sourceTag}${apLine}`;
+                if (structType === 'semi')     return ` · <span style="color:#9a3412;font-weight:600">semi-detached</span>${sourceTag}${apLine}`;
+                if (structType === 'row')      return ` · <span style="color:#9f1239;font-weight:600">row / townhouse</span>${sourceTag}${apLine}`;
                 return '';
             })();
             const existingHtml = (() => {
@@ -5536,7 +5609,7 @@
                 <div class="pick ${rankClass(i)} ${heroClass} ${hotClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
                         <div class="head-row">
-                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${semiBadge(r)}${signalBadgesHtml(r)}</div>
+                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${trueDetachedBadge(r)}${multiUnitAddressBadge(r)}${semiBadge(r)}${signalBadgesHtml(r)}</div>
                             <button class="star ${watched ? 'on' : ''}" data-action="star" aria-label="${watched ? 'Remove from saved' : 'Save to watchlist'}">${watched ? '★' : '☆'}</button>
                         </div>
                         <div class="meta">${r.neighborhood}</div>

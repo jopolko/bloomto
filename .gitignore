@@ -7,6 +7,7 @@ __pycache__/
 
 # ETL caches (re-downloadable from Toronto Open Data on next ETL run)
 tools/cache/
+cache/
 
 # ETL outputs — regenerable from `python3 tools/build_parcels.py` +
 # `python3 tools/build_parcels_top.py`. parcels.geojson is ~250 MB and

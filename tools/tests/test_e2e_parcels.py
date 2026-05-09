@@ -220,6 +220,7 @@ class ParcelE2ETests(unittest.TestCase):
             permit_index=empty_permits,
             permit_structure_type_by_addr={},
             osm_structure_type_by_addr={},
+            address_points_index=None,  # tests don't exercise the AP override
             tax_exempt_addrs=set(),
             permit_freshness_cutoff=date(2021, 1, 1),
             bike_tree=empty_tree,

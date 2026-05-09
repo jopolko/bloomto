@@ -72,10 +72,17 @@ FEATURE_PROPERTIES = (
                               # Cross-boundary classifier OR permit-derived
                               # ground truth (Toronto Building Permits CSV
                               # STRUCTURE_TYPE column, ~32% coverage on elite).
-    "existingStructureSource", # "permit" | "classifier" | "vacant"
+    "existingStructureSource", # "permit" | "osm" | "address_points" | "classifier" | "vacant"
                                # Tells the dev whether the structure-type
-                               # label is ground truth (city permit record)
-                               # or our cross-boundary classifier guess.
+                               # label is ground truth (city permit record,
+                               # OSM volunteer-mapped, or address-point
+                               # spatial join) or our cross-boundary
+                               # classifier guess.
+    "addressPointCount",       # int — distinct municipal address points
+                               # contained in the parcel polygon. AP=1 +
+                               # detached structure → "True Detached" badge
+                               # (no shared walls, no shared addresses).
+                               # AP≥2 → multi-unit existing on parcel.
     "solarYieldKwhPerYr",   # int kWh, the un-shadowed best-rooftop figure
     "pvCapacityKwEstimate", # float kW, derived from solarYieldKwhPerYr
     "sixplexBonusValueCad", # int CAD, or None when ineligible / no comp
@@ -117,6 +124,8 @@ REQUIRED_STATS_KEYS = frozenset({
     "matureTrees",
     "sixplexEligible",
     "existingStructureType",
+    "addressPointFlips",  # how many parcels had their classifier verdict
+                          # flipped by the address-points override
 })
 
 LEGACY_STATS_KEY = "heritageFlagged"

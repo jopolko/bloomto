@@ -70,6 +70,7 @@ def _make_props(*, quality: str = "measured", solar_score=80,
         "existingMaxBuildingHeightM": 7.5,
         "existingStructureType": "detached",
         "existingStructureSource": "classifier",
+        "addressPointCount": 1,
         "solarYieldKwhPerYr": 22000,
         "pvCapacityKwEstimate": 19.1,
         "sixplexBonusValueCad": None,
@@ -111,6 +112,7 @@ def _make_stats():
         "matureTrees": 0,
         "sixplexEligible": 0,
         "existingStructureType": {"detached": 1, "semi": 0, "row": 0, "vacant": 0, "unknown": 0},
+        "addressPointFlips": 0,
     }
 
 

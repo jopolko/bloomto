@@ -67,6 +67,7 @@ def _make_feature(*, address="100 Test St", lot_area_m2=500, lng=-79.4, lat=43.7
         "existingMaxBuildingHeightM": 7.5,
         "existingStructureType": "detached",
         "existingStructureSource": "classifier",
+        "addressPointCount": 1,
         "nbMedHouseholdIncome": 84500,
         "nbAvgHouseholdIncome": 102000,
         "nbMedDwellingValue": 950000,
