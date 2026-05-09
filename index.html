@@ -1077,14 +1077,13 @@
            Mobile (<900px): card layout, 2-col stat grid, no inner scroll.
            ════════════════════════════════════════════════════════════════ */
         .pick-list {
-            max-height: calc(100vh - 360px);
+            /* 2026-05-08 — single-scrollbar layout. Removed inner scroll
+               container so the picks-list flows with the page; .pick-header
+               stays sticky against the page scroll instead of an inner one.
+               Old behavior had max-height + overflow-y:auto + scrollbar-gutter,
+               which gave two scrollbars on long cohorts (one inner, one
+               browser). Cleaner and the column-alignment hack disappears. */
             min-height: 480px;
-            overflow-y: auto;
-            /* Always reserve scrollbar space inside .pick-list so row grid
-               widths are stable. Combined with `padding-right: var(--scrollbar-w)`
-               on .pick-header below, header columns line up with row columns
-               regardless of whether the scrollbar is currently showing. */
-            scrollbar-gutter: stable;
             padding: 0;
         }
         .pick-header,
@@ -1120,12 +1119,9 @@
             border-top: 1px solid var(--rule-strong);
             border-bottom: 1px solid var(--rule-strong);
             position: sticky; top: 0; z-index: 5;
-            /* Match the gutter that .pick-list reserves for its scrollbar so
-               header columns sit over the row columns. JS sets --scrollbar-w
-               once per page-load via measureScrollbarGutter(); falls back to
-               0 (no shift) on the rare browser without overflow:scroll. */
-            padding-right: var(--scrollbar-w, 0px);
-            box-sizing: border-box;
+            /* 2026-05-08 — no inner scrollbar to compensate for. The header
+               and rows share full content width; sticky pins to the page
+               scroll. */
         }
         .pick-header > * {
             padding: 6px 8px;
@@ -1422,10 +1418,10 @@
             z-index: 0;
         }
         .pick-list {
-            max-height: calc(100vh - 360px);
+            /* Duplicate rule kept for cascade order — production layout
+               uses the upper .pick-list block (no overflow). */
             min-height: 480px;
-            overflow-y: auto;
-            padding: 0;  /* Align child rows with .pick-header (both at 14px own padding) */
+            padding: 0;
         }
         /* Old flexbox .pick rules removed 2026-05-04 — they were silently
            overriding the magazine grid layout (defined earlier in this file)
@@ -2151,22 +2147,6 @@
 
     <script>
     (function() {
-        // ---- Scrollbar gutter measurement ----
-        // .pick-list reserves a fixed scrollbar gutter via CSS (`scrollbar-gutter:
-        // stable`); .pick-header sits OUTSIDE that scroll container, so we shift
-        // its right edge inward by the same amount via `--scrollbar-w` so header
-        // columns align with row columns. Measured once: classic scrollbars are
-        // ~15-17px on Linux/WSL, ~15px on Windows, 0 on macOS overlay scrollbars
-        // (in which case the header shouldn't shift either — both match).
-        (function measureScrollbarGutter() {
-            const probe = document.createElement('div');
-            probe.style.cssText = 'position:absolute;top:-9999px;width:100px;height:100px;overflow:scroll;visibility:hidden';
-            document.body.appendChild(probe);
-            const w = probe.offsetWidth - probe.clientWidth;
-            document.body.removeChild(probe);
-            document.documentElement.style.setProperty('--scrollbar-w', w + 'px');
-        })();
-
         // ---- Watchlist + recently-viewed (localStorage) ----
         // Stable parcel key: prefer parcelId; fall back to lat,lng (5-decimal,
         // matches the wire's COORD_DECIMALS) so unaddressed/no-PID parcels are
