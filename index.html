@@ -2264,7 +2264,7 @@
                 <div class="magazine-title-wrap">
                     <h2 class="magazine-title">Today's hot list — sixplex &amp; multiplex picks</h2>
                     <div class="magazine-subtitle">
-                        Pre-filtered: <strong>detached or vacant</strong> only · <strong>heritage-free</strong> · non-institutional · non-tax-exempt · <strong>86 % sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · <span id="header-stats">loading…</span>
+                        <span id="subtitle-line">loading…</span>
                     </div>
                     <span class="magazine-count">
                         <span id="list-count"></span>
@@ -6017,22 +6017,29 @@
         }
 
         function renderStats(filteredCount) {
-            // Combined stats fold into the magazine-subtitle (`#header-stats`)
-            // — the standalone stats line was retired 2026-05-07. The legacy
-            // `#stats` div remains as a host for the slide-in nearby-bar
-            // banner the parcel-detail "Search nearby 500m" button toggles.
+            // Combined stats fold into the magazine-subtitle (`#subtitle-line`)
+            // 2026-05-09: full subtitle is now adaptive — the "Pre-filtered"
+            // claims change between elite (detached/vacant only) and broader
+            // (also semis), and the sixplex-eligible % is computed from the
+            // currently-loaded set rather than hardcoded. Nearby-bar still
+            // lives under #stats.
             const total = payload.totalAvailable;
             const cityWide = (payload && payload.totalParcels) || TORONTO_PARCEL_TOTAL;
             const cityWideRounded = Math.round(cityWide / 1000) + 'K';
-            const headerStats = document.getElementById('header-stats');
-            if (headerStats) {
-                if (filteredCount === total) {
-                    headerStats.textContent =
-                        `${total.toLocaleString()} top-contender parcels filtered from ~${cityWideRounded} citywide`;
-                } else {
-                    headerStats.textContent =
-                        `${filteredCount.toLocaleString()} matches · ${total.toLocaleString()} top-contenders filtered from ~${cityWideRounded} citywide`;
-                }
+            const subtitle = document.getElementById('subtitle-line');
+            if (subtitle && allRows && allRows.length > 0) {
+                // Compute live percentages from the loaded set.
+                const sixplexN = allRows.reduce((a, r) => a + (r.sixplexEligible ? 1 : 0), 0);
+                const sixplexPct = Math.round(sixplexN / allRows.length * 100);
+                // Tier-aware structure-type claim.
+                const structClaim = broaderMode
+                    ? '<strong>detached, semi or vacant</strong>'
+                    : '<strong>detached or vacant</strong> only';
+                const countText = filteredCount === total
+                    ? `${total.toLocaleString()} of ~${cityWideRounded} citywide`
+                    : `${filteredCount.toLocaleString()} matches · ${total.toLocaleString()} of ~${cityWideRounded} citywide`;
+                subtitle.innerHTML =
+                    `Pre-filtered: ${structClaim} · <strong>heritage-free</strong> · non-institutional · non-tax-exempt · <strong>${sixplexPct} % sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · ${countText}`;
             }
             const stats = document.getElementById('stats');
             if (!stats) return;
