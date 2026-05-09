@@ -3062,11 +3062,22 @@
 
         // Sync the ★ Saved toggle button (in the magazine-actions row)
         // with the activePresets state and the watchlist count.
+        // 2026-05-09 — count now reflects the LIVE intersection with the
+        // currently-loaded tier (elite or broader), not the raw localStorage
+        // size. This prevents stale ghosts: a saved parcel that's no longer
+        // in the cohort after a rebuild was inflating the badge to "1" while
+        // the click-through showed empty. We also opportunistically prune
+        // those orphans from localStorage once we KNOW they're not in
+        // either tier (broader has been loaded).
         function syncSavedToggleUI() {
             const btn = document.getElementById('saved-toggle');
             if (!btn) return;
             const active = activePresets.has('saved');
-            const count = (typeof watchlist !== 'undefined' && watchlist) ? watchlist.size : 0;
+            // Live count: how many saved parcels actually exist in allRows now.
+            let count = 0;
+            if (typeof watchlist !== 'undefined' && watchlist && typeof allRows !== 'undefined' && allRows) {
+                for (const r of allRows) if (watchlist.has(parcelKey(r))) count++;
+            }
             const icon = btn.querySelector('.saved-icon');
             const countEl = btn.querySelector('.saved-count');
             btn.classList.toggle('active', active);
@@ -3075,6 +3086,19 @@
             if (countEl) {
                 countEl.hidden = count === 0;
                 countEl.textContent = count > 0 ? `(${count})` : '';
+            }
+            // Prune orphans iff broader is loaded (only then can we safely
+            // declare a saved parcel "doesn't exist"). Idempotent — re-runs
+            // every render but only mutates when there's something to drop.
+            if (typeof broaderRows !== 'undefined' && broaderRows && typeof eliteRows !== 'undefined' && eliteRows) {
+                const live = new Set();
+                for (const r of eliteRows)   live.add(parcelKey(r));
+                for (const r of broaderRows) live.add(parcelKey(r));
+                let dropped = 0;
+                for (const k of [...watchlist]) {
+                    if (!live.has(k)) { watchlist.delete(k); dropped++; }
+                }
+                if (dropped > 0) writeSet(WATCH_KEY, watchlist);
             }
         }
 
