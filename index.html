@@ -9,7 +9,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
     <!-- Tailwind CDN removed 2026-05-05 — was loading ~3 MB JIT engine on
          every page load to compile ~20 utility classes. Replaced with the
          tiny inline utility-CSS block at the top of <style> below. Poppins
@@ -99,6 +99,18 @@
             font-weight: 700;
             letter-spacing: -0.01em;
         }
+        /* Editorial serif for the brand mark + magazine-style headlines.
+           "Source Serif 4" is Adobe's modern serif — wide weight range,
+           tabular figures, neutral tone. Pairs with Inter for body. Loads
+           from the same Google Fonts request as Inter. */
+        :root {
+            --font-serif: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+        }
+        h1.serif, .serif-headline {
+            font-family: var(--font-serif);
+            font-weight: 700;
+            letter-spacing: -0.015em;
+        }
         .glass-card {
             background: var(--surface);
             border: 1px solid var(--rule);
@@ -135,6 +147,9 @@
         }
         .gradient-text {
             color: var(--tor-blue);
+            font-family: var(--font-serif);
+            font-weight: 700;
+            letter-spacing: -0.025em;
         }
         .chip {
             padding: 8px 12px;
@@ -357,11 +372,17 @@
         .pick-card:active { transform: scale(0.99); }
         .pick-card-icon {
             font-size: 28px; line-height: 1;
+            font-weight: 600;
             position: relative;  /* over the ::before halo */
             z-index: 1;
             text-align: center;
             padding-top: 2px;
         }
+        /* Per-slot glyph color so the unicode marks (↑ / ◆) carry the
+           same theme tint as the card border. The 🔥 LIVE card stays
+           emoji-rendered; CSS color is ignored on color-emoji glyphs. */
+        .pick-card-newest .pick-card-icon { color: #0e7490; }
+        .pick-card-underdog .pick-card-icon { color: #5b21b6; }
         .pick-card-body { min-width: 0; }
         .pick-card-head {
             font-size: 10px; font-weight: 800;
@@ -370,9 +391,11 @@
             margin-bottom: 4px;
         }
         .pick-card-addr {
-            font-size: 16px; font-weight: 700;
+            font-family: var(--font-serif);
+            font-size: 17px; font-weight: 700;
             color: var(--ink);
-            line-height: 1.2;
+            letter-spacing: -0.015em;
+            line-height: 1.15;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .pick-card-kpis {
@@ -418,12 +441,13 @@
            premium violet (rare find). Subtle gradients keep the grid
            cohesive on desktop while reading distinct on mobile. */
         .pick-card-newest {
-            background: linear-gradient(135deg, #ecfeff 0%, #ffffff 70%);
-            border-color: #a5f3fc;
+            background: #f0fbfc;
+            border-color: #bae6fd;
+            border-left: 3px solid #06b6d4;
         }
         .pick-card-newest::before { background: #06b6d4; }
         .pick-card-newest .pick-card-head { color: #0e7490; }
-        .pick-card-newest:hover { border-color: #06b6d4; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.18); }
+        .pick-card-newest:hover { border-color: #06b6d4; box-shadow: 0 2px 6px rgba(6, 182, 212, 0.15); }
 
         /* LIVE-count card — leftmost slot in the daily-picks strip
            (2026-05-08, replaces the signals pill that lived on the right
@@ -432,16 +456,17 @@
            Click toggles the any_signal preset (filter to signal-bearing
            parcels) — same wiring as the prior signals-pill button. */
         .pick-card-live {
-            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 70%);
-            border-color: #fdba74;
+            background: #fff8ef;
+            border-color: #fed7aa;
+            border-left: 3px solid #ea580c;
         }
         .pick-card-live::before { background: #ea580c; }
         .pick-card-live .pick-card-head { color: #c2410c; }
-        .pick-card-live:hover { border-color: #ea580c; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.18); }
+        .pick-card-live:hover { border-color: #ea580c; box-shadow: 0 2px 6px rgba(234, 88, 12, 0.15); }
         .pick-card-live.active {
             border-color: #ea580c;
-            background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
-            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
+            background: #fef3c7;
+            box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.15);
         }
         .pick-card-live .live-num {
             font-size: 32px;
@@ -467,12 +492,13 @@
         .pick-card-live .live-fresh strong { color: #b45309; font-weight: 700; }
 
         .pick-card-underdog {
-            background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 70%);
-            border-color: #c4b5fd;
+            background: #faf8ff;
+            border-color: #ddd6fe;
+            border-left: 3px solid #7c3aed;
         }
         .pick-card-underdog::before { background: #7c3aed; }
         .pick-card-underdog .pick-card-head { color: #5b21b6; }
-        .pick-card-underdog:hover { border-color: #7c3aed; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.18); }
+        .pick-card-underdog:hover { border-color: #7c3aed; box-shadow: 0 2px 6px rgba(124, 58, 237, 0.15); }
 
         /* Freshness banner — small pulse-dot strip above the picks
            cards. "Since your last visit Tue: 2 new fresh permits..." */
@@ -918,9 +944,10 @@
            incentives across the loaded set, in tens-or-hundreds-of-millions
            or billions — designed to land before any data table. */
         .money-hero {
-            background: linear-gradient(135deg, #f0f7f2 0%, #ffffff 60%, #fff7ed 100%);
+            background: #f7faf8;
             border: 1px solid var(--rule);
-            border-radius: 8px;
+            border-left: 3px solid var(--cot-green);
+            border-radius: 4px;
             padding: 14px 24px;
             margin-bottom: 12px;
             display: flex;
@@ -928,7 +955,7 @@
             align-items: center;
             gap: 28px;
             flex-wrap: wrap;
-            box-shadow: 0 2px 8px rgba(47, 106, 79, 0.06);
+            box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
         }
         .money-hero .money-num {
             font-size: 44px;
@@ -1064,7 +1091,10 @@
         .magazine-header {
             display: flex; justify-content: space-between; align-items: center;
             gap: 12px;
-            padding: 2px 4px 6px;
+            /* Horizontal padding matches the table cell padding (8px) so
+               the title's left edge lines up with the PARCEL column
+               header on desktop. */
+            padding: 2px 8px 6px;
             border-bottom: 1px solid var(--rule);
         }
         .magazine-title-wrap {
@@ -1073,11 +1103,12 @@
             flex: 1 1 auto;
         }
         .magazine-title {
-            font-size: 17px;
+            font-family: var(--font-serif);
+            font-size: 19px;
             font-weight: 700;
             color: var(--ink);
-            letter-spacing: -0.01em;
-            line-height: 1.2;
+            letter-spacing: -0.015em;
+            line-height: 1.15;
         }
         .magazine-subtitle {
             font-size: 12px;
@@ -1149,7 +1180,7 @@
                 76px                  /* Subway */
                 76px                  /* Sixplex */
                 88px                  /* Permits — fits "Nbhd permits" without wrap */
-                60px;                 /* Trees */
+                72px;                 /* Trees — bumped from 60px so right-aligned values clear the cell padding */
                 /* SAVED $ column removed 2026-05-08 — derivable from maxUnits
                    + sixplex eligibility ($200K DC waiver + $25K × maxUnits
                    parking elimination per Bill 185). Per-pick number is in
@@ -3548,7 +3579,7 @@
                 {
                     key: 'newest',
                     cls: 'pick-card-newest',
-                    icon: '✨',
+                    icon: '↑',
                     label: 'Newest',
                     fallback: 'No new cover-list entries this visit. Toronto Open Data refreshes daily — come back tomorrow.',
                     tip: 'Compares the current cover-list to a snapshot from your last visit (stored in your browser only). On a first-ever visit this slot falls back to the elite parcel with the freshest permit, so you always see the kind of signal this card tracks.',
@@ -3556,7 +3587,7 @@
                 {
                     key: 'underdog',
                     cls: 'pick-card-underdog',
-                    icon: '💎',
+                    icon: '◆',
                     label: 'Underdog',
                     fallback: 'No high-savings parcel ranked outside the top 10.',
                     tip: 'Highest stacked Bill 185 incentive total on a parcel ranked outside the top 10 by the current sort. The high-leverage deal hiding beneath the obvious frontrunners — same dollar incentives, lower visibility, less competition.',
