@@ -1926,6 +1926,16 @@
         .detail-body details > *:not(summary) {
             margin-top: 8px;
         }
+        /* Inline count next to a <summary> label — gives the user a "(0)"
+           preview before they bother clicking the disclosure. Muted weight
+           so it doesn't compete with the section title. */
+        .summary-count {
+            color: var(--ink-mute2);
+            font-weight: 500;
+            text-transform: none;
+            letter-spacing: 0;
+            font-variant-numeric: tabular-nums;
+        }
         .score-hero {
             display: flex; align-items: center; gap: 16px;
             padding: 16px 18px; border-radius: 6px;
@@ -4868,8 +4878,8 @@
                     ${consHtml}
                 </section>
 
-                <details>
-                    <summary>Goldmine badges</summary>
+                <details${badges.filter(b => b.fired).length === 0 ? '' : ''}>
+                    <summary>Goldmine badges <span class="summary-count">(${badges.filter(b => b.fired).length})</span></summary>
                     ${badges.map(b => {
                         const r = b.reason || '';
                         const cap = r ? r.charAt(0).toUpperCase() + r.slice(1) : '';
