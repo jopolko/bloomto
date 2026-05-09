@@ -610,16 +610,17 @@
             background: var(--surface);
             border: 1px solid var(--rule-strong);
             border-radius: 4px;
-            padding: 9px 16px;
-            font-size: 13px;
+            padding: 5px 12px;
+            font-size: 12px;
             font-weight: 500;
             color: var(--tor-blue);
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            white-space: nowrap;
             transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-            min-height: 36px;
+            min-height: 32px;
         }
         .tier-toggle:hover:not(:disabled) {
             background: var(--tor-blue-soft);
@@ -649,34 +650,40 @@
         .magazine-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+            gap: 6px;
+            flex-wrap: nowrap;
             justify-content: flex-end;
+            flex: 0 0 auto;
         }
         .search-input-compact {
-            min-height: 36px;
-            padding: 7px 12px;
-            font-size: 13px;
-            min-width: 220px;
-            flex: 0 1 260px;
+            min-height: 32px;
+            padding: 5px 10px;
+            font-size: 12px;
+            min-width: 180px;
+            flex: 0 1 220px;
+        }
+        @media (max-width: 900px) {
+            .magazine-header { flex-wrap: wrap; }
+            .magazine-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
         }
         @media (max-width: 640px) {
-            .magazine-actions { width: 100%; justify-content: stretch; }
+            .magazine-actions { justify-content: stretch; gap: 8px; }
             .search-input-compact { flex: 1 1 100%; min-height: 44px; font-size: 15px; }
         }
         .saved-toggle {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            min-height: 36px;
-            padding: 7px 12px;
+            gap: 5px;
+            min-height: 32px;
+            padding: 5px 10px;
             background: var(--surface);
             border: 1px solid var(--rule-strong);
             border-radius: 4px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             color: var(--ink);
             cursor: pointer;
+            white-space: nowrap;
             transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
         }
         .saved-toggle:hover {
@@ -869,19 +876,34 @@
         /* Money-hero — billboard. The first thing devs see. Total stacked
            incentives across the loaded set, in tens-or-hundreds-of-millions
            or billions — designed to land before any data table. */
-        /* Inline money summary — replaces the standalone .money-hero
-           billboard. Renders inside the magazine subtitle as the first
-           bold phrase, so the dollar headline reads as part of the
-           subtitle prose instead of a separate hero card. */
-        .money-summary-num {
-            color: var(--cot-green);
-            font-weight: 800;
-            font-size: 15px;
-            letter-spacing: -0.01em;
-            font-variant-numeric: tabular-nums;
-            font-style: normal;
-            cursor: help;
+        .money-hero {
+            background: linear-gradient(135deg, #f0f7f2 0%, #ffffff 60%, #fff7ed 100%);
+            border: 1px solid var(--rule);
+            border-radius: 8px;
+            padding: 28px 32px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 24px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(47, 106, 79, 0.06);
         }
+        .money-hero .money-num {
+            font-size: 56px;
+            font-weight: 800;
+            color: var(--cot-green);
+            letter-spacing: -0.03em;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+        .money-hero .money-lab {
+            font-size: 14px;
+            color: var(--ink-muted);
+            line-height: 1.45;
+            max-width: 50ch;
+        }
+        .money-hero .money-lab strong { color: var(--ink); font-weight: 600; }
         .signals-pill {
             display: flex; flex-direction: column; align-items: flex-end;
             gap: 4px;
@@ -948,51 +970,13 @@
             0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
             50%      { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
         }
-        /* Inline signals pill — compact horizontal form embedded in the
-           subtitle. Same click-to-filter behavior as the billboard pill;
-           renders as a single-line button so the urgency stat sits in
-           the same paragraph as the dollar headline. */
-        .signals-pill-inline {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 2px 8px;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid var(--rule);
-            border-radius: 999px;
-            cursor: pointer;
-            font-family: inherit;
-            font-style: normal;
-            font-size: 12px;
-            color: var(--ink);
-            transition: border-color .12s, background .12s;
-            vertical-align: baseline;
+        @media (max-width: 640px) {
+            .money-hero { padding: 18px 18px; gap: 10px; }
+            .money-hero .money-num { font-size: 38px; }
+            .money-hero .money-lab { font-size: 12px; }
+            .signals-pill { padding: 10px 14px; align-items: flex-start; text-align: left; }
+            .signals-pill .signals-num { font-size: 28px; }
         }
-        .signals-pill-inline:hover { border-color: #d97706; background: #fff; }
-        .signals-pill-inline.active {
-            border-color: #d97706;
-            background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
-            color: #b45309;
-        }
-        .signals-pill-inline .signals-num-inline {
-            font-weight: 700;
-            color: #d97706;
-            font-variant-numeric: tabular-nums;
-        }
-        .signals-pill-inline.active .signals-num-inline { color: #b45309; }
-        .signals-pill-inline.empty {
-            cursor: default;
-            opacity: 0.55;
-            border-style: dashed;
-        }
-        .signals-pill-inline.empty:hover { border-color: var(--rule); background: rgba(255, 255, 255, 0.7); }
-        .signals-fresh-inline {
-            display: inline-flex; align-items: center; gap: 4px;
-            color: var(--ink-mute2);
-            font-weight: 500;
-            font-size: 11px;
-        }
-        .signals-fresh-inline strong { color: #b45309; font-weight: 700; }
         /* Filters moved into the listings card 2026-05-06 — slim row, no
            label "Filters" / no redundant stats. Search + chips + chip
            counts. */
@@ -1037,25 +1021,26 @@
         .magazine-header {
             display: flex; justify-content: space-between; align-items: center;
             gap: 12px;
-            padding: 4px 8px 10px;
+            padding: 2px 4px 6px;
             border-bottom: 1px solid var(--rule);
         }
         .magazine-title-wrap {
-            display: flex; flex-direction: column; gap: 2px;
+            display: flex; flex-direction: column; gap: 1px;
             min-width: 0;
+            flex: 1 1 auto;
         }
         .magazine-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: var(--ink);
             letter-spacing: -0.01em;
+            line-height: 1.2;
         }
         .magazine-subtitle {
             font-size: 12px;
             color: var(--ink-muted);
             font-style: italic;
-            margin-top: 1px;
-            line-height: 1.4;
+            line-height: 1.35;
             letter-spacing: 0;
         }
         .magazine-count {
@@ -2025,18 +2010,23 @@
              stats moved to the page footer below the listings — devs who
              want the metadata scroll for it; the first screen carries the
              billion-dollar headline + the listings table only. -->
-        <section class="glass-card p-3 mb-4">
-            <!-- Consolidated header — money-hero billboard merged in 2026-05-08.
-                 Row 1: title left + actions inline right (search, ★ saved,
-                 broader-set toggle). Row 2: dense subtitle with $ amount,
-                 inline clickable signals pill, sixplex %, header-stats, and
-                 the "target list, not a buy list" framing — one paragraph,
-                 no separate billboard. -->
+        <div id="money-hero" class="money-hero money-hero-billboard" aria-live="polite">
+            <!-- populated by renderMoneyHero(). Subtitle reflects the count
+                 of permits filed recently (a freshness signal that survived
+                 the BloomTO-score rip-out — permit count is a city number). -->
+        </div>
+        <section class="glass-card p-2 mb-4">
+            <!-- Magazine header — tight single-row layout 2026-05-08:
+                 title + dense subtitle on the left, actions (search,
+                 ★ saved, broader-set toggle) inline on the right. Bill 185
+                 stack-of-incentives copy lives in the money-hero billboard
+                 above; subtitle here just sets sixplex carve-out scope +
+                 the "target list" framing. -->
             <div class="magazine-header">
                 <div class="magazine-title-wrap">
                     <h2 class="magazine-title">Today's hot list — sixplex &amp; multiplex picks</h2>
-                    <div class="magazine-subtitle" aria-live="polite">
-                        <span id="money-summary">…</span><span id="signals-summary"></span><strong>86 % sixplex-eligible</strong> (T&amp;EY District + Ward 23, June 2025) · <span id="header-stats">loading…</span>. A target list, not a buy list — direct outreach + Land Registry lookup.
+                    <div class="magazine-subtitle">
+                        <strong>86 % sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · <span id="header-stats">loading…</span> · a target list, not a buy list — direct outreach + Land Registry lookup.
                     </div>
                     <span class="magazine-count">
                         <span id="list-count"></span>
@@ -5728,26 +5718,24 @@
             syncColumnHighlights();
         }
 
-        // Money + signals summary: writes into the consolidated subtitle
-        // (replaces the standalone billboard 2026-05-08). Two inline slots:
-        // `#money-summary` carries the dollar headline ("$66M stacked Bill
-        // 185 across 244 sites · "), `#signals-summary` carries the
-        // clickable signals pill + LIVE freshness ("[44 with active owner
-        // signals · LIVE 17h] · "). Both end with " · " so they flow into
-        // the static subtitle prose that follows.
+        // Money-hero: dollar-leaning banner summarising the currently-loaded
+        // set. Updates on every filter change. Total stacked = sum of
+        // stackedSavingsFor() across the filtered rows. Bloom + active-permit
+        // counts are the proof points behind the dollar.
         function renderMoneyHero(rows) {
-            const moneyEl = document.getElementById('money-summary');
-            const sigEl = document.getElementById('signals-summary');
-            if (!moneyEl || !sigEl) return;
-            if (!rows || rows.length === 0) {
-                moneyEl.innerHTML = '';
-                sigEl.innerHTML = '';
-                return;
-            }
+            const el = document.getElementById('money-hero');
+            if (!el) return;
+            if (!rows || rows.length === 0) { el.style.display = 'none'; return; }
+            el.style.display = '';
             let total = 0;
+            let bloomN = 0;
+            // Unified "owner is moving" count: any of the three CKAN-fresh
+            // signals (severance / demo permit / active violation) attached
+            // to a parcel in the current filtered set.
             let signalsN = 0;
             for (const r of rows) {
                 total += stackedSavingsFor(r).savings || 0;
+                if (visualBloom(r)) bloomN++;
                 if (hasAnySignal(r)) signalsN++;
             }
             const dollar = total >= 1_000_000_000
@@ -5758,17 +5746,13 @@
             const tier = broaderMode ? 'broader' : 'elite';
             const signalsActive = activePresets.has('any_signal');
 
-            // Money slot — inline phrase, $ in green-bold, count + tier
-            // in regular weight. Tooltip carries the per-pick math + waiver
-            // breakdown so the subtitle stays scannable.
-            const moneyTip = `Sum of Bill 185 incentives stacked across the ${rows.length.toLocaleString()} ${tier} parcels currently loaded. ` +
-                `Typically $300K–$400K per pick ($200K DC waiver + $25K × max units parking elimination). ` +
-                `HST + GST rebates not yet stacked.`;
-            moneyEl.innerHTML =
-                `<span class="money-summary-num" title="${moneyTip.replace(/"/g, '&quot;')}">${dollar}</span> stacked Bill 185 across ${rows.length.toLocaleString()} ${tier} sites · `;
-
-            // Freshness micro-tag — only when signals.json has loaded.
+            // Freshness layer (only when we actually have signal data).
             const refreshedAgo = relativeTimeFromIso(signalsGeneratedAt);
+            // Build the "all current signal parcelIds" set for the
+            // since-last-visit diff. We use the citywide-signals set, not
+            // the filtered set — otherwise toggling a chip would shift the
+            // delta. This is "what's new in the world" not "what's new in
+            // your current filter".
             let visitDeltaHtml = '';
             if (signalsByParcelId.size > 0) {
                 const allSignalPids = [...signalsByParcelId.keys()].sort();
@@ -5792,8 +5776,8 @@
                     _signalsSnapshotWritten = true;
                 }
             }
-            const freshInline = refreshedAgo
-                ? ` <span class="signals-fresh-inline"><span class="signals-live-dot" aria-hidden="true"></span>LIVE ${refreshedAgo}${visitDeltaHtml}</span>`
+            const freshnessLine = refreshedAgo
+                ? `<div class="signals-fresh"><span class="signals-live-dot" aria-hidden="true"></span>LIVE · refreshed ${refreshedAgo}${visitDeltaHtml}</div>`
                 : '';
 
             // Read the window from signals.json meta if available; default to 12 mo.
@@ -5803,11 +5787,24 @@
                 : winDays === 30 ? '30 days'
                 : `${winDays} days`;
             const signalsHtml = signalsN > 0
-                ? `<button id="signals-pill" class="signals-pill-inline ${signalsActive ? 'active' : ''}" type="button"
-                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} carrying at least one active CKAN owner-activity signal in the last ${winLabel} — Committee of Adjustment severance application, building demolition permit, or City property-standards / unsafe / stop-work order. Three daily-refreshed Toronto Open Data feeds, address-joined to parcels by tools/build_signals.py. Click again to clear."><span class="signals-num-inline">${signalsN.toLocaleString()}</span> w/ active owner signals${freshInline}</button> · `
-                : `<span class="signals-pill-inline empty" title="No active severance / demo / violation / zoning-inquiry filings on the current set in the last ${winLabel}."><span class="signals-num-inline">—</span> active owner signals${freshInline}</span> · `;
-            sigEl.innerHTML = signalsHtml;
-
+                ? `<button id="signals-pill" class="signals-pill ${signalsActive ? 'active' : ''}" type="button"
+                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} carrying at least one active CKAN owner-activity signal in the last ${winLabel} — Committee of Adjustment severance application, building demolition permit, or City property-standards / unsafe / stop-work order. Three daily-refreshed Toronto Open Data feeds, address-joined to parcels by tools/build_signals.py. Click again to clear.">
+                       <div class="signals-num">${signalsN.toLocaleString()}</div>
+                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}parcels w/ active severance / demo / violation filings · last ${winLabel}</div>
+                       ${freshnessLine}
+                   </button>`
+                : `<div class="signals-pill empty">
+                       <div class="signals-num">—</div>
+                       <div class="signals-lab">no severance / demo / violation filings on cohort in last ${winLabel}</div>
+                       ${freshnessLine}
+                   </div>`;
+            el.innerHTML = `
+                <div>
+                    <div class="money-num">${dollar}</div>
+                    <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · <strong>typically $300K–$400K per pick</strong> ($200K DC waiver + $25K × max units parking elimination). <em>HST + GST rebates not yet stacked.</em></div>
+                </div>
+                ${signalsHtml}
+            `;
             const btn = document.getElementById('signals-pill');
             if (btn && signalsN > 0) {
                 btn.addEventListener('click', () => {
