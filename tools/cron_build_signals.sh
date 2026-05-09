@@ -15,13 +15,24 @@
 #   - exits non-zero on failure so cron's MAILTO catches it
 #
 # Required environment (override on the cron line if needed):
-#   BLOOMTO_DIR  — repo root (default: directory containing this script's parent)
-#   WEB_ROOT     — destination dir for the live site's data/ folder.
-#                  If unset, the script writes to BLOOMTO_DIR/data/ only and
-#                  whatever is serving that path picks it up.
+#   BLOOMTO_DIR    — repo root (default: directory containing this script's parent)
+#   WEB_ROOT       — local destination dir for the live site's data/ folder.
+#                    If set, signals.json is cp'd to WEB_ROOT/data/signals.json.
+#                    Use when this script runs on the same machine as Apache.
+#   REMOTE_TARGET  — remote rsync target for the live site's data/ folder.
+#                    Format: user@host:/path/to/data/  (trailing slash matters)
+#                    If set, signals.json is scp'd via rsync (atomic via
+#                    --partial + temp-name). Requires passwordless SSH key
+#                    set up between this box and the prod host.
+#                    Use when this script runs on a separate dev box.
+#   SSH_KEY        — optional path to a specific SSH private key.
+#                    Defaults to ssh-agent / ~/.ssh/id_rsa default.
 #
-# Suggested crontab entry (4:17 AM Toronto, daily):
-#   17 4 * * *  /path/to/bloomto/tools/cron_build_signals.sh
+# Suggested crontab entries on the dev box:
+#   # Nightly (3:17 AM Toronto): refresh signals.json + push to prod
+#   17 3 * * *  REMOTE_TARGET=jopolko@prod-host:/var/www/html/bloomto/data/  /home/josh/bloomto_work/tools/cron_build_signals.sh
+#   # Weekly (Sun 2:17 AM Toronto): full ETL rebuild + push all 4 data files
+#   17 2 * * 0  REMOTE_TARGET=jopolko@prod-host:/var/www/html/bloomto/data/  /home/josh/bloomto_work/tools/cron_build_full.sh
 
 set -euo pipefail
 
@@ -81,7 +92,7 @@ fi
 SIZE_KB=$(( $(stat -c%s "$SIGNALS_PATH" 2>/dev/null || stat -f%z "$SIGNALS_PATH") / 1024 ))
 log "signals.json OK · ${SIZE_KB} KB"
 
-# ── Optional deploy to live web root ───────────────────────────────────────
+# ── Optional deploy: local cp (same-machine prod) ──────────────────────────
 if [[ -n "${WEB_ROOT:-}" ]]; then
     if [[ ! -d "$WEB_ROOT" ]]; then
         log "ERROR: WEB_ROOT=$WEB_ROOT does not exist"
@@ -94,7 +105,27 @@ if [[ -n "${WEB_ROOT:-}" ]]; then
     cp -f "$SIGNALS_PATH" "$TMP"
     chmod 644 "$TMP"
     mv -f "$TMP" "$DEST"   # atomic on same filesystem
-    log "deployed → $DEST"
+    log "local-deployed → $DEST"
+fi
+
+# ── Optional deploy: rsync to remote prod host ─────────────────────────────
+if [[ -n "${REMOTE_TARGET:-}" ]]; then
+    SSH_OPTS=()
+    if [[ -n "${SSH_KEY:-}" ]]; then
+        SSH_OPTS=(-e "ssh -i $SSH_KEY -o StrictHostKeyChecking=accept-new -o BatchMode=yes")
+    else
+        SSH_OPTS=(-e "ssh -o StrictHostKeyChecking=accept-new -o BatchMode=yes")
+    fi
+    # rsync --partial + .signals.json.NNN temp name = atomic from the
+    # browser's perspective. --inplace is intentionally omitted; the default
+    # rename-on-complete is what gives us atomicity over Apache.
+    if rsync -az --chmod=F644 "${SSH_OPTS[@]}" \
+            "$SIGNALS_PATH" "$REMOTE_TARGET" >> "$LOG_FILE" 2>&1; then
+        log "remote-deployed → $REMOTE_TARGET"
+    else
+        log "ERROR: rsync to $REMOTE_TARGET failed"
+        exit 1
+    fi
 fi
 
 # ── Rotate logs older than 14 days ─────────────────────────────────────────
