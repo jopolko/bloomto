@@ -1254,6 +1254,24 @@
         .pick .cell.val-yes { color: var(--cot-green); font-weight: 700; }
         .pick .cell.val-no  { color: var(--ink-mute2); }
         .pick .cell.val-warn { color: #b45309; font-weight: 700; }
+        /* Hot cell — <30d activity. Slight bump on the visual weight so the
+           🔥 + days reads as a chip even at default font size. */
+        .pick .cell.cell-hot {
+            color: #b45309;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+        }
+        /* Hot row — full-row warm tint + accent left border. Kept subtle
+           because we don't want to overwhelm the listing when 11 picks of
+           ~244 are hot (rows 1-11 of default sort). The accent border is
+           the eye-catch; the background is just a tint to reinforce it. */
+        .pick.pick-hot {
+            background: linear-gradient(90deg, rgba(251, 146, 60, 0.07) 0%, rgba(251, 146, 60, 0.02) 30%, transparent 60%) !important;
+            box-shadow: inset 3px 0 0 #fb923c;
+        }
+        .pick.pick-hot:hover {
+            background: linear-gradient(90deg, rgba(251, 146, 60, 0.14) 0%, rgba(251, 146, 60, 0.06) 30%, var(--tor-blue-soft) 60%) !important;
+        }
         /* Saved $ */
         .pick .stack-mini {
             color: var(--cot-green);
@@ -2095,7 +2113,11 @@
             </div>
             <div class="footer-section">
                 <span class="footer-label">Pre-filtered:</span>
-                residential · within 500m major transit · heritage-clear (Parts IV/V/Listed excluded) · TRCA-clear (O. Reg. 41/24 floodplain excluded) · lot ≥ 350 m² · existing footprint &lt; 500 m² · addressed · TTC station infrastructure excluded · detached or vacant only (semis available in the broader tier; row/townhouse excluded)
+                residential · within 500m major transit · heritage-clear (Parts IV/V/Listed excluded) · TRCA-clear (O. Reg. 41/24 floodplain excluded) · lot ≥ 350 m² · existing footprint &lt; 500 m² · addressed · TTC station infrastructure excluded · detached or vacant only (semis available in the broader tier; row/townhouse excluded) · tax-exempt institutional addresses excluded (Royal Canadian Legion / charities / city facilities) · neighborhood median dwelling value ≤ $2M · mansion-shape parcels excluded (1,200+ m² floor area in $1M+ avg-value neighborhoods)
+            </div>
+            <div class="footer-section">
+                <span class="footer-label">Default sort:</span>
+                <strong>Hot</strong> — freshest activity signal first (most-recent of an on-lot building permit or active CKAN signal: severance application, demolition permit, or property-standards / unsafe / stop-work order). Signal window: CKAN signals last 12 months · on-lot permits last 5 years. Ties broken by lot area (largest first). Click any column header to re-sort.
             </div>
             <p class="footer-section footer-meta" id="provenance"></p>
         </footer>
@@ -2413,7 +2435,7 @@
 
         // Sort + bounds-restrict state. Sort drives picks-list order; bounds
         // restricts to the current map viewport (live update on pan/zoom).
-        let sortBy = 'area';   // Default: lot area DESC — biggest opportunity first (city data only)
+        let sortBy = 'activity';   // Default: freshest signal first; ties broken by lot area DESC
         // Direction relative to each comparator's natural order. 'natural' is
         // what the comparator returns (already encodes "biggest first" or
         // "closest first" depending on the column's semantic). 'reversed'
@@ -2474,7 +2496,14 @@
             savings:       (a, b) => stackedSavingsFor(b).savings - stackedSavingsFor(a).savings,
             // Hot — days since latest activity on the parcel itself (most-recent
             // of on-lot permit + CKAN signal). Smallest days = freshest = top.
-            activity:      (a, b) => (latestActivityDays(a) ?? 1e9) - (latestActivityDays(b) ?? 1e9),
+            // Tie-breaker: lot area desc (so the bulk of "no activity" picks
+            // come back in the same order the legacy default would have given).
+            activity: (a, b) => {
+                const da = latestActivityDays(a) ?? 1e9;
+                const db = latestActivityDays(b) ?? 1e9;
+                if (da !== db) return da - db;
+                return (b.lotAreaM2 || 0) - (a.lotAreaM2 || 0);
+            },
             // 2026-05-07 — neighborhood-level activity & affordability signals
             // pulled from NPP 2021 + permit aggregation. Surface these as
             // sortable dimensions so a dev can rank by "where stuff is
@@ -5338,6 +5367,12 @@
                 : totalText;
 
             const heroClass = i === 0 ? 'pick-hero' : '';
+            // pick-hot: subtle warm-tint + accent left border for parcels with
+            // an activity signal in the last 30 days. Combined with the 🔥 in
+            // the Hot column cell, the eye picks up the active deals at a
+            // scan without needing to read every row.
+            const activeDays = latestActivityDays(r);
+            const hotClass = (activeDays != null && activeDays < 30) ? 'pick-hot' : '';
             // Hero-only subhead: ONLY signals that don't already have a
             // dedicated cell in the row (so the prose adds, doesn't repeat).
             // Sixplex / subway / savings live in their own cells and are
@@ -5358,7 +5393,7 @@
             const popSixplex = i === 0 && r.sixplexEligible ? 'cell-hero-pop' : '';
             const popSavings = i === 0 && savings > 0 ? 'cell-hero-pop' : '';
             return `
-                <div class="pick ${rankClass(i)} ${heroClass}" data-i="${i}" data-key="${k}">
+                <div class="pick ${rankClass(i)} ${heroClass} ${hotClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
                         <div class="head-row">
                             <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${semiBadge(r)}${signalBadgesHtml(r)}</div>
@@ -5377,11 +5412,13 @@
                         ${(() => {
                             const days = latestActivityDays(r);
                             if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
-                            // Color-code by recency: <30d red, 30-90d orange,
-                            // 90-365d neutral, >1y muted.
-                            const cls = days < 30 ? 'val-warn' : days < 90 ? '' : days < 365 ? '' : 'val-no';
+                            // Color-code by recency: <30d hot, 30-90d warm,
+                            // 90-365d neutral, >1y muted. Hot picks get a 🔥
+                            // prefix to draw the eye on the default sort.
+                            const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
+                            const prefix = days < 30 ? '🔥' : '';
                             const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
-                            return `<div class="cell ${cls}" data-col="activity">${display}</div>`;
+                            return `<div class="cell ${cls}" data-col="activity">${prefix}${display}</div>`;
                         })()}
                         <div class="cell ${treesClass}" data-col="trees">${treesDisplay}</div>
                     </div>
@@ -6075,7 +6112,7 @@
                                 sortDir = 'reversed';
                             } else {
                                 // Third click — revert to default
-                                sortBy = 'area';
+                                sortBy = 'activity';
                                 sortDir = 'natural';
                             }
                         } else {
