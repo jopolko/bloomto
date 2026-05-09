@@ -2436,9 +2436,9 @@
                 <h2 id="detail-title">—</h2>
                 <div class="nb" id="detail-nb">—</div>
             </div>
+            <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">🗺 Map</a>
             <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">📍 Nearby</button>
-            <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">🗺 Maps</a>
-            <button class="detail-print" id="detail-print" type="button" aria-label="Save as PDF" title="Open the print dialog and choose 'Save as PDF' to keep this parcel as a one-page deal doc.">🖨 Save PDF</button>
+            <button class="detail-print" id="detail-print" type="button" aria-label="Print" title="Open the print dialog and choose 'Save as PDF' to keep this parcel as a one-page deal doc.">🖨 Print</button>
             <button class="detail-close" id="detail-close" aria-label="Close detail panel">✕</button>
         </div>
         <div class="detail-body" id="detail-body"></div>
@@ -2754,28 +2754,40 @@
         ];
         // 2026-05-07 — flagCount / netZeroScore comparators dropped (those
         // were synthesised composites). Single-primitive sorts only.
+        // Tie-breaker convention (2026-05-09): lot area DESC as the universal
+        // secondary sort. When the primary metric ties, "biggest lot wins"
+        // is the natural multiplex-builder default — more land, more units,
+        // more upside. Replaces ad-hoc undefined tie-break order. Examples:
+        // "Sixplex YES, biggest first" or "5 mature trees, biggest lot first".
+        // Eliminates the most common multi-column-sort use case without
+        // adding hidden shift-click UI.
+        const _tieByLotDesc = (a, b) => (b.lotAreaM2 || 0) - (a.lotAreaM2 || 0);
         const SORT_COMPARATORS = {
-            footprint:     (a, b) => ((a.buildingCoverageRatio || 0) * (a.lotAreaM2 || 0)) - ((b.buildingCoverageRatio || 0) * (b.lotAreaM2 || 0)),
-            sixplex:       (a, b) => (b.sixplexEligible ? 1 : 0) - (a.sixplexEligible ? 1 : 0) || ((b.lotAreaM2 || 0) - (a.lotAreaM2 || 0)),
-            permits_nb:    (a, b) => (b.nbPermitSampleSize ?? 0) - (a.nbPermitSampleSize ?? 0),
-            trees:         (a, b) => (b.matureTreeCount || 0) - (a.matureTreeCount || 0),
-            permit_recent: (a, b) => ((b.permits || {}).recentCount || 0) - ((a.permits || {}).recentCount || 0),
-            permit_value:  (a, b) => ((b.permits || {}).recentValueTotal || 0) - ((a.permits || {}).recentValueTotal || 0),
-            solar:         (a, b) => (b.solarScore ?? -1) - (a.solarScore ?? -1),
-            area:          (a, b) => (b.lotAreaM2 || 0) - (a.lotAreaM2 || 0),
-            subway:        (a, b) => (a.distSubwayM ?? 1e9) - (b.distSubwayM ?? 1e9),
-            streetcar:     (a, b) => (a.distStreetcarM ?? 1e9) - (b.distStreetcarM ?? 1e9),
-            bus:           (a, b) => (a.distBusM ?? 1e9) - (b.distBusM ?? 1e9),
-            bike:          (a, b) => (a.distBikeLaneM ?? 1e9) - (b.distBikeLaneM ?? 1e9),
-            units:         (a, b) => (b.maxUnits || 0) - (a.maxUnits || 0),
-            coverage:      (a, b) => (a.buildingCoverageRatio || 0) - (b.buildingCoverageRatio || 0),
-            built:         (a, b) => (a.builtYear || 9999) - (b.builtYear || 9999),
+            footprint:     (a, b) => (((a.buildingCoverageRatio || 0) * (a.lotAreaM2 || 0)) - ((b.buildingCoverageRatio || 0) * (b.lotAreaM2 || 0))) || _tieByLotDesc(a, b),
+            sixplex:       (a, b) => (b.sixplexEligible ? 1 : 0) - (a.sixplexEligible ? 1 : 0) || _tieByLotDesc(a, b),
+            permits_nb:    (a, b) => ((b.nbPermitSampleSize ?? 0) - (a.nbPermitSampleSize ?? 0)) || _tieByLotDesc(a, b),
+            trees:         (a, b) => ((b.matureTreeCount || 0) - (a.matureTreeCount || 0)) || _tieByLotDesc(a, b),
+            permit_recent: (a, b) => (((b.permits || {}).recentCount || 0) - ((a.permits || {}).recentCount || 0)) || _tieByLotDesc(a, b),
+            permit_value:  (a, b) => (((b.permits || {}).recentValueTotal || 0) - ((a.permits || {}).recentValueTotal || 0)) || _tieByLotDesc(a, b),
+            solar:         (a, b) => ((b.solarScore ?? -1) - (a.solarScore ?? -1)) || _tieByLotDesc(a, b),
+            // `area` is the lot-area sort itself — no secondary lot tie-break;
+            // fall through to the freshest-activity signal so identically-sized
+            // parcels still surface the more interesting one.
+            area:          (a, b) => ((b.lotAreaM2 || 0) - (a.lotAreaM2 || 0)) || ((latestActivityDays(a) ?? 1e9) - (latestActivityDays(b) ?? 1e9)),
+            subway:        (a, b) => ((a.distSubwayM ?? 1e9) - (b.distSubwayM ?? 1e9)) || _tieByLotDesc(a, b),
+            streetcar:     (a, b) => ((a.distStreetcarM ?? 1e9) - (b.distStreetcarM ?? 1e9)) || _tieByLotDesc(a, b),
+            bus:           (a, b) => ((a.distBusM ?? 1e9) - (b.distBusM ?? 1e9)) || _tieByLotDesc(a, b),
+            bike:          (a, b) => ((a.distBikeLaneM ?? 1e9) - (b.distBikeLaneM ?? 1e9)) || _tieByLotDesc(a, b),
+            units:         (a, b) => ((b.maxUnits || 0) - (a.maxUnits || 0)) || _tieByLotDesc(a, b),
+            coverage:      (a, b) => ((a.buildingCoverageRatio || 0) - (b.buildingCoverageRatio || 0)) || _tieByLotDesc(a, b),
+            built:         (a, b) => ((a.builtYear || 9999) - (b.builtYear || 9999)) || _tieByLotDesc(a, b),
+            // Address is a complete alphabetical order — no useful secondary.
             address:       (a, b) => (a.address || '~').localeCompare(b.address || '~'),
             // Bill 185 stacked dollar total — pure arithmetic on city numbers
             // ($200K DC waiver + $25K × parking-stalls-not-required, gated
             // by maxUnits >= 4). Replaces the old 'attract' comparator
             // (Deal score, BloomTO composite) on the Saved $ column.
-            savings:       (a, b) => stackedSavingsFor(b).savings - stackedSavingsFor(a).savings,
+            savings:       (a, b) => (stackedSavingsFor(b).savings - stackedSavingsFor(a).savings) || _tieByLotDesc(a, b),
             // Hot — days since latest activity on the parcel itself (most-recent
             // of on-lot permit + CKAN signal). Smallest days = freshest = top.
             // Tie-breaker: lot area desc (so the bulk of "no activity" picks
@@ -2790,9 +2802,9 @@
             // pulled from NPP 2021 + permit aggregation. Surface these as
             // sortable dimensions so a dev can rank by "where stuff is
             // actually getting built" or "cheaper hoods first."
-            nbhd_permit_rate: (a, b) => (b.nbPermitsPer1kDwellings ?? 0) - (a.nbPermitsPer1kDwellings ?? 0),
-            nbhd_value:       (a, b) => (a.nbMedDwellingValue ?? 0) - (b.nbMedDwellingValue ?? 0),
-            nbhd_income:      (a, b) => (a.nbMedHouseholdIncome ?? 0) - (b.nbMedHouseholdIncome ?? 0),
+            nbhd_permit_rate: (a, b) => ((b.nbPermitsPer1kDwellings ?? 0) - (a.nbPermitsPer1kDwellings ?? 0)) || _tieByLotDesc(a, b),
+            nbhd_value:       (a, b) => ((a.nbMedDwellingValue ?? 0) - (b.nbMedDwellingValue ?? 0)) || _tieByLotDesc(a, b),
+            nbhd_income:      (a, b) => ((a.nbMedHouseholdIncome ?? 0) - (b.nbMedHouseholdIncome ?? 0)) || _tieByLotDesc(a, b),
         };
         // neighborhood name → heatPump readiness % (from data/neighborhoods.json),
         // populated on boot. Used by the Rebate Rocket badge.
