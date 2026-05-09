@@ -425,6 +425,47 @@
         .pick-card-newest .pick-card-head { color: #0e7490; }
         .pick-card-newest:hover { border-color: #06b6d4; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.18); }
 
+        /* LIVE-count card — leftmost slot in the daily-picks strip
+           (2026-05-08, replaces the signals pill that lived on the right
+           of the money-hero billboard). Orange/red theme; the only card
+           in the strip that's a citywide stat instead of a parcel pick.
+           Click toggles the any_signal preset (filter to signal-bearing
+           parcels) — same wiring as the prior signals-pill button. */
+        .pick-card-live {
+            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 70%);
+            border-color: #fdba74;
+        }
+        .pick-card-live::before { background: #ea580c; }
+        .pick-card-live .pick-card-head { color: #c2410c; }
+        .pick-card-live:hover { border-color: #ea580c; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.18); }
+        .pick-card-live.active {
+            border-color: #ea580c;
+            background: linear-gradient(135deg, #fef3c7 0%, #ffffff 100%);
+            box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
+        }
+        .pick-card-live .live-num {
+            font-size: 32px;
+            font-weight: 800;
+            color: #c2410c;
+            letter-spacing: -0.02em;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .pick-card-live .live-sub {
+            font-size: 11px;
+            color: var(--ink-muted);
+            line-height: 1.35;
+        }
+        .pick-card-live .live-fresh {
+            display: inline-flex; align-items: center; gap: 6px;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--ink-mute2);
+            font-weight: 500;
+        }
+        .pick-card-live .live-fresh strong { color: #b45309; font-weight: 700; }
+
         .pick-card-underdog {
             background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 70%);
             border-color: #c4b5fd;
@@ -3421,11 +3462,75 @@
             return { newest, underdog };
         }
 
+        // Builds the leftmost LIVE-count card in the daily-picks strip.
+        // Citywide signal stat (any_signal-bearing parcels in the current
+        // tier), wired to the same toggle as the old signals-pill button.
+        // Falls back to a muted empty state when signals.json hasn't
+        // loaded or has no joined parcels.
+        function liveCardHtml(rows) {
+            let signalsN = 0;
+            for (const r of rows) if (hasAnySignal(r)) signalsN++;
+            const signalsActive = activePresets.has('any_signal');
+            const refreshedAgo = relativeTimeFromIso(signalsGeneratedAt);
+            const winDays = (window._signalsWindowDays || 365);
+            const winLabel = winDays === 365 ? '12 months'
+                : winDays === 90 ? '90 days'
+                : winDays === 30 ? '30 days'
+                : `${winDays} days`;
+
+            // Visit-delta tag — N new since the user's previous load.
+            let visitDeltaHtml = '';
+            if (signalsByParcelId.size > 0) {
+                const allSignalPids = [...signalsByParcelId.keys()].sort();
+                const delta = computeNewSinceLastVisit(allSignalPids);
+                if (delta.count != null && delta.count > 0) {
+                    const since = delta.since
+                        ? `since ${relativeTimeFromIso(delta.since) || 'last visit'}`
+                        : 'since last visit';
+                    visitDeltaHtml = ` · <strong>${delta.count}</strong> new ${since}`;
+                }
+                if (!_signalsSnapshotWritten) {
+                    writeSignalsVisitSnapshot(
+                        allSignalPids,
+                        buildCurrentSignalsByKind(),
+                        signalsGeneratedAt || new Date().toISOString(),
+                    );
+                    _signalsSnapshotWritten = true;
+                }
+            }
+            const freshHtml = refreshedAgo
+                ? `<div class="live-fresh"><span class="signals-live-dot" aria-hidden="true"></span>LIVE · refreshed ${refreshedAgo}${visitDeltaHtml}</div>`
+                : '';
+
+            if (signalsN === 0) {
+                return `<div class="pick-card pick-card-empty pick-card-live"
+                    title="No active CKAN owner-activity signal on the current set in the last ${winLabel}.">
+                    <div class="pick-card-icon">🔥</div>
+                    <div class="pick-card-body">
+                        <div class="pick-card-head">Active signals</div>
+                        <div class="live-num">—</div>
+                        <div class="live-sub">no severance / demo / violation / zoning inquiry on the current set in the last ${winLabel}</div>
+                        ${freshHtml}
+                    </div>
+                </div>`;
+            }
+            return `<button type="button" id="signals-pill" class="pick-card pick-card-live ${signalsActive ? 'active' : ''}"
+                title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} carrying at least one active CKAN owner-activity signal in the last ${winLabel} — Committee of Adjustment severance application, building demolition permit, or City property-standards / unsafe / stop-work order. Three daily-refreshed Toronto Open Data feeds, address-joined to parcels by tools/build_signals.py. Click again to clear.">
+                <div class="pick-card-icon">🔥</div>
+                <div class="pick-card-body">
+                    <div class="pick-card-head">${signalsActive ? '✓ filtered · ' : ''}Active signals</div>
+                    <div class="live-num">${signalsN.toLocaleString()}</div>
+                    <div class="live-sub">parcels w/ severance / demo / violation / ZPR · last ${winLabel}</div>
+                    ${freshHtml}
+                </div>
+            </button>`;
+        }
+
         function renderDailyPicksStrip(rows) {
             const el = document.getElementById('daily-picks');
             if (!el) return;
             const picks = computeDailyPicks(rows);
-            const cards = [];
+            const cards = [liveCardHtml(rows)];
             // Each slot has its own color theme — fresh teal for "newest",
             // hot orange for "hottest", premium violet for "underdog". The
             // distinct hues mean the eye picks each card up at a glance,
@@ -3513,6 +3618,32 @@
                     if (r) openDetail(r);
                 });
             });
+            // LIVE card — citywide stat, click toggles the any_signal preset
+            // (same behavior as the prior money-hero signals-pill button).
+            const liveBtn = document.getElementById('signals-pill');
+            if (liveBtn && liveBtn.tagName === 'BUTTON') {
+                liveBtn.addEventListener('click', () => {
+                    if (activePresets.has('any_signal')) {
+                        const restoreTarget = viewHistory.get('any_signal') || null;
+                        viewHistory.delete('any_signal');
+                        activePresets.delete('any_signal');
+                        selectedIdx = null;
+                        render();
+                        if (restoreTarget) restoreMapView(restoreTarget);
+                        else fitBoundsToFiltered(applyFilters());
+                    } else {
+                        viewHistory.set('any_signal', snapshotMapView());
+                        activePresets.add('any_signal');
+                        selectedIdx = null;
+                        if (boundsRestricted) {
+                            boundsRestricted = false;
+                            syncBoundsBtnUI();
+                        }
+                        render();
+                        fitBoundsToFiltered(applyFilters());
+                    }
+                });
+            }
         }
 
         // Freshness banner — diff-against-snapshot reading "Since your
@@ -5720,115 +5851,28 @@
 
         // Money-hero: dollar-leaning banner summarising the currently-loaded
         // set. Updates on every filter change. Total stacked = sum of
-        // stackedSavingsFor() across the filtered rows. Bloom + active-permit
-        // counts are the proof points behind the dollar.
+        // stackedSavingsFor() across the filtered rows. Signals pill +
+        // LIVE freshness moved into the daily-picks strip 2026-05-08 (see
+        // liveCardHtml); this function now renders only the dollar headline.
         function renderMoneyHero(rows) {
             const el = document.getElementById('money-hero');
             if (!el) return;
             if (!rows || rows.length === 0) { el.style.display = 'none'; return; }
             el.style.display = '';
             let total = 0;
-            let bloomN = 0;
-            // Unified "owner is moving" count: any of the three CKAN-fresh
-            // signals (severance / demo permit / active violation) attached
-            // to a parcel in the current filtered set.
-            let signalsN = 0;
-            for (const r of rows) {
-                total += stackedSavingsFor(r).savings || 0;
-                if (visualBloom(r)) bloomN++;
-                if (hasAnySignal(r)) signalsN++;
-            }
+            for (const r of rows) total += stackedSavingsFor(r).savings || 0;
             const dollar = total >= 1_000_000_000
                 ? `$${(total / 1_000_000_000).toFixed(2)}B`
                 : total >= 1_000_000
                     ? `$${(total / 1_000_000).toFixed(0)}M`
                     : `$${Math.round(total / 1_000).toLocaleString()}K`;
             const tier = broaderMode ? 'broader' : 'elite';
-            const signalsActive = activePresets.has('any_signal');
-
-            // Freshness layer (only when we actually have signal data).
-            const refreshedAgo = relativeTimeFromIso(signalsGeneratedAt);
-            // Build the "all current signal parcelIds" set for the
-            // since-last-visit diff. We use the citywide-signals set, not
-            // the filtered set — otherwise toggling a chip would shift the
-            // delta. This is "what's new in the world" not "what's new in
-            // your current filter".
-            let visitDeltaHtml = '';
-            if (signalsByParcelId.size > 0) {
-                const allSignalPids = [...signalsByParcelId.keys()].sort();
-                const delta = computeNewSinceLastVisit(allSignalPids);
-                if (delta.count != null && delta.count > 0) {
-                    const since = delta.since
-                        ? `since ${relativeTimeFromIso(delta.since) || 'last visit'}`
-                        : 'since last visit';
-                    visitDeltaHtml = ` · <strong>${delta.count}</strong> new ${since}`;
-                }
-                // Persist the current set as the new snapshot — exactly once
-                // per page load. Subsequent re-renders (filter toggles, etc.)
-                // don't re-persist, so the user's "since last visit" anchor
-                // stays at their actual last visit until they reload.
-                if (!_signalsSnapshotWritten) {
-                    writeSignalsVisitSnapshot(
-                        allSignalPids,
-                        buildCurrentSignalsByKind(),
-                        signalsGeneratedAt || new Date().toISOString(),
-                    );
-                    _signalsSnapshotWritten = true;
-                }
-            }
-            const freshnessLine = refreshedAgo
-                ? `<div class="signals-fresh"><span class="signals-live-dot" aria-hidden="true"></span>LIVE · refreshed ${refreshedAgo}${visitDeltaHtml}</div>`
-                : '';
-
-            // Read the window from signals.json meta if available; default to 12 mo.
-            const winDays = (window._signalsWindowDays || 365);
-            const winLabel = winDays === 365 ? '12 months'
-                : winDays === 90 ? '90 days'
-                : winDays === 30 ? '30 days'
-                : `${winDays} days`;
-            const signalsHtml = signalsN > 0
-                ? `<button id="signals-pill" class="signals-pill ${signalsActive ? 'active' : ''}" type="button"
-                       title="Click to filter to the ${signalsN} ${signalsN===1?'parcel':'parcels'} carrying at least one active CKAN owner-activity signal in the last ${winLabel} — Committee of Adjustment severance application, building demolition permit, or City property-standards / unsafe / stop-work order. Three daily-refreshed Toronto Open Data feeds, address-joined to parcels by tools/build_signals.py. Click again to clear.">
-                       <div class="signals-num">${signalsN.toLocaleString()}</div>
-                       <div class="signals-lab">${signalsActive ? '✓ filtered · ' : ''}parcels w/ active severance / demo / violation filings · last ${winLabel}</div>
-                       ${freshnessLine}
-                   </button>`
-                : `<div class="signals-pill empty">
-                       <div class="signals-num">—</div>
-                       <div class="signals-lab">no severance / demo / violation filings on cohort in last ${winLabel}</div>
-                       ${freshnessLine}
-                   </div>`;
             el.innerHTML = `
                 <div>
                     <div class="money-num">${dollar}</div>
                     <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · <strong>typically $300K–$400K per pick</strong> ($200K DC waiver + $25K × max units parking elimination). <em>HST + GST rebates not yet stacked.</em></div>
                 </div>
-                ${signalsHtml}
             `;
-            const btn = document.getElementById('signals-pill');
-            if (btn && signalsN > 0) {
-                btn.addEventListener('click', () => {
-                    if (activePresets.has('any_signal')) {
-                        const restoreTarget = viewHistory.get('any_signal') || null;
-                        viewHistory.delete('any_signal');
-                        activePresets.delete('any_signal');
-                        selectedIdx = null;
-                        render();
-                        if (restoreTarget) restoreMapView(restoreTarget);
-                        else fitBoundsToFiltered(applyFilters());
-                    } else {
-                        viewHistory.set('any_signal', snapshotMapView());
-                        activePresets.add('any_signal');
-                        selectedIdx = null;
-                        if (boundsRestricted) {
-                            boundsRestricted = false;
-                            syncBoundsBtnUI();
-                        }
-                        render();
-                        fitBoundsToFiltered(applyFilters());
-                    }
-                });
-            }
         }
 
         // Highlight the active sort column in the picks header. Also tags
