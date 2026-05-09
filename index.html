@@ -425,14 +425,6 @@
         .pick-card-newest .pick-card-head { color: #0e7490; }
         .pick-card-newest:hover { border-color: #06b6d4; box-shadow: 0 4px 12px rgba(6, 182, 212, 0.18); }
 
-        .pick-card-hottest {
-            background: linear-gradient(135deg, #fff7ed 0%, #ffffff 70%);
-            border-color: #fdba74;
-        }
-        .pick-card-hottest::before { background: #ea580c; }
-        .pick-card-hottest .pick-card-head { color: #c2410c; }
-        .pick-card-hottest:hover { border-color: #ea580c; box-shadow: 0 4px 12px rgba(234, 88, 12, 0.18); }
-
         .pick-card-underdog {
             background: linear-gradient(135deg, #f5f3ff 0%, #ffffff 70%);
             border-color: #c4b5fd;
@@ -1999,7 +1991,7 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
             <div>
                 <h1 class="text-2xl font-bold"><a href="./" class="gradient-text title-link" aria-label="Reload BloomTO">BloomTO</a></h1>
-                <p class="text-xs text-gray-600 mt-0.5">Top sixplex-ready picks for small builders &amp; infill developers — curated from 500K+ <a href="https://open.toronto.ca/" target="_blank" rel="noopener" class="map-link">City of Toronto Open Data</a> listings · refreshed weekly</p>
+                <p class="text-xs text-gray-600 mt-0.5">Top sixplex-ready picks for small builders &amp; infill developers — curated from 500K+ <a href="https://open.toronto.ca/" target="_blank" rel="noopener" class="map-link">City of Toronto Open Data</a> listings · updated <span id="last-updated">…</span></p>
             </div>
         </div>
     </header>
@@ -2027,7 +2019,7 @@
                     <h2 class="magazine-title">Today's hot list — sixplex &amp; multiplex picks</h2>
                     <div class="magazine-subtitle">
                         <strong>86 % sixplex-eligible</strong> (T&amp;EY District + Ward 23 carve-out, June 2025) · <strong>Bill 185 incentives stack to $300–400K per pick</strong>.
-                        <span id="header-stats">loading…</span>. A target list, not a buy list — use it for direct outreach + Land Registry lookup. <em>List refreshed weekly.</em>
+                        <span id="header-stats">loading…</span>. A target list, not a buy list — use it for direct outreach + Land Registry lookup.
                     </div>
                     <span class="magazine-count">
                         <span id="list-count"></span>
@@ -2067,11 +2059,12 @@
                  renderFreshnessBanner() each render; hidden when nothing
                  changed or on first-ever visit. -->
             <div id="freshness-banner" class="freshness-banner" hidden></div>
-            <!-- Daily picks strip — three real-signal cards (newest /
-                 hottest / underdog) above the listings, replacing the
-                 prior date-hash spotlight. Populated by
-                 renderDailyPicksStrip(); hidden when none of the three
-                 have a qualifying parcel. -->
+            <!-- Daily picks strip — two real-signal cards (newest +
+                 underdog) above the listings. Hottest dropped 2026-05-08:
+                 default sort is activity desc so row #1 IS the hottest
+                 parcel; the Hot column with source icons gives the same
+                 dopamine inline. Populated by renderDailyPicksStrip();
+                 hidden when neither slot has a qualifying parcel. -->
             <div id="daily-picks" class="daily-picks" hidden></div>
             <div class="pick-header" id="pick-header" role="row">
                 <button class="col-btn header-addr-label" data-sort="address" title="Sort alphabetically by address">PARCEL</button>
@@ -2811,6 +2804,18 @@
             return `${days} days ago`;
         }
 
+        // "May 8, 2026" — used in the header subtitle to show the actual
+        // build date of the cohort (parcels-top.json `generatedAt`). Honest
+        // alternative to a hand-curated "refreshed weekly" tag — the date
+        // is data-truth and self-stales: a stale build is visible at a
+        // glance instead of hiding behind an aspirational cadence.
+        function formatLastUpdated(iso) {
+            if (!iso) return null;
+            const t = Date.parse(iso);
+            if (isNaN(t)) return null;
+            return new Date(t).toLocaleDateString('en-US',
+                { year: 'numeric', month: 'short', day: 'numeric' });
+        }
         function relativeTimeFromIso(iso) {
             if (!iso) return null;
             const t = Date.parse(iso);
@@ -3199,8 +3204,6 @@
         //
         //   newest:    parcel that just qualified for the elite set
         //              since your last visit (localStorage-driven).
-        //   hottest:   parcel with the freshest CKAN signal — severance,
-        //              demo permit, or violation — by filing date.
         //   underdog:  highest stacked Bill 185 incentive savings on a
         //              parcel ranked outside the obvious top-10. The
         //              high-leverage deal hiding in the long tail.
@@ -3306,7 +3309,7 @@
         }
 
         function computeDailyPicks(rows) {
-            if (!rows || rows.length === 0) return { newest: null, hottest: null, underdog: null };
+            if (!rows || rows.length === 0) return { newest: null, underdog: null };
 
             // Newest — first row in `rows` whose parcelId isn't in the
             // last-visit snapshot. On first-ever visit (no snapshot yet)
@@ -3379,56 +3382,6 @@
                 _eliteSnapshotWritten = true;
             }
 
-            // Hottest — parcel with the most recent CKAN signal date,
-            // EXCLUDING whichever parcel NEWEST already claimed (so we don't
-            // dedup-null this card). Ties broken by lot area desc.
-            let hottest = null;
-            let hottestDate = '';
-            let hottestArea = -1;
-            const newestKey = newest ? parcelKey(newest) : null;
-            for (const r of rows) {
-                if (newestKey && parcelKey(r) === newestKey) continue;
-                const d = _signalLatestDateForRow(r);
-                if (!d) continue;
-                const area = r.lotAreaM2 || 0;
-                if (d > hottestDate || (d === hottestDate && area > hottestArea)) {
-                    hottest = r;
-                    hottestDate = d;
-                    hottestArea = area;
-                }
-            }
-            if (hottest) {
-                const sk = _signalKindForRow(hottest);
-                const ago = relativeTimeFromIso(hottestDate);
-                hottest._pickWhy = sk
-                    ? `Freshest owner activity on the list — ${sk.label} ${ago || 'recently'}.`
-                    : 'Most recent owner-activity signal on the list.';
-            }
-            // Fallback when no CKAN signals are joined to the cohort
-            // (signals.json missing / not yet deployed / empty after a fresh
-            // build). Pick the freshest on-lot permit AFTER newest, so the
-            // card always populates. Without this the HOTTEST slot greys
-            // any time signals.json is unavailable — including the period
-            // between a static-file deploy and the next signals refresh.
-            if (!hottest) {
-                let bestRow = null;
-                let bestDate = '';
-                for (const r of rows) {
-                    if (newestKey && parcelKey(r) === newestKey) continue;
-                    const d = r.permitsRecentMostRecentDate;
-                    if (!d) continue;
-                    if (d > bestDate) { bestDate = d; bestRow = r; }
-                }
-                if (bestRow) {
-                    const ago = (typeof formatDaysAgo === 'function')
-                        ? (formatDaysAgo(bestDate) || 'recently')
-                        : 'recently';
-                    hottest = bestRow;
-                    hottest._pickWhy = `Freshest building permit on the list after the cover pick — filed ${ago}.`;
-                    hottest._pickIsPermitFallback = true;
-                }
-            }
-
             // Underdog — highest stacked savings on a parcel ranked
             // outside the top 10. Surfaces high-leverage deals hiding
             // beneath the obvious frontrunners.
@@ -3454,13 +3407,11 @@
                 underdog = null;
             }
 
-            // Dedupe — if two slots collapsed onto the same parcel, drop
-            // the lower-priority one. Order: newest > hottest > underdog.
-            if (hottest && newest && parcelKey(hottest) === parcelKey(newest)) hottest = null;
+            // Dedupe — if newest and underdog collapsed onto the same parcel,
+            // drop underdog (lower priority).
             if (underdog && newest && parcelKey(underdog) === parcelKey(newest)) underdog = null;
-            if (underdog && hottest && parcelKey(underdog) === parcelKey(hottest)) underdog = null;
 
-            return { newest, hottest, underdog };
+            return { newest, underdog };
         }
 
         function renderDailyPicksStrip(rows) {
@@ -3472,6 +3423,13 @@
             // hot orange for "hottest", premium violet for "underdog". The
             // distinct hues mean the eye picks each card up at a glance,
             // particularly on mobile where they stack vertically.
+            // 2026-05-08 — HOTTEST card dropped. Default sort is `activity`
+            // desc (hot-first), so row #1 of the table is already the hottest
+            // parcel; the card just opened that same row's detail panel.
+            // The Hot column with source icons (🔨/🔪/⚠/📋/🔧 + days)
+            // surfaces the same dopamine inline on every row. Two-card strip:
+            // NEWEST (delta the table can't show) + UNDERDOG (high-savings
+            // pick ranked outside top 10).
             const slotMeta = [
                 {
                     key: 'newest',
@@ -3480,14 +3438,6 @@
                     label: 'Newest',
                     fallback: 'No new cover-list entries this visit. Toronto Open Data refreshes daily — come back tomorrow.',
                     tip: 'Compares the current cover-list to a snapshot from your last visit (stored in your browser only). On a first-ever visit this slot falls back to the elite parcel with the freshest permit, so you always see the kind of signal this card tracks.',
-                },
-                {
-                    key: 'hottest',
-                    cls: 'pick-card-hottest',
-                    icon: '🔥',
-                    label: 'Hottest',
-                    fallback: 'No fresh owner-activity signal on the current set.',
-                    tip: 'Parcel with the most recent severance application, demolition permit, City enforcement order, or zoning inquiry in the daily-refreshed signals layer. The owner is doing something with this property right now.',
                 },
                 {
                     key: 'underdog',
@@ -3512,15 +3462,6 @@
                     return `<div class="pick-card-kpis">
                         <span class="pick-card-kpi"><span class="kpi-num">${dollars}</span><span class="kpi-lab">stacked $</span></span>
                         <span class="pick-card-kpi"><span class="kpi-num">${lot}</span><span class="kpi-lab">lot</span></span>
-                    </div>`;
-                }
-                if (slot.key === 'hottest') {
-                    const sk = _signalKindForRow(r);
-                    const ago = sk && sk.dateField ? formatAge(sk.dateField) : '';
-                    const kindLabel = sk ? sk.label : 'activity';
-                    return `<div class="pick-card-kpis">
-                        <span class="pick-card-kpi"><span class="kpi-num">${ago || '?'}</span><span class="kpi-lab">${kindLabel}</span></span>
-                        <span class="pick-card-kpi"><span class="kpi-num">${units}</span><span class="kpi-lab">max units</span></span>
                     </div>`;
                 }
                 // newest
@@ -6067,6 +6008,14 @@
                 elitePayload = p;
                 allRows = p.rows;
                 eliteRows = p.rows;
+                // Stamp the header subtitle with the actual build date —
+                // honest data-truth, no aspirational cadence claim.
+                const lastUpdEl = document.getElementById('last-updated');
+                if (lastUpdEl) {
+                    const formatted = formatLastUpdated(p.generatedAt);
+                    lastUpdEl.textContent = formatted || 'recently';
+                    if (p.generatedAt) lastUpdEl.title = `Cohort built ${p.generatedAt}`;
+                }
                 // Wire the tier toggle now that elite is loaded.
                 document.getElementById('tier-toggle').addEventListener('click', toggleTier);
                 // ★ Saved toggle — replaces the prior chip-grid 'saved' chip.
