@@ -5879,21 +5879,16 @@
                         const days = latestActivityDays(r);
                         if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
                         // Color-code by recency: <30d hot, 30-90d warm,
-                        // 90-365d neutral, >1y muted. The icon identifies
-                        // WHAT made it hot (demo / severance / violation /
-                        // zoning inquiry / owner permit) so the eye picks
-                        // up the *kind* of activity at a scan, not just
-                        // the freshness. Within the 12-month signal window
-                        // we always show the source icon; older activity
-                        // suppresses the icon (signal already aged out).
+                        // 90-365d neutral, >1y muted. Source kind goes in
+                        // the tooltip only — the column itself stays
+                        // numeric for clean scanning.
                         const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
                         const src = latestActivitySource(r);
                         const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
-                        const icon = (src && days < 365) ? src.icon : '';
                         const tip = src
                             ? `${src.label} · ${display} ago`
                             : `Latest activity ${display} ago`;
-                        return `<div class="cell ${cls}" data-col="activity" title="${tip}">${icon ? `${icon} ` : ''}${display}</div>`;
+                        return `<div class="cell ${cls}" data-col="activity" title="${tip}">${display}</div>`;
                     })()}
                     <div class="stats-row">
                         <div class="cell" data-col="lot">${lotDisplay}</div>
