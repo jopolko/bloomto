@@ -1438,6 +1438,15 @@
             display: flex; align-items: center; justify-content: flex-end;
         }
         .pick > *:last-child { border-right: 0; }
+        /* Trees column: center-justify both the header label and the row
+           values. Numeric value is short (single digit + emoji) and reads
+           better centered in the narrow column than right-aligned against
+           the cell border. */
+        .pick > [data-col="trees"],
+        .pick-header > *:last-child {
+            text-align: center;
+            justify-content: center;
+        }
 
         /* NZ score — center-aligned big-number tile */
         .pick .nz {
