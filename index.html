@@ -4071,7 +4071,7 @@
             if (t !== 'detached') return '';
             if (s !== 'permit' && s !== 'osm') return '';
             if (ap !== 1) return '';
-            return `<span class="true-detached-badge" title="Bulletproof detached: city permit/OSM record + Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite. The dev's gold-mine row.">✓ TRUE DETACHED</span>`;
+            return `<span class="true-detached-badge" title="Bulletproof detached: city permit/OSM record + Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite. The dev's gold-mine row.">✓ DETACHED</span>`;
         }
         // "Multi-unit" — parcel polygon contains ≥2 distinct municipal address
         // points. Often signals a registered basement suite, laneway suite,
@@ -4636,7 +4636,7 @@
             const apLine = (apCount == null || apCount === 0) ? '' : (() => {
                 if (apCount === 1 && structType === 'detached'
                     && (structSource === 'permit' || structSource === 'osm')) {
-                    return ` · <span style="color:#15803d;font-weight:600" title="Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite.">✓ true detached</span>`;
+                    return ` · <span style="color:#15803d;font-weight:600" title="Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite.">✓ detached</span>`;
                 }
                 if (apCount === 1) {
                     return ` · <span style="color:var(--ink-mute2);font-size:11px">1 address on parcel</span>`;
