@@ -83,6 +83,30 @@ FEATURE_PROPERTIES = (
                                # detached structure → "True Detached" badge
                                # (no shared walls, no shared addresses).
                                # AP≥2 → multi-unit existing on parcel.
+    "addrToStreetM",           # float metres — distance from the parcel's
+                               # representative point to the nearest
+                               # Centreline geometry. Combined with
+                               # `abutsLaneway` it surfaces back-lot
+                               # residue parcels (1030 Danforth case).
+    "existingUnitsApprox",     # int | None — best estimate of existing
+                               # dwelling units on the parcel. 0 = vacant.
+                               # Derivation precedence: permits
+                               # (DWELLING_UNITS_EXISTING) > height ×
+                               # footprint > height band > unknown.
+    "existingUnitsBasis",      # str — which method produced the estimate:
+                               # 'permits' | 'height_x_footprint' |
+                               # 'height_band' | 'vacant' | 'unknown'.
+                               # Frontend renders the calculation visibly
+                               # so the dev sees HOW the count was derived.
+    "osmAmenityType",          # str | None — OSM `amenity` tag of any
+                               # commercial holdover (fast_food / restaurant /
+                               # cafe / bar / pub / bank / pharmacy /
+                               # post_office) substantially sitting on this
+                               # parcel. Surfaced for the "Currently A&W"
+                               # row badge so the dev sees the commercial
+                               # reality before Street View click. NOT a
+                               # hard exclusion — R-zoned commercial
+                               # holdovers are valid teardown candidates.
     "solarYieldKwhPerYr",   # int kWh, the un-shadowed best-rooftop figure
     "pvCapacityKwEstimate", # float kW, derived from solarYieldKwhPerYr
     "sixplexBonusValueCad", # int CAD, or None when ineligible / no comp
@@ -117,6 +141,7 @@ REQUIRED_STATS_KEYS = frozenset({
     "skippedOsmLanduse",
     "skippedTaxExempt",
     "skippedTallExistingBuilding",
+    "skippedImpliedFsiMismatch",
     "abutsLaneway",
     "nearRapidToCorridor",
     "inFloodingStudyArea",
@@ -126,6 +151,12 @@ REQUIRED_STATS_KEYS = frozenset({
     "existingStructureType",
     "addressPointFlips",  # how many parcels had their classifier verdict
                           # flipped by the address-points override
+    "osmAmenityHoldover", # how many parcels carry a non-null osmAmenityType
+                          # (commercial holdover on what may be R-zoned land:
+                          # 505 Jarvis A&W class). Added 2026-05-09.
+    "backLotCandidates",  # parcels where addrToStreetM ≥ 15 AND abutsLaneway
+                          # = True. The 1030 Danforth / 1558 Davenport
+                          # pattern. Added 2026-05-09.
 })
 
 LEGACY_STATS_KEY = "heritageFlagged"

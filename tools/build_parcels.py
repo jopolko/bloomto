@@ -120,6 +120,7 @@ def _process_parcel(parcel_or_record) -> dict:
     institutions_index = _W['institutions_index']
     ttc_station_index = _W['ttc_station_index']
     landuse_index = _W['landuse_index']
+    amenity_holdover_index = _W.get('amenity_holdover_index')
     zone_index = _W['zone_index']
     multipliers = _W['multipliers']
     sixplex_index = _W['sixplex_index']
@@ -188,6 +189,45 @@ def _process_parcel(parcel_or_record) -> dict:
     existing_max_h = _existing_max_building_height(parcel, massing_index)
     if existing_max_h is not None and existing_max_h >= EXISTING_BUILDING_HEIGHT_THRESHOLD_M:
         return {'skip': 'tall_existing_building'}
+    # --- gate stage 3d: implied-FSI vs zone-FSI mismatch (added 2026-05-09) ---
+    # Catches non-conforming apartments that squeak under the 18m hard cap
+    # by being 17m tall on a low-FSI residential lot. The 1 Leonard Crcl
+    # case (RD zone d=0.35 FSI, existing 17.8m × ~152m² footprint × 6
+    # storeys = ~1.2 implied FSI = 3.4× over the zone cap). No real
+    # detached SFH triples its zone's FSI cap; that signature is an
+    # apartment building tagged as "detached" in stale permit data.
+    # Threshold = 2× zone FSI to leave headroom for legit pre-WW2 stock
+    # that mildly exceeds modern setbacks. Only fires when zone_fsi is
+    # known; missing zone data falls through (no false positives).
+    if (existing_max_h is not None and existing_max_h > 5
+            and parcel.area_m2 > 0):
+        # Need zone_record loaded for FSI; lift the lookup ahead of stage 4.
+        _gate_zone_record = _lookup_zone_record(parcel, zone_tree, zone_records)
+        _gate_zone_fsi = _gate_zone_record.fsi if _gate_zone_record else None
+        if _gate_zone_fsi is not None and _gate_zone_fsi > 0:
+            _building_area_m2 = 0.0
+            for idx in building_tree.query(parcel.geometry):
+                try:
+                    inter = building_geoms[idx].intersection(parcel.geometry)
+                    if inter.is_empty:
+                        continue
+                    a, _ = _GEOD.geometry_area_perimeter(inter)
+                    _building_area_m2 += abs(a)
+                except Exception:
+                    continue
+            if _building_area_m2 > 0:
+                _storeys = max(1, round(existing_max_h / 3.0))
+                _implied_fsi = (_building_area_m2 * _storeys) / parcel.area_m2
+                # 3× threshold tuned 2026-05-09 — catches 1 Leonard Crcl /
+                # 324 Riverside Dr (~3.4× over) without nuking legit pre-
+                # WW2 detached stock with steeply pitched roofs (commonly
+                # 2.0-2.5× over their RD d=0.35 cap because 3D Massing
+                # measures roof apex height, not storey count). 2× was
+                # too aggressive in calibration (13% of elite hidden);
+                # 3× hits 1.6% which matches the actual apartment-on-RD
+                # signature.
+                if _implied_fsi > 3.0 * _gate_zone_fsi:
+                    return {'skip': 'implied_fsi_mismatch'}
 
     # --- per-parcel work ---
     zone_record = _lookup_zone_record(parcel, zone_tree, zone_records)
@@ -314,7 +354,18 @@ def _process_parcel(parcel_or_record) -> dict:
     address_point_count = 0
     ap_attached_verdict: str | None = None
     if address_points_index is not None and parcel.geometry is not None:
-        ap_records = ap_src.points_in_parcel(address_points_index, parcel.geometry)
+        # Inset the parcel polygon by ~0.5m before the AP containment test
+        # to guard against boundary fuzziness (177 Symons spillover case,
+        # 2026-05-09). Without the inset, a neighbour's address point that
+        # falls just inside our boundary would bump `addressPointCount` and
+        # wrongly trigger the multi-unit attached-housing classifier. With
+        # the inset, only address points that sit cleanly inside this parcel
+        # count. Falls back to the original geometry on degenerate insets
+        # (very small parcels where buffer(-x) collapses to empty/invalid).
+        ap_test_geom = parcel.geometry.buffer(-ADDRESS_POINT_INSET_DEG)
+        if ap_test_geom.is_empty or not ap_test_geom.is_valid:
+            ap_test_geom = parcel.geometry
+        ap_records = ap_src.points_in_parcel(address_points_index, ap_test_geom)
         # Distinct addresses (a parcel can host duplicate point records for
         # the same address — e.g., front-door + side-door — which we don't
         # want to double-count).
@@ -369,9 +420,44 @@ def _process_parcel(parcel_or_record) -> dict:
             and ap_attached_verdict is not None):
         existing_structure_type = ap_attached_verdict
         existing_structure_source = "address_points"
+    # Classifier-on-low-coverage demotion (added 2026-05-09 — 158 Dufferin
+    # St case). The cross-boundary side-yard classifier returns "detached"
+    # whenever the building has clear side-yards, regardless of whether
+    # the building is plausibly residential. On parcels with very low
+    # coverage (<10%), the structure is likely a derelict shed / industrial
+    # outbuilding / back-lot residue, not an SFH. Demote to "unknown" so
+    # the parcel fails the elite-tier {detached, vacant} gate. Permit/OSM-
+    # sourced verdicts are ground truth and are not affected. Address-
+    # points-overridden verdicts are also skipped (they fired BEFORE this
+    # gate, and AP=2+ on a low-coverage lot is its own valid signal).
+    if (existing_structure_source == "classifier"
+            and existing_structure_type == "detached"
+            and coverage < 0.10):
+        existing_structure_type = "unknown"
+        existing_structure_source = "classifier_low_cov_demotion"
+    # Classifier-on-CR-zone demotion (added 2026-05-09 — 581 Parliament
+    # St case). CR / CRE / RAC / RA / CL are commercial-residential and
+    # mid-rise residential zones — typically mainstreet retail with
+    # apartment-above or mid-rise apartment buildings, NOT detached SFHs.
+    # When the classifier guesses "detached" on a CR-zoned parcel without
+    # permit/OSM ground truth, the verdict is unreliable: a real detached
+    # SFH on a CR lot would typically be permit- or OSM-tagged. Demoting
+    # cleans up Cabbagetown / Danforth / Bloor / College mainstreet
+    # parcels that would otherwise misrepresent as "detached SFH teardown."
+    elif (existing_structure_source == "classifier"
+            and existing_structure_type == "detached"
+            and zone_class in ("CR", "CRE", "RAC", "RA", "CL")):
+        existing_structure_type = "unknown"
+        existing_structure_source = "classifier_cr_zone_demotion"
     corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
     abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
     near_rapidto = _near_rapidto(parcel, rapidto_tree)
+    # Distance from the parcel's representative point (rep_pt) to the
+    # nearest centreline geometry. Surfaces as `addrToStreetM` on the wire;
+    # combined with `abutsLaneway` it exposes back-lot residue parcels
+    # (1030 Danforth / 1558 Davenport pattern — address geocodes to a
+    # frontage that this parcel sits BEHIND, accessed only by laneway).
+    addr_to_street_m = streets_src.dist_addr_to_centreline_m(rep_pt, centreline_tree)
     in_flooding_area = flood_src.is_in_flooding_area(parcel.geometry, flood_index)
     in_regulated_area = trca_src.is_in_regulated_area(parcel.geometry, trca_index)
 
@@ -395,6 +481,47 @@ def _process_parcel(parcel_or_record) -> dict:
     permit_claims_by_nb: dict = {}
     if local_permit_claims:
         permit_claims_by_nb[nb.name] = list(local_permit_claims)
+
+    # Existing-units derivation (Item 4, 2026-05-09). Three-tier precedence:
+    #   1. Permits — DWELLING_UNITS_EXISTING from the most-recent permit
+    #      joined to this parcel's address. Highest confidence.
+    #   2. Height × footprint — storeys × footprint / 90 m²/unit (CMHC
+    #      residential per-unit average). Medium confidence; misjoins or
+    #      spillover would inflate the count.
+    #   3. Height band — pure height-bucket fallback when footprint is
+    #      missing. Low confidence; surfaces "any structure at all" rough
+    #      tier.
+    # Vacant lots emit 0/'vacant' explicitly. No-signal parcels emit
+    # null/'unknown' — frontend renders "—" when basis is unknown.
+    existing_units_approx: int | None = None
+    existing_units_basis = "unknown"
+    if existing_structure_type == "vacant":
+        existing_units_approx = 0
+        existing_units_basis = "vacant"
+    else:
+        units_from_permits = permits_src.existing_units_from_permits(
+            local_permit_claims, permit_index.permits,
+        )
+        if units_from_permits is not None and units_from_permits > 0:
+            existing_units_approx = int(units_from_permits)
+            existing_units_basis = "permits"
+        elif (existing_max_h is not None and existing_max_h > 0
+                and building_area_m2 > 0):
+            storeys = max(1, round(existing_max_h / 3.0))
+            if storeys <= 20:  # sanity cap — taller suggests massing misjoin
+                floor_area = building_area_m2 * storeys
+                existing_units_approx = max(1, round(floor_area / 90.0))
+                existing_units_basis = "height_x_footprint"
+        elif existing_max_h is not None and existing_max_h > 0:
+            if existing_max_h < 4:
+                existing_units_approx = 1
+            elif existing_max_h < 8:
+                existing_units_approx = 2
+            elif existing_max_h < 12:
+                existing_units_approx = 4
+            else:
+                existing_units_approx = 8
+            existing_units_basis = "height_band"
 
     nb_canopy_pct = nb_canopy_by_name.get(nb.name)
     street_tree_count, mature_tree_count = street_trees_src.count_for_parcel(
@@ -438,6 +565,7 @@ def _process_parcel(parcel_or_record) -> dict:
             'builtYear': int(built_year),
             'cornerLot': corner,
             'abutsLaneway': abuts_laneway,
+            'addrToStreetM': round(addr_to_street_m, 1),
             'nearRapidToCorridor': near_rapidto,
             'inFloodingStudyArea': in_flooding_area,
             'inRegulatedArea': in_regulated_area,
@@ -465,6 +593,20 @@ def _process_parcel(parcel_or_record) -> dict:
             'existingStructureType': existing_structure_type,
             'existingStructureSource': existing_structure_source,
             'addressPointCount': int(address_point_count),
+            'existingUnitsApprox': existing_units_approx,
+            'existingUnitsBasis': existing_units_basis,
+            # OSM commercial-holdover amenity (added 2026-05-09): the
+            # `amenity` tag (e.g., "fast_food", "restaurant", "bank") of
+            # any building substantially sitting on this parcel. None
+            # for residential / vacant lots. NOT a hard exclusion — the
+            # 505 Jarvis case (A&W on R-zoned land) is a legitimate
+            # teardown candidate; the dev needs to know about the
+            # commercial holdover before they walk up to it.
+            'osmAmenityType': (
+                landuse_src.osm_amenity_type(parcel.geometry, amenity_holdover_index)
+                if amenity_holdover_index is not None and parcel.geometry is not None
+                else None
+            ),
             'solarYieldKwhPerYr': int(round(max_kwh)) if max_kwh else 0,
             'pvCapacityKwEstimate': round(max_kwh / _TORONTO_PV_YIELD_KWH_PER_KW, 1) if max_kwh else 0.0,
             'sixplexBonusValueCad': None,
@@ -476,6 +618,7 @@ def _process_parcel(parcel_or_record) -> dict:
         'corner': 1 if corner else 0,
         'postwar': 1 if postwar else 0,
         'abuts_laneway': 1 if abuts_laneway else 0,
+        'back_lot_candidate': 1 if (abuts_laneway and addr_to_street_m >= 15) else 0,
         'near_rapidto': 1 if near_rapidto else 0,
         'in_flooding_area': 1 if in_flooding_area else 0,
         'in_regulated_area': 1 if in_regulated_area else 0,
@@ -888,10 +1031,29 @@ _NEIGHBOR_RADIUS_DEG = _NEIGHBOR_RADIUS_M / 111_000  # ≤1.4× over-bound for b
 # Dufferin Grove home on a 2300m² lot with a steeply pitched roof
 # (Toronto's pre-WW2 detached stock peaks 14–17m at the roof while
 # being only 2.5–3 habitable storeys). 15m was over-blocking that
-# cohort. The 50% overlap requirement guards against picking up a
-# neighbour's tower that just clips this parcel's boundary.
+# cohort.
 EXISTING_BUILDING_HEIGHT_THRESHOLD_M = 18.0
-EXISTING_BUILDING_OVERLAP_RATIO = 0.5
+# Overlap-ratio gate for crediting a 3D Massing building's height to a
+# parcel: the building's footprint must sit at least 80% inside the
+# parcel polygon. Bumped 2026-05-09 from 0.5 after the 177 Symons St
+# spillover case — a 3-4 storey apartment block on the neighbouring
+# parcel had its footprint clip ~10-30% into 177 Symons via boundary
+# fuzziness, and the prior 0.5 gate let the 9.1m height get credited to
+# 177 Symons (actually a 1-storey bungalow per Street View). 0.80
+# tightens the gate so a building must SUBSTANTIALLY sit on this parcel
+# before its height counts. Cleanly excludes shared / clipped-neighbour
+# structures from BOTH parcels — better to read "vacant or no recorded
+# structure" than a wrong height.
+EXISTING_BUILDING_OVERLAP_RATIO = 0.80
+# Boundary-fuzziness inset applied to the parcel polygon before testing
+# Address-Point containment. Same principle as the overlap ratio above:
+# Toronto's Property Boundaries polygons can drift 0.5-1m at the edges
+# (digitization imprecision, retired subdivision lines, etc), so a
+# neighbour's address point that barely clips inside this parcel via
+# the fuzz boundary should not bump `addressPointCount`. ~5e-6 deg is
+# ~0.5m at Toronto's latitude (≈80-111km per degree depending on axis).
+# Slight asymmetry between N-S and E-W is acceptable at this scale.
+ADDRESS_POINT_INSET_DEG = 0.5 / 111_000
 
 # Cross-boundary classifier (2026-05-08 — replaces the side-yard test
 # against parcel edges, which was over-claiming detached because Toronto's
@@ -921,9 +1083,11 @@ def _existing_max_building_height(parcel, massing_index) -> float | None:
     """Tallest 3D Massing building substantially overlapping this parcel.
 
     Returns the `height_m` of the tallest building whose footprint is at
-    least `EXISTING_BUILDING_OVERLAP_RATIO` (50%) inside the parcel
+    least `EXISTING_BUILDING_OVERLAP_RATIO` (80%) inside the parcel
     polygon. Returns `None` when the parcel has no qualifying building
-    (vacant lot, narrow accessory structure, neighbour-clip-through).
+    (vacant lot, narrow accessory structure, neighbour-clip-through —
+    including shared / clipped buildings that don't substantially sit on
+    THIS parcel).
 
     Used for both the "too tall to teardown" hard-exclusion gate AND the
     per-parcel `existingMaxBuildingHeightM` wire field surfaced to the
@@ -1161,6 +1325,7 @@ def assemble_parcel_payload(
     nb_canopy_by_name: dict[str, int],
     include_non_eligible: bool,
     workers: int = 1,
+    amenity_holdover_index=None,
 ) -> dict:
     """Build the GeoJSON FeatureCollection payload (no I/O).
 
@@ -1192,7 +1357,9 @@ def assemble_parcel_payload(
     stats_skipped_osm_landuse = 0
     stats_skipped_tax_exempt = 0
     stats_skipped_tall_building = 0
+    stats_skipped_implied_fsi = 0
     stats_abuts_laneway = 0
+    stats_back_lot_candidates = 0
     stats_near_rapidto = 0
     stats_in_flooding_area = 0
     stats_in_regulated_area = 0
@@ -1210,6 +1377,7 @@ def assemble_parcel_payload(
         "detached": 0, "semi": 0, "row": 0, "vacant": 0, "unknown": 0,
     }
     stats_address_point_flips = 0
+    stats_osm_amenity_holdover = 0
 
     # Build the worker state dict — every shared input the per-parcel loop
     # body needs. Both sequential and parallel paths use the same
@@ -1225,6 +1393,7 @@ def assemble_parcel_payload(
         'institutions_index': institutions_index,
         'ttc_station_index': ttc_station_index,
         'landuse_index': landuse_index,
+        'amenity_holdover_index': amenity_holdover_index,
         'zone_index': zone_index,
         'multipliers': multipliers,
         'sixplex_index': sixplex_index,
@@ -1278,6 +1447,8 @@ def assemble_parcel_payload(
                 stats_skipped_tax_exempt += 1
             elif reason == 'tall_existing_building':
                 stats_skipped_tall_building += 1
+            elif reason == 'implied_fsi_mismatch':
+                stats_skipped_implied_fsi += 1
             elif reason == 'non_buildable':
                 stats_skipped_non_buildable += 1
             elif reason == 'unparseable_geometry':
@@ -1310,6 +1481,7 @@ def assemble_parcel_payload(
         stats_heritage_part_v += st['heritage_part_v']
         stats_heritage_listed += st['heritage_listed']
         stats_abuts_laneway += st['abuts_laneway']
+        stats_back_lot_candidates += st.get('back_lot_candidate', 0)
         stats_near_rapidto += st['near_rapidto']
         stats_in_flooding_area += st['in_flooding_area']
         stats_in_regulated_area += st['in_regulated_area']
@@ -1319,6 +1491,7 @@ def assemble_parcel_payload(
         for kind in stats_structure_counts:
             stats_structure_counts[kind] += st.get(f'structure_{kind}', 0)
         stats_address_point_flips += st.get('address_point_flip', 0)
+        stats_osm_amenity_holdover += st.get('osm_amenity_holdover', 0)
         # Merge per-worker claim sets so the parent's globally-deduplicated
         # views stay correct (heritage stats + permit aggregations).
         claimed_heritage_indices |= result['heritage_claims']
@@ -1446,7 +1619,9 @@ def assemble_parcel_payload(
             "skippedOsmLanduse": stats_skipped_osm_landuse,
             "skippedTaxExempt": stats_skipped_tax_exempt,
             "skippedTallExistingBuilding": stats_skipped_tall_building,
+            "skippedImpliedFsiMismatch": int(stats_skipped_implied_fsi),
             "abutsLaneway": stats_abuts_laneway,
+            "backLotCandidates": int(stats_back_lot_candidates),
             "nearRapidToCorridor": stats_near_rapidto,
             "inFloodingStudyArea": stats_in_flooding_area,
             "inRegulatedArea": stats_in_regulated_area,
@@ -1454,6 +1629,7 @@ def assemble_parcel_payload(
             "sixplexEligible": stats_sixplex_eligible,
             "existingStructureType": dict(stats_structure_counts),
             "addressPointFlips": int(stats_address_point_flips),
+            "osmAmenityHoldover": int(stats_osm_amenity_holdover),
         },
     }
 
@@ -1519,6 +1695,10 @@ def main(argv=None) -> int:
     t = _stage("compute OSM landuse exclusion (parking / industrial / construction / brownfield)")
     landuse_index = landuse_src.compute_landuse_exclusion_index(cache)
     _done("OSM landuse exclusion", t)
+
+    t = _stage("compute OSM amenity holdover (fast_food / restaurant / bank / pharmacy on R-zoned land)")
+    amenity_holdover_index = landuse_src.compute_amenity_holdover_index(cache)
+    _done("OSM amenity holdover", t)
 
     t = _stage("compute basement-flooding study areas")
     flood_index = flood_src.compute_flood_index(cache)
@@ -1640,6 +1820,7 @@ def main(argv=None) -> int:
         institutions_index=institutions_index,
         ttc_station_index=ttc_station_index,
         landuse_index=landuse_index,
+        amenity_holdover_index=amenity_holdover_index,
         flood_index=flood_index,
         trca_index=trca_index,
         rapidto_tree=rapidto_tree,

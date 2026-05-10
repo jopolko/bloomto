@@ -71,6 +71,10 @@ def _make_props(*, quality: str = "measured", solar_score=80,
         "existingStructureType": "detached",
         "existingStructureSource": "classifier",
         "addressPointCount": 1,
+        "osmAmenityType": None,
+        "addrToStreetM": 5.0,
+        "existingUnitsApprox": 1,
+        "existingUnitsBasis": "height_x_footprint",
         "solarYieldKwhPerYr": 22000,
         "pvCapacityKwEstimate": 19.1,
         "sixplexBonusValueCad": None,
@@ -113,6 +117,9 @@ def _make_stats():
         "sixplexEligible": 0,
         "existingStructureType": {"detached": 1, "semi": 0, "row": 0, "vacant": 0, "unknown": 0},
         "addressPointFlips": 0,
+        "osmAmenityHoldover": 0,
+        "backLotCandidates": 0,
+        "skippedImpliedFsiMismatch": 0,
     }
 
 

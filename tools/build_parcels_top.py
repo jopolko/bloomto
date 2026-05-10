@@ -574,6 +574,12 @@ def main():
         len(curated_features), len(path_a_features), len(path_b_features), overlap,
     )
 
+    # Archive the previous rebuild's parcels-top.json (if any) BEFORE
+    # writing the new one. The frontend reads `parcels-top-prev.json` to
+    # compute "this week" deltas (added picks since last refresh).
+    # Idempotent — does nothing on the first-ever rebuild. Added 2026-05-09.
+    _archive_previous(args.out)
+
     curated_payload = parcels_top_io.make_payload(
         curated_features, args.top_n, total_citywide=total_citywide,
     )
@@ -590,6 +596,22 @@ def main():
     _log.info("DONE broader: %d rows → %s | %.0f KB",
               broader_payload["topN"], args.out_broader, broader_kb)
     return 0
+
+
+def _archive_previous(out_path: Path) -> None:
+    """If `out_path` exists, copy it to `<stem>-prev<suffix>` so the
+    frontend can diff this rebuild vs the last for the weekly-freshness
+    strip. Uses copy (not rename) so a build failure mid-archive doesn't
+    blow away the live file.
+    """
+    if not out_path.exists():
+        return
+    prev_path = out_path.with_name(out_path.stem + "-prev" + out_path.suffix)
+    try:
+        prev_path.write_bytes(out_path.read_bytes())
+        _log.info("archived previous %s → %s", out_path.name, prev_path.name)
+    except Exception as e:
+        _log.warning("could not archive %s to %s: %s", out_path, prev_path, e)
 
 
 def _load_signal_pids(signals_path: Path) -> set | None:

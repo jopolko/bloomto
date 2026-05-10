@@ -144,6 +144,11 @@ class BuildingPermit:
     declared_value_cad: int
     issued_date: date
     units_created: int   # DWELLING_UNITS_CREATED, ≥0
+    units_existing: int  # DWELLING_UNITS_EXISTING, ≥0 — pre-construction
+                         # unit count, ground truth for the parcel's existing-
+                         # units count when this permit's address joins to a
+                         # parcel. Added 2026-05-09 for the existingUnitsApprox
+                         # feature (Item 4 ETL pipeline).
     category: str        # one of KEPT_CATEGORIES
 
 
@@ -256,6 +261,7 @@ def compute_permits(
             issued_date = _parse_date(row.get("ISSUED_DATE"))
             value = _parse_int(row.get("EST_CONST_COST"))
             units = _parse_int(row.get("DWELLING_UNITS_CREATED")) or 0
+            units_existing = _parse_int(row.get("DWELLING_UNITS_EXISTING")) or 0
             description = row.get("DESCRIPTION") or ""
 
             address = _build_address(row)
@@ -306,6 +312,7 @@ def compute_permits(
                 declared_value_cad=value,
                 issued_date=issued_date,
                 units_created=units,
+                units_existing=units_existing,
                 category=category,
             ))
             normalized = normalize_address(address)
@@ -454,6 +461,27 @@ def freshness_cutoff(today: date | None = None,
     # Crude "N years ago" — exact boundary is fine; a 1-day off-by-one at the
     # cutoff doesn't change the aggregate.
     return today - timedelta(days=freshness_years * 365)
+
+
+def existing_units_from_permits(
+    permit_indices: list[int],
+    permits: list[BuildingPermit],
+) -> int | None:
+    """Return the most-recent permit's `units_existing` for a parcel,
+    or None if no permits are joined.
+
+    Used by `build_parcels.py` to derive `existingUnitsApprox` with
+    basis='permits' (the highest-confidence source). The "most recent"
+    rule favours fresher signals — a 2024 reno after a 2018 permit
+    reflects today's reality, not what was on the lot 6 years ago.
+    """
+    if not permit_indices:
+        return None
+    relevant = [permits[i] for i in permit_indices]
+    if not relevant:
+        return None
+    most_recent = max(relevant, key=lambda p: p.issued_date)
+    return most_recent.units_existing
 
 
 def aggregate_per_parcel(

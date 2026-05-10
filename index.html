@@ -327,8 +327,323 @@
             vertical-align: middle;
         }
         .signal-section-intro {
+            position: relative;
+            margin: 6px 0 10px;
+            padding: 10px 12px 10px 14px;
+            background: linear-gradient(90deg, rgba(251, 146, 60, 0.10) 0%, rgba(251, 146, 60, 0.03) 60%, transparent 100%);
+            border-left: 3px solid #fb923c;
+            border-radius: 0 6px 6px 0;
+            line-height: 1.45;
+            color: var(--ink);
+        }
+        .signal-intro-eyebrow {
+            display: block;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            color: #c2410c;
+            margin-bottom: 2px;
+        }
+        .signal-intro-headline {
+            display: block;
+            font-size: 14px; font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+            margin-bottom: 4px;
+        }
+        .signal-intro-body {
+            display: block;
             font-size: 12px; color: var(--ink-muted);
-            line-height: 1.4; margin: 4px 0 8px;
+        }
+        .signal-intro-body strong {
+            color: var(--ink); font-weight: 600;
+        }
+        /* Money on the table — compact rows replacing the old Financial-
+           upside + Incentives-stacked sections (consolidated 2026-05-09). */
+        .money-rows { display: flex; flex-direction: column; }
+        .money-row {
+            display: grid; grid-template-columns: 1fr auto;
+            gap: 12px; padding: 8px 0; align-items: start;
+            border-bottom: 1px dashed rgba(47,106,79,0.10);
+        }
+        .money-row:last-child { border-bottom: 0; }
+        .money-row-label { min-width: 0; font-size: 13px; color: var(--ink); line-height: 1.35; }
+        .money-row-label strong { font-weight: 600; color: var(--ink); display: block; }
+        .money-row-sub { font-size: 11px; color: var(--ink-muted); display: block; margin-top: 2px; }
+        .money-row-val {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 14px; font-weight: 600; color: #15803d;
+            white-space: nowrap;
+        }
+        .money-foot {
+            font-size: 10px; color: var(--ink-mute2);
+            margin-top: 6px; line-height: 1.4;
+        }
+        .money-empty { color: #9ca3af; font-size: 12px; }
+        /* Site notes — one compact 3-column strip replacing the standalone
+           Transit / Regulatory / Recent-permits sections. */
+        .site-notes {
+            display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px 16px; font-size: 12px;
+        }
+        .site-notes > .site-note-tile {
+            display: flex; flex-direction: column;
+            padding: 6px 8px; background: #f9fafb; border-radius: 4px;
+            min-width: 0;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: border-color 0.12s ease, background 0.12s ease;
+            font-family: inherit;
+            text-align: left;
+            position: relative;
+        }
+        .site-notes > .site-note-tile:hover {
+            border-color: var(--rule-strong);
+            background: #f3f4f6;
+        }
+        .site-notes > .site-note-tile:focus-visible {
+            outline: 2px solid var(--tor-blue);
+            outline-offset: 2px;
+        }
+        .site-notes-label {
+            font-size: 10px; font-weight: 600;
+            color: #6b7280; text-transform: uppercase; letter-spacing: 0.04em;
+            margin-bottom: 2px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        /* "i" info-affordance — tells mobile users the tile is tappable.
+           Small, muted, auto-aligned to the right of the label. */
+        .site-note-info-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 13px; height: 13px;
+            border-radius: 50%;
+            background: #d1d5db; color: #4b5563;
+            font-size: 9px; font-weight: 700;
+            font-style: italic;
+            margin-left: auto;
+            font-family: 'Inter', system-ui, sans-serif;
+            text-transform: none; letter-spacing: 0;
+            user-select: none;
+        }
+        .site-note-tile:hover .site-note-info-icon {
+            background: var(--tor-blue); color: white;
+        }
+        .site-notes-val {
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 13px; color: var(--ink);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .site-notes-val.warn { color: #b45309; font-weight: 600; }
+        .site-notes-val.bad  { color: #b91c1c; font-weight: 600; }
+        .site-notes-val.good { color: #15803d; font-weight: 600; }
+        @media (max-width: 640px) {
+            .site-notes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        /* Site-note info dialog — native <dialog> handles backdrop, Esc,
+           focus trap. Touch + desktop both get a single-tap interaction
+           to surface the by-law / Act / regulation rationale that lives
+           in the tile's title attr (which mobile can't render). */
+        #site-note-dialog {
+            border: 1px solid var(--rule-strong);
+            border-radius: 8px;
+            padding: 0;
+            max-width: min(420px, 90vw);
+            box-shadow: 0 12px 40px rgba(17, 24, 39, 0.20);
+            color: var(--ink);
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        #site-note-dialog::backdrop {
+            background: rgba(17, 24, 39, 0.55);
+        }
+        #site-note-dialog .snd-head {
+            display: flex; justify-content: space-between; align-items: baseline;
+            padding: 14px 16px 8px;
+            border-bottom: 1px solid var(--rule);
+            gap: 12px;
+        }
+        #site-note-dialog .snd-label {
+            font-size: 11px; font-weight: 700;
+            color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        #site-note-dialog .snd-val {
+            font-family: ui-monospace, Menlo, monospace;
+            font-size: 14px; font-weight: 600;
+            color: var(--ink);
+        }
+        #site-note-dialog .snd-body {
+            padding: 12px 16px 16px;
+            font-size: 13px; line-height: 1.5;
+            color: var(--ink);
+        }
+        #site-note-dialog .snd-close {
+            position: absolute; top: 6px; right: 8px;
+            width: 32px; height: 32px;
+            background: transparent; border: 0; cursor: pointer;
+            font-size: 20px; color: var(--ink-muted);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #site-note-dialog .snd-close:hover { background: var(--rule); color: var(--ink); }
+        /* Toronto Hydro Multiplex PowerPlay pilot — $50K toward smart-load-
+           management devices for 4-6 unit multiplex with electrification.
+           EOI deadline May 31 2026; auto-hides after that. Yellow theme to
+           visually distinguish from the parcel-fixed-dollars (green) family.
+           Central banner: single strip above the listings (replaces the
+           per-row badge that was noise on every eligible row). */
+        .powerplay-banner {
+            display: flex; align-items: center; flex-wrap: wrap;
+            gap: 10px;
+            padding: 8px 14px;
+            margin: 8px 0 0;
+            background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 60%, #ffffff 100%);
+            border: 1px solid #fcd34d;
+            border-left: 3px solid #f59e0b;
+            border-radius: 6px 6px 0 0;
+            font-size: 13px;
+            color: var(--ink);
+            line-height: 1.4;
+            /* Sticky to keep the deadline countdown in view as the dev
+               scrolls the listings — persistent urgency without a per-row
+               column. Sits above the column header (which is also sticky
+               at top:0; this one stacks above it). */
+            position: sticky; top: 0; z-index: 6;
+        }
+        .powerplay-banner.urgent {
+            background: linear-gradient(90deg, #fee2e2 0%, #fef2f2 60%, #ffffff 100%);
+            border-color: #fca5a5;
+            border-left-color: #dc2626;
+        }
+        .powerplay-banner-eyebrow {
+            font-size: 10px; font-weight: 700;
+            color: #92400e;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .powerplay-banner.urgent .powerplay-banner-eyebrow { color: #991b1b; }
+        .powerplay-banner-headline {
+            font-weight: 700;
+            color: var(--ink);
+        }
+        .powerplay-banner-headline strong { color: #ca8a04; }
+        .powerplay-banner.urgent .powerplay-banner-headline strong { color: #b91c1c; }
+        .powerplay-banner-deadline {
+            font-family: ui-monospace, Menlo, monospace;
+            font-weight: 700; color: #b91c1c;
+        }
+        .powerplay-banner-link {
+            margin-left: auto;
+            font-size: 12px; font-weight: 600;
+            color: #b45309; text-decoration: underline;
+            white-space: nowrap;
+        }
+        .powerplay-banner-link:hover { color: #78350f; }
+        @media (max-width: 640px) {
+            .powerplay-banner { font-size: 12px; padding: 8px 10px; }
+            .powerplay-banner-link { margin-left: 0; }
+        }
+        /* Weekly-delta strip — green-themed pulse showing "This week
+           (since last refresh): +X picks · Y new signals". Sits between
+           the PowerPlay banner and the column header; non-sticky (scrolls
+           away with the rest of the chrome). */
+        .weekly-delta {
+            display: flex; align-items: center; flex-wrap: wrap;
+            gap: 10px;
+            padding: 7px 14px;
+            margin: 4px 0 6px;
+            background: linear-gradient(90deg, #ecfdf5 0%, #f0fdf4 60%, #ffffff 100%);
+            border: 1px solid #6ee7b7;
+            border-left: 3px solid #10b981;
+            border-radius: 4px;
+            font-size: 12px;
+            color: var(--ink);
+            line-height: 1.4;
+        }
+        .weekly-delta-eyebrow {
+            font-size: 10px; font-weight: 700;
+            color: #047857;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .weekly-delta-body strong { color: #065f46; font-weight: 700; }
+        @media (max-width: 640px) {
+            .weekly-delta { font-size: 11px; padding: 6px 10px; }
+        }
+        /* Commercial-holdover badge — orange theme to read as caution
+           (don't expect a clean SFH on this lot) without screaming "skip
+           this parcel" — these are still valid teardown candidates. */
+        .amenity-holdover-badge {
+            display: inline-flex; align-items: center;
+            margin-left: 4px; padding: 1px 6px;
+            border-radius: 4px;
+            background: #ffedd5; color: #9a3412;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.03em;
+            border: 1px solid #fdba74;
+            cursor: help;
+            white-space: nowrap;
+        }
+        .powerplay-badge {
+            display: inline-flex; align-items: center;
+            margin-left: 4px; padding: 1px 6px;
+            border-radius: 4px;
+            background: #fef3c7; color: #92400e;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.03em;
+            border: 1px solid #fcd34d;
+            cursor: help;
+            white-space: nowrap;
+        }
+        /* Final-week urgency: red theme when ≤7 days left on the EOI. */
+        .powerplay-badge.urgent {
+            background: #fee2e2; color: #991b1b;
+            border-color: #fca5a5;
+            animation: powerplay-pulse 2s ease-in-out infinite;
+        }
+        .powerplay-callout.urgent {
+            background: linear-gradient(90deg, rgba(248, 113, 113, 0.18) 0%, rgba(248, 113, 113, 0.06) 60%, transparent 100%);
+            border-left-color: #dc2626;
+        }
+        .powerplay-callout.urgent .powerplay-eyebrow { color: #991b1b; }
+        .powerplay-callout.urgent .powerplay-headline strong { color: #b91c1c; }
+        .powerplay-callout.urgent .powerplay-deadline {
+            background: #fee2e2; padding: 1px 6px; border-radius: 3px;
+        }
+        @keyframes powerplay-pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.30); }
+            50%      { box-shadow: 0 0 0 4px rgba(220, 38, 38, 0); }
+        }
+        .powerplay-callout {
+            position: relative;
+            margin: 6px 0 12px;
+            padding: 10px 12px 10px 14px;
+            background: linear-gradient(90deg, rgba(252, 211, 77, 0.18) 0%, rgba(252, 211, 77, 0.06) 60%, transparent 100%);
+            border-left: 3px solid #f59e0b;
+            border-radius: 0 6px 6px 0;
+            line-height: 1.4;
+        }
+        .powerplay-eyebrow {
+            display: block;
+            font-size: 10px; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            color: #92400e;
+            margin-bottom: 2px;
+        }
+        .powerplay-headline {
+            display: block;
+            font-size: 14px; font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.01em;
+            margin-bottom: 4px;
+        }
+        .powerplay-headline strong { color: #ca8a04; }
+        .powerplay-body {
+            display: block;
+            font-size: 12px; color: var(--ink-muted);
+        }
+        .powerplay-body a { color: #b45309; text-decoration: underline; }
+        .powerplay-deadline {
+            display: inline-block;
+            font-family: ui-monospace, Menlo, monospace;
+            font-weight: 700; color: #b91c1c;
         }
         .signal-block {
             border: 1px solid; border-radius: 6px;
@@ -364,7 +679,7 @@
            the eye picks each one up at a glance. */
         .daily-picks {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
             margin: 10px 0 14px;
         }
@@ -1285,6 +1600,39 @@
             font-size: 12px; color: var(--ink-mute2);
             font-variant-numeric: tabular-nums;
         }
+        /* Inline $ total — sits flush with search/saved/broader-set
+           controls in the actions row. Replaces the old money-hero
+           billboard + magazine title block (stripped 2026-05-09).
+           Big enough to anchor the eye, but doesn't dominate the row. */
+        .actions-total {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--cot-green);
+            letter-spacing: -0.02em;
+            line-height: 1;
+            cursor: help;
+            margin-right: auto;       /* pushes search/saved/toggle to the right */
+            white-space: nowrap;
+        }
+        .actions-total:empty { display: none; }
+        /* Small label next to the big $ — tells the dev what the figure
+           represents at a glance. Tooltip carries the full Bill 185 /
+           HST-GST nuance. */
+        .actions-total-tag {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink-muted);
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        @media (max-width: 640px) {
+            .actions-total { font-size: 18px; }
+            .actions-total-tag { font-size: 9px; }
+        }
         @media (max-width: 640px) {
             .magazine-header { padding: 4px 4px 8px; gap: 8px; flex-wrap: wrap; }
             .magazine-title { font-size: 16px; }
@@ -1341,25 +1689,28 @@
                 104px                 /* Lot */
                 120px                 /* Existing (footprint + storeys) */
                 64px                  /* Built */
-                76px                  /* Subway */
+                108px                 /* TTC — fits "Streetcar 50m" / "Subway 1.2km" without truncation */
                 76px                  /* Sixplex */
                 88px                  /* Permits — fits "Nbhd permits" without wrap */
-                72px;                 /* Trees — bumped from 60px so right-aligned values clear the cell padding */
-                /* SAVED $ column removed 2026-05-08 — derivable from maxUnits
-                   + sixplex eligibility ($200K DC waiver + $25K × maxUnits
-                   parking elimination per Bill 185). Per-pick number is in
-                   the detail panel's Financial Upside section; cohort
-                   aggregate stays prominent in the money hero. */
+                72px                  /* Trees — bumped from 60px so right-aligned values clear the cell padding */
+                88px;                 /* $ Saved — Bill 185 stack ($200K DC + $25K × max units parking) */
+                /* $ Saved column moved to last position 2026-05-09 (was
+                   between Permits and Trees). Money cell anchors the right
+                   edge of the row visually. Trees stays centered via its
+                   data-col selector below. */
             align-items: stretch;
         }
         .pick-header {
             background: #d8dde4;
             border-top: 1px solid var(--rule-strong);
             border-bottom: 1px solid var(--rule-strong);
-            position: sticky; top: 0; z-index: 5;
-            /* 2026-05-08 — no inner scrollbar to compensate for. The header
-               and rows share full content width; sticky pins to the page
-               scroll. */
+            /* Sticky offset = PowerPlay banner height. ~38px desktop / 56px
+               mobile when banner wraps. After May 31 2026 the banner
+               auto-hides and these stack onto top:0 anyway. */
+            position: sticky; top: 38px; z-index: 5;
+        }
+        @media (max-width: 640px) {
+            .pick-header { top: 56px; }
         }
         .pick-header > * {
             padding: 6px 8px;
@@ -1368,11 +1719,11 @@
             color: var(--ink-muted);
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             border-right: 1px solid #c8ced6;
-            text-align: right;
+            text-align: center;
             line-height: 1.15;
             white-space: normal;
             word-break: normal;
-            display: flex; align-items: center; justify-content: flex-end;
+            display: flex; align-items: center; justify-content: center;
         }
         .pick-header > *:last-child { border-right: 0; }
         .pick-header .header-addr-label,
@@ -1432,10 +1783,10 @@
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             font-variant-numeric: tabular-nums;
             border-right: 1px solid var(--rule);
-            text-align: right;
+            text-align: center;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             min-width: 0;
-            display: flex; align-items: center; justify-content: flex-end;
+            display: flex; align-items: center; justify-content: center;
         }
         .pick > *:last-child { border-right: 0; }
         /* Trees column: center-justify both the header label and the row
@@ -1444,8 +1795,12 @@
            the cell border. Selector uses descendant (not >) because the
            trees cell sits inside .stats-row in the DOM (display:contents
            flattens it visually into the .pick grid). */
+        /* Trees + $ Saved columns: centered. 2026-05-09 — both columns now
+           centered so the rightmost columns visually balance the row. */
         .pick [data-col="trees"],
-        .pick-header > *:last-child {
+        .pick [data-col="savings"],
+        .pick-header > [data-sort="trees"],
+        .pick-header > [data-sort="savings"] {
             text-align: center !important;
             justify-content: center !important;
         }
@@ -1546,30 +1901,126 @@
            leaving collision between Permits / Trees / Saved $ headers.
            Each row becomes a self-contained card: address top-row, 2-col
            stat grid below, savings line at bottom. No inner scroll. */
+        /* ─────────────────────────────────────────────────────────────
+           MOBILE CARDS (2026-05-10 datasheet redesign)
+
+           Per-row card ≈70-90px tall: address line + neighborhood line +
+           one or two flex-wrapped stat lines. Reads like a spreadsheet
+           row. No tiles, no big white space, every label-value pair
+           inline with mono numerals + tiny uppercase labels.
+           ───────────────────────────────────────────────────────────── */
         @media (max-width: 1080px) {
             .pick-list {
                 max-height: none !important;
                 min-height: 0 !important;
                 overflow-y: visible !important;
+                gap: 6px;
+                padding: 6px 4px 24px;
+                display: flex;
+                flex-direction: column;
             }
-            .pick-header { display: none; }
+            /* Mobile sort pills — restyle the desktop pick-header as a
+               horizontal pill row. Same DOM, same data-sort handlers,
+               same wiring as desktop. Hide the columns whose sort isn't
+               useful for triaging deals on a phone (address / existing /
+               subway-as-its-own / permits / trees), keep the 5 the dev
+               most often re-sorts by: Hot · → Units · Lot · Built · $ Saved.
+               Default sort (confidence) is implicit — third click on any
+               active pill cycles back to it. */
+            .pick-header {
+                display: flex !important;
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 8px 6px 6px;
+                background: transparent;
+                border: 0;
+                position: static;
+                z-index: auto;
+            }
+            .pick-header::before {
+                content: 'Sort';
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--ink-mute2);
+                align-self: center;
+                margin-right: 2px;
+                font-family: 'Inter', system-ui, sans-serif;
+            }
+            .pick-header .col-btn {
+                display: inline-flex;
+                align-items: center;
+                padding: 5px 11px;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                border: 1px solid var(--rule);
+                border-radius: 999px;
+                background: var(--surface);
+                color: var(--ink-muted);
+                cursor: pointer;
+                white-space: nowrap;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            }
+            .pick-header .col-btn:active { background: var(--tor-blue-soft); }
+            .pick-header .col-btn.sort-active {
+                background: var(--tor-blue);
+                color: var(--surface);
+                border-color: var(--tor-blue);
+            }
+            .pick-header .col-btn.sort-active::after {
+                content: ' ↓';
+                font-size: 9px;
+            }
+            .pick-header .col-btn.sort-active.sort-reversed::after {
+                content: ' ↑';
+            }
+            /* Hide the columns that don't make sense as mobile sort pills */
+            .pick-header .col-btn[data-sort="address"],
+            .pick-header .col-btn[data-sort="footprint"],
+            .pick-header .col-btn[data-sort="subway"],
+            .pick-header .col-btn[data-sort="permits_nb"],
+            .pick-header .col-btn[data-sort="trees"] {
+                display: none;
+            }
+            /* 2026-05-10 — kill all filter/preset/CTA UI on mobile.
+               Mobile = strict subset of the desktop, no extra "tap to
+               filter" surfaces. Header search + ☆ saved + ↓ broader
+               toggles stay inline in the actions row; everything else
+               (daily-picks strip, end-of-list CTA, hidden chip stub) is
+               banished. User direction: same functions as desktop or
+               fewer, never more. */
+            #daily-picks { display: none !important; }
+            #picks-end-cta { display: none !important; }
+            #chips { display: none !important; }
+
             .pick {
-                /* Mobile card layout 2026-05-06: dropped the leading 64px
-                   "nz" column when the Score number left the wire-display.
-                   2026-05-07: star moved inline with .addr (inside .head),
-                   so the header row is now a single full-width cell. */
-                grid-template-columns: 1fr;
-                grid-template-areas:
-                    "head"
-                    "cells"
-                    "stack";
-                row-gap: 6px;
-                padding: 12px 14px;
-                align-items: start;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                padding: 8px 12px;
+                background: var(--surface) !important;
+                border: 1px solid var(--rule);
+                border-radius: 6px;
+                box-shadow: none;
                 width: auto;
                 max-width: 100%;
-                margin-left: 0;
-                margin-right: 0;
+                margin: 0;
+                cursor: pointer;
+                scroll-margin-top: 64px;
+                grid-template-columns: none !important;
+                grid-template-areas: none !important;
+            }
+            .pick:active {
+                background: var(--tor-blue-soft) !important;
+                transition: background 0.08s ease;
+            }
+            .pick.pick-hot {
+                background: var(--surface) !important;
+                border-left: 3px solid #fb923c;
+                padding-left: 9px;
             }
             .pick > * {
                 border-right: 0 !important;
@@ -1579,48 +2030,125 @@
                 white-space: normal;
                 overflow: visible;
                 text-overflow: clip;
+                display: block;
             }
-            .pick > .head { grid-area: head; padding: 0 4px; }
-            .pick > .stack-mini {
-                grid-area: stack; padding: 4px 8px;
-                font-size: 12px;
-            }
-            /* On mobile, .stats-row stops being display:contents and becomes
-               a 2-col grid INSIDE the "cells" area. Each cell shows its
-               label-value pair as a labeled row. */
-            .pick .stats-row {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 4px 14px;
-                grid-area: cells;
-                align-items: stretch;
-            }
-            .pick .stats-row .cell {
-                /* Drop the desktop right-aligned numeric treatment — on
-                   mobile the cell becomes a label · value pair. */
+
+            /* ── HEADER ── address (bold) on top, neighborhood compact below */
+            .pick > .head {
+                padding: 0;
+                gap: 0;
                 display: flex;
-                justify-content: space-between;
-                align-items: baseline;
-                padding: 5px 4px;
-                border: 0;
-                border-bottom: 1px dotted var(--rule);
-                font-size: 13px;
-                white-space: nowrap;
+                flex-direction: column;
             }
-            .pick .stats-row .cell::before {
-                content: attr(data-col);
+            .pick > .head .head-row {
+                display: flex;
+                align-items: baseline;
+                gap: 6px;
+            }
+            .pick > .head .addr {
+                font-size: 14px;
+                font-weight: 700;
+                letter-spacing: -0.005em;
+                color: var(--ink);
+                line-height: 1.25;
+                flex: 1;
+                white-space: normal;
+                overflow: visible;
+            }
+            .pick > .head .star {
+                flex-shrink: 0;
+                font-size: 16px;
+                padding: 0 2px;
+                line-height: 1.2;
+            }
+            .pick > .head .meta {
                 font-size: 11px;
+                color: var(--ink-muted);
+                margin-top: 0;
+                font-weight: 500;
+            }
+
+            /* ── DATASHEET STATS ── 3×3 fixed grid. Every card has the
+               IDENTICAL layout, so scanning down the list compares
+               apples-to-apples: Hot is always top-left, Saved is always
+               bottom-right, etc. Stacked label-on-top + value-below per
+               cell so the columns line up cleanly even with varied
+               content widths. */
+            .pick > .stats-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                grid-auto-rows: auto;
+                gap: 6px 10px;
+                margin-top: 4px;
+                align-items: start;
+            }
+            .pick > .stats-row .cell {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1px;
+                padding: 0;
+                border: 0;
+                font-size: 13px;
+                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                font-variant-numeric: tabular-nums;
+                white-space: nowrap;
+                color: var(--ink);
+                line-height: 1.2;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
+            }
+            .pick > .stats-row .cell::before {
+                font-family: 'Inter', system-ui, sans-serif;
+                font-size: 9px;
                 font-weight: 700;
                 text-transform: uppercase;
-                letter-spacing: 0.04em;
+                letter-spacing: 0.06em;
                 color: var(--ink-mute2);
-                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+                line-height: 1.1;
             }
+            /* Labels */
+            .pick .stats-row [data-col="activity"]::before  { content: 'Hot'; }
+            .pick .stats-row [data-col="sixplex"]::before   { content: 'Units'; }
+            .pick .stats-row [data-col="lot"]::before       { content: 'Lot m²'; }
+            .pick .stats-row [data-col="footprint"]::before { content: 'Existing'; }
+            .pick .stats-row [data-col="built"]::before     { content: 'Built'; }
+            .pick .stats-row [data-col="subway"]::before    { content: 'TTC'; }
+            .pick .stats-row [data-col="permits"]::before   { content: 'Permits'; }
+            .pick .stats-row [data-col="trees"]::before     { content: 'Trees'; }
+            .pick .stats-row [data-col="savings"]::before   { content: 'Saved'; }
+            /* Explicit grid placement — same metric in same spot every
+               row. Hidden cells (val-no) keep their slot empty so the
+               other columns stay aligned. */
+            .pick .stats-row [data-col="activity"]  { grid-column: 1; grid-row: 1; }
+            .pick .stats-row [data-col="sixplex"]   { grid-column: 2; grid-row: 1; }
+            .pick .stats-row [data-col="lot"]       { grid-column: 3; grid-row: 1; }
+            .pick .stats-row [data-col="footprint"] { grid-column: 1; grid-row: 2; }
+            .pick .stats-row [data-col="built"]     { grid-column: 2; grid-row: 2; }
+            .pick .stats-row [data-col="subway"]    { grid-column: 3; grid-row: 2; }
+            .pick .stats-row [data-col="permits"]   { grid-column: 1; grid-row: 3; }
+            .pick .stats-row [data-col="trees"]     { grid-column: 2; grid-row: 3; }
+            .pick .stats-row [data-col="savings"]   { grid-column: 3; grid-row: 3; }
+            /* Color-popped values for the deal-relevant trio */
+            .pick .stats-row [data-col="sixplex"]  { font-weight: 700; }
+            .pick .stats-row [data-col="savings"]  { font-weight: 700; color: #15803d; }
+            .pick .stats-row [data-col="activity"].cell-hot {
+                color: #b45309; font-weight: 700;
+            }
+            /* Empty hot slot still occupies grid-column 1 row 1 — render
+               the dash inline so the column position is preserved (no
+               dropouts in the alignment grid as the user scrolls). */
+            .pick .stats-row [data-col="activity"].val-no { color: var(--ink-mute2); opacity: 0.6; }
+            .pick .stats-row [data-col="trees"].val-no { opacity: 0.4; }
         }
+        /* ── EXTRA-NARROW VIEWPORTS (≤540px) ── tighten further */
         @media (max-width: 540px) {
-            .pick {
-                grid-template-columns: 1fr;
-            }
+            .pick { padding: 7px 10px; }
+            .pick > .head .addr { font-size: 13.5px; }
+            .pick > .stats-row .cell { font-size: 11.5px; }
+            .pick > .stats-row .cell::before { font-size: 8.5px; }
+            .pick > .stats-row { gap: 2px 10px; }
         }
         /* Mobile cells wrapper — used only when the row needs to wrap stats
            into a 2-col grid below the address. JS adds .cells-mobile wrapper
@@ -1721,6 +2249,34 @@
             transition: all 0.12s ease;
         }
         .detail-maps:hover { background: rgba(10, 76, 168, 0.18); }
+        /* Save-to-watchlist toggle in the detail-panel header. Matches
+           the existing chip-style action buttons (Map / Nearby / Print)
+           in shape and height; amber when toggled on, neutral otherwise.
+           Same `toggleWatched` API the row-inline ★ uses. */
+        .detail-save {
+            height: 32px; flex-shrink: 0;
+            padding: 0 12px;
+            border: none; background: rgba(245, 158, 11, 0.10);
+            border-radius: 8px; cursor: pointer; color: #b45309;
+            font-size: 13px; font-weight: 600; line-height: 1;
+            white-space: nowrap;
+            transition: all 0.12s ease;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .detail-save:hover { background: rgba(245, 158, 11, 0.20); }
+        .detail-save .detail-save-icon { font-size: 16px; line-height: 1; }
+        .detail-save[aria-pressed="true"] {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+        .detail-save[aria-pressed="true"]:hover { background: #d97706; }
+        .detail-save[aria-pressed="true"] .detail-save-icon::before { content: '★'; }
+        .detail-save[aria-pressed="false"] .detail-save-icon::before { content: '☆'; }
+        .detail-save .detail-save-icon { font-family: 'Inter', system-ui, sans-serif; }
+        /* Hide the textual default "☆" / "★" we ship in the markup so
+           the ::before-driven icon swap is the single source of truth. */
+        .detail-save .detail-save-icon { font-size: 0; }
+        .detail-save .detail-save-icon::before { font-size: 16px; }
         /* Print-only header — populated dynamically when the panel opens
            and shown only in the print stylesheet below. */
         .print-header { display: none; }
@@ -2254,61 +2810,42 @@
     </style>
 </head>
 <body>
-    <header class="px-6 py-4" style="background: var(--surface); border-bottom: 1px solid var(--rule);">
-        <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3">
+    <header class="px-6 py-3" style="background: var(--surface); border-bottom: 1px solid var(--rule);">
+        <!-- 2026-05-09: actions row (inline $ total, filter, ★ saved,
+             broader-set toggle) folded into the page header to save 1-2
+             lines of vertical space on desktop. Title + actions share one
+             horizontal line; subtitle ("Multiplex Opportunities · updated …")
+             stacks under the title block on the left.
+             Inner padding 18px aligns the title's left edge with the table's
+             PARCEL column content below: glass-card p-2 (8px) + cell padding
+             (10px) = 18px offset to match. Right edge similarly aligned. -->
+        <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3" style="padding-left:18px;padding-right:18px">
             <div>
                 <h1 class="text-2xl font-bold"><a href="./" class="gradient-text title-link" aria-label="Reload BloomTO">BloomTO</a></h1>
-                <p class="text-xs text-gray-600 mt-0.5">Surfacing Toronto's hottest sixplex &amp; multiplex opportunities — curated from 500K+ <a href="https://open.toronto.ca/" target="_blank" rel="noopener" class="map-link">City of Toronto Open Data</a> listings · updated <span id="last-updated">…</span></p>
+                <p class="text-xs text-gray-600 mt-0.5">Toronto Multiplex Picks · <span id="last-updated">…</span></p>
+            </div>
+            <div class="magazine-actions">
+                <span id="actions-total" class="actions-total" aria-live="polite" title="Stacked Bill 185 incentives across the currently-loaded set ($200K DC waiver + $25K × max units parking elimination per pick). HST + GST rebates excluded — they're sale-price-driven, not parcel-fixed."></span>
+                <input id="search" class="search-input search-input-compact"
+                       placeholder="Filter…" type="text"
+                       aria-label="Filter listings"
+                       title="Free-text filter — matches address, neighborhood, zone class, structure type, and keywords. Try: 'detached', 'vacant', 'sixplex', 'RM', 'corner', 'laneway', 'postwar', 'fast food', or any address / neighborhood fragment.">
+                <button id="saved-toggle" class="saved-toggle" type="button"
+                        aria-pressed="false"
+                        title="Toggle filter to your starred parcels. Star saved in this browser only.">
+                    <span class="saved-icon">☆</span>
+                    <span class="saved-count" hidden></span>
+                </button>
+                <button id="tier-toggle" class="tier-toggle" type="button" aria-pressed="false" disabled>
+                    <span class="tier-toggle-icon">↓</span>
+                    <span class="tier-toggle-label">Loading…</span>
+                </button>
             </div>
         </div>
     </header>
 
     <main class="max-w-7xl mx-auto px-6 pb-12 pt-4">
-        <!-- 2026-05-06 layout pivot: money hero is the first thing devs see.
-             Methodology / data pedigree / regulatory recency stripe / hero
-             stats moved to the page footer below the listings — devs who
-             want the metadata scroll for it; the first screen carries the
-             billion-dollar headline + the listings table only. -->
-        <div id="money-hero" class="money-hero money-hero-billboard" aria-live="polite">
-            <!-- populated by renderMoneyHero(). Subtitle reflects the count
-                 of permits filed recently (a freshness signal that survived
-                 the BloomTO-score rip-out — permit count is a city number). -->
-        </div>
         <section class="glass-card p-2 mb-4">
-            <!-- Magazine header — tight single-row layout 2026-05-08:
-                 title + dense subtitle on the left, actions (search,
-                 ★ saved, broader-set toggle) inline on the right. Bill 185
-                 stack-of-incentives copy lives in the money-hero billboard
-                 above; subtitle here just sets sixplex carve-out scope +
-                 the "target list" framing. -->
-            <div class="magazine-header">
-                <div class="magazine-title-wrap">
-                    <h2 class="magazine-title">Today's hot list — sixplex &amp; multiplex picks</h2>
-                    <div class="magazine-subtitle">
-                        <span id="subtitle-line">loading…</span>
-                    </div>
-                    <span class="magazine-count">
-                        <span id="list-count"></span>
-                        <span id="fresh-timestamp" style="margin-left:6px;color:var(--ink-mute2)"></span>
-                    </span>
-                </div>
-                <div class="magazine-actions">
-                    <input id="search" class="search-input search-input-compact"
-                           placeholder="Filter by address / neighborhood…" type="text"
-                           aria-label="Filter by address or neighborhood"
-                           title="Type a street, neighborhood, or address fragment to scope the list. Searches across the entire elite set, not just visible rows.">
-                    <button id="saved-toggle" class="saved-toggle" type="button"
-                            aria-pressed="false"
-                            title="Toggle filter to your starred parcels. Star saved in this browser only.">
-                        <span class="saved-icon">☆</span>
-                        <span class="saved-count" hidden></span>
-                    </button>
-                    <button id="tier-toggle" class="tier-toggle" type="button" aria-pressed="false" disabled>
-                        <span class="tier-toggle-icon">↓</span>
-                        <span class="tier-toggle-label">Loading…</span>
-                    </button>
-                </div>
-            </div>
             <!-- Hidden chip container — the predicate registry still lives
                  in `PRESETS`; we keep an empty DOM stub so renderChips() is
                  safe to call (it short-circuits when there are no
@@ -2320,11 +2857,12 @@
                  nearby-bar (set by the "Search nearby 500m" button on the
                  detail panel). Hidden when empty. -->
             <div id="stats" class="listings-stats" hidden></div>
-            <!-- Freshness banner — surfaces what new owner-activity
-                 signals landed since your last visit. Populated by
-                 renderFreshnessBanner() each render; hidden when nothing
-                 changed or on first-ever visit. -->
-            <div id="freshness-banner" class="freshness-banner" hidden></div>
+            <!-- 2026-05-09: freshness-banner stub removed at user request
+                 (empty green bar above the daily-picks cards). The fresh-
+                 ness signal still surfaces inline on each row via the Hot
+                 column + signal badges; the standalone banner was
+                 redundant. renderFreshnessBanner() guards on missing
+                 element and no-ops. -->
             <!-- Daily picks strip — two real-signal cards (newest +
                  underdog) above the listings. Hottest dropped 2026-05-08:
                  default sort is activity desc so row #1 IS the hottest
@@ -2332,16 +2870,31 @@
                  dopamine inline. Populated by renderDailyPicksStrip();
                  hidden when neither slot has a qualifying parcel. -->
             <div id="daily-picks" class="daily-picks" hidden></div>
+            <!-- PowerPlay banner — central announcement strip 2026-05-09.
+                 Most elite parcels (4-6 unit band) qualify, so a per-row
+                 badge was noise. Single banner with the headline + countdown
+                 + program link communicates the signal once; auto-hides
+                 after the May 31 2026 EOI deadline. Populated by
+                 renderPowerPlayBanner(). -->
+            <div id="powerplay-banner" hidden></div>
+            <!-- Weekly-delta strip 2026-05-09 — populated by
+                 renderWeeklyDelta(). Compares THIS rebuild's elite set
+                 to the prior rebuild (parcels-top-prev.json) for added
+                 picks; counts severance/demo/violation signals filed
+                 since the prior generatedAt. Hidden until both data
+                 fetches resolve. -->
+            <div id="weekly-delta" hidden></div>
             <div class="pick-header" id="pick-header" role="row">
                 <button class="col-btn header-addr-label" data-sort="address" title="Sort alphabetically by address">PARCEL</button>
                 <button class="col-btn" data-sort="activity" title="Days since the latest activity signal on this parcel — most-recent of (a) on-lot building permit, or (b) active CKAN signal (severance / demolition permit / property-standards violation, last 12 months). '—' if neither. Sort: freshest first. (Default sort.)">Hot</button>
                 <button class="col-btn" data-sort="area" title="Sort by lot area (largest first)">Lot (m²)</button>
                 <button class="col-btn" data-sort="footprint" title="Existing structure on the lot — footprint area (m²) and rough storey count (height ÷ 3, derived from 3D Massing). 'vacant' when no structure recorded. Sort: smallest footprint first.">Existing</button>
                 <button class="col-btn" data-sort="built" title="Sort by build year (oldest first)">Built</button>
-                <button class="col-btn" data-sort="subway" title="Sort by subway proximity (closest first)">Subway</button>
-                <button class="col-btn" data-sort="sixplex" title="Sixplex eligible — does this parcel qualify for as-of-right 6-plex? Yes only in T&EY District + Ward 23 (June 2025 carve-out). Sort: eligible first.">6-plex OK</button>
+                <button class="col-btn" data-sort="subway" title="Nearest higher-order TTC — subway (S) or streetcar (C). Sort by distance, closest first. Cell shows 'S 200m' / 'C 50m'. Bus excluded (most Toronto parcels are bus-close; bus distance doesn't move PSF comps the way subway/streetcar does — bus distance lives in the detail panel Site notes).">TTC</button>
+                <button class="col-btn" data-sort="units" title="Existing → max units. Existing = address points on parcel polygon (vacant = 0). Max = streamlined multiplex pathway target — 6 in T&amp;EY + Ward 23 (June 2025 sixplex carve-out), 4 citywide otherwise. '+' suffix means the underlying zone (FSI / RM / CR) supports MORE than that, but via Site Plan Approval (mid-rise pathway), not the streamlined multiplex by-law. Sort: highest max first.">→ Units</button>
                 <button class="col-btn" data-sort="permits_nb" title="Permit activity in this parcel's neighborhood over the last 5 years (sample size). Sort: most first.">Nbhd permits</button>
                 <button class="col-btn" data-sort="trees" title="Sort by mature tree count (most first)">Trees</button>
+                <button class="col-btn" data-sort="savings" title="Stacked Bill 185 incentives per pick — $200K DC waiver + $25K × max units parking elimination. ≤6 units only (the streamlined multiplex pathway). HST/GST rebates not stacked here — they're sale-price-driven, so the dev's pro forma carries them separately. Sort: highest stack first.">$ Saved</button>
             </div>
             <div id="picks" class="pick-list"></div>
         </section>
@@ -2436,11 +2989,25 @@
             </div>
             <div class="footer-section">
                 <span class="footer-label">Default sort:</span>
-                <strong>Hot</strong> — freshest activity signal first (most-recent of an on-lot building permit or active CKAN signal: severance application, demolition permit, or property-standards / unsafe / stop-work order). Signal window: CKAN signals last 12 months · on-lot permits last 5 years. Ties broken by lot area (largest first). Click any column header to re-sort.
+                <strong>Confidence × Activity</strong> — bulletproof picks first (detached + permit/OSM-verified structure + exactly 1 registered municipal address on the parcel polygon), then vacant + address-points-confirmed picks, then heuristic-classifier picks. Within each tier, freshest activity signal first (most-recent of an on-lot building permit or active CKAN signal: severance application, demolition permit, or property-standards order). Final tie-breaker: largest lot. Click any column header to re-sort.
             </div>
             <p class="footer-section footer-meta" id="provenance"></p>
         </footer>
     </main>
+
+    <!-- Site-note info popup. Tap any Site notes tile in the detail
+         panel → this dialog opens with the by-law / Act / regulation
+         rationale. Mobile-first: title-attr tooltips don't render on
+         touch devices, so this gives mobile users access to the same
+         legal-citation context desktop hovers get. -->
+    <dialog id="site-note-dialog" aria-labelledby="snd-label">
+        <button type="button" class="snd-close" id="snd-close" aria-label="Close">&times;</button>
+        <div class="snd-head">
+            <span class="snd-label" id="snd-label">…</span>
+            <span class="snd-val" id="snd-val">…</span>
+        </div>
+        <div class="snd-body" id="snd-body">…</div>
+    </dialog>
 
     <div id="detail-overlay"></div>
     <aside id="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden>
@@ -2457,9 +3024,12 @@
                 <h2 id="detail-title">—</h2>
                 <div class="nb" id="detail-nb">—</div>
             </div>
-            <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">🗺 Map</a>
-            <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">📍 Nearby</button>
-            <button class="detail-print" id="detail-print" type="button" aria-label="Print" title="Open the print dialog and choose 'Save as PDF' to keep this parcel as a one-page deal doc.">🖨 Print</button>
+            <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">Map</a>
+            <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">Nearby</button>
+            <button class="detail-print" id="detail-print" type="button" aria-label="Print" title="Open the print dialog and choose 'Save as PDF' to keep this parcel as a one-page deal doc.">Print</button>
+            <button class="detail-save" id="detail-save" type="button" aria-pressed="false" aria-label="Save to watchlist" title="Save this parcel to your watchlist (browser-local). Toggle the ★ Saved chip in the page header to filter the listings to your saved set.">
+                <span class="detail-save-icon">☆</span><span class="detail-save-label">Save</span>
+            </button>
             <button class="detail-close" id="detail-close" aria-label="Close detail panel">✕</button>
         </div>
         <div class="detail-body" id="detail-body"></div>
@@ -2722,6 +3292,84 @@
             // city's authoritative tagging instead of a coverage heuristic.
             // Pattern 3: addressed mall/plaza
             if (addressed && PLAZA_ZONES.has(r.zoneClass) && area > PLAZA_AREA_M2) return true;
+            // Pattern 7 (added 2026-05-09): STRICT zone filter. Only
+            // residential-family zones (R / RD / RS / RT / RM) qualify
+            // for the "logical residential rebuild" cohort. CR / CRE /
+            // RAC / RA / CL / OR / E / I are commercial / mid-rise /
+            // employment / institutional and produce false positives
+            // (mainstreet retail, apartment-above-retail, gas stations,
+            // industrial yards). User direction 2026-05-09: no commercial
+            // holdovers, no parks, no liquor stores — only logical
+            // residential rebuilds that are legal. Drops ~15 CR-zoned
+            // parcels from current elite (Cabbagetown / Danforth / Bloor
+            // mainstreets).
+            const RESIDENTIAL_ZONES = ['R', 'RD', 'RS', 'RT', 'RM'];
+            if (r.zoneClass && !RESIDENTIAL_ZONES.includes(r.zoneClass)) return true;
+            // Pattern 8 (added 2026-05-09): commercial-holdover hard
+            // exclude — when the OSM amenity tag identifies the parcel
+            // as fast food / restaurant / cafe / bar / pub / bank /
+            // pharmacy / post office, drop it. The "buy out the lease"
+            // teardown reframe was nice in theory; in practice the dev
+            // wants logical residential parcels only.
+            if (r.osmAmenityType) return true;
+            // Pattern 9 (added 2026-05-09): classifier-sourced "detached"
+            // on low coverage (< 10%) — 158 Dufferin St case. Industrial
+            // yards, derelict sheds, and back-lot residues that the side-
+            // yard classifier guessed as "detached" because the structure
+            // has clear surrounding space.
+            if (r.existingStructureSource === 'classifier'
+                && r.existingStructureType === 'detached'
+                && cover > 0 && cover < 0.10) return true;
+            // Pattern 10b (added 2026-05-10): commercial-holdover signature
+            // pre-rebuild — classifier-sourced "detached" + ≤7m height +
+            // high-FSI residential zone (d≥1.0). 505 Jarvis A&W case: a
+            // 1-storey commercial pad on R(d2.0) zoning that the OSM
+            // amenity filter will catch post-rebuild via osmAmenityType.
+            // Until the rebuild lands, this geometric signature substitutes:
+            // a real R-zoned SFH on a high-FSI lot wouldn't be classifier-
+            // sourced AND 1-storey AND mostly-empty. Catches 7 of 258
+            // (~2.7%), 5 of which are also caught by other gates (defense
+            // in depth). Removable post-rebuild once osmAmenityType
+            // populates.
+            const _zfsi_holdover = (() => {
+                if (r.zoneFsi != null) return r.zoneFsi;
+                if (!r.zoneString) return null;
+                const m = String(r.zoneString).match(/d\s*(\d+(?:\.\d+)?)/);
+                return m ? parseFloat(m[1]) : null;
+            })();
+            if (r.existingStructureSource === 'classifier'
+                && r.existingStructureType === 'detached'
+                && r.existingMaxBuildingHeightM != null
+                && r.existingMaxBuildingHeightM > 0
+                && r.existingMaxBuildingHeightM <= 7
+                && _zfsi_holdover != null
+                && _zfsi_holdover >= 1.0) {
+                return true;
+            }
+            // Pattern 10 (added 2026-05-09): implied-FSI vs zone-FSI
+            // mismatch — 1 Leonard Crcl case. A 17.8m / 5-6 storey
+            // building on an RD-zoned d=0.35 FSI cap = ~1.2 implied FSI =
+            // 3.4× the zone cap. That's a non-conforming apartment tagged
+            // as "detached" in stale permit data, not an SFH. Threshold
+            // 2× zone FSI leaves headroom for legit pre-WW2 stock that
+            // mildly exceeds modern setbacks.
+            const _h = r.existingMaxBuildingHeightM;
+            // zoneFsi often comes through null on the wire even when the
+            // zoneString carries the d= density value (e.g. "RD (f10.0;
+            // d0.35)"). Regex-extract as a fallback so the gate fires.
+            let _zfsi = r.zoneFsi;
+            if (_zfsi == null && r.zoneString) {
+                const _m = String(r.zoneString).match(/d\s*(\d+(?:\.\d+)?)/);
+                if (_m) _zfsi = parseFloat(_m[1]);
+            }
+            const _lot = r.lotAreaM2 || 0;
+            if (_h != null && _h > 5 && cover > 0 && _lot > 0
+                    && _zfsi != null && _zfsi > 0) {
+                const _storeys = Math.max(1, Math.round(_h / 3));
+                // Implied FSI = floor area / lot area = cover × storeys.
+                const _impliedFsi = cover * _storeys;
+                if (_impliedFsi > 3.0 * _zfsi) return true;
+            }
             // Patterns 1 & 2 require unaddressed
             if (addressed) return false;
             if (area > INSTITUTIONAL_AREA_M2 && cover < INSTITUTIONAL_MAX_COVER_LARGE) return true;
@@ -2738,7 +3386,12 @@
 
         // Sort + bounds-restrict state. Sort drives picks-list order; bounds
         // restricts to the current map viewport (live update on pan/zoom).
-        let sortBy = 'activity';   // Default: freshest signal first; ties broken by lot area DESC
+        // Default sort 2026-05-09 — confidence tier, then activity, then
+        // lot area. Bulletproof picks (permit/OSM + AP=1) at top, fading
+        // to lower-confidence tiers below. Within tier: freshest first.
+        // Devs see the gold-mine rows up front; the noise sinks. They can
+        // still re-sort by clicking any column header.
+        let sortBy = 'confidence';
         // Direction relative to each comparator's natural order. 'natural' is
         // what the comparator returns (already encodes "biggest first" or
         // "closest first" depending on the column's semantic). 'reversed'
@@ -2795,7 +3448,14 @@
             // fall through to the freshest-activity signal so identically-sized
             // parcels still surface the more interesting one.
             area:          (a, b) => ((b.lotAreaM2 || 0) - (a.lotAreaM2 || 0)) || ((latestActivityDays(a) ?? 1e9) - (latestActivityDays(b) ?? 1e9)),
-            subway:        (a, b) => ((a.distSubwayM ?? 1e9) - (b.distSubwayM ?? 1e9)) || _tieByLotDesc(a, b),
+            subway:        (a, b) => {
+                // 2026-05-09: column relabeled "TTC" + cell shows
+                // min(subway, streetcar) with mode prefix. Sort follows
+                // the cell display — nearest higher-order TTC.
+                const aMin = Math.min(a.distSubwayM ?? 1e9, a.distStreetcarM ?? 1e9);
+                const bMin = Math.min(b.distSubwayM ?? 1e9, b.distStreetcarM ?? 1e9);
+                return (aMin - bMin) || _tieByLotDesc(a, b);
+            },
             streetcar:     (a, b) => ((a.distStreetcarM ?? 1e9) - (b.distStreetcarM ?? 1e9)) || _tieByLotDesc(a, b),
             bus:           (a, b) => ((a.distBusM ?? 1e9) - (b.distBusM ?? 1e9)) || _tieByLotDesc(a, b),
             bike:          (a, b) => ((a.distBikeLaneM ?? 1e9) - (b.distBikeLaneM ?? 1e9)) || _tieByLotDesc(a, b),
@@ -2826,6 +3486,35 @@
             nbhd_permit_rate: (a, b) => ((b.nbPermitsPer1kDwellings ?? 0) - (a.nbPermitsPer1kDwellings ?? 0)) || _tieByLotDesc(a, b),
             nbhd_value:       (a, b) => ((a.nbMedDwellingValue ?? 0) - (b.nbMedDwellingValue ?? 0)) || _tieByLotDesc(a, b),
             nbhd_income:      (a, b) => ((a.nbMedHouseholdIncome ?? 0) - (b.nbMedHouseholdIncome ?? 0)) || _tieByLotDesc(a, b),
+            // Confidence × activity composite (DEFAULT 2026-05-09). Devs scan
+            // for signal — show them the highest-confidence picks first,
+            // then break ties on activity recency. Confidence tier:
+            //   0 = bulletproof: detached + permit/osm source + AP=1
+            //       (city ground-truth + exactly-1-dwelling registered)
+            //   1 = vacant or address_points-sourced or AP=1 generally
+            //       (deterministic absence or AP confirmation)
+            //   2 = other detached (classifier with non-AP=1 confirmation)
+            //   3 = anything else (semi/row/unknown — only in broader tier)
+            // Within tier: freshest activity first, then lot area desc.
+            confidence: (a, b) => {
+                const tier = (r) => {
+                    const t = r.existingStructureType;
+                    const s = r.existingStructureSource;
+                    const ap = r.addressPointCount ?? 0;
+                    if (t === 'detached' && (s === 'permit' || s === 'osm') && ap === 1) return 0;
+                    if (t === 'vacant') return 1;
+                    if (s === 'address_points') return 1;
+                    if (ap === 1) return 1;
+                    if (t === 'detached') return 2;
+                    return 3;
+                };
+                const ta = tier(a), tb = tier(b);
+                if (ta !== tb) return ta - tb;
+                const da = latestActivityDays(a) ?? 1e9;
+                const db = latestActivityDays(b) ?? 1e9;
+                if (da !== db) return da - db;
+                return (b.lotAreaM2 || 0) - (a.lotAreaM2 || 0);
+            },
         };
         // neighborhood name → heatPump readiness % (from data/neighborhoods.json),
         // populated on boot. Used by the Rebate Rocket badge.
@@ -3277,17 +3966,17 @@
             const s = getSignals(r);
             if (!s) return '';
             const parts = [];
-            // Inline age tag — a fresh permit reads radically different
-            // from a 10-month-old one, but they look identical without it.
-            // The age suffix is the at-a-glance "is this hot?" cue.
+            // 2026-05-09: emojis + inline age tags both dropped from the
+            // PARCEL column. Days-since-signal is the Hot column's job
+            // (sortable). Tooltip keeps the full date+age context.
             if (s.severance) {
                 const sv = s.severance;
                 const desc = (sv.description || '').replace(/"/g, '&quot;').slice(0, 200);
                 const filed = sv.filedDate || '?';
                 const age = formatAge(sv.filedDate);
-                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
+                const ageNote = age ? ` (${age})` : '';
                 const lots = sv.lotsCreated ? ` · ${sv.lotsCreated} lots` : '';
-                parts.push(`<span class="signal-badge signal-severance" title="Severance application filed ${filed}${lots}. ${desc}">🔪 Severance${ageTag}</span>`);
+                parts.push(`<span class="signal-badge signal-severance" title="Severance application filed ${filed}${ageNote}${lots}. ${desc}">Severance</span>`);
             }
             if (s.demoPermit) {
                 const d = s.demoPermit;
@@ -3298,24 +3987,24 @@
                 // to application date when never issued.
                 const ageSrc = d.issuedDate || d.applicationDate;
                 const age = formatAge(ageSrc);
-                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
+                const ageNote = age ? ` (${age})` : '';
                 const status = d.status ? ` · ${d.status}` : '';
-                parts.push(`<span class="signal-badge signal-demo" title="Demolition permit ${date}${status}. ${desc}">🔨 Demo permit${ageTag}</span>`);
+                parts.push(`<span class="signal-badge signal-demo" title="Demolition permit ${date}${ageNote}${status}. ${desc}">Demo permit</span>`);
             }
             if (s.violation) {
                 const v = s.violation;
                 const desc = (v.description || '').replace(/"/g, '&quot;').slice(0, 200);
                 const date = v.filedDate || '?';
                 const age = formatAge(v.filedDate);
-                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
-                parts.push(`<span class="signal-badge signal-violation" title="${v.status || 'Violation'} filed ${date}. ${desc}">⚠ ${v.status || 'Violation'}${ageTag}</span>`);
+                const ageNote = age ? ` (${age})` : '';
+                parts.push(`<span class="signal-badge signal-violation" title="${v.status || 'Violation'} filed ${date}${ageNote}. ${desc}">${v.status || 'Violation'}</span>`);
             }
             if (s.prelimZoning) {
                 const z = s.prelimZoning;
                 const date = z.applicationDate || '?';
                 const age = formatAge(z.applicationDate);
-                const ageTag = age ? ` · <span class="signal-age">${age}</span>` : '';
-                parts.push(`<span class="signal-badge signal-pzr" title="Preliminary Zoning Review filed ${date}. Someone (owner / dev / broker) asked City Planning &quot;what can I build at this address&quot; — the earliest dev-interest signal we surface. Anonymous; no purpose field.">📋 Zoning inquiry${ageTag}</span>`);
+                const ageNote = age ? ` (${age})` : '';
+                parts.push(`<span class="signal-badge signal-pzr" title="Preliminary Zoning Review filed ${date}${ageNote}. Someone (owner / dev / broker) asked City Planning &quot;what can I build at this address&quot; — the earliest dev-interest signal we surface. Anonymous; no purpose field.">Zoning inquiry</span>`);
             }
             return parts.length ? ` <span class="signal-badges">${parts.join('')}</span>` : '';
         }
@@ -3419,10 +4108,12 @@
                         <div class="signal-block-desc">Someone — owner, broker, or another developer — asked City Planning what can be built at this address. Earliest possible dev-interest signal; identity is not disclosed.</div>
                     </div>`);
             }
+            // 2026-05-09: explanatory intro paragraph stripped at user
+            // request. The signal cards below speak for themselves; the
+            // section heading sets context.
             return `
                 <section>
                     <h4>Owner activity <span class="signal-section-tag">live · daily refresh</span></h4>
-                    <div class="signal-section-intro">CKAN-fresh signals address-joined to this parcel. Each is a publicly-filed City record signalling that the owner is doing something with the property right now — your highest-leverage prospecting moments.</div>
                     ${blocks.join('')}
                 </section>`;
         }
@@ -3626,6 +4317,13 @@
             if (onLot) candidates.push(onLot);
             const sigDate = _signalLatestDateForRow(r);
             if (sigDate) candidates.push(sigDate);
+            // Fresh CKAN permit (last 30 days) — fetched live, may be newer
+            // than the static `permitsRecentMostRecentDate` baked at ETL
+            // time. Folded in here so the Hot column carries it (instead
+            // of the parcel-column badge being the only place the user
+            // sees recency).
+            const fp = freshPermitsByKey.get(parcelKey(r));
+            if (fp && fp.applicationDate) candidates.push(fp.applicationDate);
             if (!candidates.length) return null;
             return candidates.reduce((a, b) => a > b ? a : b);
         }
@@ -3857,6 +4555,11 @@
             // surfaces the same dopamine inline on every row. Two-card strip:
             // NEWEST (delta the table can't show) + UNDERDOG (high-savings
             // pick ranked outside top 10).
+            // 2026-05-09: Underdog card dropped. After the strict zone
+            // filter (R-family only) trimmed the cohort, the underdog
+            // slot frequently went blank/greyed because there weren't
+            // enough parcels outside the top 10 to qualify. Two-card
+            // strip (LIVE + Newest) is always populated.
             const slotMeta = [
                 {
                     key: 'newest',
@@ -3865,14 +4568,6 @@
                     label: 'Newest',
                     fallback: 'No new cover-list entries this visit. Toronto Open Data refreshes daily — come back tomorrow.',
                     tip: 'Compares the current cover-list to a snapshot from your last visit (stored in your browser only). On a first-ever visit this slot falls back to the elite parcel with the freshest permit, so you always see the kind of signal this card tracks.',
-                },
-                {
-                    key: 'underdog',
-                    cls: 'pick-card-underdog',
-                    icon: '◆',
-                    label: 'Underdog',
-                    fallback: 'No high-savings parcel ranked outside the top 10.',
-                    tip: 'Highest stacked Bill 185 incentive total on a parcel ranked outside the top 10 by the current sort. The high-leverage deal hiding beneath the obvious frontrunners — same dollar incentives, lower visibility, less competition.',
                 },
             ];
 
@@ -3998,6 +4693,124 @@
             el.hidden = false;
         }
 
+        // ---- Toronto Hydro Multiplex PowerPlay pilot ----
+        // Verified 2026-05-09 against torontohydro.com: up to $50,000 per
+        // project for smart-load-management devices. Eligibility: 4-6 unit
+        // multiplex (M-postal codes excl. M0R/M7R), electrification load
+        // (heat pumps + EV chargers) that would otherwise need a 400A+
+        // service upgrade. Six winners selected. EOI deadline May 31 2026.
+        //
+        // Postal-code gate (M-prefix excl. M0R/M7R) effectively passes for
+        // all Toronto residential parcels in our cohort, so we don't gate
+        // on it client-side. Project-side criteria (electrification scope,
+        // 400A+ trigger) are the dev's call — we surface the parcel as a
+        // "candidate" for the program, not a guaranteed winner.
+        // ~Midnight Toronto time (EDT, UTC-4) on May 31 2026.
+        const POWERPLAY_DEADLINE_MS = Date.parse('2026-06-01T03:59:00-04:00');
+        function powerPlayActive() {
+            return Date.now() < POWERPLAY_DEADLINE_MS;
+        }
+        function _powerPlayDaysLeft() {
+            return Math.max(0, Math.ceil((POWERPLAY_DEADLINE_MS - Date.now()) / 86400000));
+        }
+        function powerPlayEligible(r) {
+            if (!powerPlayActive()) return false;
+            const u = r.maxUnits || 0;
+            // 4-6 unit band (the streamlined multiplex pathway). Sixplex-
+            // eligible parcels also qualify even when maxUnits<4 wouldn't
+            // (zoning may show a small zone cap but the carve-out unlocks 6).
+            return (u >= 4 && u <= 6) || r.sixplexEligible === true;
+        }
+        function powerPlayBadge(r) {
+            // 2026-05-09: per-row badge dropped. Most elite parcels (4-6
+            // unit band) qualify, so the badge was noise on every row.
+            // Replaced by the central renderPowerPlayBanner() strip
+            // above the listings. Function kept defensive (orphaned) in
+            // case a future use-case needs a per-row chip.
+            return '';
+        }
+        // Weekly-delta strip (added 2026-05-09). Surfaces what changed in
+        // the cohort since the prior rebuild — helps devs build a "fresh
+        // every Monday" expectation and spot the picks/signals that landed
+        // most recently. Computed entirely client-side from:
+        //   - parcels-top.json (current) vs parcels-top-prev.json (prior
+        //     rebuild's snapshot, archived by build_parcels_top.py)
+        //   - signals.json filedDate filtered by `prev.generatedAt` cutoff
+        // Hides when no prior snapshot is available (first-ever rebuild)
+        // or when there's nothing to report (no added picks AND no fresh
+        // signals since the cutoff).
+        function renderWeeklyDelta() {
+            const el = document.getElementById('weekly-delta');
+            if (!el) return;
+            const prev = window._prevTopSnapshot;
+            if (!prev || !prev.parcelIds || prev.parcelIds.size === 0) {
+                el.hidden = true; el.innerHTML = ''; return;
+            }
+            // Added picks since prior rebuild.
+            const currentIds = new Set((eliteRows || []).map(r => String(r.parcelId)));
+            let addedCount = 0;
+            for (const id of currentIds) if (!prev.parcelIds.has(id)) addedCount++;
+            // Fresh signals since prior rebuild's generatedAt. Defensive on
+            // missing date — fall back to no-signal-delta if we can't anchor.
+            const cutoffMs = prev.generatedAt ? Date.parse(prev.generatedAt) : NaN;
+            let sevN = 0, demoN = 0, violN = 0;
+            if (!isNaN(cutoffMs) && signalsByParcelId && signalsByParcelId.size > 0) {
+                for (const payload of signalsByParcelId.values()) {
+                    if (payload.severance && payload.severance.filedDate
+                            && Date.parse(payload.severance.filedDate) >= cutoffMs) {
+                        sevN++;
+                    }
+                    if (payload.demoPermit) {
+                        const d = payload.demoPermit.issuedDate || payload.demoPermit.applicationDate;
+                        if (d && Date.parse(d) >= cutoffMs) demoN++;
+                    }
+                    if (payload.violation && payload.violation.filedDate
+                            && Date.parse(payload.violation.filedDate) >= cutoffMs) {
+                        violN++;
+                    }
+                }
+            }
+            const totalSig = sevN + demoN + violN;
+            if (addedCount === 0 && totalSig === 0) {
+                el.hidden = true; el.innerHTML = ''; return;
+            }
+            const sinceTxt = prev.generatedAt
+                ? `since ${formatLastUpdated(prev.generatedAt) || prev.generatedAt.slice(0, 10)}`
+                : 'since last refresh';
+            const parts = [];
+            if (addedCount > 0) {
+                parts.push(`<strong>+${addedCount}</strong> pick${addedCount === 1 ? '' : 's'} added`);
+            }
+            if (totalSig > 0) {
+                const breakdown = [];
+                if (sevN > 0) breakdown.push(`${sevN} severance`);
+                if (demoN > 0) breakdown.push(`${demoN} demo`);
+                if (violN > 0) breakdown.push(`${violN} enforcement`);
+                parts.push(`<strong>${totalSig}</strong> new signal${totalSig === 1 ? '' : 's'} (${breakdown.join(' · ')})`);
+            }
+            el.className = 'weekly-delta';
+            el.innerHTML = `
+                <span class="weekly-delta-eyebrow">This week ${sinceTxt}</span>
+                <span class="weekly-delta-body">${parts.join(' · ')}</span>
+            `;
+            el.hidden = false;
+        }
+        function renderPowerPlayBanner() {
+            const el = document.getElementById('powerplay-banner');
+            if (!el) return;
+            if (!powerPlayActive()) { el.hidden = true; el.innerHTML = ''; return; }
+            const days = _powerPlayDaysLeft();
+            const urgent = days <= 7;
+            const dayWord = days === 1 ? 'day' : 'days';
+            el.className = `powerplay-banner${urgent ? ' urgent' : ''}`;
+            el.innerHTML = `
+                <span class="powerplay-banner-eyebrow">${urgent ? 'Final week · ' : ''}Toronto Hydro pilot</span>
+                <span class="powerplay-banner-headline"><strong>PowerPlay $50K</strong> for 4-6 unit multiplex with electrification (heat pump + EV chargers) — EOI <span class="powerplay-banner-deadline">May 31, 2026 (${days} ${dayWord} left)</span></span>
+                <a class="powerplay-banner-link" target="_blank" rel="noopener" href="https://www.torontohydro.com/contractors-and-developers/multiplex-powerplay-pilot-program">Program page ↗</a>
+            `;
+            el.hidden = false;
+        }
+
         // ---- 3. localStorage visit deltas ----
         const VISIT_KEY_LAST = 'bloomto:visit:lastSeenAt';
         const VISIT_KEY_TOP = 'bloomto:visit:topParcelKeys';
@@ -4045,11 +4858,37 @@
             const k = parcelKey(r);
             const fp = freshPermitsByKey.get(k);
             if (!fp) return '';
+            // Days dropped from the inline badge — Hot column (sortable) is
+            // the single home for recency. Cost stays because it's signal
+            // the Hot column doesn't carry. Tooltip keeps full context.
             const ago = fp.daysAgo === 0 ? 'today'
                       : fp.daysAgo === 1 ? '1d ago'
                       : `${fp.daysAgo}d ago`;
-            const cost = fp.declaredCost > 0 ? `· $${(fp.declaredCost/1000).toFixed(0)}K` : '';
-            return `<span class="fresh-permit-badge" title="Permit ${fp.permitNum || ''} filed ${fp.applicationDate} for ${fp.unitsCreated} unit(s). Type: ${fp.permitType}. Declared cost: $${(fp.declaredCost||0).toLocaleString()}.">🔥 ${ago} ${cost}</span>`;
+            const label = fp.declaredCost > 0
+                ? `Permit · $${(fp.declaredCost/1000).toFixed(0)}K`
+                : `Permit`;
+            return `<span class="fresh-permit-badge" title="Permit ${fp.permitNum || ''} filed ${fp.applicationDate} (${ago}) for ${fp.unitsCreated} unit(s). Type: ${fp.permitType}. Declared cost: $${(fp.declaredCost||0).toLocaleString()}. Recency surfaced in the Hot column.">${label}</span>`;
+        }
+        // OSM commercial-holdover badge (added 2026-05-09). Fires when the
+        // wire carries an `osmAmenityType` — a fast_food / restaurant / bank /
+        // pharmacy on what may be R-zoned land (505 Jarvis A&W case). Surfaced
+        // so the dev sees "this is a commercial holdover" before clicking
+        // through to Street View. NOT a hard exclusion — these are valid
+        // teardown candidates once the lease is bought out.
+        const _AMENITY_LABELS = {
+            fast_food: 'Fast food',
+            restaurant: 'Restaurant',
+            cafe: 'Cafe',
+            bar: 'Bar', pub: 'Pub',
+            bank: 'Bank',
+            pharmacy: 'Pharmacy',
+            post_office: 'Post office',
+        };
+        function amenityHoldoverBadge(r) {
+            const t = r.osmAmenityType;
+            if (!t) return '';
+            const label = _AMENITY_LABELS[t] || t;
+            return ` <span class="amenity-holdover-badge" title="OSM tags this parcel as a ${label.toLowerCase()} (commercial-holdover signal). The underlying zoning may permit residential — meaning this is a buy-out-the-lease teardown candidate, not a clean SFH play. Verify on Street View before underwriting.">${label}</span>`;
         }
         function semiBadge(r) {
             // Inline warn-orange chip on broader-tier rows where the parcel's
@@ -4073,7 +4912,7 @@
             if (t !== 'detached') return '';
             if (s !== 'permit' && s !== 'osm') return '';
             if (ap !== 1) return '';
-            return `<span class="true-detached-badge" title="Bulletproof detached: city permit/OSM record + Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite. The dev's gold-mine row.">✓ DETACHED</span>`;
+            return `<span class="true-detached-badge" title="Bulletproof detached: city permit/OSM record + Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite. The dev's gold-mine row.">DETACHED</span>`;
         }
         // "Multi-unit" — parcel polygon contains ≥2 distinct municipal address
         // points. Often signals a registered basement suite, laneway suite,
@@ -4310,6 +5149,122 @@
             const addr = r.address || '';
             const cover = r.buildingCoverageRatio;
             const solar = r.solarScore;
+            // _cov hoisted to top — used by multiple geometry-suspicion
+            // heuristics below (low-cov, back-lot, height-spillover). Was
+            // declared mid-function and broke the click handler when an
+            // earlier heuristic referenced it before declaration (TDZ).
+            const _cov = cover ?? 0;
+            // OSM commercial-holdover surfacing (added 2026-05-09). When the
+            // wire carries `osmAmenityType`, the OSM building polygon on this
+            // parcel is tagged as a fast-food / restaurant / bank / pharmacy
+            // / etc — the 505 Jarvis A&W case. R-zoned land + commercial
+            // holdover = valid teardown play once the lease is bought out, so
+            // it's a CAUTION (verify on Street View, factor lease buyout into
+            // pro forma), not a hard reject.
+            if (r.osmAmenityType) {
+                const _amLabel = _AMENITY_LABELS[r.osmAmenityType] || r.osmAmenityType;
+                out.push({
+                    kind: 'caution',
+                    text: `Currently a ${_amLabel.toLowerCase()} (OSM commercial-holdover) — buy out the lease before underwriting a teardown. Verify on Street View; the lot may still be R-zoned residential underneath.`,
+                });
+            }
+            // CR-zone classifier-detached pattern (581 Parliament St case,
+            // 2026-05-09). CR / CRE / RAC / RA / CL zones are commercial-
+            // residential / mid-rise — typically mainstreet retail with
+            // apartment-above, NOT detached SFHs. Classifier-sourced
+            // "detached" on these zones is unreliable; a real detached SFH
+            // would typically have a permit or OSM ground-truth tag.
+            // Mirrors the ETL classifier_cr_zone_demotion gate so the
+            // caution fires NOW, before next rebuild drops these parcels.
+            if (r.existingStructureSource === 'classifier'
+                && r.existingStructureType === 'detached'
+                && ['CR', 'CRE', 'RAC', 'RA', 'CL'].includes(r.zoneClass)) {
+                out.push({
+                    kind: 'caution',
+                    text: `${r.zoneClass}-zoned mainstreet parcel — classifier guessed "detached" without permit/OSM ground truth. Likely an apartment-above-retail or mid-rise building, not a detached SFH teardown. Verify on Street View; consider it a Site Plan Approval mid-rise play, not a streamlined multiplex.`,
+                });
+            }
+            // Low-coverage non-vacant pattern (158 Dufferin St case,
+            // 2026-05-09). When a non-vacant parcel reads <10% building
+            // coverage, the existing structure is implausibly tiny for a
+            // residential teardown candidate (typical SFH is 15-50%).
+            // Likely possibilities: derelict shed wrongly classified as
+            // "detached", industrial yard with one small office, back-lot
+            // residue without laneway access. Real fix is an ETL gate that
+            // demotes classifier-sourced "detached" to "unknown" when cov<10%
+            // (queued).
+            if (_cov > 0 && _cov < 0.10 && r.existingStructureType !== 'vacant') {
+                const fp = Math.round(_cov * (r.lotAreaM2 || 0));
+                const _src = r.existingStructureSource;
+                const _srcNote = _src === 'classifier'
+                    ? ' (classifier-sourced, not permit-verified)'
+                    : '';
+                out.push({
+                    kind: 'caution',
+                    text: `Tiny structure on large lot — only ${fp}m² built on a ${(r.lotAreaM2 || 0).toLocaleString()}m² lot${_srcNote}. Could be a derelict shed, industrial yard, or back-lot residue rather than a real residential building. Verify on Street View before underwriting.`,
+                });
+            }
+            // Back-lot-residue / coach-house pattern (1030 Danforth, 1558
+            // Davenport, "387R Leslie St", etc). Address geocodes to a
+            // mainstreet/avenue frontage but the parcel polygon is the back
+            // strip running BEHIND adjacent buildings, accessed via the
+            // laneway.
+            // 2026-05-09: when `addrToStreetM` is on the wire (post-ETL-
+            // rebuild), use the DIRECT measurement: ≥15m to nearest street
+            // + abuts laneway = back-lot. Pre-rebuild fallback heuristic:
+            // abutsLaneway + low coverage proxies the same signal.
+            // Surfaced FIRST so it always lands in the top-5 considerations.
+            const _addrM = r.addrToStreetM;
+            const _backLotDirect = _addrM != null && _addrM >= 15 && r.abutsLaneway === true;
+            const _backLotProxy = _addrM == null && r.abutsLaneway === true && _cov > 0 && _cov < 0.25;
+            if (_backLotDirect || _backLotProxy) {
+                const _aspect = r.lotAspectRatio || 0;
+                const fp = Math.round(_cov * (r.lotAreaM2 || 0));
+                const _aspNote = _aspect >= 2.5
+                    ? `, narrow ${_aspect.toFixed(1)}-aspect strip`
+                    : '';
+                const _distNote = _backLotDirect
+                    ? `, ${Math.round(_addrM)}m from the nearest street`
+                    : '';
+                out.push({
+                    kind: 'caution',
+                    text: `Possible back-lot residue — only ${fp}m² of building on a ${(r.lotAreaM2 || 0).toLocaleString()}m² lot${_aspNote}${_distNote}, abuts laneway. The address may geocode to a frontage that this parcel sits BEHIND. Verify on Street View before underwriting.`,
+                });
+            }
+            // Neighbor-height spillover diagnostic (177 Symons St case,
+            // 2026-05-09). 3D Massing per-parcel max-height extraction
+            // takes max() over every building outline intersecting the
+            // parcel polygon. When the polygon is fuzzy at the boundary
+            // (or a neighbor's footprint crosses the lot line slightly),
+            // the neighbor's TALL building gets credited to THIS parcel.
+            // Two-condition trigger:
+            //   1. existingMaxBuildingHeightM matches one of the four
+            //      `neighborHeight*AvgM` values within 0.05m — same source
+            //      data, statistical near-impossibility for two real
+            //      buildings.
+            //   2. Coverage < 22% — a tall structure with that little
+            //      footprint contradicts itself (a 3-storey building on
+            //      ~20% coverage has high implied FSI, sure, but combined
+            //      with the exact-match neighbor height it reads as
+            //      attribution error, not real building).
+            // Tuned 2026-05-09 against 177 Symons (cov 0.21, h matches
+            // N-nb 9.1m) and 1030 Danforth (cov 0.20, h matches S-nb 9.2m).
+            // Hits ~10% of elite. Real fix is ETL-side (require ≥80%
+            // intersection ratio before crediting a building's height to
+            // a parcel; queued).
+            const _h = r.existingMaxBuildingHeightM;
+            if (_h != null && _h > 5 && _cov > 0 && _cov < 0.22) {
+                const _nbVals = [r.neighborHeightNAvgM, r.neighborHeightSAvgM,
+                                 r.neighborHeightEAvgM, r.neighborHeightWAvgM];
+                const _idx = _nbVals.findIndex(x => x != null && x > 0 && Math.abs(x - _h) < 0.05);
+                if (_idx >= 0) {
+                    const _matchSide = ['N', 'S', 'E', 'W'][_idx];
+                    out.push({
+                        kind: 'caution',
+                        text: `Existing height (${_h.toFixed(1)}m) matches the ${_matchSide}-side neighbour exactly + low ${Math.round(_cov*100)}% coverage — likely 3D Massing spillover, not the actual on-parcel structure. The real building may be 1-storey even when the wire reads 3-storey. Verify on Street View.`,
+                    });
+                }
+            }
             // POSITIVES
             // Bloom-tier consideration removed 2026-05-06 — we no longer
             // surface BloomTO-synthesised tiers in display copy. The
@@ -4591,7 +5546,11 @@
                 : `${r.solarScore}/100 <span class="muted">(raw ${r.solarScoreRaw}, ${r.solarShadowQuality})</span>`;
 
             const attract = attractivenessScore(r);
-            const cons = consider(r);
+            // Top 5 considerations only — keeps the one-page panel intact for
+            // the L2/L3 read. consider(r) returns up to ~10 ranked observations;
+            // the trailing low-rank entries (small-lot caution, aspect warning,
+            // etc.) are noise relative to the headline good/bad on the parcel.
+            const cons = consider(r).slice(0, 5);
             const consHtml = cons.length
                 ? cons.map(c => {
                     const icon = c.kind === 'good' ? '<span style="color:#16a34a;font-weight:700">✓</span>'
@@ -4652,12 +5611,27 @@
                 if (structType === 'row')      return ` · <span style="color:#9f1239;font-weight:600">row / townhouse</span>${sourceTag}${apLine}`;
                 return '';
             })();
+            // Spillover detection — same heuristic as consider() uses for the
+            // caution bullet. If the per-parcel max height matches a neighbor
+            // within 0.05m AND coverage is < 22%, the height is likely 3D
+            // Massing attribution leaking from an adjacent building, not the
+            // structure on THIS parcel. Soften the lead-line copy in that
+            // case so the dev doesn't anchor on a 3-storey claim that walks
+            // back to a 1-storey bungalow on Street View.
+            const _hSpillCov = r.buildingCoverageRatio ?? 0;
+            const _hSpillover = (() => {
+                if (existingH == null || existingH <= 5) return null;
+                if (_hSpillCov <= 0 || _hSpillCov >= 0.22) return null;
+                const nbVals = [r.neighborHeightNAvgM, r.neighborHeightSAvgM,
+                                r.neighborHeightEAvgM, r.neighborHeightWAvgM];
+                const idx = nbVals.findIndex(x => x != null && x > 0 && Math.abs(x - existingH) < 0.05);
+                return idx < 0 ? null : ['N', 'S', 'E', 'W'][idx];
+            })();
             const existingHtml = (() => {
                 if (existingH == null) {
-                    return '<div class="sub" style="color:#15803d">Vacant or no recorded structure</div>';
+                    return '<div class="sub" style="color:#15803d">Vacant${structSuffix}</div>';
                 }
-                const storeys = Math.max(1, Math.round(existingH / 3));
-                return `<div class="sub">Currently <strong>${existingH.toFixed(1)} m</strong> (≈${storeys}-storey existing structure)${structSuffix}</div>`;
+                return `<div class="sub"><strong>${existingH.toFixed(1)} m</strong>${structSuffix}</div>`;
             })();
 
             return `
@@ -4767,120 +5741,82 @@
                     </div>
                 </section>
 
-                <!-- ── Tier 3: Financial upside (specific dollar figures) ─────── -->
-                <section>
-                    <h4>Financial upside</h4>
-                    <div style="display:grid;grid-template-columns:1fr;gap:0;font-size:13px">
-                        ${(() => {
-                            const rows = [];
-                            // Parking-minimum elimination (Bill 185, Jan 2025)
-                            const parkLow  = POLICY.parkingPerUnitCadMin * (r.maxUnits || 0);
-                            const parkHigh = POLICY.parkingPerUnitCadMax * (r.maxUnits || 0);
-                            if (parkLow > 0) {
-                                rows.push({
-                                    label: 'Parking-minimum elimination',
-                                    value: `${fmtCad(parkLow)} – ${fmtCad(parkHigh)}`,
-                                    sub: `Underground or mechanical parking no longer required citywide (Bill 185, Jan 2025). ~${fmtCad(POLICY.parkingPerUnitCadMin)}–${fmtCad(POLICY.parkingPerUnitCadMax)}/unit construction savings × ${r.maxUnits} units.`,
-                                    src: POLICY.parkingSource,
-                                });
-                            }
-                            // DC waiver (≤6 units)
-                            if (r.maxUnits && r.maxUnits <= POLICY.dcWaiverThresholdUnits) {
-                                rows.push({
-                                    label: 'Development-charge waiver',
-                                    value: fmtCad(POLICY.dcPerUnitCadEstimate * r.maxUnits),
-                                    sub: `Toronto waives DCs for projects of ≤${POLICY.dcWaiverThresholdUnits} units (Jan 2025). Toronto residential DC ≈ ${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit × ${r.maxUnits} units.`,
-                                    src: POLICY.dcSource,
-                                });
-                            } else if (r.maxUnits) {
-                                rows.push({
-                                    label: 'Development-charge waiver',
-                                    value: '<span style="color:#9ca3af">does not apply</span>',
-                                    sub: `${r.maxUnits} units exceeds the ${POLICY.dcWaiverThresholdUnits}-unit threshold; DCs apply at ~${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit.`,
-                                    src: POLICY.dcSource,
-                                });
-                            }
-                            // Sixplex carve-out bonus
-                            if (r.sixplexBonusValueCad) {
-                                rows.push({
-                                    label: 'Sixplex carve-out bonus',
-                                    value: fmtCad(r.sixplexBonusValueCad),
-                                    sub: `T&amp;EY District / Ward 23 lots can build 6 units as-of-right (June 2025) vs the citywide 4-cap. Bonus = 2 extra units × neighbourhood median construction cost.`,
-                                    src: 'Toronto City Council June 2025 amendment',
-                                });
-                            }
-                            // Transit absorption lift (descriptive, no specific $ — depends on price)
-                            if (r.distSubwayStreetcarM != null && r.distSubwayStreetcarM <= 500) {
-                                rows.push({
-                                    label: 'Transit-corridor premium',
-                                    value: `+${POLICY.tocPriceLiftPctMin}–${POLICY.tocPriceLiftPctMax}% PSF · ~${POLICY.tocAbsorptionLiftPct}% faster sell-through`,
-                                    sub: `${r.distSubwayStreetcarM}m to subway/streetcar — within the 500m TOD threshold. New-build comps in transit corridors price higher and absorb faster than non-TOD lots.`,
-                                    src: POLICY.tocSource,
-                                });
-                            }
-                            if (rows.length === 0) {
-                                return '<div style="color:#9ca3af;font-size:12px">No specific financial upside lines for this lot.</div>';
-                            }
-                            return rows.map(row => `
-                                <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding:8px 0;border-bottom:1px dashed rgba(47,106,79,0.10);align-items:start">
-                                    <div style="min-width:0">
-                                        <div style="font-weight:600;color:#1f2937">${row.label}</div>
-                                        <div style="color:#4b5563;line-height:1.4;margin-top:3px;font-size:12px">${row.sub}</div>
-                                        <div style="color:#9ca3af;font-size:11px;margin-top:2px">Source: ${row.src}</div>
-                                    </div>
-                                    <div style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;font-weight:600;color:#15803d;white-space:nowrap">${row.value}</div>
-                                </div>
-                            `).join('');
-                        })()}
-                    </div>
-                    <div style="font-size:10px;color:var(--ink-mute2);margin-top:8px;line-height:1.4">
-                        Estimates only. Verify each program&rsquo;s eligibility criteria with the issuing
-                        authority before relying on these numbers in a pro-forma. BloomTO does not warrant
-                        financial outcomes.
-                    </div>
-                </section>
+                ${(() => {
+                    if (!powerPlayEligible(r)) return '';
+                    const days = _powerPlayDaysLeft();
+                    const dayWord = days === 1 ? 'day' : 'days';
+                    const urgent = days <= 7;
+                    return `
+                        <div class="powerplay-callout${urgent ? ' urgent' : ''}">
+                            <span class="powerplay-eyebrow">${urgent ? 'Final week · ' : 'Time-limited · '}Toronto Hydro pilot</span>
+                            <span class="powerplay-headline">PowerPlay: up to <strong>$50,000</strong> · EOI deadline <span class="powerplay-deadline">May 31, 2026 (${days} ${dayWord} left)</span></span>
+                            <span class="powerplay-body">Toronto Hydro Multiplex PowerPlay pays for the smart-load-management devices that let you skip a $50K+ transformer / service upgrade on a 4-6 unit multiplex with heat pumps + EV chargers. Six winners total. <a target="_blank" rel="noopener" href="https://www.torontohydro.com/contractors-and-developers/multiplex-powerplay-pilot-program">Program page ↗</a></span>
+                        </div>`;
+                })()}
 
+                <!-- ── Money on the table — consolidated 2026-05-09 ──
+                     Replaces the prior Financial-upside + Incentives-stacked
+                     duo. Compact label / sub / $ rows; HST/GST footnote on
+                     the bottom. Aimed at the L2/L3 cohort: deal-memo glance,
+                     no expansion needed. -->
                 <section>
-                    <h4>Incentives stacked</h4>
-                    <div style="font-size:11px;color:var(--ink-mute2);margin-bottom:6px">
-                        Tags: <span class="audience-tag aud-dev">DEV</span> · <span class="audience-tag aud-buyer">BUYER</span> · <span class="audience-tag aud-both">BOTH</span>
-                    </div>
+                    <h4>Money on the table</h4>
                     ${(() => {
-                        const inc = incentivesStackedFor(r);
-                        if (inc.length === 0) {
-                            return `<div style="font-size:12px;color:#9ca3af">No specific incentive programs identified for this parcel.</div>`;
+                        const u = r.maxUnits || 0;
+                        const rows = [];
+                        // DC waiver — applies cleanly when ≤6 units; flagged when over.
+                        if (u > 0 && u <= POLICY.dcWaiverThresholdUnits) {
+                            rows.push({
+                                label: 'DC waiver',
+                                val: fmtCad(POLICY.dcPerUnitCadEstimate * u),
+                                sub: `≤${POLICY.dcWaiverThresholdUnits} units · Bill 185 (Jan 2025) · ${u} × ${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit`,
+                            });
+                        } else if (u > 0) {
+                            rows.push({
+                                label: 'DC waiver',
+                                val: '<span style="color:#9ca3af">does not apply</span>',
+                                sub: `${u} units exceeds the ${POLICY.dcWaiverThresholdUnits}-unit threshold; standard DC ≈${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit applies`,
+                            });
                         }
-                        const confColor = {
-                            'binary': '#16a34a',           // applies / doesn't (clear)
-                            'eligibility-likely': '#65a30d',// likely qualifies, verify
-                            'derived': '#0d9488',           // computed from parcel attributes
-                            'voluntary': '#7c3aed',         // requires builder choice
-                            'soft': '#9ca3af',              // qualitative, no $
-                        };
-                        const confLabel = {
-                            'binary': 'applies',
-                            'eligibility-likely': 'likely — verify',
-                            'derived': 'parcel-derived',
-                            'voluntary': 'voluntary',
-                            'soft': 'qualitative',
-                        };
-                        const audClass = { dev: 'aud-dev', buyer: 'aud-buyer', both: 'aud-both' };
-                        const audLabel = { dev: 'DEV', buyer: 'BUYER', both: 'BOTH' };
-                        return inc.map(i => `
-                            <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding:8px 0;border-bottom:1px dashed rgba(47,106,79,0.10);font-size:12px;align-items:start">
-                                <div style="min-width:0">
-                                    <div style="font-weight:600;color:#1f2937;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                                        <span class="audience-tag ${audClass[i.audience] || 'aud-both'}">${audLabel[i.audience] || 'BOTH'}</span>
-                                        <span>${i.name}</span>
-                                    </div>
-                                    <div style="color:#4b5563;line-height:1.4;margin-top:3px">${i.value}</div>
-                                    <div style="color:#9ca3af;font-size:11px;margin-top:2px">
-                                        ${i.href ? `<a target="_blank" rel="noopener" href="${i.href}" style="color:var(--tor-blue)">${i.source} ↗</a>` : i.source}
-                                    </div>
+                        // Parking-min elimination — Bill 185 citywide.
+                        if (u > 0) {
+                            const lo = POLICY.parkingPerUnitCadMin * u;
+                            const hi = POLICY.parkingPerUnitCadMax * u;
+                            rows.push({
+                                label: 'Parking-min elimination',
+                                val: `${fmtCad(lo)}–${fmtCad(hi)}`,
+                                sub: `Bill 185 · ${u} units × ${fmtCad(POLICY.parkingPerUnitCadMin)}–${fmtCad(POLICY.parkingPerUnitCadMax)}/unit construction savings`,
+                            });
+                        }
+                        // Sixplex carve-out bonus (parcel-derived).
+                        if (r.sixplexBonusValueCad) {
+                            rows.push({
+                                label: 'Sixplex carve-out bonus',
+                                val: fmtCad(r.sixplexBonusValueCad),
+                                sub: `T&EY + Ward 23 (June 2025): 6-plex as-of-right vs 4-cap · 2 extra units × neighbourhood median`,
+                            });
+                        }
+                        // Transit-corridor premium — descriptive %, not $.
+                        if (r.distSubwayStreetcarM != null && r.distSubwayStreetcarM <= 500) {
+                            rows.push({
+                                label: 'Transit-corridor premium',
+                                val: `+${POLICY.tocPriceLiftPctMin}–${POLICY.tocPriceLiftPctMax}% PSF`,
+                                sub: `${r.distSubwayStreetcarM}m to subway/streetcar · ~${POLICY.tocAbsorptionLiftPct}% faster sell-through`,
+                            });
+                        }
+                        if (rows.length === 0) {
+                            return '<div class="money-empty">No specific upside lines for this lot.</div>';
+                        }
+                        return `<div class="money-rows">${rows.map(rr => `
+                            <div class="money-row">
+                                <div class="money-row-label">
+                                    <strong>${rr.label}</strong>
+                                    <span class="money-row-sub">${rr.sub}</span>
                                 </div>
-                                <span style="font-size:10px;color:${confColor[i.confidence] || '#6b7280'};font-weight:600;white-space:nowrap;padding-top:2px">${confLabel[i.confidence] || i.confidence}</span>
+                                <div class="money-row-val">${rr.val}</div>
                             </div>
-                        `).join('');
+                        `).join('')}</div>
+                        <div class="money-foot">HST + GST rebates excluded — sale-price-driven (not parcel-fixed). Verify each program before underwriting.</div>`;
                     })()}
                 </section>
 
@@ -4889,19 +5825,137 @@
                     ${consHtml}
                 </section>
 
-                <details${badges.filter(b => b.fired).length === 0 ? '' : ''}>
-                    <summary>Goldmine badges <span class="summary-count">(${badges.filter(b => b.fired).length})</span></summary>
-                    ${badges.map(b => {
-                        const r = b.reason || '';
-                        const cap = r ? r.charAt(0).toUpperCase() + r.slice(1) : '';
-                        return `
-                        <div class="badge-explain ${b.fired ? 'fired' : 'dim'}">
-                            <span class="pill ${b.cls}">${b.label}</span>
-                            <span class="reason">${cap}</span>
-                        </div>
-                    `;}).join('')}
-                </details>
+                <!-- ── Site notes — consolidated 2026-05-09 ──
+                     One compact 3-column strip replacing the prior standalone
+                     Transit / Regulatory / Recent-permits sections. Six tiles
+                     fit two rows; sufficient for the L2/L3 read. -->
+                <section>
+                    <h4>Site notes</h4>
+                    ${(() => {
+                        // Tooltips cite the specific by-law / Act / regulation
+                        // each tile is gated by — so the dev sees not just
+                        // the value, but WHY it moves their pro forma. Each
+                        // citation is one of: Bill 185 (parking-min waiver +
+                        // DC waiver), By-law 569-2013 (zoning, laneway/garden
+                        // suites, sixplex carve-out), Ontario Reg. 41/24
+                        // (TRCA), Ontario Heritage Act, Toronto Green Standard
+                        // V4 (solar/energy), Toronto Cycling Network Plan.
+                        const tiles = [];
+                        tiles.push({
+                            label: 'Subway',
+                            val: fmtDist(r.distSubwayM),
+                            tip: 'Major Transit Station Area gate. Within 500m of subway, Bill 185 (Jan 2025) parking-minimum waiver applies citywide and the project absorbs faster (transit-corridor lift). Beyond 500m the corridor premium drops sharply.',
+                        });
+                        tiles.push({
+                            label: 'Streetcar',
+                            val: fmtDist(r.distStreetcarM),
+                            tip: 'Higher-order transit (TTC streetcar). Same 500m MTSA framework as subway — parking-min waiver under Bill 185, transit-corridor PSF lift in TOC pricing comps.',
+                        });
+                        // Bus tile dropped 2026-05-09 — most Toronto parcels
+                        // sit <500m from a bus stop, so the value rarely
+                        // moves a deal. Laneway is the dev-relevant signal:
+                        // rear access + permittable laneway-suite path.
+                        tiles.push(r.abutsLaneway === true
+                            ? {
+                                label: 'Laneway',
+                                val: 'rear access',
+                                cls: 'good',
+                                tip: 'Parcel boundary touches a public laneway. Unlocks the laneway-suite path under Toronto Zoning By-law 569-2013 (Laneway Suites, May 2018) + Garden Suites by-law (Feb 2022) — a permittable secondary structure on the rear lot, in addition to the main multiplex. Free pre-approved permit-ready plan templates from City Planning.',
+                            }
+                            : {
+                                label: 'Laneway',
+                                val: 'no',
+                                cls: '',
+                                tip: 'No public laneway abutting this parcel. Laneway/garden suite secondary-structure path under By-law 569-2013 not available; rear access for teardown logistics is street-side only.',
+                            });
+                        tiles.push(r.inRegulatedArea
+                            ? {
+                                label: 'TRCA',
+                                val: 'REGULATED',
+                                cls: 'bad',
+                                tip: 'Within Ontario Reg. 41/24 (Conservation Authorities Act) regulated area — riverine floodplain / valley / wetland overlay. Toronto and Region Conservation Authority permit REQUIRED before any building permit; new residential rarely granted on regulated land. Hard buy/no-buy gate.',
+                            }
+                            : {
+                                label: 'TRCA',
+                                val: 'clear',
+                                cls: 'good',
+                                tip: 'Outside Ontario Reg. 41/24 (Conservation Authorities Act) regulated area. No TRCA permit gate — building permit pathway is unblocked from the floodplain side.',
+                            });
+                        tiles.push(r.heritageStatus
+                            ? {
+                                label: 'Heritage',
+                                val: ({part_iv:'Part IV',part_v:'Part V',listed:'Listed'}[r.heritageStatus] || r.heritageStatus),
+                                cls: 'bad',
+                                tip: r.heritageStatus === 'part_iv'
+                                    ? 'Ontario Heritage Act Part IV — individually designated. Demolition / material alteration requires Council approval; multiplex teardown effectively blocked.'
+                                    : r.heritageStatus === 'part_v'
+                                    ? 'Ontario Heritage Act Part V — within a Heritage Conservation District. Design review required, design freedom constrained, score discounted.'
+                                    : 'Ontario Heritage Act §27 (Listed) — on the Heritage Register watchlist. Demolition allowed after 60-day notice but design review may apply.',
+                            }
+                            : {
+                                label: 'Heritage',
+                                val: 'clear',
+                                cls: 'good',
+                                tip: 'No Ontario Heritage Act encumbrance (Part IV / Part V / Listed). Demolition pathway is unblocked from the heritage side.',
+                            });
+                        const onLot = (r.permits || {}).recentCount || r.permitsRecentCount || 0;
+                        tiles.push({
+                            label: 'Permits on lot',
+                            val: onLot > 0 ? `${onLot} (${(r.permits || {}).recentMostRecentDate || r.permitsRecentMostRecentDate || '—'})` : 'none · 5 yrs',
+                            cls: onLot > 0 ? 'warn' : '',
+                            tip: 'On-lot building-permit count over the last 5 years (Toronto Building Code Act compliance, public CKAN dataset). Recent permits = active owner intent — call before listing.',
+                        });
+                        // Solar yield tile — surfaces the SolarTO measured /
+                        // estimated rooftop kWh/yr that was buried in the
+                        // collapsed details before. Anchored to Toronto Green
+                        // Standard V4 solar-readiness mandate (Tier 1 baseline).
+                        const solarKwh = r.solarYieldKwhPerYr || 0;
+                        const solarQ = r.solarShadowQuality;
+                        const solarVal = solarKwh > 0
+                            ? `${(solarKwh / 1000).toFixed(1)}K kWh/yr`
+                            : (solarQ === 'unavailable' ? '—' : 'low');
+                        tiles.push({
+                            label: 'Solar',
+                            val: solarVal,
+                            cls: solarKwh >= 18000 ? 'good' : solarKwh >= 10000 ? '' : (solarKwh > 0 ? 'warn' : ''),
+                            tip: `Annual rooftop solar yield from SolarTO (Toronto's rooftop-solar-potential dataset, CKAN), shadow-adjusted via 3D Massing analysis. Source quality: ${solarQ || 'unavailable'}. Surfaces here because Toronto Green Standard V4 (Tier 1, mandatory for new construction since 2022) requires solar-readiness, and >18K kWh/yr roofs make a rooftop-PV add to the multiplex pro forma economically clean.`,
+                        });
+                        // Bike-lane proximity — 15-min-city tenant signal.
+                        // Anchored to the Toronto Cycling Network Plan
+                        // (Council-adopted) + active-transport modal-share
+                        // targets in TransformTO Net Zero 2040.
+                        const bikeM = r.distBikeLaneM;
+                        const bikeVal = bikeM == null || bikeM >= 99000
+                            ? '—'
+                            : bikeM < 1000 ? `${bikeM}m` : `${(bikeM/1000).toFixed(1)}km`;
+                        tiles.push({
+                            label: 'Bike',
+                            val: bikeVal,
+                            cls: (bikeM != null && bikeM < 200) ? 'good' : '',
+                            tip: 'Distance to nearest cycling lane (Toronto Cycling Network Plan, Council-adopted). <200m unlocks the 15-min-city tenant signal — multiplex absorption is faster in bike-accessible neighborhoods, and the active-transport modal-share targets in TransformTO Net Zero 2040 mean tenants increasingly prefer bike-near units.',
+                        });
+                        // Tiles render as <button> so they're keyboard-
+                        // focusable + tap-targetable. The `data-tip` carries
+                        // the rationale; click handler (wired in openDetail
+                        // post-render) reads it and opens the popup. The "i"
+                        // icon is the explicit "tap for info" affordance —
+                        // mobile users WILL discover this whereas they'd
+                        // never find a `title` attribute on hover.
+                        return `<div class="site-notes">${tiles.map(t => `
+                            <button type="button" class="site-note-tile"
+                                    title="${escapeHtml(t.tip || '')}"
+                                    data-tip="${escapeHtml(t.tip || '')}"
+                                    data-label="${escapeHtml(t.label)}"
+                                    data-val="${escapeHtml(String(t.val))}">
+                                <span class="site-notes-label">${t.label}<span class="site-note-info-icon" aria-hidden="true">i</span></span>
+                                <span class="site-notes-val ${t.cls || ''}">${t.val}</span>
+                            </button>`).join('')}</div>`;
+                    })()}
+                </section>
 
+                <!-- ── Reference details (collapsed by default) ──────────
+                     Kept off-screen so the L2/L3 read is one-page; the
+                     architect / pro-forma deep-dive is one click away. -->
                 <details>
                     <summary>Lot geometry</summary>
                     <div class="stat-grid">
@@ -4922,7 +5976,6 @@
                     </div>
                 </details>
 
-                <!-- ── Tier 2: Architect site context ──────────────────────────── -->
                 <details>
                     <summary>Neighbour massing context</summary>
                     ${(() => {
@@ -4937,7 +5990,6 @@
                             return '<div style="color:#9ca3af;font-size:12px">No 3D Massing buildings detected within 30 m of this parcel. Likely a corner / open lot.</div>';
                         }
                         const fmt = h => h == null ? '<span class="muted">open sky</span>' : `${h.toFixed(1)} m`;
-                        // Highlight the south-side height (winter solar gain primary driver).
                         const sStyle = (s != null && s >= 9) ? 'color:#b45309;font-weight:600' : '';
                         return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px">
                             <div style="text-align:center;padding:8px;background:#f9fafb;border-radius:4px">
@@ -4961,54 +6013,7 @@
                     })()}
                 </details>
 
-                <section>
-                    <h4>Transit</h4>
-                    <div class="stat-grid">
-                        <div class="k">Nearest subway</div><div class="v">${fmtDist(r.distSubwayM)}</div>
-                        <div class="k">Nearest streetcar</div><div class="v">${fmtDist(r.distStreetcarM)}</div>
-                        <div class="k">Nearest bus</div><div class="v">${fmtDist(r.distBusM)}</div>
-                        <div class="k">RapidTO corridor</div><div class="v">${r.nearRapidToCorridor ? 'yes — Jane / Finch E / Dufferin / Lawrence E / Steeles W' : 'no'}</div>
-                    </div>
-                </section>
-
-                <section>
-                    <h4>Regulatory</h4>
-                    <div class="stat-grid">
-                        <div class="k">TRCA Regulated Area</div>
-                        <div class="v" style="${r.inRegulatedArea ? 'color:#b91c1c;font-weight:600' : ''}">${r.inRegulatedArea ? 'YES — Ont. Reg. 41/24 (riverine / valley / wetland; permit gate)' : 'no'}</div>
-                        <div class="k">Basement-flooding study area</div>
-                        <div class="v" style="${r.inFloodingStudyArea ? 'color:#b45309' : ''}">${r.inFloodingStudyArea ? 'yes — combined-sewer service zone' : 'no'}</div>
-                        <div class="k">Abuts laneway</div>
-                        <div class="v">${r.abutsLaneway ? 'yes' : 'no'}</div>
-                        <div class="k">Sixplex-eligible (June 2025 by-law)</div>
-                        <div class="v" style="${r.sixplexEligible ? 'color:#15803d;font-weight:600' : ''}">${r.sixplexEligible ? 'yes — T&EY District or Ward 23 (up to 6 units as-of-right)' : 'no — citywide cap of 4 units applies'}</div>
-                    </div>
-                </section>
-
-                <section>
-                    <h4>Recent permits (≤5 yrs)</h4>
-                    ${(() => {
-                        const p = r.permits || {};
-                        const nb = r.neighborhoodPermitComp || {};
-                        const recent = p.recentCount || 0;
-                        if (recent === 0) {
-                            return `<div class="stat-grid">
-                                <div class="k">Permits on this lot</div><div class="v" style="color:#9ca3af">none in the past 5 years</div>
-                                <div class="k">Neighborhood activity</div><div class="v">${nb.sampleSize || 0} permits citywide-comparable; median CAD/unit: ${nb.medianCostPerUnit ? '$' + nb.medianCostPerUnit.toLocaleString() : 'insufficient sample (<10)'}</div>
-                            </div>`;
-                        }
-                        const total = '$' + (p.recentValueTotal || 0).toLocaleString();
-                        const lastDate = p.recentMostRecentDate || '—';
-                        return `<div class="stat-grid">
-                            <div class="k">Permits on this lot</div><div class="v"><strong>${recent}</strong> in past 5 yrs · total declared cost ${total}</div>
-                            <div class="k">Most recent</div><div class="v">${lastDate}</div>
-                            <div class="k">Neighborhood activity</div><div class="v">${nb.sampleSize || 0} permits with units · median ${nb.medianCostPerUnit ? '$' + nb.medianCostPerUnit.toLocaleString() + '/unit' : 'insufficient sample (<10)'}</div>
-                        </div>
-                        <div style="font-size:11px;color:#9ca3af;margin-top:6px">Declared construction cost — not market sale price. Source: <a class="map-link" target="_blank" rel="noopener" href="https://www.toronto.ca/services-payments/building-construction/building-permits/">Toronto Building Permits (CKAN)</a>.</div>`;
-                    })()}
-                </section>
-
-                <details open>
+                <details>
                     <summary>Neighborhood context (NPP 2021)</summary>
                     ${(() => {
                         const incMed = r.nbMedHouseholdIncome || 0;
@@ -5022,7 +6027,6 @@
                         const fmt$ = v => v >= 1_000_000 ? `$${(v/1_000_000).toFixed(2)}M`
                                        : v >= 1000 ? `$${Math.round(v/1000)}K`
                                        : `$${v}`;
-                        // Activity bucket — relative to citywide avg of ~2/1k
                         const actLabel = permitRate >= 5 ? 'hot market'
                                        : permitRate >= 2 ? 'active'
                                        : permitRate >= 1 ? 'moderate'
@@ -5046,35 +6050,9 @@
                             <div class="v">${valIncRatio ? valIncRatio.toFixed(1) + '×' : '—'}${ratioNote}</div>
                             <div class="k">Permit rate per 1k dwellings</div>
                             <div class="v" style="color:${actColor};font-weight:600">${permitRate.toFixed(2)} <span style="font-weight:400">— ${actLabel}</span></div>
-                        </div>
-                        <div style="font-size:10px;color:#9ca3af;margin-top:6px;line-height:1.4">
-                            Per-neighborhood from NPP 2021 (2020 income/value data) and
-                            building permits joined to parcels. Permit rate counts last-5-yr
-                            permits with ≥1 unit created. Citywide median permit rate ≈ 2/1k.
                         </div>`;
                     })()}
                 </details>
-
-                <details>
-                    <summary>Site context</summary>
-                    <div class="stat-grid">
-                        <div class="k">Mature street trees on frontage</div>
-                        <div class="v" style="${(r.matureTreeCount || 0) >= 3 ? 'color:#b45309' : ''}">${r.matureTreeCount || 0} (≥30 cm DBH — Tree Bylaw protected) · ${r.streetTreeCount || 0} total street trees</div>
-                        <div class="k">Neighborhood canopy</div>
-                        <div class="v">${r.neighborhoodCanopyPct != null ? r.neighborhoodCanopyPct + '%' : '—'}${r.neighborhoodCanopyPct != null && r.neighborhoodCanopyPct >= 35 ? ' (above Toronto avg of ~28%)' : ''}</div>
-                        <div class="k">Nearest bike lane</div>
-                        <div class="v">${r.distBikeLaneM == null || r.distBikeLaneM >= 99000 ? '—' : r.distBikeLaneM + ' m'}</div>
-                    </div>
-                </details>
-
-                <!-- Solar yield + PV capacity section deleted 2026-05-07: rooftop solar is
-                     a downstream construction decision for L2/3 multiplex devs, not a
-                     parcel-selection signal, and it was burying the action-relevant content
-                     below it. Heritage, which had been parked inside this section as a
-                     third stat row, is already surfaced in the Considerations narrative
-                     and the Underwriting snapshot As-of-right summary. The wire fields
-                     solarYieldKwhPerYr and pvCapacityKwEstimate stay on parcels.geojson
-                     in case the buyer-tier audience comes back into scope. -->
 
                 <details>
                     <summary>TGS V4 compliance ceiling</summary>
@@ -5115,37 +6093,58 @@
                     })()}
                 </details>
 
-                <section>
-                    <h4>Sources for this parcel</h4>
+                <details>
+                    <summary>Data sources for this parcel</summary>
                     <div style="font-size:11px;color:#6b7280;line-height:1.55">
-                        Every number on this page comes from <a target="_blank" rel="noopener" href="https://open.toronto.ca/" style="color:#2f6a4f;text-decoration:none;font-weight:500">Toronto Open Data</a>, OpenStreetMap, or StatsCan:
+                        Every number above comes from <a target="_blank" rel="noopener" href="https://open.toronto.ca/" style="color:#2f6a4f;text-decoration:none;font-weight:500">Toronto Open Data</a>, OpenStreetMap, or StatsCan. Highlights:
                         <ul style="margin:6px 0 0 0;padding-left:18px;list-style:disc">
-                            <li><strong>Lot geometry &amp; PARCELID:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/property-boundaries/" style="color:#2f6a4f">Property Boundaries</a></li>
-                            <li><strong>Address points / true-detached:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/address-points-municipal-toronto-one-address-repository/" style="color:#2f6a4f">Address Points (One Address Repository)</a></li>
-                            <li><strong>Zoning &amp; unit cap:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/zoning-by-law/" style="color:#2f6a4f">Zoning By-law 569-2013</a></li>
-                            <li><strong>Sixplex carve-out:</strong> Toronto City Council 2025.PH13.4 (T&amp;EY District + Ward 23, June 2025)</li>
-                            <li><strong>Heritage status:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/heritage-register/" style="color:#2f6a4f">Heritage Register</a></li>
-                            <li><strong>Existing structure type:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-active-permits/" style="color:#2f6a4f">Building Permits</a> (STRUCTURE_TYPE column) + <a target="_blank" rel="noopener" href="https://www.openstreetmap.org/" style="color:#2f6a4f">OpenStreetMap</a> building tags</li>
-                            <li><strong>Existing height &amp; footprint:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/3d-massing/" style="color:#2f6a4f">3D Massing</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/topographic-mapping-building-outlines/" style="color:#2f6a4f">Building Outlines</a></li>
-                            <li><strong>Transit distances:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/ttc-routes-and-schedules/" style="color:#2f6a4f">TTC GTFS</a> (subway, streetcar, bus stops) + TTC Subway Entrances shapefile</li>
-                            <li><strong>Corner-lot &amp; laneway:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/toronto-centreline-tcl/" style="color:#2f6a4f">Centreline (Streets &amp; Lanes)</a></li>
-                            <li><strong>Permit history (this address):</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-active-permits/" style="color:#2f6a4f">Active Permits</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-cleared-permits/" style="color:#2f6a4f">Cleared Permits</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/building-permits-demolitions/" style="color:#2f6a4f">Demo Permits</a></li>
-                            <li><strong>Owner-activity signals:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/committee-of-adjustment-applications/" style="color:#2f6a4f">CoA Severance Applications</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/property-standards-orders/" style="color:#2f6a4f">Property Standards / Enforcement Orders</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/preliminary-zoning-reviews/" style="color:#2f6a4f">Preliminary Zoning Reviews</a></li>
-                            <li><strong>Tax-exempt institutional filter:</strong> Toronto retired Tax Exemptions Roll</li>
-                            <li><strong>Neighborhood income &amp; dwelling value:</strong> <a target="_blank" rel="noopener" href="https://www12.statcan.gc.ca/census-recensement/2021/dp-pd/prof/index.cfm" style="color:#2f6a4f">StatsCan 2021 Census</a> via Toronto NPP</li>
-                            <li><strong>Solar &amp; canopy context:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/solar-rooftop-tool/" style="color:#2f6a4f">SolarTO</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/forest-and-land-cover/" style="color:#2f6a4f">Forest &amp; Land Cover</a> + <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/street-tree-data/" style="color:#2f6a4f">Street Tree Data</a></li>
-                            <li><strong>Flood / TRCA overlays:</strong> <a target="_blank" rel="noopener" href="https://open.toronto.ca/dataset/basement-flooding-study-areas/" style="color:#2f6a4f">Basement Flooding Study Areas</a> + TRCA Reg 41/24</li>
+                            <li><strong>Lot &amp; zoning:</strong> Property Boundaries · Zoning By-law 569-2013 · Address Points (One Address Repository)</li>
+                            <li><strong>Structure:</strong> Building Permits (STRUCTURE_TYPE) · OSM building tags · 3D Massing · Building Outlines</li>
+                            <li><strong>Transit:</strong> TTC GTFS · Subway Entrances · Centreline</li>
+                            <li><strong>Activity:</strong> Active / Cleared / Demo Permits · CoA Severance · Property Standards · Preliminary Zoning Reviews</li>
+                            <li><strong>Overlays:</strong> Heritage Register · TRCA Reg 41/24 · Basement Flooding Study Areas · NPP 2021 Census · SolarTO · Forest &amp; Land Cover</li>
                         </ul>
-                        <div style="margin-top:6px;color:#9ca3af">
-                            Full 27-source inventory + the curation algorithm itself: see <strong>Methodology</strong> in the page footer.
-                        </div>
-                        <div style="margin-top:8px;padding-top:8px;border-top:1px dashed rgba(47,106,79,0.15);color:#9ca3af">
-                            Not a permit pre-clearance — every parcel is curation-tier eligible against the published by-law and incentive set, but confirm with a planner before acting.
-                        </div>
+                        <div style="margin-top:8px;color:#9ca3af">Full 27-source inventory + the curation algorithm itself: see <strong>Methodology</strong> in the page footer. Not a permit pre-clearance — confirm with a planner before acting.</div>
                     </div>
-                </section>
+                </details>
             `;
         }
+
+        // Site-note info popup wiring (added 2026-05-09 per user direction
+        // — make tile rationale accessible on mobile via a single tap, since
+        // `title=` tooltips are desktop-hover-only). Uses native <dialog> so
+        // we get backdrop, Esc, focus trap for free.
+        function wireSiteNoteTiles() {
+            const dlg = document.getElementById('site-note-dialog');
+            if (!dlg) return;
+            document.querySelectorAll('.site-note-tile').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.getElementById('snd-label').textContent = btn.dataset.label || '';
+                    document.getElementById('snd-val').textContent = btn.dataset.val || '';
+                    document.getElementById('snd-body').textContent = btn.dataset.tip || '';
+                    if (typeof dlg.showModal === 'function') {
+                        dlg.showModal();
+                    } else {
+                        // Defensive — Safari < 15.4 / very old browsers.
+                        dlg.setAttribute('open', '');
+                    }
+                });
+            });
+        }
+        // One-time dialog wiring at page load. Click on backdrop or close
+        // button dismisses; Esc is handled natively by <dialog>.
+        (function initSiteNoteDialog() {
+            const dlg = document.getElementById('site-note-dialog');
+            if (!dlg) return;
+            document.getElementById('snd-close')?.addEventListener('click', () => dlg.close());
+            // Click on backdrop (the ::backdrop is part of the dialog's box,
+            // so a click on the dialog element itself outside its inner
+            // content closes it). Inner clicks bubble to the dialog but
+            // their target won't be the dialog itself.
+            dlg.addEventListener('click', (e) => {
+                if (e.target === dlg) dlg.close();
+            });
+        })();
 
         let detailCurrent = null;
         let selectionRing = null;
@@ -5182,6 +6181,8 @@
             document.getElementById('detail-title').textContent = initialTitle;
             document.getElementById('detail-nb').textContent = r.neighborhood;
             document.getElementById('detail-body').innerHTML = detailHtml(r);
+            wireSiteNoteTiles();
+            syncDetailSaveButton(isWatched(r));
             populatePrintHeader(r, initialTitle);
             document.getElementById('detail-maps').href = googleMapsUrl(r);
             panel.hidden = false;
@@ -5217,6 +6218,7 @@
                     document.getElementById('detail-title').textContent = addr;
                     // Also rerender body so the external links pick up the new address.
                     document.getElementById('detail-body').innerHTML = detailHtml(r);
+                    wireSiteNoteTiles();
                     populatePrintHeader(r, addr);
                 });
             }
@@ -5249,10 +6251,9 @@
             // score-formula-note, financial upside dup) collapses.
             const keepHeadings = new Set([
                 'Underwriting snapshot',
-                'Goldmine badges',
+                'Money on the table',
                 'Considerations',
-                'Lot geometry',
-                'Regulatory',
+                'Site notes',
             ]);
             document.querySelectorAll('#detail-body section').forEach(sec => {
                 const h = sec.querySelector('h4');
@@ -5276,6 +6277,31 @@
 
         document.getElementById('detail-close').addEventListener('click', closeDetail);
         document.getElementById('detail-overlay').addEventListener('click', closeDetail);
+        // Save-to-watchlist toggle. Reuses `toggleWatched` (the same
+        // function the row-inline ★ button uses) so saved state stays
+        // in sync between the row and the panel. After toggling, syncs
+        // every visible row's ★ for the same parcelKey.
+        document.getElementById('detail-save').addEventListener('click', () => {
+            if (!detailCurrent) return;
+            toggleWatched(detailCurrent);
+            const on = isWatched(detailCurrent);
+            syncDetailSaveButton(on);
+            // Sync any row-inline star buttons for the same parcel.
+            const k = parcelKey(detailCurrent);
+            document.querySelectorAll(`.pick[data-key="${k}"] .star`).forEach(starBtn => {
+                starBtn.classList.toggle('on', on);
+                starBtn.textContent = on ? '★' : '☆';
+                starBtn.setAttribute('aria-label', on ? 'Remove from saved' : 'Save to watchlist');
+            });
+        });
+        function syncDetailSaveButton(on) {
+            const btn = document.getElementById('detail-save');
+            if (!btn) return;
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            const lbl = btn.querySelector('.detail-save-label');
+            if (lbl) lbl.textContent = on ? 'Saved' : 'Save';
+            btn.setAttribute('aria-label', on ? 'Remove from watchlist' : 'Save to watchlist');
+        }
         document.getElementById('detail-print').addEventListener('click', () => {
             // Pure window.print() — the @media print stylesheet handles the
             // visual transformation. User picks "Save as PDF" in the print
@@ -5523,6 +6549,30 @@
                 </div>`;
         }
 
+        // Free-text haystack for filtering. Concatenates every textual
+        // field a dev might reasonably search for + boolean flags as
+        // keywords. So "detached", "vacant", "sixplex", "RM", "corner",
+        // "laneway", "fast food", etc. all match the right rows.
+        // Lowercase + space-normalized so `osmAmenityType: "fast_food"`
+        // matches "fast food".
+        function _searchHaystack(r) {
+            const parts = [
+                r.address, r.neighborhood,
+                r.zoneClass, r.zoneString,
+                r.existingStructureType, r.existingStructureSource,
+                r.maxUnitsRationale,
+                r.osmAmenityType ? r.osmAmenityType.replace(/_/g, ' ') : '',
+                r.heritageStatus ? r.heritageStatus.replace(/_/g, ' ') + ' heritage' : '',
+            ];
+            if (r.cornerLot)            parts.push('corner');
+            if (r.abutsLaneway)         parts.push('laneway');
+            if (r.sixplexEligible)      parts.push('sixplex');
+            if (r.postwarNeighborhood)  parts.push('postwar');
+            if (r.inFloodingStudyArea)  parts.push('flood');
+            if (r.inRegulatedArea)      parts.push('trca regulated');
+            if (r.nearRapidToCorridor)  parts.push('rapidto');
+            return parts.filter(Boolean).join(' ').toLowerCase();
+        }
         function applyFilters() {
             const q = searchQuery.trim().toLowerCase();
             const bounds = boundsRestricted ? map.getBounds() : null;
@@ -5547,8 +6597,7 @@
                     if (!fn(r)) return false;
                 }
                 if (!q) return true;
-                return (r.address || '').toLowerCase().includes(q)
-                    || (r.neighborhood || '').toLowerCase().includes(q);
+                return _searchHaystack(r).includes(q);
             });
             const cmp = SORT_COMPARATORS[sortBy] || SORT_COMPARATORS.area;
             // sortDir 'natural' = comparator's encoded direction; 'reversed'
@@ -5579,8 +6628,7 @@
                 let ok = true;
                 for (const fn of otherFns) { if (!fn(r)) { ok = false; break; } }
                 if (!ok) continue;
-                if (q && !((r.address || '').toLowerCase().includes(q)
-                       || (r.neighborhood || '').toLowerCase().includes(q))) continue;
+                if (q && !_searchHaystack(r).includes(q)) continue;
                 n++;
             }
             return n;
@@ -5815,8 +6863,45 @@
                 const storeys = Math.max(1, Math.round(h / 3));
                 return `${fpM2}m² · ${storeys} fl`;
             })();
-            const sxClass = r.sixplexEligible ? 'val-yes' : 'val-no';
-            const sxText = r.sixplexEligible ? 'YES' : 'no';
+            // existing → max units. Replaces the old YES/no sixplex flag
+            // with a comparison rendering (more dopamine: dev sees the
+            // upside delta inline).
+            //
+            //   existing = addressPointCount (vacant = 0; 1 for most
+            //              detached; ≥2 when a basement suite / laneway
+            //              suite / duplex conversion is registered).
+            //   target   = streamlined multiplex pathway cap = 6 (sixplex
+            //              carve-out: T&EY + Ward 23) else 4 citywide.
+            //   "+" suffix when r.maxUnits > target, signalling the zone
+            //   (FSI / RM / CR) supports MORE via Site Plan Approval
+            //   (mid-rise pathway, not the streamlined multiplex by-law).
+            const _existing = r.existingStructureType === 'vacant'
+                ? 0
+                : (r.addressPointCount ?? 1);
+            const _streamTarget = r.sixplexEligible
+                ? 6
+                : Math.min(4, Math.max(r.maxUnits || 0, 0));
+            const _zoneCeiling = r.maxUnits || 0;
+            const _hasUpside = _zoneCeiling > _streamTarget && _streamTarget > 0;
+            const _targetDisplay = _streamTarget > 0
+                ? `${_streamTarget}${_hasUpside ? '+' : ''}`
+                : '—';
+            const sxText = _streamTarget > 0
+                ? `${_existing} → ${_targetDisplay}`
+                : `${_existing}`;
+            // val-yes when the streamlined pathway gives ≥4 units, val-no
+            // otherwise (parcel under multiplex floor, e.g. agricultural / OS).
+            const sxClass = _streamTarget >= 4 ? 'val-yes' : 'val-no';
+            const sxTitle = _streamTarget > 0
+                ? `Existing ${_existing} unit${_existing === 1 ? '' : 's'} (address points on parcel) → up to ${_targetDisplay} via the streamlined multiplex pathway (` +
+                  (r.sixplexEligible
+                    ? 'sixplex carve-out: T&EY + Ward 23, June 2025'
+                    : '4-plex citywide, Bill 185') +
+                  `).` +
+                  (_hasUpside
+                    ? ` Underlying zone (${r.zoneClass || '?'}) permits up to ${_zoneCeiling} units total — that's the "+" — but anything over ${_streamTarget} requires Site Plan Approval (mid-rise pathway), not the streamlined multiplex by-law.`
+                    : ` Zone ceiling (${_zoneCeiling}) matches the streamlined cap — no SPA upside.`)
+                : `Existing ${_existing} units; underlying zone doesn't permit the multiplex floor (4 units). Skip.`;
             const solarClass = (r.solarScore != null && r.solarScore < 30) ? 'val-warn' : '';
             const solarDisplay = r.solarScore == null ? '—' : `${r.solarScore}`;
             const treesClass = (r.matureTreeCount || 0) >= 1 ? 'val-warn' : 'val-no';
@@ -5824,13 +6909,37 @@
             const permitsCount = (r.nbPermitSampleSize ?? 0);
             const permitsDisplay = permitsCount > 0 ? `${permitsCount}` : '—';
             const builtDisplay = r.builtYear || '—';
-            const subDisplayShort = (r.distSubwayM ?? 9999) >= 1000
-                ? `${((r.distSubwayM ?? 0)/1000).toFixed(1)}km`
-                : `${r.distSubwayM ?? '—'}m`;
+            // TTC column — nearest higher-order transit, named in full.
+            // Picks min(subway, streetcar). Bus excluded — most Toronto
+            // parcels are bus-close, and bus distance doesn't move PSF
+            // pricing comps the way subway/streetcar does. "Subway 200m"
+            // / "Streetcar 50m" — full word so the dev sees what kind of
+            // transit it is at a glance, not just a cryptic letter.
+            const _sub = r.distSubwayM ?? Infinity;
+            const _str = r.distStreetcarM ?? Infinity;
+            const _ttcMode = _str < _sub ? 'Streetcar' : 'Subway';
+            const _ttcM = Math.min(_sub, _str);
+            const _ttcStr = _ttcM === Infinity || _ttcM == null
+                ? '—'
+                : _ttcM >= 1000
+                    ? `${(_ttcM/1000).toFixed(1)}km`
+                    : `${_ttcM}m`;
+            const subDisplayShort = _ttcM === Infinity ? '—' : `${_ttcMode} ${_ttcStr}`;
+            const _ttcTip = `Subway ${r.distSubwayM != null ? r.distSubwayM + 'm' : '—'} · Streetcar ${r.distStreetcarM != null ? r.distStreetcarM + 'm' : '—'} · Bus ${r.distBusM != null && r.distBusM < 99999 ? r.distBusM + 'm' : '—'}`;
 
             // Stack-line incentive math — extracted to stackedSavingsFor()
             // so the money-hero banner above the listings can reuse it.
-            const { savings, sources } = stackedSavingsFor(r);
+            const { savings, sources, targetUnits } = stackedSavingsFor(r);
+            // $ Saved cell display — compact "$XXXk" / "$X.XM" format.
+            // "—" when no Bill 185 savings apply (target units outside 4-6).
+            const savingsDisplay = savings > 0
+                ? (savings >= 1_000_000
+                    ? `$${(savings / 1_000_000).toFixed(2)}M`
+                    : `$${Math.round(savings / 1_000)}K`)
+                : '—';
+            const savingsTitle = savings > 0
+                ? `$${savings.toLocaleString()} — Bill 185 stack at ${targetUnits} units. $200K DC waiver + $25K × ${targetUnits} units parking elimination = $${savings.toLocaleString()}. HST/GST rebates not included (sale-price-driven; dev's pro forma carries them separately).`
+                : `No Bill 185 incentives — target units (${targetUnits}) outside the 4-6 streamlined multiplex band.`;
             const extras = [];
             if (r.sixplexEligible)  extras.push('sixplex (4→6 units)');
             if (r.abutsLaneway)     extras.push('abuts laneway');
@@ -5841,65 +6950,54 @@
                 ? `${totalText} · plus ${extras.join(', ')}`
                 : totalText;
 
-            const heroClass = i === 0 ? 'pick-hero' : '';
+            // 2026-05-10 — top-row hero highlighting dropped. The position
+            // (row 0) speaks for itself; gold-accent gradient + cell-pop
+            // backgrounds were blocking subheadings on mobile and adding
+            // visual noise that the user doesn't need.
+            const heroClass = '';
             // pick-hot: subtle warm-tint + accent left border for parcels with
-            // an activity signal in the last 30 days. Combined with the 🔥 in
-            // the Hot column cell, the eye picks up the active deals at a
+            // an activity signal in the last 30 days. Combined with the
+            // amber Hot value, the eye picks up the active deals at a
             // scan without needing to read every row.
             const activeDays = latestActivityDays(r);
             const hotClass = (activeDays != null && activeDays < 30) ? 'pick-hot' : '';
-            // Hero-only subhead: ONLY signals that don't already have a
-            // dedicated cell in the row (so the prose adds, doesn't repeat).
-            // Sixplex / subway / savings live in their own cells and are
-            // popped via .cell-hero-pop instead of restated here.
-            const heroSubhead = i === 0 ? (() => {
-                const bits = [];
-                if (r.cornerLot) bits.push('Corner lot');
-                if (r.postwarNeighborhood) bits.push('Postwar vintage');
-                return bits.length
-                    ? `<div class="hero-subhead">${bits.join(' · ')}</div>`
-                    : '';
-            })() : '';
-            // Per-cell pop classes — only on the hero row, only when the
-            // signal is genuinely positive. Echoes the deleted prose ("7m
-            // to subway", "saves $362K") via cell weight + colour rather
-            // than a duplicate sentence.
-            const popSubway = i === 0 && (r.distSubwayM ?? 9999) < 500 ? 'cell-hero-pop' : '';
-            const popSixplex = i === 0 && r.sixplexEligible ? 'cell-hero-pop' : '';
-            const popSavings = i === 0 && savings > 0 ? 'cell-hero-pop' : '';
+            const heroSubhead = '';
+            const popSubway = '';
+            const popSixplex = '';
+            const popSavings = '';
             return `
                 <div class="pick ${rankClass(i)} ${heroClass} ${hotClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
                         <div class="head-row">
-                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${trueDetachedBadge(r)}${multiUnitAddressBadge(r)}${semiBadge(r)}${signalBadgesHtml(r)}</div>
+                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${trueDetachedBadge(r)}${multiUnitAddressBadge(r)}${semiBadge(r)}${amenityHoldoverBadge(r)}${signalBadgesHtml(r)}</div>
                             <button class="star ${watched ? 'on' : ''}" data-action="star" aria-label="${watched ? 'Remove from saved' : 'Save to watchlist'}">${watched ? '★' : '☆'}</button>
                         </div>
                         <div class="meta">${r.neighborhood}</div>
                         ${heroSubhead}
                     </div>
-                    ${(() => {
-                        const days = latestActivityDays(r);
-                        if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
-                        // Color-code by recency: <30d hot, 30-90d warm,
-                        // 90-365d neutral, >1y muted. Source kind goes in
-                        // the tooltip only — the column itself stays
-                        // numeric for clean scanning.
-                        const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
-                        const src = latestActivitySource(r);
-                        const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
-                        const tip = src
-                            ? `${src.label} · ${display} ago`
-                            : `Latest activity ${display} ago`;
-                        return `<div class="cell ${cls}" data-col="activity" title="${tip}">${display}</div>`;
-                    })()}
                     <div class="stats-row">
+                        ${(() => {
+                            const days = latestActivityDays(r);
+                            if (days == null) return '<div class="cell val-no" data-col="activity">—</div>';
+                            // Color-code by recency: <30d hot, 30-90d warm,
+                            // 90-365d neutral, >1y muted. Source kind goes
+                            // in the tooltip only.
+                            const cls = days < 30 ? 'val-warn cell-hot' : days < 90 ? '' : days < 365 ? '' : 'val-no';
+                            const src = latestActivitySource(r);
+                            const display = days < 365 ? `${days}d` : `${Math.round(days/365)}y+`;
+                            const tip = src
+                                ? `${src.label} · ${display} ago`
+                                : `Latest activity ${display} ago`;
+                            return `<div class="cell ${cls}" data-col="activity" title="${tip}">${display}</div>`;
+                        })()}
                         <div class="cell" data-col="lot">${lotDisplay}</div>
                         <div class="cell" data-col="footprint">${fpDisplay}</div>
                         <div class="cell" data-col="built">${builtDisplay}</div>
-                        <div class="cell ${popSubway}" data-col="subway">${subDisplayShort}</div>
-                        <div class="cell ${sxClass} ${popSixplex}" data-col="sixplex">${sxText}</div>
+                        <div class="cell ${popSubway}" data-col="subway" title="${_ttcTip}">${subDisplayShort}</div>
+                        <div class="cell ${sxClass} ${popSixplex}" data-col="sixplex" title="${sxTitle}">${sxText}</div>
                         <div class="cell" data-col="permits">${permitsDisplay}</div>
                         <div class="cell ${treesClass}" data-col="trees">${treesDisplay}</div>
+                        <div class="cell stack-mini ${popSavings}" data-col="savings" title="${savingsTitle}">${savingsDisplay}</div>
                     </div>
                 </div>`;
         }
@@ -5968,7 +7066,10 @@
                     document.getElementById('tier-toggle')?.click();
                 });
             }
-            document.getElementById('list-count').textContent =
+            // list-count element removed 2026-05-09 with the magazine
+            // title block; guard for compatibility if ever re-added.
+            const _lc = document.getElementById('list-count');
+            if (_lc) _lc.textContent =
                 `${renderedCount.toLocaleString()} of ${pickRows.length.toLocaleString()}`;
         }
 
@@ -6038,12 +7139,15 @@
             // the prior date-hash spotlight. Re-rendered on every filter
             // change so the picks reflect the current visible set.
             renderDailyPicksStrip(rows);
+            renderPowerPlayBanner();
+            renderWeeklyDelta();
             renderFreshTimestamp();
             list.innerHTML = '';
             if (pickObserver) { pickObserver.disconnect(); pickObserver = null; }
             if (rows.length === 0) {
                 list.innerHTML = emptyStateHtml();
-                document.getElementById('list-count').textContent =
+                const _lc0 = document.getElementById('list-count');
+                if (_lc0) _lc0.textContent =
                     `0 of ${allRows.length.toLocaleString()}`;
                 return;
             }
@@ -6089,8 +7193,13 @@
                 const countText = filteredCount === total
                     ? `${total.toLocaleString()} of ~${cityWideRounded} citywide`
                     : `${filteredCount.toLocaleString()} matches · ${total.toLocaleString()} of ~${cityWideRounded} citywide`;
+                // Pre-qual list — every row has been screened against these
+                // before it earned its spot. Reads like a "we did the
+                // homework so you don't have to" guarantee. Order = strongest
+                // gates first (kill-criteria), then quality filters, then
+                // the eligibility upside.
                 subtitle.innerHTML =
-                    `Pre-filtered: ${structClaim} · <strong>heritage-free</strong> · non-institutional · non-tax-exempt · <strong>${sixplexPct} % sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · ${countText}`;
+                    `Pre-screened: ${structClaim} · <strong>heritage-free</strong> (Parts IV/V/Listed excluded) · <strong>TRCA-clear</strong> (O. Reg. 41/24 floodplain excluded) · <strong>transit ≤500m</strong> · <strong>lot ≥350m²</strong> · <strong>footprint &lt;500m²</strong> (clean teardown) · addressed · non-institutional · non-tax-exempt · neighborhood median value ≤$2M · <strong>${sixplexPct}% sixplex-eligible</strong> (T&amp;EY + Ward 23, June 2025) · ${countText}`;
             }
             const stats = document.getElementById('stats');
             if (!stats) return;
@@ -6225,26 +7334,24 @@
         // LIVE freshness moved into the daily-picks strip 2026-05-08 (see
         // liveCardHtml); this function now renders only the dollar headline.
         function renderMoneyHero(rows) {
-            const el = document.getElementById('money-hero');
+            // 2026-05-09: billboard stripped. Total $ now renders inline
+            // in the magazine-actions row (#actions-total). Function name
+            // kept (callers unchanged) — semantics narrowed to "write the
+            // number + 'stacked' label into the inline slot."
+            const el = document.getElementById('actions-total');
             if (!el) return;
-            if (!rows || rows.length === 0) { el.style.display = 'none'; return; }
-            el.style.display = '';
+            if (!rows || rows.length === 0) { el.innerHTML = ''; return; }
             let total = 0;
             for (const r of rows) total += stackedSavingsFor(r).savings || 0;
+            if (total <= 0) { el.innerHTML = ''; return; }
             const dollar = total >= 1_000_000_000
                 ? `$${(total / 1_000_000_000).toFixed(2)}B`
                 : total >= 1_000_000
                     ? `$${(total / 1_000_000).toFixed(0)}M`
                     : `$${Math.round(total / 1_000).toLocaleString()}K`;
-            const tier = broaderMode ? 'broader' : 'elite';
-            // Two-column billboard 2026-05-08: $ number left, explanation
-            // right (was: stacked left-only with empty right space after the
-            // signals pill moved out). Fills the billboard horizontally so
-            // the explanation reads alongside the number, not under it.
-            el.innerHTML = `
-                <div class="money-num">${dollar}</div>
-                <div class="money-lab"><strong>Stacked Bill 185 incentives</strong> across ${rows.length.toLocaleString()} ${tier} multiplex sites · <strong>typically $300K–$400K per pick</strong> ($200K DC waiver + $25K × max units parking elimination). <em>HST + GST rebates not yet stacked.</em></div>
-            `;
+            // Inline tag clarifies what the figure represents — the
+            // tooltip carries the full Bill 185 / HST-GST nuance.
+            el.innerHTML = `${dollar} <span class="actions-total-tag">Bill 185 stack</span>`;
         }
 
         // Highlight the active sort column in the picks header. Also tags
@@ -6279,10 +7386,12 @@
             built: 'built',
             subway: 'subway',
             sixplex: 'sixplex',
+            units: 'sixplex',
             permits_nb: 'permits',
             activity: 'activity',
             trees: 'trees',
-            // savings → stack-mini cell; address → .head; net_zero → no col
+            savings: 'savings',
+            // address → .head; net_zero → no col
         };
 
         // Compute the set of column keys that should be highlighted right
@@ -6419,16 +7528,32 @@
             })
             .catch(() => {});
 
+        // Previous-rebuild snapshot for the "This week" delta strip. Fails
+        // silently on first-ever rebuild (no -prev file yet).
+        const prevTopPromise = fetch('data/parcels-top-prev.json', { cache: 'default' })
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null);
+
         Promise.all([
             fetch('data/parcels-top.json', { cache: 'default' }).then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`);
                 return r.json();
             }),
             nbPromise,
+            prevTopPromise,
         ])
-            .then(([p]) => {
+            .then(([p, _nb, prevTop]) => {
                 payload = p;
                 elitePayload = p;
+                // Cache the previous rebuild's parcelId set + generatedAt
+                // for the "This week" delta. Falsy when no -prev exists
+                // (first-ever rebuild) — renderWeeklyDelta() will hide.
+                window._prevTopSnapshot = prevTop && Array.isArray(prevTop.rows)
+                    ? {
+                        parcelIds: new Set(prevTop.rows.map(r => String(r.parcelId))),
+                        generatedAt: prevTop.generatedAt || null,
+                      }
+                    : null;
                 allRows = p.rows;
                 eliteRows = p.rows;
                 // Stamp the header subtitle with the actual build date —
@@ -6528,8 +7653,8 @@
                             if (sortDir === 'natural') {
                                 sortDir = 'reversed';
                             } else {
-                                // Third click — revert to default
-                                sortBy = 'activity';
+                                // Third click — revert to default (confidence)
+                                sortBy = 'confidence';
                                 sortDir = 'natural';
                             }
                         } else {

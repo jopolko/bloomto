@@ -216,6 +216,43 @@ def load_centreline_index(
     return STRtree(geoms), name_ids, laneway_idx
 
 
+# Mean meters-per-degree at Toronto's latitude (43.7°N), used by the
+# planar-distance approximation in `dist_addr_to_centreline_m`. Geometric
+# mean of the lat axis (~111,000 m/deg) and lng axis (~80,250 m/deg) gives
+# ~94,400; we round to 95,000 to err on the side of slightly overstated
+# distance (pushes more borderline parcels into the back-lot caution,
+# preferable to missing them).
+_TORONTO_DEG_TO_M = 95_000.0
+
+
+def dist_addr_to_centreline_m(
+    point: Point,
+    centreline_tree: STRtree,
+) -> float:
+    """Approximate distance in metres from `point` to the nearest centreline
+    geometry. Used by the back-lot-residue gate (large distance + abuts
+    laneway → parcel polygon sits behind a frontage building).
+
+    Implementation: shapely planar `distance()` in WGS84 degrees, scaled
+    by the mean Toronto degree-to-metre factor. Accuracy ~5% — sufficient
+    for the 15m threshold-based caution. Returns 0.0 on empty inputs or
+    nearest-query failure (defensive — never raises in the hot loop).
+    """
+    if point is None or point.is_empty:
+        return 0.0
+    try:
+        idx = centreline_tree.nearest(point)
+    except Exception:
+        return 0.0
+    if idx is None:
+        return 0.0
+    try:
+        geom = centreline_tree.geometries[int(idx)]
+        return geom.distance(point) * _TORONTO_DEG_TO_M
+    except Exception:
+        return 0.0
+
+
 def is_corner_lot(
     parcel: Parcel,
     centreline_tree: STRtree,
