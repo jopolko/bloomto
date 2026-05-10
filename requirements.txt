@@ -1,18 +1,18 @@
-# BloomTO ETL — Python dependencies. Pinned to the workstation venv as of
-# 2026-05-10. Daily signals refresh on prod needs the lighter subset
-# (requests + shapely for spatial joins). Full rebuild on the workstation
-# needs the lot (pyproj + pyshp + numpy + openpyxl for census parsing).
-# Both paths can install from this single file.
-certifi==2026.4.22
-charset-normalizer==3.4.7
-et_xmlfile==2.0.0
-idna==3.13
-ijson==3.3.0
-numpy==2.4.4
-openpyxl==3.1.5
-pyproj==3.7.0
-pyshp==3.0.3
-requests==2.32.3
-shapely==2.0.6
-urllib3==2.6.3
-xlrd==2.0.2
+# BloomTO ETL — Python dependencies. `>=` pins (not `==`) so the same
+# requirements.txt installs on the workstation (Python 3.12) and prod
+# (Python 3.10), where the latest available numpy version differs.
+# Daily signals refresh on prod uses requests + shapely; full rebuild on
+# the workstation needs the full set including pyproj + pyshp + numpy.
+certifi>=2024.0.0
+charset-normalizer>=3.0
+et_xmlfile>=2.0
+idna>=3.0
+ijson>=3.0
+numpy>=2.0,<3
+openpyxl>=3.1
+pyproj>=3.6
+pyshp>=2.3
+requests>=2.31
+shapely>=2.0,<3
+urllib3>=2.0
+xlrd>=2.0
