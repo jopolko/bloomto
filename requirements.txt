@@ -1,0 +1,18 @@
+# BloomTO ETL — Python dependencies. Pinned to the workstation venv as of
+# 2026-05-10. Daily signals refresh on prod needs the lighter subset
+# (requests + shapely for spatial joins). Full rebuild on the workstation
+# needs the lot (pyproj + pyshp + numpy + openpyxl for census parsing).
+# Both paths can install from this single file.
+certifi==2026.4.22
+charset-normalizer==3.4.7
+et_xmlfile==2.0.0
+idna==3.13
+ijson==3.3.0
+numpy==2.4.4
+openpyxl==3.1.5
+pyproj==3.7.0
+pyshp==3.0.3
+requests==2.32.3
+shapely==2.0.6
+urllib3==2.6.3
+xlrd==2.0.2
