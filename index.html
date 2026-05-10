@@ -1439,13 +1439,15 @@
         }
         .pick > *:last-child { border-right: 0; }
         /* Trees column: center-justify both the header label and the row
-           values. Numeric value is short (single digit + emoji) and reads
-           better centered in the narrow column than right-aligned against
-           the cell border. */
-        .pick > [data-col="trees"],
+           values. Numeric value is short (single digit) and reads better
+           centered in the narrow 72px column than right-aligned against
+           the cell border. Selector uses descendant (not >) because the
+           trees cell sits inside .stats-row in the DOM (display:contents
+           flattens it visually into the .pick grid). */
+        .pick [data-col="trees"],
         .pick-header > *:last-child {
-            text-align: center;
-            justify-content: center;
+            text-align: center !important;
+            justify-content: center !important;
         }
 
         /* NZ score — center-aligned big-number tile */
