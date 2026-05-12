@@ -34,11 +34,11 @@ When the user proposes a specific dollar figure for the page, verify it via WebS
 
 ```bash
 # Serve locally for dev
-cd /var/www/html/DemoCalcTO
+cd /var/www/html/democalcto
 python3 -m http.server 8000
 
 # Or hit it through Apache directly at
-#   http(s)://joshuaopolko.com/DemoCalcTO/
+#   http(s)://joshuaopolko.com/democalcto/
 ```
 
 When changing the site:
@@ -50,7 +50,7 @@ When changing the site:
 
 Apache + mod_php (PHP 7.4) on `joshuaopolko.com` shared host. Practical implications:
 
-- Files placed in `/var/www/html/DemoCalcTO/` are served at `http(s)://joshuaopolko.com/DemoCalcTO/`.
+- Files placed in `/var/www/html/democalcto/` are served at `http(s)://joshuaopolko.com/democalcto/`.
 - The `.htaccess` default-denies everything except `index.html` — when adding a new file path the browser needs, widen the allow-list explicitly.
 - File ownership is `john:www-data` with group-write — keep new files in that group.
 - `python3 -m http.server` for local dev avoids `file://` CORS issues with `fetch()`.
@@ -70,7 +70,7 @@ Anything not on that list lives under `legacy/bloomto/tools/sources/` and is not
 
 ## Secrets
 
-`/var/secrets/bloomto.env` (root:www-data 640) holds `GOOGLE_API_KEY` and referer/rate-limit knobs. Never inline, never echo, never commit. Filename kept as `bloomto.env` for now; can rename later.
+`/var/secrets/democalcto.env` (root:www-data 640) holds `GOOGLE_API_KEY` and referer/rate-limit knobs. Never inline, never echo, never commit. Filename kept as `bloomto.env` for now; can rename later.
 
 ## Data Source Notes
 

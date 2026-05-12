@@ -1,4 +1,4 @@
-# DemoCalcTO
+# democalcto
 
 **Toronto demolition cost benchmarking.** Enter a Toronto address, get the median + quartile demolition cost for that structure type in that neighbourhood, sourced from city building-permit filings and supplemented with public contractor pricing.
 
@@ -34,7 +34,7 @@ Toronto developers currently spend $2–5K and 1–2 weeks getting demolition qu
 ## Layout
 
 ```
-DemoCalcTO/
+democalcto/
 ├── tools/
 │   ├── cache/             # Local data cache (gitignored)
 │   └── sources/           # CKAN data loaders
@@ -64,16 +64,16 @@ python3 -m venv .venv
 .venv/bin/python -m tools.build_democalc
 
 # Serve locally (no build step)
-cd /var/www/html/DemoCalcTO && python3 -m http.server 8000
+cd /var/www/html/democalcto && python3 -m http.server 8000
 ```
 
 ## Secrets
 
-`GOOGLE_API_KEY` lives in `/var/secrets/bloomto.env` on the prod host (root:www-data 640). Never inline, never echo, never commit. Used by `geocode-proxy.php` for address autocomplete.
+`GOOGLE_API_KEY` lives in `/var/secrets/democalcto.env` on the prod host (root:www-data 640). Never inline, never echo, never commit. Used by `geocode-proxy.php` for address autocomplete.
 
 ## Hosting
 
-Apache on `joshuaopolko.com`, serving `/var/www/html/DemoCalcTO/`. `.htaccess` default-denies everything except explicit allow-list of files needed by the UI.
+Apache on `joshuaopolko.com`, serving `/var/www/html/democalcto/`. `.htaccess` default-denies everything except explicit allow-list of files needed by the UI.
 
 ## License
 
