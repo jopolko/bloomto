@@ -388,6 +388,21 @@ def is_elite(props: dict) -> bool:
     # caution.
     if props.get("addressDriftSuspect"):
         return False
+    # Apartment-block masquerade exclusion (added 2026-05-12 — 191 Dunn Ave
+    # pattern). 5+ storey detached residences on Toronto's 25%+ coverage
+    # lots are almost universally converted multi-unit (Parkdale, Annex,
+    # High Park, Beaches Victorian conversions) — NOT multiplex-by-law
+    # candidates. Even if some are real luxury mansions, teardown of a
+    # $5-10M structure for a 6-unit multiplex doesn't pencil either way.
+    # Page is called "Multiplex Plays" → every elite row should actually
+    # be a multiplex play. Reject; broader keeps them for devs hunting
+    # value-add / refinance opportunities outside the multiplex pathway.
+    height = props.get("existingMaxBuildingHeightM") or 0
+    coverage = props.get("buildingCoverageRatio") or 0
+    approx = props.get("existingUnitsApprox") or 0
+    ap = props.get("addressPointCount") or 0
+    if height >= 14.0 and coverage >= 0.25 and approx >= 10 and (approx - ap) >= 5:
+        return False
     structure_type = props.get("existingStructureType", "unknown")
     if structure_type not in ELITE_STRUCTURE_TYPES:
         return False
