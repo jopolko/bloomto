@@ -349,6 +349,16 @@ def is_elite(props: dict) -> bool:
         return False
     if not props.get("residential", False):
         return False
+    # Back-lot residue exclusion (added 2026-05-11 — 1030 Danforth /
+    # 1558 Davenport pattern). When a parcel abuts a laneway AND its
+    # representative point sits ≥15 m from the nearest street centreline,
+    # the parcel is geometrically behind the frontage — accessed only via
+    # the laneway, not the street. These are residue lots, not
+    # underwriting-grade frontage parcels. The frontend was already
+    # surfacing `back_lot_candidate` in meta.stats; this gate uses the
+    # same signal as a hard-exclusion for the elite cohort.
+    if props.get("abutsLaneway") and (props.get("addrToStreetM") or 0) >= 15:
+        return False
     structure_type = props.get("existingStructureType", "unknown")
     if structure_type not in ELITE_STRUCTURE_TYPES:
         return False

@@ -317,6 +317,55 @@
             opacity: 0.78;
             font-variant-numeric: tabular-nums;
         }
+        /* TGS V4 reference card — informational table of Toronto Green
+           Standard tier ceilings (GHGI / TEUI / TEDI) applicable to new
+           construction. Static data, embedded client-side per the
+           TransformTO alignment roadmap. Frames the dev's eventual build
+           obligations alongside the parcel they're looking at. */
+        .tgs-card {
+            background: var(--surface);
+            border: 1px solid var(--rule);
+            border-radius: 6px;
+            padding: 10px 12px 12px;
+        }
+        .tgs-card .tgs-intro {
+            font-size: 12px;
+            line-height: 1.5;
+            color: var(--ink);
+            margin-bottom: 8px;
+        }
+        .tgs-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        .tgs-table th, .tgs-table td {
+            text-align: left;
+            padding: 5px 8px;
+            border-bottom: 1px solid var(--rule);
+        }
+        .tgs-table th {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--ink-muted);
+            background: rgba(47, 106, 79, 0.05);
+        }
+        .tgs-table .tgs-row-t1 { background: rgba(47, 106, 79, 0.06); font-weight: 600; }
+        .tgs-table .tgs-tier { font-weight: 600; color: var(--cot-green); }
+        .tgs-table .tgs-note { font-size: 11px; color: var(--ink-mute2); }
+        .tgs-card .tgs-foot {
+            font-size: 10px;
+            color: var(--ink-mute2);
+            line-height: 1.45;
+            margin-top: 6px;
+        }
+        .tgs-card .tgs-foot a {
+            color: var(--cot-green);
+            text-decoration: underline;
+            text-decoration-style: dotted;
+        }
         /* Detail-panel "Owner activity" section — full per-record cards. */
         .signal-section-tag {
             display: inline-block; margin-left: 8px;
@@ -483,67 +532,178 @@
             display: flex; align-items: center; justify-content: center;
         }
         #site-note-dialog .snd-close:hover { background: var(--rule); color: var(--ink); }
-        /* Toronto Hydro Multiplex PowerPlay pilot — $50K toward smart-load-
-           management devices for 4-6 unit multiplex with electrification.
-           EOI deadline May 31 2026; auto-hides after that. Yellow theme to
-           visually distinguish from the parcel-fixed-dollars (green) family.
-           Central banner: single strip above the listings (replaces the
-           per-row badge that was noise on every eligible row). */
-        .powerplay-banner {
-            display: flex; align-items: center; flex-wrap: wrap;
-            gap: 10px;
-            padding: 8px 14px;
-            margin: 8px 0 0;
-            background: linear-gradient(90deg, #fef3c7 0%, #fef9e7 60%, #ffffff 100%);
-            border: 1px solid #fcd34d;
-            border-left: 3px solid #f59e0b;
-            border-radius: 6px 6px 0 0;
-            font-size: 13px;
+        /* Methodology dialog — explains how the cover-list is built. Wider
+           than the site-note dialog because the content is longer-form prose
+           + a table. Same backdrop / close-button pattern for consistency. */
+        #methodology-dialog {
+            border: 1px solid var(--rule-strong);
+            border-radius: 8px;
+            padding: 0;
+            max-width: min(680px, 92vw);
+            max-height: 88vh;
+            box-shadow: 0 12px 40px rgba(17, 24, 39, 0.20);
             color: var(--ink);
-            line-height: 1.4;
-            /* Sticky to keep the deadline countdown in view as the dev
-               scrolls the listings — persistent urgency without a per-row
-               column. Sits above the column header (which is also sticky
-               at top:0; this one stacks above it). */
-            position: sticky; top: 0; z-index: 6;
+            font-family: 'Inter', system-ui, sans-serif;
+            /* No `display: flex` here — that would override the UA default
+               `display: none` for closed dialogs and keep the modal visible
+               on page load. Scope the flex layout to [open] state only. */
         }
-        .powerplay-banner.urgent {
-            background: linear-gradient(90deg, #fee2e2 0%, #fef2f2 60%, #ffffff 100%);
-            border-color: #fca5a5;
-            border-left-color: #dc2626;
+        #methodology-dialog[open] {
+            display: flex;
+            flex-direction: column;
         }
-        .powerplay-banner-eyebrow {
-            font-size: 10px; font-weight: 700;
-            color: #92400e;
-            letter-spacing: 0.08em; text-transform: uppercase;
-            white-space: nowrap;
+        #methodology-dialog::backdrop {
+            background: rgba(17, 24, 39, 0.55);
         }
-        .powerplay-banner.urgent .powerplay-banner-eyebrow { color: #991b1b; }
-        .powerplay-banner-headline {
+        #methodology-dialog .md-head {
+            display: flex; justify-content: space-between; align-items: baseline;
+            padding: 14px 18px 10px;
+            border-bottom: 1px solid var(--rule);
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        #methodology-dialog .md-title {
+            font-size: 16px; font-weight: 700;
+            color: var(--ink);
+        }
+        #methodology-dialog .md-body {
+            padding: 14px 18px 18px;
+            font-size: 13px; line-height: 1.55;
+            color: var(--ink);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+        #methodology-dialog .md-body h3 {
+            font-size: 13px; font-weight: 700;
+            color: var(--cot-green);
+            margin: 14px 0 6px;
+            letter-spacing: 0.01em;
+        }
+        #methodology-dialog .md-body h3:first-child { margin-top: 0; }
+        #methodology-dialog .md-body p { margin: 0 0 8px; }
+        #methodology-dialog .md-body ul {
+            margin: 0 0 10px; padding-left: 18px;
+        }
+        #methodology-dialog .md-body li { margin-bottom: 4px; }
+        #methodology-dialog .md-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0 10px;
+            font-size: 12px;
+        }
+        #methodology-dialog .md-body th,
+        #methodology-dialog .md-body td {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--rule);
+            vertical-align: top;
+        }
+        #methodology-dialog .md-body th {
+            background: rgba(47, 106, 79, 0.06);
+            color: var(--ink);
             font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        #methodology-dialog .md-body td:first-child { font-weight: 600; width: 42%; }
+        #methodology-dialog .md-body em { color: var(--ink-mute2); font-style: italic; }
+        #methodology-dialog .md-close {
+            position: absolute; top: 6px; right: 8px;
+            width: 32px; height: 32px;
+            background: transparent; border: 0; cursor: pointer;
+            font-size: 22px; color: var(--ink-muted);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #methodology-dialog .md-close:hover { background: var(--rule); color: var(--ink); }
+        .methodology-link {
+            color: var(--cot-green);
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            text-underline-offset: 2px;
+            cursor: pointer;
+            background: none; border: 0;
+            font: inherit;
+            padding: 0;
+        }
+        .methodology-link:hover { color: #0b3d1f; }
+        /* Definition icon + popover — tap/click target for jargon explanations.
+           Replaces (gradually) the desktop-only title="" tooltips so mobile
+           users can finally access the explanations. One global popover, one
+           click handler, central GLOSSARY object in the script block. Pattern:
+           <span class="def-icon" data-def="key">i</span> anywhere in the markup. */
+        .def-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 14px; height: 14px;
+            margin: 0 1px 0 3px;
+            border-radius: 50%;
+            background: var(--rule);
+            color: var(--ink-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 9px; font-weight: 700;
+            font-style: italic;
+            line-height: 1;
+            cursor: pointer;
+            vertical-align: middle;
+            user-select: none;
+            transition: background 0.12s ease, color 0.12s ease;
+        }
+        .def-icon:hover, .def-icon:focus, .def-icon[aria-expanded="true"] {
+            background: var(--cot-green);
+            color: #fff;
+            outline: none;
+        }
+        /* Bigger touch target on mobile so a finger reliably hits it without
+           making the icon visually larger (pseudo-element padding trick). */
+        @media (max-width: 640px) {
+            .def-icon { width: 16px; height: 16px; font-size: 10px; }
+            .def-icon::after {
+                content: '';
+                position: absolute;
+                width: 28px; height: 28px;
+                margin: -6px;
+            }
+            .def-icon { position: relative; }
+        }
+        #def-popover {
+            position: fixed;
+            /* z-index above the detail panel (1001) so def-icons clicked
+               from inside the panel surface their popover on top. The
+               popover lives outside the panel in the DOM (sibling of
+               <body>), so it's not subject to the panel's transform —
+               this z-index bump is all that's needed. */
+            z-index: 1100;
+            max-width: 300px;
+            min-width: 200px;
+            padding: 10px 12px 11px;
+            background: var(--surface);
+            border: 1px solid var(--rule-strong);
+            border-radius: 6px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+            font-size: 12px;
+            line-height: 1.45;
             color: var(--ink);
         }
-        .powerplay-banner-headline strong { color: #ca8a04; }
-        .powerplay-banner.urgent .powerplay-banner-headline strong { color: #b91c1c; }
-        .powerplay-banner-deadline {
-            font-family: ui-monospace, Menlo, monospace;
-            font-weight: 700; color: #b91c1c;
+        #def-popover .def-term {
+            font-weight: 700;
+            color: var(--cot-green);
+            margin-bottom: 4px;
+            font-size: 12px;
+            letter-spacing: 0.02em;
         }
-        .powerplay-banner-link {
-            margin-left: auto;
-            font-size: 12px; font-weight: 600;
-            color: #b45309; text-decoration: underline;
-            white-space: nowrap;
-        }
-        .powerplay-banner-link:hover { color: #78350f; }
-        @media (max-width: 640px) {
-            .powerplay-banner { font-size: 12px; padding: 8px 10px; }
-            .powerplay-banner-link { margin-left: 0; }
+        #def-popover .def-body { color: var(--ink); }
+        #def-popover .def-cite {
+            display: block;
+            margin-top: 5px;
+            font-size: 10px;
+            color: var(--ink-mute2);
+            font-style: italic;
         }
         /* Weekly-delta strip — green-themed pulse showing "This week
-           (since last refresh): +X picks · Y new signals". Sits between
-           the PowerPlay banner and the column header; non-sticky (scrolls
-           away with the rest of the chrome). */
+           (since last refresh): +X picks · Y new signals". Sits above
+           the column header; non-sticky (scrolls away with the rest of
+           the chrome). */
         .weekly-delta {
             display: flex; align-items: center; flex-wrap: wrap;
             gap: 10px;
@@ -1081,7 +1241,22 @@
         }
         @media (max-width: 640px) {
             .magazine-actions { justify-content: stretch; gap: 8px; }
-            .search-input-compact { flex: 1 1 100%; min-height: 44px; font-size: 15px; }
+            /* Mobile actions row — explicit row-grouping. The $67M badge
+               (actions-total) and the "Browse all candidates" button
+               (tier-toggle) each claim their own row via flex-basis: 100%.
+               That leaves the Filter input + ☆ saved-toggle to share the
+               middle row. The default flex-wrap algorithm was forcing the
+               star to its own line because the natural widths fought for
+               space; explicit row-claims fix it. */
+            .actions-total { flex: 0 0 100%; margin-right: 0; text-align: left; }
+            /* `.search-input.search-input-compact` (two-class selector) beats
+               the single-class `.search-input { width: 100% }` rule that
+               otherwise wins via source-order. Without this, the compact
+               input still hits 100% width and pushes the star to its own
+               row. */
+            .search-input.search-input-compact { flex: 1 1 auto; min-width: 0; width: auto; min-height: 44px; font-size: 15px; }
+            .saved-toggle { flex: 0 0 auto; }
+            .tier-toggle { flex: 0 0 100%; justify-content: center; }
         }
         .saved-toggle {
             display: inline-flex;
@@ -1688,7 +1863,6 @@
                 64px                  /* Hot — days since latest signal/permit */
                 104px                 /* Lot */
                 120px                 /* Existing (footprint + storeys) */
-                64px                  /* Built */
                 108px                 /* TTC — fits "Streetcar 50m" / "Subway 1.2km" without truncation */
                 76px                  /* Sixplex */
                 88px                  /* Permits — fits "Nbhd permits" without wrap */
@@ -1704,13 +1878,7 @@
             background: #d8dde4;
             border-top: 1px solid var(--rule-strong);
             border-bottom: 1px solid var(--rule-strong);
-            /* Sticky offset = PowerPlay banner height. ~38px desktop / 56px
-               mobile when banner wraps. After May 31 2026 the banner
-               auto-hides and these stack onto top:0 anyway. */
-            position: sticky; top: 38px; z-index: 5;
-        }
-        @media (max-width: 640px) {
-            .pick-header { top: 56px; }
+            position: sticky; top: 0; z-index: 5;
         }
         .pick-header > * {
             padding: 6px 8px;
@@ -1930,7 +2098,7 @@
             .pick-header {
                 display: flex !important;
                 flex-wrap: wrap;
-                gap: 6px;
+                gap: 4px;
                 padding: 8px 6px 6px;
                 background: transparent;
                 border: 0;
@@ -1942,20 +2110,20 @@
                 font-size: 10px;
                 font-weight: 700;
                 text-transform: uppercase;
-                letter-spacing: 0.06em;
+                letter-spacing: 0.04em;
                 color: var(--ink-mute2);
                 align-self: center;
-                margin-right: 2px;
+                margin-right: 1px;
                 font-family: 'Inter', system-ui, sans-serif;
             }
             .pick-header .col-btn {
                 display: inline-flex;
                 align-items: center;
-                padding: 5px 11px;
-                font-size: 11px;
+                padding: 4px 8px;
+                font-size: 10px;
                 font-weight: 700;
                 text-transform: uppercase;
-                letter-spacing: 0.04em;
+                letter-spacing: 0.02em;
                 border: 1px solid var(--rule);
                 border-radius: 999px;
                 background: var(--surface);
@@ -2113,9 +2281,8 @@
             .pick .stats-row [data-col="sixplex"]::before   { content: 'Units'; }
             .pick .stats-row [data-col="lot"]::before       { content: 'Lot m²'; }
             .pick .stats-row [data-col="footprint"]::before { content: 'Existing'; }
-            .pick .stats-row [data-col="built"]::before     { content: 'Built'; }
             .pick .stats-row [data-col="subway"]::before    { content: 'TTC'; }
-            .pick .stats-row [data-col="permits"]::before   { content: 'Permits'; }
+            .pick .stats-row [data-col="permits"]::before   { content: 'Nbhd permits'; }
             .pick .stats-row [data-col="trees"]::before     { content: 'Trees'; }
             .pick .stats-row [data-col="savings"]::before   { content: 'Saved'; }
             /* Explicit grid placement — same metric in same spot every
@@ -2125,11 +2292,10 @@
             .pick .stats-row [data-col="sixplex"]   { grid-column: 2; grid-row: 1; }
             .pick .stats-row [data-col="lot"]       { grid-column: 3; grid-row: 1; }
             .pick .stats-row [data-col="footprint"] { grid-column: 1; grid-row: 2; }
-            .pick .stats-row [data-col="built"]     { grid-column: 2; grid-row: 2; }
-            .pick .stats-row [data-col="subway"]    { grid-column: 3; grid-row: 2; }
-            .pick .stats-row [data-col="permits"]   { grid-column: 1; grid-row: 3; }
-            .pick .stats-row [data-col="trees"]     { grid-column: 2; grid-row: 3; }
-            .pick .stats-row [data-col="savings"]   { grid-column: 3; grid-row: 3; }
+            .pick .stats-row [data-col="subway"]    { grid-column: 2; grid-row: 2; }
+            .pick .stats-row [data-col="permits"]   { grid-column: 3; grid-row: 2; }
+            .pick .stats-row [data-col="trees"]     { grid-column: 1; grid-row: 3; }
+            .pick .stats-row [data-col="savings"]   { grid-column: 2; grid-row: 3; }
             /* Color-popped values for the deal-relevant trio */
             .pick .stats-row [data-col="sixplex"]  { font-weight: 700; }
             .pick .stats-row [data-col="savings"]  { font-weight: 700; color: #15803d; }
@@ -2237,6 +2403,13 @@
             transition: all 0.12s ease;
         }
         .detail-nearby:hover { background: rgba(47, 106, 79, 0.20); }
+        .detail-nearby:disabled {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--ink-mute2);
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+        .detail-nearby:disabled:hover { background: rgba(0, 0, 0, 0.05); }
         .detail-maps {
             height: 32px; flex-shrink: 0;
             padding: 0 12px;
@@ -2433,16 +2606,43 @@
             padding: 16px 20px 14px;
             background: linear-gradient(135deg, #f3f9f4 0%, #ffffff 100%);
             border-bottom: 1px solid rgba(47, 106, 79, 0.1);
-            display: flex; gap: 10px; align-items: flex-start;
+            /* flex-wrap added 2026-05-11 — the panel is 540px max and the
+               5 action buttons + close can eat enough of that width to
+               truncate even short addresses like "106 Eastwood Rd" on
+               desktop. Wrap lets the address row take a full line above
+               the actions when there isn't room for both. */
+            display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap;
         }
-        .detail-header .head-text { flex: 1; min-width: 0; }
+        .detail-header .head-text {
+            /* Force the address line to claim its own row on desktop
+               (same approach as mobile). Avoids the truncation problem
+               cleanly without trying to balance button widths. */
+            flex: 1 1 100%;
+            min-width: 0;
+        }
         .detail-header h2 {
             font-family: 'Poppins', sans-serif;
             font-size: 18px; font-weight: 700; color: #1f4131;
             line-height: 1.2; margin: 0;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            /* Allow wrap on long addresses now that the row is full-width. */
+            white-space: normal;
+            word-break: break-word;
         }
         .detail-header .nb { color: #4f9d7d; font-size: 12px; font-weight: 600; margin-top: 3px; }
+        /* Mobile-specific tightening — flex-wrap and stacked head-text are
+           now in the base desktop rule (full address always claims its own
+           row), so the only mobile-specific tweaks left are padding/font/
+           gap density. */
+        @media (max-width: 640px) {
+            .detail-header {
+                padding: 12px 14px 10px;
+                gap: 8px;
+            }
+            .detail-header h2 {
+                font-size: 17px;
+                line-height: 1.25;
+            }
+        }
         .detail-close {
             width: 32px; height: 32px; flex-shrink: 0;
             border: none; background: rgba(47, 106, 79, 0.08);
@@ -2451,7 +2651,7 @@
             transition: background 0.12s ease;
         }
         .detail-close:hover { background: rgba(47, 106, 79, 0.18); }
-        .detail-body { flex: 1; overflow-y: auto; padding: 16px 20px 24px; }
+        .detail-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px 20px 24px; }
         .detail-body section { margin-bottom: 20px; }
         .detail-body h4 {
             font-family: 'Poppins', sans-serif;
@@ -2513,12 +2713,28 @@
             background: linear-gradient(135deg, #f0f7f2 0%, #ffffff 60%);
             border-color: rgba(47, 106, 79, 0.30);
         }
+        .score-hero .num-block {
+            display: flex; flex-direction: column;
+            align-items: flex-start; gap: 2px;
+            min-width: 70px;
+        }
         .score-hero .num {
             font-family: 'Inter', sans-serif;
-            font-size: 44px; font-weight: 700; line-height: 1;
+            font-size: 26px; font-weight: 700; line-height: 1;
             color: var(--cot-green);
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.02em;
+        }
+        .score-hero .num-unit {
+            font-size: 11px; font-weight: 500;
+            color: var(--ink-mute2);
+            margin-left: 3px;
+        }
+        .score-hero .num-label {
+            font-size: 10px; font-weight: 600;
+            color: var(--ink-mute2);
+            text-transform: uppercase; letter-spacing: 0.06em;
+            line-height: 1.2;
         }
         .score-hero .meat { flex: 1; }
         .score-supporting {
@@ -2810,6 +3026,9 @@
     </style>
 </head>
 <body>
+    <!-- Global definition popover. Single element reused for every .def-icon
+         click/tap. Hidden by default; positioned at click-time via JS. -->
+    <div id="def-popover" hidden role="dialog" aria-modal="false"></div>
     <header class="px-6 py-3" style="background: var(--surface); border-bottom: 1px solid var(--rule);">
         <!-- 2026-05-09: actions row (inline $ total, filter, ★ saved,
              broader-set toggle) folded into the page header to save 1-2
@@ -2822,10 +3041,10 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3" style="padding-left:18px;padding-right:18px">
             <div>
                 <h1 class="text-2xl font-bold"><a href="./" class="gradient-text title-link" aria-label="Reload BloomTO">BloomTO</a></h1>
-                <p class="text-xs text-gray-600 mt-0.5">Toronto Multiplex Picks · refreshed daily · <span id="last-updated">…</span> · check back often</p>
+                <p class="text-xs text-gray-600 mt-0.5">Toronto Multiplex Plays · Updated <span id="last-updated">…</span> · Data from <a target="_blank" rel="noopener" href="https://open.toronto.ca/">Toronto Open Data</a> · <button type="button" class="methodology-link" id="methodology-link">How we picked these</button></p>
             </div>
             <div class="magazine-actions">
-                <span id="actions-total" class="actions-total" aria-live="polite" title="Stacked Bill 185 incentives across the currently-loaded set ($200K DC waiver + $25K × max units parking elimination per pick). HST + GST rebates excluded — they're sale-price-driven, not parcel-fixed."></span>
+                <span id="actions-total" class="actions-total" aria-live="polite" title="Total DC-waiver savings across the currently-loaded set. Per parcel: $113,938 (Multiples 2+ BR rate, June 26 2025) × (target units − 1), since unit 1 always pays the full DC under By-law 1137-2022 + EX24.2 (Jul 24 2025). HST + GST rebates excluded — sale-price-driven, not parcel-fixed."></span>
                 <input id="search" class="search-input search-input-compact"
                        placeholder="Filter…" type="text"
                        aria-label="Filter listings"
@@ -2870,13 +3089,6 @@
                  dopamine inline. Populated by renderDailyPicksStrip();
                  hidden when neither slot has a qualifying parcel. -->
             <div id="daily-picks" class="daily-picks" hidden></div>
-            <!-- PowerPlay banner — central announcement strip 2026-05-09.
-                 Most elite parcels (4-6 unit band) qualify, so a per-row
-                 badge was noise. Single banner with the headline + countdown
-                 + program link communicates the signal once; auto-hides
-                 after the May 31 2026 EOI deadline. Populated by
-                 renderPowerPlayBanner(). -->
-            <div id="powerplay-banner" hidden></div>
             <!-- Weekly-delta strip 2026-05-09 — populated by
                  renderWeeklyDelta(). Compares THIS rebuild's elite set
                  to the prior rebuild (parcels-top-prev.json) for added
@@ -2889,12 +3101,11 @@
                 <button class="col-btn" data-sort="activity" title="Days since the latest activity signal on this parcel — most-recent of (a) on-lot building permit, or (b) active CKAN signal (severance / demolition permit / property-standards violation, last 12 months). '—' if neither. Sort: freshest first. (Default sort.)">Hot</button>
                 <button class="col-btn" data-sort="area" title="Sort by lot area (largest first)">Lot (m²)</button>
                 <button class="col-btn" data-sort="footprint" title="Existing structure on the lot — footprint area (m²) and rough storey count (height ÷ 3, derived from 3D Massing). 'vacant' when no structure recorded. Sort: smallest footprint first.">Existing</button>
-                <button class="col-btn" data-sort="built" title="Sort by build year (oldest first)">Built</button>
                 <button class="col-btn" data-sort="subway" title="Nearest higher-order TTC — subway (S) or streetcar (C). Sort by distance, closest first. Cell shows 'S 200m' / 'C 50m'. Bus excluded (most Toronto parcels are bus-close; bus distance doesn't move PSF comps the way subway/streetcar does — bus distance lives in the detail panel Site notes).">TTC</button>
                 <button class="col-btn" data-sort="units" title="Existing → max units. Existing = address points on parcel polygon (vacant = 0). Max = streamlined multiplex pathway target — 6 in T&amp;EY + Ward 23 (June 2025 sixplex carve-out), 4 citywide otherwise. '+' suffix means the underlying zone (FSI / RM / CR) supports MORE than that, but via Site Plan Approval (mid-rise pathway), not the streamlined multiplex by-law. Sort: highest max first.">→ Units</button>
                 <button class="col-btn" data-sort="permits_nb" title="Permit activity in this parcel's neighborhood over the last 5 years (sample size). Sort: most first.">Nbhd permits</button>
                 <button class="col-btn" data-sort="trees" title="Sort by mature tree count (most first)">Trees</button>
-                <button class="col-btn" data-sort="savings" title="Stacked Bill 185 incentives per pick — $200K DC waiver + $25K × max units parking elimination. ≤6 units only (the streamlined multiplex pathway). HST/GST rebates not stacked here — they're sale-price-driven, so the dev's pro forma carries them separately. Sort: highest stack first.">$ Saved</button>
+                <button class="col-btn" data-sort="savings" title="DC-waiver savings per pick — $113,938 (Multiples 2+ BR rate, June 26 2025) × (max_units − 1), since unit 1 always pays. Toronto By-law 1137-2022 + EX24.2 (effective July 24, 2025). HST/GST rebates and other unverified industry estimates not stacked. Sort: highest savings first.">$ Saved <span class="def-icon" data-def="bill-185" role="button" tabindex="0" aria-label="Definition of Bill 185">i</span></button>
             </div>
             <div id="picks" class="pick-list"></div>
         </section>
@@ -2949,7 +3160,7 @@
                         <div class="formula-stack">
                             <span class="formula-label">$ stacked</span>
                             <span class="formula-eq">=</span>
-                            <span class="formula-rhs">Σ <sub><em>p</em> ∈ ELITE</sub> [ $200K · DC_waiver(<em>p</em>) + $25K · max_units(<em>p</em>) · parking_elim(<em>p</em>) ]</span>
+                            <span class="formula-rhs">Σ <sub><em>p</em> ∈ ELITE</sub> [ $113,938 · (max_units(<em>p</em>) − 1) · DC_waiver(<em>p</em>) ]</span>
                         </div>
                     </div>
                     <div class="datasets-grid">
@@ -2976,11 +3187,11 @@
             </details>
             <div class="footer-section">
                 <span class="footer-label">Regulatory anchors:</span>
-                <a target="_blank" rel="noopener" href="https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185">Bill 185</a> (parking minimums + DC waiver ≤6 units, Jan 2025) ·
-                <a target="_blank" rel="noopener" href="https://secure.toronto.ca/council/agenda-item.do?item=2025.EX24.2">2025.EX24.2</a> (City DC waiver implementation) ·
-                <a target="_blank" rel="noopener" href="https://budget.ontario.ca/2026/hst.html">2026 ON Budget</a> (HST rebate 75%→100%, cap removed) ·
-                <a target="_blank" rel="noopener" href="https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/purpose-built-rental-housing.html">Federal PBRH</a> (GST rebate, no cap) ·
-                <a target="_blank" rel="noopener" href="https://www.torontohydro.com/contractors-and-developers/multiplex-powerplay-pilot-program">TH Multiplex PowerPlay</a> (May 31 2026 deadline · 6 winners) ·
+                <a target="_blank" rel="noopener" href="https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185">Bill 185</a> (parking-min eliminated citywide, 2024) ·
+                <a target="_blank" rel="noopener" href="https://secure.toronto.ca/council/agenda-item.do?item=2025.EX24.2">2025.EX24.2</a> (units 2–6 DC-exempt, effective Jul 24, 2025) ·
+                <a target="_blank" rel="noopener" href="https://budget.ontario.ca/2026/hst.html">2026 ON Budget HST rebate</a> (100% provincial 8%, $80K max ≤$1M, Apr 2026–Mar 2027) ·
+                <a target="_blank" rel="noopener" href="https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/purpose-built-rental-housing.html">Federal PBRH</a> (100% GST · $35K/unit cap · 4+ units rental) ·
+                <a target="_blank" rel="noopener" href="https://www.torontohydro.com/contractors-and-developers/multiplex-powerplay-pilot-program">TH Multiplex PowerPlay</a> ($50K · 4-6 unit electrified · EOI May 31 2026 · 6 winners) ·
                 <a target="_blank" rel="noopener" href="https://www.toronto.ca/city-government/planning-development/planning-studies-initiatives/multiplex-housing/">By-law 569-2013</a> (sixplex T&amp;EY + Ward 23, Jun 2025)
             </div>
             <div class="footer-section">
@@ -3008,6 +3219,57 @@
         </div>
         <div class="snd-body" id="snd-body">…</div>
     </dialog>
+    <!-- Methodology dialog — explains how the cover-list is built. Opens
+         from the "How we picked these" link in the page header subtitle.
+         Content is static; rendered server-side as HTML for SEO + first-
+         paint clarity. -->
+    <dialog id="methodology-dialog" aria-labelledby="md-title">
+        <button type="button" class="md-close" id="md-close" aria-label="Close">&times;</button>
+        <div class="md-head">
+            <span class="md-title" id="md-title">How we picked these parcels</span>
+        </div>
+        <div class="md-body">
+            <p>This list isn't a ranking. It's the parcels that pass every check we run for a 4-6 unit multiplex play under the post-Bill 185 rules. We start with all ~528,000 Toronto parcels and filter out anything a developer can't economically build on, then keep only the ones that meet a tight quality bar.</p>
+
+            <h3>What we exclude</h3>
+            <table>
+                <thead><tr><th>Reason</th><th>Why</th></tr></thead>
+                <tbody>
+                    <tr><td>Heritage Register entry (designated or listed)</td><td>Can't teardown without city approval; rarely granted for multiplex.</td></tr>
+                    <tr><td>TRCA regulated area (floodplain, valley, wetland)</td><td>New residential effectively prohibited.</td></tr>
+                    <tr><td>Apartment-only zoning (RA / RAC)</td><td>Wrong product for the streamlined multiplex pathway.</td></tr>
+                    <tr><td>Existing footprint over 500 m²</td><td>Already too much building; teardown economics don't work.</td></tr>
+                    <tr><td>Wealthy enclaves (Forest Hill, Rosedale, Bridle Path, Casa Loma…)</td><td>Land cost alone exceeds typical multiplex budgets.</td></tr>
+                    <tr><td>Neighborhood median dwelling value over $2M</td><td>Same logic, broader.</td></tr>
+                    <tr><td>Missing or unverified address</td><td>Can't underwrite what you can't physically locate.</td></tr>
+                    <tr><td>Institutional or non-residential land</td><td>School fields, parkettes, parking lots, mainstreet retail, road-allowance slivers.</td></tr>
+                </tbody>
+            </table>
+
+            <h3>What makes the cut</h3>
+            <p>A parcel has to check every one of these:</p>
+            <ul>
+                <li><strong>Walking distance to higher-order transit</strong> — within 500m of subway or streetcar. This is the Major Transit Station Area zone where the Bill 185 parking-minimum waiver applies and tenant demand is strongest.</li>
+                <li><strong>Lot at least 350 m²</strong> — room for a 4-6 unit footprint without site-fitting compromise.</li>
+                <li><strong>Zoning allows 4+ units as-of-right</strong> under the streamlined multiplex pathway (citywide 4-cap, or the Toronto–East York + Ward 23 sixplex carve-out from June 2025).</li>
+                <li><strong>Clean teardown story</strong> — the existing building is detached, or the lot is vacant. Semis appear in the broader list; row-houses and unconfirmed structures are excluded everywhere.</li>
+                <li><strong>Structure type confirmed by city data</strong> — a building-permit record, an OpenStreetMap building tag, or a Toronto Address Points cross-confirmation. Best-guess classifications don't make this list.</li>
+            </ul>
+
+            <h3>What you're seeing</h3>
+            <p>~260 parcels citywide that pass every check. Not a ranking — a set of <em>structurally clean teardown candidates within walking distance of higher-order transit, where the regulatory and economic pieces line up before you spend a minute underwriting.</em></p>
+
+            <h3>What this isn't</h3>
+            <p>It isn't financial advice. It isn't a guarantee that any specific parcel is for sale, or for sale at a price that pencils. And it isn't a complete pro forma — we surface the inputs that distinguish good parcels from bad, so you spend real time modelling the few worth modelling instead of all of them.</p>
+
+            <h3>Worth knowing</h3>
+            <ul>
+                <li><strong>The picks list refreshes weekly</strong> (Sundays). <strong>Daily signals</strong> in the Owner-Activity section — severance applications, demolition permits, property-standards orders — refresh every night from Toronto Open Data.</li>
+                <li><strong>City building-geometry data has coverage gaps.</strong> We cross-check with Address Points and OpenStreetMap where possible, but verify on Google Street View before relying on any specific parcel's existing-structure claim.</li>
+                <li><strong>Per-parcel construction-cost benchmarks</strong> in the detail panel come from <em>declared</em> values on building permits, which typically under-report actual hard costs by 20-40%. Treat them as a neighborhood-cost-tier benchmark, not a budget. Your cost consultant applies the multipliers.</li>
+            </ul>
+        </div>
+    </dialog>
 
     <div id="detail-overlay"></div>
     <aside id="detail-panel" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden>
@@ -3025,7 +3287,7 @@
                 <div class="nb" id="detail-nb">—</div>
             </div>
             <a class="detail-maps" id="detail-maps" target="_blank" rel="noopener" href="#" aria-label="Open in Google Maps" title="Open this parcel in Google Maps in a new tab.">Map</a>
-            <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other multiplex sites within 500m of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">Nearby</button>
+            <button class="detail-nearby" id="detail-nearby" type="button" aria-label="Search nearby" title="Filter the listings to other cover-list parcels within 1km of this parcel. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.">Nearby</button>
             <button class="detail-print" id="detail-print" type="button" aria-label="Print" title="Open the print dialog and choose 'Save as PDF' to keep this parcel as a one-page deal doc.">Print</button>
             <button class="detail-save" id="detail-save" type="button" aria-pressed="false" aria-label="Save to watchlist" title="Save this parcel to your watchlist (browser-local). Toggle the ★ Saved chip in the page header to filter the listings to your saved set.">
                 <span class="detail-save-icon">☆</span><span class="detail-save-label">Save</span>
@@ -3461,7 +3723,6 @@
             bike:          (a, b) => ((a.distBikeLaneM ?? 1e9) - (b.distBikeLaneM ?? 1e9)) || _tieByLotDesc(a, b),
             units:         (a, b) => ((b.maxUnits || 0) - (a.maxUnits || 0)) || _tieByLotDesc(a, b),
             coverage:      (a, b) => ((a.buildingCoverageRatio || 0) - (b.buildingCoverageRatio || 0)) || _tieByLotDesc(a, b),
-            built:         (a, b) => ((a.builtYear || 9999) - (b.builtYear || 9999)) || _tieByLotDesc(a, b),
             // Address is a complete alphabetical order — no useful secondary.
             address:       (a, b) => (a.address || '~').localeCompare(b.address || '~'),
             // Bill 185 stacked dollar total — pure arithmetic on city numbers
@@ -4113,7 +4374,7 @@
             // section heading sets context.
             return `
                 <section>
-                    <h4>Owner activity <span class="signal-section-tag">live · daily refresh</span></h4>
+                    <h4>Owner activity <span class="def-icon" data-def="hot-signal" role="button" tabindex="0" aria-label="Definition of Owner activity">i</span> <span class="signal-section-tag">live · daily refresh</span></h4>
                     ${blocks.join('')}
                 </section>`;
         }
@@ -4392,50 +4653,45 @@
                     const visitDaysText = visitDays === 0 ? 'earlier today'
                                         : visitDays === 1 ? '1 day ago'
                                         : `${visitDays} days ago`;
-                    newest._pickWhy = `Just entered the cover-list since your last visit ${visitDaysText}.`;
+                    newest._pickWhy = `New to the top picks since your last visit (${visitDaysText}).`;
                 }
             }
-            // First-visit fallback. Uses sync wire data (`permitsRecentMostRecentDate`,
-            // baked into parcels-top.json by build_parcels.py) so the card populates
-            // on the very first render — independent of the async CKAN fresh-permits
-            // fetch which may fail on local dev or return zero matches in elite parcels.
-            // Picks the absolute freshest on-lot permit in the cohort, period —
-            // no signal-exclusion. If HOTTEST would have wanted the same parcel,
-            // HOTTEST falls back to the next-freshest signal-bearing parcel below.
-            // First-visit only; deeper inspection (row badges, detail panel)
-            // makes the signal/permit distinction clear.
+            // Rebuild-delta fallback (2026-05-11). For first-time visitors
+            // (no localStorage snapshot yet) AND for returning visitors whose
+            // snapshot has no delta, pick the freshest parcel that entered
+            // the elite cohort in the most recent ETL rebuild. This keeps
+            // "Newest" semantically distinct from Hot — Hot sorts by activity
+            // recency, Newest tracks cohort-membership changes. Previous
+            // implementation here used `latestActivityDays()` as the fallback
+            // which made Newest identical to the top of the Hot sort —
+            // redundant with the default list ordering.
             if (!newest) {
-                let bestRow = null;
-                let bestDate = '';
-                for (const r of rows) {
-                    const d = r.permitsRecentMostRecentDate;
-                    if (!d) continue;
-                    if (d > bestDate) {
-                        bestDate = d;
-                        bestRow = r;
+                const prevSnap = window._prevTopSnapshot;
+                if (prevSnap && prevSnap.parcelIds && prevSnap.parcelIds.size > 0) {
+                    for (const r of rows) {
+                        if (!prevSnap.parcelIds.has(String(r.parcelId))) {
+                            const dateText = prevSnap.generatedAt
+                                ? (typeof formatLastUpdated === 'function' && formatLastUpdated(prevSnap.generatedAt)) || prevSnap.generatedAt.slice(0, 10)
+                                : null;
+                            newest = r;
+                            newest._pickWhy = dateText
+                                ? `New to the top picks — added in this week's refresh (${dateText}).`
+                                : `New to the top picks — added in this week's refresh.`;
+                            newest._pickIsFirstVisitFallback = true;
+                            break;
+                        }
                     }
                 }
-                if (bestRow) {
-                    const agoText = (typeof formatDaysAgo === 'function')
-                        ? (formatDaysAgo(bestDate) || 'recently')
-                        : 'recently';
-                    const valTotal = bestRow.permitsRecentValueTotal || 0;
-                    const dollar = valTotal >= 1_000_000
-                        ? `$${(valTotal/1_000_000).toFixed(1)}M`
-                        : valTotal >= 1000
-                            ? `$${Math.round(valTotal/1000)}K`
-                            : '';
-                    const valFrag = dollar ? ` · ${dollar} declared cost` : '';
-                    newest = bestRow;
-                    newest._pickWhy = `Freshest building permit on the list — filed ${agoText}${valFrag}.`;
-                    newest._pickIsFirstVisitFallback = true;
-                } else if (rows.length > 0) {
-                    // No permit data on any cover-list parcel — pick top row as
-                    // a featured starter so the card never greys.
-                    newest = rows[0];
-                    newest._pickWhy = `Featured pick from the current cover-list. On future visits this slot tracks what's joined the list since you were last here.`;
-                    newest._pickIsFirstVisitFallback = true;
-                }
+            }
+            // Cohort-stable fallback. No visitor delta + no rebuild delta =
+            // the cover-list hasn't changed since the last rebuild and the
+            // visitor was here for it. Pick the top-ranked row but reframe
+            // the caption so it's clearly a featured-pick anchor, not a
+            // "newly joined" claim that would mislead.
+            if (!newest && rows.length > 0) {
+                newest = rows[0];
+                newest._pickWhy = `Top picks are steady this week — no new additions since the last refresh. Featured the top-ranked parcel here; check back Monday for fresh entries.`;
+                newest._pickIsFirstVisitFallback = true;
             }
             // Persist the current set on first render only.
             if (!_eliteSnapshotWritten) {
@@ -4722,11 +4978,9 @@
             return (u >= 4 && u <= 6) || r.sixplexEligible === true;
         }
         function powerPlayBadge(r) {
-            // 2026-05-09: per-row badge dropped. Most elite parcels (4-6
-            // unit band) qualify, so the badge was noise on every row.
-            // Replaced by the central renderPowerPlayBanner() strip
-            // above the listings. Function kept defensive (orphaned) in
-            // case a future use-case needs a per-row chip.
+            // 2026-05-09: per-row badge dropped — noise on every elite row.
+            // Function kept defensive (orphaned) in case a future use-case
+            // needs a per-row chip.
             return '';
         }
         // Weekly-delta strip (added 2026-05-09). Surfaces what changed in
@@ -4795,22 +5049,6 @@
             `;
             el.hidden = false;
         }
-        function renderPowerPlayBanner() {
-            const el = document.getElementById('powerplay-banner');
-            if (!el) return;
-            if (!powerPlayActive()) { el.hidden = true; el.innerHTML = ''; return; }
-            const days = _powerPlayDaysLeft();
-            const urgent = days <= 7;
-            const dayWord = days === 1 ? 'day' : 'days';
-            el.className = `powerplay-banner${urgent ? ' urgent' : ''}`;
-            el.innerHTML = `
-                <span class="powerplay-banner-eyebrow">${urgent ? 'Final week · ' : ''}Toronto Hydro pilot</span>
-                <span class="powerplay-banner-headline"><strong>PowerPlay $50K</strong> for 4-6 unit multiplex with electrification (heat pump + EV chargers) — EOI <span class="powerplay-banner-deadline">May 31, 2026 (${days} ${dayWord} left)</span></span>
-                <a class="powerplay-banner-link" target="_blank" rel="noopener" href="https://www.torontohydro.com/contractors-and-developers/multiplex-powerplay-pilot-program">Program page ↗</a>
-            `;
-            el.hidden = false;
-        }
-
         // ---- 3. localStorage visit deltas ----
         const VISIT_KEY_LAST = 'bloomto:visit:lastSeenAt';
         const VISIT_KEY_TOP = 'bloomto:visit:topParcelKeys';
@@ -5119,24 +5357,23 @@
         //
         // DC waiver: $200K (vs the $200K-$270K City range; we take the
         // bottom for honesty). Only fires when target units ≤ 6.
-        // Parking eliminated: targetUnits × 0.5 stalls × $25K/stall.
-        const PARKING_STALLS_PER_UNIT_PRE_BILL_185 = 0.5;
-        const PARKING_COST_PER_STALL_CAD = 25000;
-        const DC_WAIVER_CAD = 200000;
+        // Stacked DC savings — verified math (2026-05-11). Unit 1 pays
+        // the full DC; units 2 through (target) are exempt under By-law
+        // 1137-2022 / EX24.2 effective July 24, 2025. Multiples 2+ BR
+        // rate of $113,938 from Toronto's June 26, 2025 rate sheet.
+        // Parking-min savings dropped — primary-source verification of
+        // the $40-80K/unit Altus range wasn't available.
         function stackedSavingsFor(r) {
             const targetUnits = r.sixplexEligible
                 ? 6
                 : Math.min(4, Math.max(r.maxUnits || 0, 0));
             let savings = 0;
             const sources = [];
-            if (targetUnits >= 4 && targetUnits <= 6) {
-                savings += DC_WAIVER_CAD;
-                savings += Math.round(
-                    targetUnits
-                    * PARKING_STALLS_PER_UNIT_PRE_BILL_185
-                    * PARKING_COST_PER_STALL_CAD
-                );
-                sources.push('Bill 185');
+            if (targetUnits >= 4 && targetUnits <= POLICY.dcWaiverThresholdUnits) {
+                // Exempt units = (target - 1). Unit 1 pays.
+                const exemptUnits = targetUnits - 1;
+                savings += exemptUnits * POLICY.dcPerUnitCadEstimate;
+                sources.push('DC waiver');
             }
             return { savings, sources, targetUnits };
         }
@@ -5252,8 +5489,18 @@
             // Hits ~10% of elite. Real fix is ETL-side (require ≥80%
             // intersection ratio before crediting a building's height to
             // a parcel; queued).
+            // Two cautions:
+            //   (1) Exact neighbour-height match + low coverage → confirmed
+            //       3D Massing spillover. 177 Symons / 1030 Danforth pattern.
+            //   (2) Tall (≥10m) + low coverage (<25%), no neighbour match —
+            //       still anomalous on a detached-residential lot. 807
+            //       Glencairn pattern (14.5m vs cov 17%, neighbours 10-13m).
+            //       Could be a real coach-house but more often a sliver-
+            //       spillover from a tall neighbour the gate didn't catch.
+            //   Real fix is ETL-side (largest-overlapping-building variant
+            //   of the gate; queued in project_3dmassing_spillover_gate).
             const _h = r.existingMaxBuildingHeightM;
-            if (_h != null && _h > 5 && _cov > 0 && _cov < 0.22) {
+            if (_h != null && _h > 5 && _cov > 0 && _cov < 0.25) {
                 const _nbVals = [r.neighborHeightNAvgM, r.neighborHeightSAvgM,
                                  r.neighborHeightEAvgM, r.neighborHeightWAvgM];
                 const _idx = _nbVals.findIndex(x => x != null && x > 0 && Math.abs(x - _h) < 0.05);
@@ -5262,6 +5509,17 @@
                     out.push({
                         kind: 'caution',
                         text: `Existing height (${_h.toFixed(1)}m) matches the ${_matchSide}-side neighbour exactly + low ${Math.round(_cov*100)}% coverage — likely 3D Massing spillover, not the actual on-parcel structure. The real building may be 1-storey even when the wire reads 3-storey. Verify on Street View.`,
+                    });
+                } else if (_h >= 12 && _cov < 0.20) {
+                    // Tightened 2026-05-11: 12m+ (≈4-storey) on a <20%
+                    // coverage lot is genuinely anomalous for a detached-
+                    // residential teardown. Catches 807 Glencairn (14.5m,
+                    // 17%) and similar without false-flagging real 3-storey
+                    // newer builds. Hits ~12% of elite.
+                    const _storeys = Math.round(_h / 3);
+                    out.push({
+                        kind: 'caution',
+                        text: `Wire reads ${_h.toFixed(1)}m (≈${_storeys}-storey) on a ${Math.round(_cov*100)}% coverage lot — uncommon for detached residential. Likely 3D Massing attribution error (a tall neighbour's building clipped into this parcel polygon) but could be a genuine coach-house / laneway suite. Verify on Street View.`,
                     });
                 }
             }
@@ -5285,15 +5543,36 @@
             } else if (_dCom >= 400) {
                 out.push({ kind: 'caution', text: `Nearest major transit ${_dCom}m — score reduced by transit-distance factor` });
             }
-            if (r.postwarNeighborhood) out.push({ kind: 'good', text: 'Postwar build era (1945–60) — Rebate Rocket eligible neighborhood (federal Greener Homes / Ontario HRSP / Toronto HELP target stock)' });
+            if (r.postwarNeighborhood) out.push({ kind: 'good', text: 'Postwar build era (1945–60) — older detached / bungalow / split-level stock that suits teardown-and-rebuild multiplex economics.' });
             if (r.maxUnits >= 8) out.push({ kind: 'caution', text: `Underlying zone permits ${r.maxUnits}+ units (CR/RM/RAC/RA mid-rise) — Site Plan Approval required, NOT the streamlined multiplex pathway. Multiplex by-law max is 4 citywide / 6 in T&EY+Ward 23.` });
-            if (r.maxUnits >= 4) out.push({ kind: 'good', text: '≤6 units = $0 development charges (Bill 185, January 2025) — saves ~$200K-$270K per project vs pre-2025' });
+            if (r.maxUnits >= 4 && r.maxUnits <= 6) {
+                const _exemptUnits = r.maxUnits - 1;
+                const _savings = _exemptUnits * 113938;
+                const _savingsK = Math.round(_savings / 1000);
+                out.push({ kind: 'good', text: `Units 2–${r.maxUnits} exempt from development charges (Toronto By-law 1137-2022 · EX24.2 · July 24, 2025) — saves ~$${_savingsK}K per project (${_exemptUnits} units × $113,938). Unit 1 pays full DC.` });
+            }
             // 500 m² heuristic: small enough that teardown for a 4-plex or
             // 6-plex rebuild is economically clean. Above 500 m², the
             // existing build is bigger than what you'd target — costlier
             // teardown for a smaller-built result.
+            // Vacant gets its own branch (no demolition required, the cleanest
+            // case) so we don't claim "clean teardown of 0 m²".
             const _footprintM2 = (cover || 0) * (r.lotAreaM2 || 0);
-            if (cover != null && _footprintM2 < 500) {
+            if (r.existingStructureType === 'vacant') {
+                // The geometry-based classifier returns "vacant" when no
+                // qualifying building footprint is found in 3D Massing or
+                // Building Outlines — both have coverage gaps. The per-parcel
+                // Address Points count is independent: a non-zero count means
+                // Toronto has a registered municipal address inside this
+                // parcel polygon, which strongly implies a structure exists.
+                // (builtYear is neighborhood-median, not per-parcel, so it
+                // can't be used here.)
+                if (r.addressPointCount && r.addressPointCount >= 1) {
+                    out.push({ kind: 'caution', text: 'Wire shows vacant but Toronto Address Points registers an address on this parcel — structure likely exists (3D Massing / Building Outlines coverage gap). Verify on Street View before assuming no demolition.' });
+                } else {
+                    out.push({ kind: 'good', text: 'Vacant lot — no demolition required; straight to ground-up 4-plex or sixplex build' });
+                }
+            } else if (cover != null && _footprintM2 < 500) {
                 out.push({ kind: 'good', text: `Existing footprint ${Math.round(_footprintM2)} m² (cover ${Math.round(cover * 100)}%) — small enough for clean teardown to a 4-plex or sixplex rebuild` });
             } else if (cover != null && _footprintM2 >= 500 && _footprintM2 < 2000) {
                 out.push({ kind: 'caution', text: `Existing footprint ${Math.round(_footprintM2).toLocaleString()} m² — substantial existing structure (small apartment / commercial); teardown costs material` });
@@ -5327,9 +5606,10 @@
         // ---- Per-parcel incentives stack ----
         // Returns the list of City / Provincial / Federal incentive programs
         // a specific parcel qualifies for, with dollar values + cite links.
-        // Mixes universal (DC waiver, no parking) with parcel-specific
-        // (laneway pre-approved plans, HELP loan eligibility) so a developer
-        // sees the full upside for THIS parcel in one place.
+        // 2026-05-11 audit: every dollar figure and rule on this stack must
+        // be verifiable from a primary city / provincial / federal source.
+        // Dropped homeowner-side rebates (HELP, HRSP, LTT first-time-buyer,
+        // HBP/FHSA) per dev-audience direction.
         function incentivesStackedFor(r) {
             const items = [];
             const maxU = r.maxUnits || 0;
@@ -5349,14 +5629,17 @@
             //   'both'  = applies to dev AND owner-builder AND retrofit-buyer
             //             (most retrofit grants — anyone reducing emissions)
 
-            // ── DEV-ONLY (Bill 185, January 2025) ──
-            if (maxU >= 4) {
+            // ── DEV-ONLY (Toronto By-law 1137-2022 + EX24.2, July 24, 2025) ──
+            if (maxU >= 4 && maxU <= 6) {
+                const _exemptUnits = maxU - 1;
+                const _savings = _exemptUnits * 113938;
+                const _savingsK = Math.round(_savings / 1000);
                 items.push({
                     audience: 'dev',
-                    name: '$0 development charges (≤6 units)',
-                    value: '~$200K+ saved per project',
-                    source: 'Bill 185 (Jan 2025) + Toronto DC By-law 515-2022',
-                    href: 'https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185',
+                    name: `Units 2–${maxU} exempt from DC`,
+                    value: `~$${_savingsK}K saved (${_exemptUnits} units × $113,938)`,
+                    source: 'Toronto By-law 1137-2022 + EX24.2 (Jul 24, 2025)',
+                    href: 'https://secure.toronto.ca/council/agenda-item.do?item=2025.EX24.2',
                     confidence: 'binary',
                 });
             }
@@ -5364,8 +5647,8 @@
                 items.push({
                     audience: 'dev',
                     name: 'No parking minimum',
-                    value: '~$25–30K saved per stall not built',
-                    source: 'Bill 185 (Cutting Red Tape Act, 2024)',
+                    value: 'Build zero stalls if you want',
+                    source: 'Bill 185 (Cutting Red Tape Act, 2024) — parking minimums eliminated citywide',
                     href: 'https://www.ola.org/en/legislative-business/bills/parliament-43/session-1/bill-185',
                     confidence: 'binary',
                 });
@@ -5392,24 +5675,12 @@
                     confidence: 'binary',
                 });
             }
-            if (isPostwar && nbHp != null && nbHp > 6) {
-                items.push({
-                    audience: 'both',
-                    name: 'Toronto HELP loan',
-                    value: 'Up to $125,000 low-interest retrofit loan',
-                    source: 'City of Toronto Home Energy Loan Program',
-                    href: 'https://www.toronto.ca/services-payments/water-environment/environmentally-friendly-city-initiatives/save-money-and-energy/home-energy-loan-program-help/',
-                    confidence: 'eligibility-likely',
-                });
-                items.push({
-                    audience: 'both',
-                    name: 'Ontario HRSP — Heat pump rebate',
-                    value: 'Up to $12,000 (CCASHP) / $7,500 (gas-heated)',
-                    source: 'Ontario Home Renovation Savings Program (through Nov 2026)',
-                    href: 'https://www.homerenovationsavings.ca/without-assessment/heat-pumps',
-                    confidence: 'eligibility-likely',
-                });
-            }
+            // Toronto HELP loan + Ontario HRSP heat pump rebates dropped
+            // 2026-05-11 — both are homeowner-retrofit programs, not new-
+            // construction developer incentives. Per BloomTO product
+            // direction (audience: developers, not homeowners), these
+            // don't belong on a dev-focused stack. Devs who plan to owner-
+            // occupy after build can look them up directly.
             if (r.nearRapidToCorridor === true) {
                 items.push({
                     audience: 'both',
@@ -5449,18 +5720,41 @@
                 });
             }
 
-            // ── BUYER-side (consolidated — devs are the primary audience,
-            //    so universal homebuyer programs are folded into one row to
-            //    keep the stack tight). Heritage Tax Rebate stays as its own
-            //    parcel-conditional entry since it only fires sometimes.
-            items.push({
-                audience: 'buyer',
-                name: 'Homebuyer programs (universal)',
-                value: '~$8,475 first-time-buyer LTT rebate · GST/HST rebate on new builds · RRSP HBP $60K · FHSA · principal-residence cap-gains exemption',
-                source: 'Province of Ontario · City of Toronto MLTT · CMHC · CRA',
-                href: 'https://www.cmhc-schl.gc.ca/consumers/home-buying/first-time-home-buyer-incentive',
-                confidence: 'eligibility-likely',
-            });
+            // ── DEV-relevant tax rebates that affect what builders can
+            //    realize from the project (kept) ──
+            // GST PBRH: 100% federal GST rebate on purpose-built rental
+            // projects (4+ units, 90%+ long-term residential, construction
+            // begun after Sep 13, 2023, before 2031). $35K/unit cap.
+            // Direct cash benefit to the dev IF building for hold/rental.
+            if (maxU >= 4) {
+                items.push({
+                    audience: 'dev',
+                    name: 'GST PBRH rebate (rental projects)',
+                    value: '100% federal GST refund · $35K/unit cap',
+                    source: 'Federal Purpose-Built Rental Housing rebate (construction Sep 13, 2023 – 2031, 4+ units, 90%+ long-term residential)',
+                    href: 'https://www.canada.ca/en/revenue-agency/services/tax/businesses/topics/gst-hst-businesses/gst-hst-rebates/purpose-built-rental-housing.html',
+                    confidence: 'rental-only',
+                });
+            }
+            // Ontario HST rebate: applies to BUYER of new home from builder.
+            // Indirectly relevant — buyers paying less means dev can price
+            // higher, so it surfaces in pro forma revenue. Time-limited
+            // (April 1, 2026 – March 31, 2027 agreement window).
+            if (maxU >= 4) {
+                items.push({
+                    audience: 'dev',
+                    name: 'Ontario HST rebate (sale projects)',
+                    value: '100% provincial 8% portion · $80K max ≤$1M · phasing to $24K at $1.85M+',
+                    source: '2026 Ontario Budget HST rebate enhancement · agreement of purchase between April 1, 2026 and March 31, 2027',
+                    href: 'https://budget.ontario.ca/2026/hst.html',
+                    confidence: 'time-bound',
+                });
+            }
+            // First-time-buyer / homebuyer programs (LTT rebate, RRSP HBP
+            // $60K, FHSA, principal-residence cap gains) all removed
+            // 2026-05-11 — these flow to the eventual BUYER, not the
+            // developer. Per product direction (dev audience), they don't
+            // belong on a dev-focused incentive stack.
             if (heritage === 'part_v' || heritage === 'listed') {
                 items.push({
                     audience: 'buyer',
@@ -5579,33 +5873,40 @@
             // cross-boundary heuristic (~82% accuracy, 90% precision excluding
             // attached). Surfacing this lets the dev know whether to verify on
             // Street View before underwriting.
+            // 2026-05-11 — caution-mode rendering. 67% of detached elite
+            // parcels are "bulletproof" (permit/OSM + 1 address); surfacing
+            // affirmative tags on every one is noise. Only render when
+            // something is NOT baseline — classifier-sourced structure type
+            // gets a visible "est." caution; permit/OSM/address_points stay
+            // silent. Clean line = baseline elite case; visible tag = worth
+            // a second look.
             const structSource = r.existingStructureSource || 'classifier';
-            const sourceTag = structSource === 'permit'
-                ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="Ground truth from a city building-permit STRUCTURE_TYPE record on this address.">✓ city permit record</span>'
-                : structSource === 'osm'
-                    ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="OpenStreetMap building tag — volunteer-mapped, 96% agreement with permits where they overlap.">✓ OSM record</span>'
-                    : structSource === 'address_points'
-                    ? ' <span style="font-size:10px;color:#15803d;font-weight:500" title="Inferred from Toronto Address Points — multiple distinct municipal addresses fall inside the parcel polygon. Strong attached-housing signal.">✓ address-points</span>'
-                    : structSource === 'vacant'
-                        ? ''
-                        : ' <span style="font-size:10px;color:#9ca3af;font-weight:500" title="Heuristic — cross-boundary building-distance classifier. Verify on Street View before relying on this for underwriting.">est.</span>';
+            const sourceTag = structSource === 'classifier'
+                ? ' <span style="font-size:10px;color:#9a3412;font-weight:500" title="Heuristic — cross-boundary building-distance classifier (~82% accuracy). Verify on Street View before relying on this for underwriting.">est.</span>'
+                : '';
             // Address-point line — surfaced inline after the structure type so
             // the dev sees the "True Detached" or "multi-unit existing"
             // verdict in the same Lot section. ap=0 stays silent (pre-rebuild
             // wire data has no field).
+            // Caution-mode: silent when 1 address (baseline), visible only
+            // when 2+ (existing duplex / basement suite / laneway suite —
+            // changes the dev's underwriting story).
             const apCount = r.addressPointCount;
-            const apLine = (apCount == null || apCount === 0) ? '' : (() => {
-                if (apCount === 1 && structType === 'detached'
-                    && (structSource === 'permit' || structSource === 'osm')) {
-                    return ` · <span style="color:#15803d;font-weight:600" title="Toronto Address Points dataset confirms exactly 1 dwelling on this parcel polygon. No shared walls, no shared addresses, no hidden registered suite.">✓ detached</span>`;
-                }
-                if (apCount === 1) {
-                    return ` · <span style="color:var(--ink-mute2);font-size:11px">1 address on parcel</span>`;
-                }
-                return ` · <span style="color:#1d4ed8;font-weight:600" title="${apCount} distinct municipal address points fall inside this parcel polygon — likely an existing duplex / basement suite / laneway suite registered with the City.">${apCount} addresses on parcel</span>`;
-            })();
+            const apLine = (apCount == null || apCount <= 1) ? '' :
+                ` · <span style="color:#1d4ed8;font-weight:600">${apCount} addresses on parcel</span> <span class="def-icon" data-def="address-points" role="button" tabindex="0" aria-label="Definition of Address Points">i</span>`;
+            // Drop the structure-type word when the zone label already
+            // says the same thing (RD = Residential Detached, RS = Semi,
+            // RT = Townhouse) — avoids "Residential Detached … · detached"
+            // duplication on the most common case. Source tag + apLine
+            // still render so the cross-dataset confirmation isn't lost.
+            const zoneImpliesStruct = (
+                (r.zoneClass === 'RD' && structType === 'detached') ||
+                (r.zoneClass === 'RS' && structType === 'semi') ||
+                (r.zoneClass === 'RT' && structType === 'row')
+            );
             const structSuffix = (() => {
                 if (!structType) return '';
+                if (zoneImpliesStruct) return `${sourceTag}${apLine}`;
                 if (structType === 'detached') return ` · <span style="color:#15803d;font-weight:600">detached</span>${sourceTag}${apLine}`;
                 if (structType === 'semi')     return ` · <span style="color:#9a3412;font-weight:600">semi-detached</span>${sourceTag}${apLine}`;
                 if (structType === 'row')      return ` · <span style="color:#9f1239;font-weight:600">row / townhouse</span>${sourceTag}${apLine}`;
@@ -5629,7 +5930,7 @@
             })();
             const existingHtml = (() => {
                 if (existingH == null) {
-                    return '<div class="sub" style="color:#15803d">Vacant${structSuffix}</div>';
+                    return `<div class="sub" style="color:#15803d">Vacant${structSuffix}</div>`;
                 }
                 return `<div class="sub"><strong>${existingH.toFixed(1)} m</strong>${structSuffix}</div>`;
             })();
@@ -5637,9 +5938,11 @@
             return `
                 <section>
                     <div class="score-hero score-hero-netzero">
-                        <div class="num">${r.lotAreaM2 != null ? r.lotAreaM2.toLocaleString() : '—'}<span style="font-size:14px;font-weight:500;color:var(--ink-mute2);margin-left:4px;">m²</span></div>
+                        <div class="num-block">
+                            <div class="num">${r.lotAreaM2 != null ? r.lotAreaM2.toLocaleString() : '—'}<span class="num-unit">m²</span></div>
+                            <div class="num-label">Lot area</div>
+                        </div>
                         <div class="meat">
-                            <div class="label">Lot area</div>
                             <div class="sub">${zoneLabel(r.zoneClass)} · ${zoneCapText(r)} · ${r.neighborhood}</div>
                             ${existingHtml}
                         </div>
@@ -5656,32 +5959,32 @@
                     <h4>Underwriting snapshot</h4>
                     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px">
                         ${(() => {
-                            // ── KPI 1: Pro-forma anchor ──
-                            // medianCostPerUnit is *declared construction cost*
-                            // from the building-permit CSV — not market sale.
-                            // We label it as such so the dev doesn't confuse it
-                            // for revenue. Sixplex bonus value is the wire-side
-                            // calc (2 extra units × neighbourhood median, only
-                            // populated when the parcel is sixplex-eligible AND
-                            // the neighbourhood comp has >=10-permit sample).
+                            // ── KPI 1: Pro-forma anchor (per-unit only) ──
+                            // 2026-05-11: dropped the maxUnits×median total.
+                            // Permit-declared construction cost is systematically
+                            // under-reported (fees scale with declared value, so
+                            // builders lowball by 20-40%); on top of that it's
+                            // hard-cost-only, excluding architect/engineering/
+                            // financing/legal/marketing/contingency (+15-25%);
+                            // and the comp set mixes ground-up new-builds with
+                            // conversions and additions. A bold total like
+                            // "$3.6M" stamped on the page implies a budget we
+                            // can't defend. So we surface the median PER UNIT
+                            // and let the dev scale to their own plan with
+                            // their own cost consultant's multipliers.
+                            // Sixplex bonus line dropped for the same reason —
+                            // it was 2× the same dangerous multiplication.
                             const nb = r.neighborhoodPermitComp || {};
                             const median = r.nbPermitMedianCostPerUnit ?? nb.medianCostPerUnit;
-                            const totalCost = (median != null && r.maxUnits)
-                                ? median * r.maxUnits : null;
-                            const bonus = r.sixplexBonusValueCad;
                             const sample = r.nbPermitSampleSize ?? nb.sampleSize ?? 0;
-                            const costLine = totalCost
-                                ? `<div class="kpi-num">${fmtCad(totalCost)}</div>
-                                   <div class="kpi-sub">est. construction · ${r.maxUnits} units × ${fmtCad(median)} median<br><span class="kpi-cite">${sample} comparable permits in ${r.neighborhood || 'this neighbourhood'}</span></div>`
+                            const costLine = median != null
+                                ? `<div class="kpi-num">${fmtCad(median)}<span style="font-size:13px;font-weight:500;color:var(--ink-muted);margin-left:4px">/unit</span></div>
+                                   <div class="kpi-sub">median declared hard cost · <span class="kpi-cite">${sample} comparable permits in ${r.neighborhood || 'this neighbourhood'}</span></div>`
                                 : `<div class="kpi-num kpi-muted">—</div>
                                    <div class="kpi-sub">insufficient permit comp <span class="kpi-cite">(need ≥10; have ${sample})</span></div>`;
-                            const bonusLine = bonus
-                                ? `<div class="kpi-pop">+ ${fmtCad(bonus)} <span style="font-size:11px;color:#15803d;font-weight:500">sixplex carve-out bonus</span></div>`
-                                : '';
                             return `<div class="kpi-card kpi-pro-forma">
-                                <div class="kpi-label">Pro-forma anchor</div>
+                                <div class="kpi-label">Pro-forma anchor <span class="def-icon" data-def="pro-forma-anchor" role="button" tabindex="0" aria-label="Definition of Pro-forma anchor">i</span></div>
                                 ${costLine}
-                                ${bonusLine}
                             </div>`;
                         })()}
                         ${(() => {
@@ -5700,7 +6003,7 @@
                                             : sample >= 12 ? '↗ active'
                                             : '· quiet';
                             return `<div class="kpi-card ${heatClass}" title="ETL filter: PERMIT_TYPE classified as new_residential, conversion, or addition_with_units AND DWELLING_UNITS_CREATED ≥ 1. Includes single-family rebuilds, duplex/triplex conversions, multiplex, and small apartments below the value-sanity ceiling — NOT just 3-6 unit multiplex.">
-                                <div class="kpi-label">Permit velocity</div>
+                                <div class="kpi-label">Permit velocity <span class="def-icon" data-def="permit-velocity" role="button" tabindex="0" aria-label="Definition of Permit velocity">i</span></div>
                                 <div class="kpi-num">${sample.toLocaleString()}</div>
                                 <div class="kpi-sub">residential permits adding ≥1 new unit · neighbourhood · last 5 yrs · ${heatLabel}</div>
                                 ${onLot > 0 ? `<div class="kpi-pop">${onLot} on this lot · last ${lastDate || '—'}</div>` : ''}
@@ -5727,7 +6030,7 @@
                                 ? { ok: true, label: 'Sixplex carve-out applies' }
                                 : { ok: null, label: '4-unit citywide cap' });
                             return `<div class="kpi-card kpi-as-of-right">
-                                <div class="kpi-label">As-of-right summary</div>
+                                <div class="kpi-label">As-of-right summary <span class="def-icon" data-def="as-of-right" role="button" tabindex="0" aria-label="Definition of As-of-right">i</span></div>
                                 <ul class="kpi-checklist">
                                     ${items.map(i => `<li><span class="kpi-check ${i.ok === true ? 'ok' : i.ok === false ? 'bad' : 'neut'}">${i.ok === true ? '✓' : i.ok === false ? '!' : '·'}</span>${i.label}</li>`).join('')}
                                 </ul>
@@ -5735,9 +6038,10 @@
                         })()}
                     </div>
                     <div style="font-size:10px;color:var(--ink-mute2);margin-top:6px;line-height:1.4">
-                        Construction cost is <em>declared</em> on the permit (not sale price). Sixplex bonus
-                        assumes the carve-out parcel builds 6 units vs the citywide 4-cap, valued at
-                        neighbourhood median. Verify all figures against your own pro-forma before relying.
+                        Per-unit cost is <em>declared</em> on the building permit (typically 20-40% below
+                        actual hard costs; soft costs — architect, financing, legal, contingency — add
+                        another 15-25% on top). Use as a neighbourhood-cost-tier benchmark, not a budget;
+                        scale to your own build plan with a cost consultant.
                     </div>
                 </section>
 
@@ -5764,60 +6068,114 @@
                     ${(() => {
                         const u = r.maxUnits || 0;
                         const rows = [];
-                        // DC waiver — applies cleanly when ≤6 units; flagged when over.
-                        if (u > 0 && u <= POLICY.dcWaiverThresholdUnits) {
+                        // DC waiver — units 2 through 6 in developments of up
+                        // to 6 units are exempt. Unit 1 always pays. Math
+                        // verified 2026-05-11 against By-law 1137-2022 +
+                        // EX24.2 (July 24, 2025) + the June 26, 2025 rate
+                        // sheet's "Multiples 2+ Bedrooms" class ($113,938).
+                        if (u >= 2 && u <= POLICY.dcWaiverThresholdUnits) {
+                            const exemptUnits = u - 1;
+                            const savings = exemptUnits * POLICY.dcPerUnitCadEstimate;
                             rows.push({
                                 label: 'DC waiver',
-                                val: fmtCad(POLICY.dcPerUnitCadEstimate * u),
-                                sub: `≤${POLICY.dcWaiverThresholdUnits} units · Bill 185 (Jan 2025) · ${u} × ${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit`,
+                                defKey: 'dc-waiver',
+                                val: fmtCad(savings),
+                                sub: `Units 2–${u} exempt (${exemptUnits} × ${fmtCad(POLICY.dcPerUnitCadEstimate)}). Unit 1 pays full DC.`,
                             });
-                        } else if (u > 0) {
+                        } else if (u === 1) {
                             rows.push({
                                 label: 'DC waiver',
+                                defKey: 'dc-waiver',
                                 val: '<span style="color:#9ca3af">does not apply</span>',
-                                sub: `${u} units exceeds the ${POLICY.dcWaiverThresholdUnits}-unit threshold; standard DC ≈${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit applies`,
+                                sub: `Single-unit build — the exemption only kicks in starting from the 2nd unit.`,
                             });
-                        }
-                        // Parking-min elimination — Bill 185 citywide.
-                        if (u > 0) {
-                            const lo = POLICY.parkingPerUnitCadMin * u;
-                            const hi = POLICY.parkingPerUnitCadMax * u;
+                        } else if (u > POLICY.dcWaiverThresholdUnits) {
                             rows.push({
-                                label: 'Parking-min elimination',
-                                val: `${fmtCad(lo)}–${fmtCad(hi)}`,
-                                sub: `Bill 185 · ${u} units × ${fmtCad(POLICY.parkingPerUnitCadMin)}–${fmtCad(POLICY.parkingPerUnitCadMax)}/unit construction savings`,
+                                label: 'DC waiver',
+                                defKey: 'dc-waiver',
+                                val: '<span style="color:#9ca3af">does not apply</span>',
+                                sub: `${u} units exceeds the ${POLICY.dcWaiverThresholdUnits}-unit ceiling; standard DC ≈${fmtCad(POLICY.dcPerUnitCadEstimate)}/unit applies for every unit.`,
                             });
                         }
-                        // Sixplex carve-out bonus (parcel-derived).
-                        if (r.sixplexBonusValueCad) {
+                        // Sixplex carve-out — qualitative only (2026-05-11).
+                        // Dropped the dollar amount (was 2 × median declared cost,
+                        // same systematic-under-reporting problem as the KPI total).
+                        // The regulatory signal is what matters: 2 extra units
+                        // as-of-right. The dev values those in their own model.
+                        if (r.sixplexEligible) {
                             rows.push({
-                                label: 'Sixplex carve-out bonus',
-                                val: fmtCad(r.sixplexBonusValueCad),
-                                sub: `T&EY + Ward 23 (June 2025): 6-plex as-of-right vs 4-cap · 2 extra units × neighbourhood median`,
+                                label: 'Sixplex carve-out',
+                                defKey: 'sixplex-carveout',
+                                val: '+2 units',
+                                sub: `T&EY + Ward 23 (June 2025): 6-plex as-of-right vs the citywide 4-cap. Scale to your build plan.`,
                             });
                         }
-                        // Transit-corridor premium — descriptive %, not $.
-                        if (r.distSubwayStreetcarM != null && r.distSubwayStreetcarM <= 500) {
-                            rows.push({
-                                label: 'Transit-corridor premium',
-                                val: `+${POLICY.tocPriceLiftPctMin}–${POLICY.tocPriceLiftPctMax}% PSF`,
-                                sub: `${r.distSubwayStreetcarM}m to subway/streetcar · ~${POLICY.tocAbsorptionLiftPct}% faster sell-through`,
-                            });
-                        }
+                        // Parking-min and Transit-corridor rows dropped
+                        // 2026-05-11 — the $40-80K parking-cost range came
+                        // from Altus 2024 (paywalled) and the TOC PSF / absorption
+                        // numbers from Altus/RealNet TOD comps (paywalled).
+                        // Neither was independently verifiable from primary
+                        // city sources. Per user direction: better 8 absolute
+                        // signals than 10 unsure ones.
                         if (rows.length === 0) {
                             return '<div class="money-empty">No specific upside lines for this lot.</div>';
                         }
                         return `<div class="money-rows">${rows.map(rr => `
                             <div class="money-row">
                                 <div class="money-row-label">
-                                    <strong>${rr.label}</strong>
+                                    <strong>${rr.label}${rr.defKey ? ` <span class="def-icon" data-def="${rr.defKey}" role="button" tabindex="0" aria-label="Definition of ${rr.label}">i</span>` : ''}</strong>
                                     <span class="money-row-sub">${rr.sub}</span>
                                 </div>
                                 <div class="money-row-val">${rr.val}</div>
                             </div>
                         `).join('')}</div>
-                        <div class="money-foot">HST + GST rebates excluded — sale-price-driven (not parcel-fixed). Verify each program before underwriting.</div>`;
+                        <div class="money-foot">DC math verified against Toronto By-law 1137-2022 + EX24.2 (July 24, 2025) using the "Multiples 2+ Bedrooms" rate effective June 26, 2025. HST + GST rebates excluded — sale-price-driven (not parcel-fixed). Verify each program before underwriting.</div>`;
                     })()}
+                </section>
+
+                <!-- TGS V4 reference card. Numbers verified 2026-05-11 via
+                     toronto.ca/.../buildings-energy-emissions-resilience.
+                     Multiplex projects ≤6 storeys (the BloomTO audience)
+                     fall under "MURB ≤6 storeys" for TEUI/TEDI. GHGI is
+                     the same ceiling for all residential. -->
+                <section>
+                    <h4>TGS V4 build standards <span class="def-icon" data-def="tgs-v4" role="button" tabindex="0" aria-label="Definition of Toronto Green Standard V4">i</span></h4>
+                    <div class="tgs-card">
+                        <div class="tgs-intro">
+                            New residential construction in Toronto must meet Toronto Green Standard V4. <strong>Tier 1</strong> is mandatory for every permit (since May 2022). <strong>Tier 2</strong> is voluntary today and earns a development-charge refund — but becomes mandatory in 2026. <strong>Tier 3</strong> is the deepest voluntary tier, near net-zero.
+                        </div>
+                        <table class="tgs-table">
+                            <thead>
+                                <tr><th>Tier</th><th>GHGI</th><th>TEUI</th><th>TEDI</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr class="tgs-row-t1">
+                                    <td class="tgs-tier">Tier 1</td>
+                                    <td>≤ 15</td>
+                                    <td>≤ 130</td>
+                                    <td>≤ 40</td>
+                                    <td class="tgs-note">Mandatory</td>
+                                </tr>
+                                <tr>
+                                    <td class="tgs-tier">Tier 2</td>
+                                    <td>≤ 10</td>
+                                    <td>≤ 100</td>
+                                    <td>≤ 25</td>
+                                    <td class="tgs-note">Voluntary · DC refund · mandatory 2026</td>
+                                </tr>
+                                <tr>
+                                    <td class="tgs-tier">Tier 3</td>
+                                    <td>≤ 5</td>
+                                    <td>≤ 70</td>
+                                    <td>≤ 15</td>
+                                    <td class="tgs-note">Voluntary · near net-zero</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="tgs-foot">
+                            GHGI in kg CO2e/m²/yr · TEUI &amp; TEDI in kWh/m²/yr · Numbers shown are for MURB ≤6 storeys (the typical multiplex range). · <a target="_blank" rel="noopener" href="https://www.toronto.ca/city-government/planning-development/official-plan-guidelines/toronto-green-standard/toronto-green-standard-version-4/mid-to-high-rise-residential-non-residential-version-4/buildings-energy-emissions-resilience/">Full TGS V4 reference ↗</a>
+                        </div>
+                    </div>
                 </section>
 
                 <section>
@@ -5844,12 +6202,12 @@
                         tiles.push({
                             label: 'Subway',
                             val: fmtDist(r.distSubwayM),
-                            tip: 'Major Transit Station Area gate. Within 500m of subway, Bill 185 (Jan 2025) parking-minimum waiver applies citywide and the project absorbs faster (transit-corridor lift). Beyond 500m the corridor premium drops sharply.',
+                            tip: 'Major Transit Station Area gate. Within 500m of subway = parking-minimum waiver applies citywide (Bill 185, 2024). Tenant demand stays strong here regardless of the parking math — a real signal, not an avoided-cost claim.',
                         });
                         tiles.push({
                             label: 'Streetcar',
                             val: fmtDist(r.distStreetcarM),
-                            tip: 'Higher-order transit (TTC streetcar). Same 500m MTSA framework as subway — parking-min waiver under Bill 185, transit-corridor PSF lift in TOC pricing comps.',
+                            tip: 'Higher-order transit (TTC streetcar). Same 500m MTSA framework as subway — parking-minimum waiver applies under Bill 185, and pedestrian-grade transit means lower car dependence in the tenant pool.',
                         });
                         // Bus tile dropped 2026-05-09 — most Toronto parcels
                         // sit <500m from a bus stop, so the value rarely
@@ -6115,21 +6473,16 @@
         // `title=` tooltips are desktop-hover-only). Uses native <dialog> so
         // we get backdrop, Esc, focus trap for free.
         function wireSiteNoteTiles() {
-            const dlg = document.getElementById('site-note-dialog');
-            if (!dlg) return;
-            document.querySelectorAll('.site-note-tile').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.getElementById('snd-label').textContent = btn.dataset.label || '';
-                    document.getElementById('snd-val').textContent = btn.dataset.val || '';
-                    document.getElementById('snd-body').textContent = btn.dataset.tip || '';
-                    if (typeof dlg.showModal === 'function') {
-                        dlg.showModal();
-                    } else {
-                        // Defensive — Safari < 15.4 / very old browsers.
-                        dlg.setAttribute('open', '');
-                    }
-                });
-            });
+            // 2026-05-11 — site-note tiles now use the global def-popover
+            // (capture-phase click handler in setupDefPopover) for visual
+            // consistency with every other ⓘ trigger on the page. The
+            // popover positions itself next to the clicked tile rather
+            // than centering as a modal — better UX on both desktop and
+            // mobile per user direction. The old showModal path that
+            // opened #site-note-dialog rendered top-left when triggered
+            // from inside the slide-in detail panel's transform context.
+            // No per-tile wiring needed anymore — the global handler
+            // recognizes .site-note-tile via e.target.closest().
         }
         // One-time dialog wiring at page load. Click on backdrop or close
         // button dismisses; Esc is handled natively by <dialog>.
@@ -6141,6 +6494,22 @@
             // so a click on the dialog element itself outside its inner
             // content closes it). Inner clicks bubble to the dialog but
             // their target won't be the dialog itself.
+            dlg.addEventListener('click', (e) => {
+                if (e.target === dlg) dlg.close();
+            });
+        })();
+        // Methodology dialog — same open/close pattern as site-note-dialog.
+        // Trigger: "How we picked these" link in the page header subtitle.
+        (function initMethodologyDialog() {
+            const dlg = document.getElementById('methodology-dialog');
+            const link = document.getElementById('methodology-link');
+            if (!dlg || !link) return;
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof dlg.showModal === 'function') dlg.showModal();
+                else dlg.setAttribute('open', '');
+            });
+            document.getElementById('md-close')?.addEventListener('click', () => dlg.close());
             dlg.addEventListener('click', (e) => {
                 if (e.target === dlg) dlg.close();
             });
@@ -6185,6 +6554,25 @@
             syncDetailSaveButton(isWatched(r));
             populatePrintHeader(r, initialTitle);
             document.getElementById('detail-maps').href = googleMapsUrl(r);
+            // Nearby button — pre-compute count so the dev sees there are or
+            // aren't other cover-list parcels within 1km before clicking. Disable
+            // the button when count is 0; relabel as "Nearby (N)" when > 0.
+            // Uses the currently-loaded row set (broader if toggled, else elite).
+            const nearbyBtn = document.getElementById('detail-nearby');
+            if (nearbyBtn && r.lat != null && r.lng != null) {
+                const activeRows = (broaderMode && broaderRows) ? broaderRows : (eliteRows || []);
+                let nearbyN = 0;
+                for (const other of activeRows) {
+                    if (other.parcelId === r.parcelId) continue;
+                    if (other.lat == null || other.lng == null) continue;
+                    if (haversineM(r.lat, r.lng, other.lat, other.lng) <= 1000) nearbyN++;
+                }
+                nearbyBtn.textContent = nearbyN > 0 ? `Nearby (${nearbyN})` : 'Nearby (0)';
+                nearbyBtn.disabled = nearbyN === 0;
+                nearbyBtn.title = nearbyN > 0
+                    ? `Filter the listings to the ${nearbyN} other cover-list parcel${nearbyN === 1 ? '' : 's'} within 1km. Useful after spotting a fresh-permit hot spot or a deal in motion — see what else is in that pocket.`
+                    : 'No other cover-list parcels within 1km. Try toggling the broader tier to expand the candidate set.';
+            }
             panel.hidden = false;
             // Trigger transition on next frame so the slide-in animates.
             requestAnimationFrame(() => {
@@ -6308,6 +6696,34 @@
             // dialog. No extra libraries, no jsPDF.
             window.print();
         });
+        // iOS-specific: try the Google Maps app via comgooglemaps:// scheme,
+        // fall back to the static https URL after a delay if the app didn't
+        // open. iOS Universal Links route to the app from Safari but NOT
+        // reliably from third-party browsers (Edge / Chrome / Firefox iOS) —
+        // the scheme bypasses that whole issue. Android is unchanged; its
+        // intent URL already handles app-launch via the static href.
+        document.getElementById('detail-maps').addEventListener('click', (e) => {
+            const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+            if (!/iPhone|iPad|iPod/i.test(ua)) return;  // not iOS, let href fire normally
+            if (!detailCurrent) return;
+            const r = detailCurrent;
+            const wireAddr = r.address && r.address !== 'None None' ? r.address : null;
+            const addr = wireAddr || (typeof resolvedAddress === 'function' ? resolvedAddress(r) : null);
+            const query = addr ? `${addr}, Toronto, ON` : `${r.lat},${r.lng}`;
+            const appUrl = `comgooglemaps://?q=${encodeURIComponent(query)}`;
+            const fallbackUrl = e.currentTarget.href;
+            e.preventDefault();
+            const start = Date.now();
+            window.location.href = appUrl;
+            // If document is still visible after 1.5s, the scheme didn't
+            // resolve (Google Maps app probably isn't installed). Fall
+            // back to the https URL so the user still gets a map view.
+            setTimeout(() => {
+                if (document.visibilityState === 'visible' && Date.now() - start < 2500) {
+                    window.location.href = fallbackUrl;
+                }
+            }, 1500);
+        });
         document.getElementById('detail-nearby').addEventListener('click', () => {
             // Filter listings to other multiplex sites within 500m of the
             // currently-open parcel. Closes the detail panel and scrolls the
@@ -6320,7 +6736,7 @@
                 lng: r.lng,
                 label: wireAddr || resolvedAddress(r) || `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}`,
                 parcelId: r.parcelId,
-                radiusM: 500,
+                radiusM: 1000,
             };
             // Bounds-restriction would compete with the radius filter — drop it.
             if (boundsRestricted) {
@@ -6338,6 +6754,119 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !document.getElementById('detail-panel').hidden) closeDetail();
         });
+
+        // ── Definition popover (mobile-friendly tooltip replacement) ─────
+        // Pattern: any element with class="def-icon" + data-def="<key>"
+        // opens a popover with GLOSSARY[key]. Click/tap on the icon toggles;
+        // outside-click or Escape closes; popover auto-flips to stay onscreen.
+        (function setupDefPopover() {
+            const pop = document.getElementById('def-popover');
+            if (!pop) return;
+            let openIcon = null;
+
+            function close() {
+                pop.hidden = true;
+                if (openIcon) openIcon.setAttribute('aria-expanded', 'false');
+                openIcon = null;
+            }
+
+            // Positioning routine — shared by both glossary-keyed icons and
+            // inline-content site-note tiles. Anchors below the click target;
+            // flips above if it would run off the viewport bottom; clamps
+            // horizontally to stay within the viewport with an 8px margin.
+            function positionPopoverAt(anchor) {
+                const rect = anchor.getBoundingClientRect();
+                const popRect = pop.getBoundingClientRect();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                let left = rect.left;
+                if (left + popRect.width > vw - 8) left = vw - popRect.width - 8;
+                if (left < 8) left = 8;
+                let top = rect.bottom + 6;
+                if (top + popRect.height > vh - 8) {
+                    top = rect.top - popRect.height - 6;
+                    if (top < 8) top = 8;
+                }
+                pop.style.left = left + 'px';
+                pop.style.top = top + 'px';
+            }
+
+            function open(icon) {
+                // Site-note tiles carry their content as data-* attributes
+                // (parcel-specific values), not via the static GLOSSARY.
+                // Detect that pattern first; fall through to the glossary
+                // lookup for the standard .def-icon case.
+                if (icon.classList.contains('site-note-tile')) {
+                    const label = icon.dataset.label || '';
+                    const val = icon.dataset.val || '';
+                    const tip = icon.dataset.tip || '';
+                    const termHtml = label
+                        + (val ? ` <span style="color:var(--ink-muted);font-weight:500;font-size:11px;letter-spacing:0;text-transform:none">· ${escapeHtml(val)}</span>` : '');
+                    pop.innerHTML = `<div class="def-term">${termHtml}</div>`
+                        + `<div class="def-body">${escapeHtml(tip)}</div>`;
+                } else {
+                    const key = icon.dataset.def;
+                    const entry = GLOSSARY[key];
+                    if (!entry) {
+                        console.warn(`[def-popover] no glossary entry for "${key}"`);
+                        return;
+                    }
+                    const citeHtml = entry.cite
+                        ? `<span class="def-cite">${entry.cite}</span>` : '';
+                    pop.innerHTML = `<div class="def-term">${entry.term}</div>`
+                        + `<div class="def-body">${entry.body}${citeHtml}</div>`;
+                }
+                pop.hidden = false;
+                positionPopoverAt(icon);
+                openIcon = icon;
+                icon.setAttribute('aria-expanded', 'true');
+            }
+
+            // Capture phase so we intercept the click BEFORE it reaches any
+            // ancestor's click handler. Required when a def-icon sits inside
+            // a clickable parent (e.g., a sort button in the column header)
+            // — bubbling-phase stopPropagation runs too late, the parent's
+            // handler has already fired by then. Capture phase + stopPropagation
+            // + stopImmediatePropagation = the click never reaches the parent.
+            document.addEventListener('click', (e) => {
+                // Two trigger types share the popover:
+                //   1. .def-icon  → looks up GLOSSARY[data-def]
+                //   2. .site-note-tile → uses inline data-label/data-val/data-tip
+                const trigger = e.target.closest('.def-icon, .site-note-tile');
+                if (trigger) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    if (openIcon === trigger) { close(); return; }
+                    if (openIcon) close();
+                    open(trigger);
+                    return;
+                }
+                if (!pop.hidden && !e.target.closest('#def-popover')) close();
+            }, true);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !pop.hidden) close();
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const trigger = e.target.closest('.def-icon, .site-note-tile');
+                    if (trigger) {
+                        e.preventDefault();
+                        if (openIcon === trigger) close();
+                        else { if (openIcon) close(); open(trigger); }
+                    }
+                }
+            });
+            // Reposition on scroll/resize so the popover follows its anchor.
+            ['scroll', 'resize'].forEach(evt => {
+                window.addEventListener(evt, () => {
+                    if (openIcon && !pop.hidden) {
+                        const icon = openIcon;
+                        // Re-open to recompute position (cheap; HTML stays).
+                        const wasOpen = openIcon;
+                        open(icon);
+                    }
+                }, { passive: true });
+            });
+        })();
 
         // ---- Map ----
         // Initial map view — used by Clear (resets to full Toronto) and as
@@ -6418,31 +6947,142 @@
             const idx = Math.round(deg / 22.5) % labels.length;
             return `${labels[idx]} (${Math.round(deg)}°)`;
         }
+        // ── Glossary for the def-icon popover ────────────────────────────
+        // Central definitions keyed by data-def attribute. To add a new term:
+        //   1. Add an entry here.
+        //   2. Wrap the term in markup with `<span class="def-icon"
+        //      data-def="your-key" role="button" tabindex="0"
+        //      aria-label="Definition of {term}">i</span>` right after it.
+        // The popover infrastructure handles click/tap, outside-dismiss, esc.
+        // Optional .cite field for the policy citation / source (rendered as
+        // italic small text below the body).
+        const GLOSSARY = {
+            'pro-forma': {
+                term: 'Pro forma',
+                body: 'The financial model a developer builds before committing to a project — acquisition, construction, soft costs, financing, projected revenue. The "should I do this deal?" spreadsheet that lenders, partners, and the dev\'s own gut all rely on.',
+            },
+            'pro-forma-anchor': {
+                term: 'Pro-forma anchor',
+                body: 'A starting input for the cost line of your pro forma — median declared construction cost per unit from comparable building permits in this neighbourhood. It\'s an anchor, not a budget — under-declaration on permits + excluded soft costs mean you scale this with your own cost consultant before relying.',
+            },
+            'permit-velocity': {
+                term: 'Permit velocity',
+                body: 'How active the neighbourhood is — count of residential building permits adding at least 1 new dwelling unit, last 5 years. Higher = more dev activity = better recent comp data, faster approval norms, more contractors familiar with the area.',
+            },
+            'as-of-right': {
+                term: 'As-of-right',
+                body: 'Permitted by the zoning by-law without needing discretionary city approval. The opposite is needing a rezoning, minor variance, or Site Plan Approval — each of which adds 6-18 months and hearings. As-of-right = build now.',
+            },
+            'dc-waiver': {
+                term: 'DC waiver',
+                body: 'Toronto Development Charges are per-unit fees the city collects on new construction. Under By-law 1137-2022 as amended by Council item EX24.2 (effective July 24, 2025), the 2nd through 6th units in developments of up to 6 units are exempt — unit 1 pays the full DC. The Multiples 2+ Bedrooms rate is $113,938 per unit (effective June 26, 2025), so a 4-unit multiplex saves ~$342K (3 exempt units) and a 6-plex saves ~$570K (5 exempt units).',
+                cite: 'Toronto By-law 1137-2022 · EX24.2 (Jul 24, 2025)',
+            },
+            'mtsa': {
+                term: 'MTSA — Major Transit Station Area',
+                body: 'Provincial planning designation = 500m radius around a higher-order transit station (subway, streetcar, GO/RER, BRT). Parcels inside an MTSA get the strongest provincial development rights — density floor, faster approvals, and the elimination of parking minimums citywide under Bill 185.',
+                cite: 'Provincial Policy Statement · Growth Plan',
+            },
+            'sixplex-carveout': {
+                term: 'Sixplex carve-out',
+                body: 'A June 2025 amendment to Toronto\'s By-law 569-2013 letting parcels in Toronto–East York and Ward 23 build up to 6 units as-of-right, instead of the citywide 4-unit cap. Doubles the buildable count on eligible parcels — a major value-add for multiplex pro formas.',
+                cite: 'By-law 569-2013 amendment · Jun 2025',
+            },
+            'fsi': {
+                term: 'FSI — Floor Space Index',
+                body: 'The ratio of a building\'s total floor area to the lot area. FSI 1.0 on a 500m² lot = 500m² of floor space allowed. The zoning by-law caps FSI by zone (e.g., RD has lower FSI than RM). One of the two main "how much can I build?" levers, alongside height.',
+            },
+            'rd-zone': {
+                term: 'RD — Residential Detached',
+                body: 'Toronto zoning class for single detached homes (and now multiplex up to 4 units citywide / 6 in T&EY+Ward 23 under the by-law amendments). Most teardown-and-rebuild plays start on RD-zoned lots — straightforward as-of-right, no rezoning needed.',
+            },
+            'rm-zone': {
+                term: 'RM — Residential Multiple Dwelling',
+                body: 'Toronto zoning class permitting multiple residential units per lot natively — often higher base FSI, lower setbacks, and more flexible unit-count caps than RD. RM-zoned parcels often allow more units than the by-law-multiplex pathway alone.',
+            },
+            'heritage-register': {
+                term: 'Heritage Register',
+                body: 'A list of properties Toronto City Council has flagged as having heritage value. "Listed" = pending evaluation, "Designated" = full Part IV protection under the Ontario Heritage Act. Listed/Designated parcels can\'t be demolished or substantially altered without city approval — usually a hard pass for teardown plays.',
+            },
+            'trca': {
+                term: 'TRCA — Toronto and Region Conservation Authority',
+                body: 'The provincial agency that regulates floodplain, valley, wetland, and shoreline land in the GTA. Parcels inside a TRCA Regulated Area need TRCA permits before the City will issue a building permit. New residential is rarely granted on regulated land — typically a hard buy/no-buy gate.',
+                cite: 'Ontario Regulation 41/24',
+            },
+            'true-detached': {
+                term: 'True Detached (no hidden suite)',
+                body: 'Two independent datasets agree this is a single detached dwelling: (1) the city building permit record classifies the structure as "detached", AND (2) Toronto Address Points data shows exactly 1 municipal address inside the parcel polygon. No shared walls, no registered basement / laneway / coach-house suite. Clean teardown candidate.',
+            },
+            'address-points': {
+                term: 'Address Points',
+                body: 'Toronto Open Data dataset of every municipal address in the city. Each existing dwelling unit (including registered basement suites, laneway suites, coach houses) has its own address point. We use the count per parcel as a cross-check on permit-declared structure type.',
+            },
+            'severance': {
+                term: 'Severance application',
+                body: 'A request to split one parcel into two or more lots. Filed with the Committee of Adjustment. Severance applications on a parcel = strong signal the current owner is actively considering subdivision or sale.',
+            },
+            'demo-permit': {
+                term: 'Demolition permit',
+                body: 'Application to tear down an existing structure. A filed demo permit = the owner has spent money signalling they intend to redevelop, which strongly correlates with a willingness to sell to a developer who would do the rebuild.',
+            },
+            'property-standards': {
+                term: 'Property Standards Order',
+                body: 'A city enforcement order issued against an owner for code violations — unpermitted work, unsafe conditions, neighbour complaints. The Order is on the owner, not the parcel (it disappears on teardown). Often signals an overwhelmed owner who may be motivated to sell.',
+            },
+            'powerplay': {
+                term: 'Toronto Hydro Multiplex PowerPlay',
+                body: '$50K pilot grant from Toronto Hydro for 4-6 unit multiplex projects that include electrification (heat pump + EV chargers). EOI deadline May 31, 2026. 6 winners total. Eligibility checked against per-parcel unit-count and energy criteria.',
+                cite: 'EOI · May 31, 2026',
+            },
+            'hot-signal': {
+                term: 'Hot · activity recency',
+                body: 'Days since the most-recent owner activity signal on this parcel — most-recent of (a) on-lot building permit, (b) severance application, (c) demolition permit, or (d) property-standards violation. Lower = more active = better cold-outreach target.',
+            },
+            'bill-185': {
+                term: 'Bill 185 — Cutting Red Tape to Build More Homes Act',
+                body: 'Ontario legislation that enabled municipalities to streamline small-residential approvals and pre-empted parking minimums. The single biggest multifamily tailwind in a decade. Toronto used Bill 185\'s framework to amend its DC By-law (1137-2022) via Council item EX24.2, effective July 24, 2025, exempting units 2-6 in developments of up to 6 units from development charges.',
+                cite: 'Ontario Bill 185 · Toronto EX24.2 (Jul 24, 2025)',
+            },
+            'bylaw-569-2013': {
+                term: 'By-law 569-2013',
+                body: 'Toronto\'s harmonized zoning by-law — the document that defines every zone class (RD, RM, etc.), unit cap, setback, height limit, and FSI in the city. The June 2025 amendment carved out the sixplex pathway for Toronto–East York and Ward 23.',
+            },
+            'absorption': {
+                term: 'Absorption rate',
+                body: 'How fast newly-built units sell or lease up. High absorption = market is hungry, you sell out before financing costs eat margin. Low absorption = inventory sits, holding costs accumulate. Transit proximity, neighbourhood income, and unit type all drive this.',
+            },
+            'tgs-v4': {
+                term: 'TGS V4 — Toronto Green Standard',
+                body: 'Toronto\'s mandatory green-building code. Every new residential construction permit issued since May 2022 must meet Tier 1 minimums on greenhouse-gas intensity (GHGI), total energy use (TEUI), and thermal energy demand (TEDI). Tier 2 is voluntary today and qualifies for a development-charge refund, but is becoming mandatory in 2026. Tier 3 is the deepest voluntary tier (near net-zero) and lines up with the city\'s 2030 emissions targets.',
+                cite: 'Toronto Green Standard V4 · mandatory since May 2022',
+            },
+        };
+
         // City-wide policy constants the dev panel cites in dollar figures.
         // Centralized here so a bylaw update only edits one place. Source
         // notes carry through to the rendered text.
         const POLICY = {
-            // Bill 185 (Jan 2025) eliminated parking minimums for all residential
-            // construction citywide. Underground parking in Toronto residential
-            // multiplex projects typically runs $40-80K/unit (Altus 2024 cost
-            // guide). The range matters: corner lots and tight lots often need
-            // ramps or mechanical lifts that push toward the high end.
-            parkingPerUnitCadMin: 40000,
-            parkingPerUnitCadMax: 80000,
-            parkingSource: 'Altus 2024 Cost Guide · Bill 185 (Jan 2025)',
-            // DC waiver: Toronto City Council waived development charges for
-            // residential projects of 6 or fewer units, effective Jan 2025.
-            // The waived amount approximates Toronto's residential DC of ~$95K/unit
-            // (varies by neighbourhood and unit size — this is the city-wide median).
+            // DC waiver (Toronto By-law 1137-2022, as amended by Council
+            // item EX24.2 / MM32.5 effective July 24, 2025): the SECOND
+            // through SIXTH units in developments of up to 6 units are
+            // exempt from development charges. Unit 1 pays the full DC.
+            //
+            // Per-unit DC verified 2026-05-11 against Toronto's official
+            // rate sheet "RESIDENTIAL DEVELOPMENT CHARGES RATES - NON-RENTAL
+            // Effective June 26, 2025". We use the "Multiples 2+ Bedrooms"
+            // class because that's the typical multiplex unit (2-3 BR
+            // family-oriented). Smaller unit mixes get smaller exemptions:
+            //   - Multiples 1-BR/Bach: $57,153
+            //   - Multiples 2+ BR:     $113,938 (used here)
+            //   - Apartments 2+ BR:    $80,690
+            //   - Apartments 1-BR/Bach: $52,676
             dcWaiverThresholdUnits: 6,
-            dcPerUnitCadEstimate: 95000,
-            dcSource: 'Toronto Municipal Code 415 · Jan 2025 amendment',
-            // Transit absorption premium for ≤500 m subway/streetcar lots
-            // (multifamily new-build comps from Altus / RealNet TOD studies 2023-24).
-            tocPriceLiftPctMin: 5,
-            tocPriceLiftPctMax: 10,
-            tocAbsorptionLiftPct: 15,
-            tocSource: 'Altus / RealNet TOD comps 2023-24',
+            dcPerUnitCadEstimate: 113938,
+            dcSource: 'Toronto By-law 1137-2022 · EX24.2 (Jul 24, 2025) · multiples 2+ BR rate (Jun 26, 2025)',
+            // Parking and TOC numbers removed 2026-05-11 — Altus / RealNet
+            // cost-guide and transit-comp ranges weren't independently
+            // verifiable from primary city sources. Per user direction
+            // ("8 absolute signals vs 10 unsure ones") these were dumped.
         };
         function heritageTag(h) {
             if (h == null) return '<span class="heritage-none">—</span>';
@@ -6510,7 +7150,21 @@
             const query = addr
                 ? `${addr}, Toronto, ON`
                 : `${r.lat},${r.lng}`;
-            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+            const encQuery = encodeURIComponent(query);
+            const httpsUrl = `https://www.google.com/maps/search/?api=1&query=${encQuery}`;
+            // Android intent URL — force-launches the Google Maps app when
+            // installed (no "Open with browser?" picker). Specifies the
+            // exact package (com.google.android.apps.maps) so Android Chrome
+            // routes the intent directly. If the app isn't installed,
+            // browser_fallback_url catches it and opens the https URL in
+            // the browser instead. iOS handles the https URL via Universal
+            // Links cleanly — no equivalent intent dance needed.
+            const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+            if (/android/i.test(ua)) {
+                const fallback = encodeURIComponent(httpsUrl);
+                return `intent://maps.google.com/maps?q=${encQuery}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
+            }
+            return httpsUrl;
         }
         function popupHtml(r) {
             const badges = badgesFor(r);
@@ -6908,7 +7562,6 @@
             const treesDisplay = `${r.matureTreeCount || 0}`;
             const permitsCount = (r.nbPermitSampleSize ?? 0);
             const permitsDisplay = permitsCount > 0 ? `${permitsCount}` : '—';
-            const builtDisplay = r.builtYear || '—';
             // TTC column — nearest higher-order transit, named in full.
             // Picks min(subway, streetcar). Bus excluded — most Toronto
             // parcels are bus-close, and bus distance doesn't move PSF
@@ -6938,8 +7591,8 @@
                     : `$${Math.round(savings / 1_000)}K`)
                 : '—';
             const savingsTitle = savings > 0
-                ? `$${savings.toLocaleString()} — Bill 185 stack at ${targetUnits} units. $200K DC waiver + $25K × ${targetUnits} units parking elimination = $${savings.toLocaleString()}. HST/GST rebates not included (sale-price-driven; dev's pro forma carries them separately).`
-                : `No Bill 185 incentives — target units (${targetUnits}) outside the 4-6 streamlined multiplex band.`;
+                ? `$${savings.toLocaleString()} — DC waiver at ${targetUnits} units. Units 2-${targetUnits} exempt (${targetUnits - 1} × $113,938 = $${savings.toLocaleString()}); unit 1 pays full DC. Toronto By-law 1137-2022 + EX24.2 (July 24, 2025). HST/GST rebates and other unverified industry figures not stacked.`
+                : `No DC waiver — target units (${targetUnits}) outside the 2-6 unit exemption band.`;
             const extras = [];
             if (r.sixplexEligible)  extras.push('sixplex (4→6 units)');
             if (r.abutsLaneway)     extras.push('abuts laneway');
@@ -6992,7 +7645,6 @@
                         })()}
                         <div class="cell" data-col="lot">${lotDisplay}</div>
                         <div class="cell" data-col="footprint">${fpDisplay}</div>
-                        <div class="cell" data-col="built">${builtDisplay}</div>
                         <div class="cell ${popSubway}" data-col="subway" title="${_ttcTip}">${subDisplayShort}</div>
                         <div class="cell ${sxClass} ${popSixplex}" data-col="sixplex" title="${sxTitle}">${sxText}</div>
                         <div class="cell" data-col="permits">${permitsDisplay}</div>
@@ -7139,7 +7791,6 @@
             // the prior date-hash spotlight. Re-rendered on every filter
             // change so the picks reflect the current visible set.
             renderDailyPicksStrip(rows);
-            renderPowerPlayBanner();
             renderWeeklyDelta();
             renderFreshTimestamp();
             list.innerHTML = '';
@@ -7205,7 +7856,7 @@
             if (!stats) return;
             if (nearbyFilter) {
                 stats.hidden = false;
-                stats.innerHTML = `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM}m of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Clear nearby filter">✕</button></div>`;
+                stats.innerHTML = `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM >= 1000 ? (nearbyFilter.radiusM/1000) + 'km' : nearbyFilter.radiusM + 'm'} of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Clear nearby filter">✕</button></div>`;
                 const clearBtn = document.getElementById('nearby-clear');
                 if (clearBtn) {
                     clearBtn.addEventListener('click', () => {

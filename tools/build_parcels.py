@@ -449,6 +449,20 @@ def _process_parcel(parcel_or_record) -> dict:
             and zone_class in ("CR", "CRE", "RAC", "RA", "CL")):
         existing_structure_type = "unknown"
         existing_structure_source = "classifier_cr_zone_demotion"
+    # False-vacant demotion (added 2026-05-11 — 106 Eastwood Rd / 14 elite
+    # parcels surfaced). The geometry classifier returns "vacant" when no
+    # qualifying building polygon is found in 3D Massing OR Building
+    # Outlines. Both datasets have coverage gaps, so "vacant" can mean
+    # "geometry data missed it" rather than "really no structure." If
+    # Toronto Address Points registers ≥1 municipal address inside the
+    # parcel polygon, a structure exists per the city's own records —
+    # demote to "unknown" so the parcel drops from the elite cohort
+    # (which gates on detached+vacant only) instead of falsely claiming
+    # "no demolition required."
+    if (existing_structure_type == "vacant"
+            and address_point_count >= 1):
+        existing_structure_type = "unknown"
+        existing_structure_source = "false_vacant_demotion"
     corner = streets_src.is_corner_lot(parcel, centreline_tree, centreline_name_ids)
     abuts_laneway = _abuts_laneway(parcel, centreline_tree, centreline_laneway_idx)
     near_rapidto = _near_rapidto(parcel, rapidto_tree)
@@ -1080,40 +1094,47 @@ MIN_CLASSIFIER_BUILDING_M2 = 50.0
 
 
 def _existing_max_building_height(parcel, massing_index) -> float | None:
-    """Tallest 3D Massing building substantially overlapping this parcel.
+    """Height of the building whose centroid sits inside this parcel.
 
-    Returns the `height_m` of the tallest building whose footprint is at
-    least `EXISTING_BUILDING_OVERLAP_RATIO` (80%) inside the parcel
-    polygon. Returns `None` when the parcel has no qualifying building
-    (vacant lot, narrow accessory structure, neighbour-clip-through —
-    including shared / clipped buildings that don't substantially sit on
-    THIS parcel).
+    2026-05-11 second rewrite. The earlier "largest-intersection-wins"
+    rule didn't catch 807 Glencairn or 177 Symons — Toronto's Property
+    Boundaries polygons are sometimes drawn with enough drift that a
+    neighbour's tall building has a LARGER intersection with our parcel
+    than the actual on-lot bungalow does. Largest-overlap fails when
+    polygon boundaries don't match reality.
 
-    Used for both the "too tall to teardown" hard-exclusion gate AND the
-    per-parcel `existingMaxBuildingHeightM` wire field surfaced to the
-    frontend so the dev can read existing structure scale at a glance.
+    Centroid proximity is the rigorous fix: of all buildings whose
+    footprint intersects this parcel, return the height of the one
+    whose **own centroid sits inside the parcel polygon**. The bungalow
+    on 807 Glencairn has its centroid inside 807 Glencairn's polygon;
+    the neighbouring apartment block's centroid sits in its own parcel.
+    Geometrically unambiguous, immune to polygon drift.
+
+    If multiple buildings have centroids inside the parcel (rare —
+    typically only on parcels with both a main residence and a real
+    coach-house / laneway suite), pick the tallest. That preserves
+    the "tallest building on this lot" semantic when it's genuinely
+    on this lot. If no building's centroid is inside the parcel,
+    return None (vacant or boundary-mismatched parcel).
     """
     tree, buildings = massing_index
     parcel_geom = parcel.geometry
-    max_h: float | None = None
+    best_height: float | None = None
     for idx in tree.query(parcel_geom):
         b = buildings[idx]
         if b.height_m is None:
             continue
         try:
-            inter = b.geometry.intersection(parcel_geom)
-            if inter.is_empty:
+            if not parcel_geom.intersects(b.geometry):
                 continue
-            bldg_area = b.geometry.area
-            if bldg_area <= 0:
-                continue
-            if inter.area / bldg_area < EXISTING_BUILDING_OVERLAP_RATIO:
+            centroid = b.geometry.centroid
+            if not parcel_geom.contains(centroid):
                 continue
         except Exception:
             continue
-        if max_h is None or b.height_m > max_h:
-            max_h = b.height_m
-    return max_h
+        if best_height is None or b.height_m > best_height:
+            best_height = b.height_m
+    return best_height
 
 
 def _classify_existing_structure(parcel, building_tree, building_geoms) -> str:
