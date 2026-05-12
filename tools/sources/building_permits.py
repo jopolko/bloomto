@@ -69,7 +69,12 @@ CLEARED_RESOURCE_URL = (
 DEFAULT_FRESHNESS_YEARS = 5
 SANITY_VALUE_CEILING_CAD = 50_000_000
 MAX_UNCLASSIFIED = 1000
-MIN_NEIGHBORHOOD_SAMPLE_SIZE = 10
+MIN_NEIGHBORHOOD_SAMPLE_SIZE = 5  # was 10 — lowered 2026-05-11 alongside the
+# ≥3-units-created filter on comp aggregation. The stricter unit filter
+# drops the available sample by ~60% in many neighbourhoods; keeping the
+# old "10 minimum" would null out half the city's pro-forma anchor.
+# 5 is the floor where median is still defensible (vs noise from a small
+# luxury outlier).
 
 # Closed-set classifier on PERMIT_TYPE. Keys are uppercased exact-match.
 # Comprehensive 2026-05-04 calibration against the full 230K-row CSV — every
@@ -514,15 +519,26 @@ def aggregate_per_neighborhood(
     freshness_years: int = DEFAULT_FRESHNESS_YEARS,
     min_sample_size: int = MIN_NEIGHBORHOOD_SAMPLE_SIZE,
 ) -> dict[str, dict]:
-    """Compute `{neighborhood_name: {medianCostPerUnit, sampleSize, freshnessYears}}`."""
+    """Compute `{neighborhood_name: {medianCostPerUnit, sampleSize, freshnessYears}}`.
+
+    2026-05-11 — filter comps to MULTIPLEX-COMPARABLE permits only (units
+    created ≥ 3). Previously the comp set included every residential permit
+    adding ≥1 unit, which in wealthy neighbourhoods (Bayview Village, Lawrence
+    Park) was dominated by $3-5M single-family custom rebuilds. Those inflated
+    the per-unit median to ~$900K — wildly above what a 4-6 unit multiplex
+    would actually cost. The multiplex-floor cutoff (3 units) drops single-
+    family rebuilds and conversions to <3 units while keeping triplex,
+    fourplex, sixplex, and small-apartment comps. Sample sizes will shrink
+    in wealthy areas where multiplex activity is sparse — that's correct;
+    "we don't have a credible comp" is better than "luxury single-family
+    median masquerading as multiplex math."
+    """
     out: dict[str, dict] = {}
     for nb_name, indices in claims_by_neighborhood.items():
         in_window = [permits[i] for i in indices if permits[i].issued_date >= cutoff]
-        # Per-unit ratio: cost / units. Excludes permits with units == 0
-        # (already filtered at load), but defensive zero-guard kept.
         ratios = [
             p.declared_value_cad / p.units_created
-            for p in in_window if p.units_created > 0
+            for p in in_window if p.units_created >= 3
         ]
         if len(ratios) < min_sample_size:
             out[nb_name] = {

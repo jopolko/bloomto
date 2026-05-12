@@ -68,6 +68,8 @@ def _make_feature(*, address="100 Test St", lot_area_m2=500, lng=-79.4, lat=43.7
         "existingStructureType": "detached",
         "existingStructureSource": "classifier",
         "addressPointCount": 1,
+        "addressDriftSuspect": False,
+        "geometrySuspect": False,
         "osmAmenityType": None,
         "addrToStreetM": 5.0,
         "existingUnitsApprox": 1,

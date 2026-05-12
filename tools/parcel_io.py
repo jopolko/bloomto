@@ -83,6 +83,12 @@ FEATURE_PROPERTIES = (
                                # detached structure → "True Detached" badge
                                # (no shared walls, no shared addresses).
                                # AP≥2 → multi-unit existing on parcel.
+    "addressDriftSuspect",     # bool — true when parcel.address does not
+                               # match any Address Point inside the polygon.
+                               # Drops from elite via is_elite gate.
+    "geometrySuspect",         # bool — true when the height attribution
+                               # looks like a polygon mis-draw (tall+narrow
+                               # or exact-neighbour-match). Drops from elite.
     "addrToStreetM",           # float metres — distance from the parcel's
                                # representative point to the nearest
                                # Centreline geometry. Combined with

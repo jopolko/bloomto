@@ -186,7 +186,7 @@ def _process_parcel(parcel_or_record) -> dict:
     # buildings and mid-rises where teardown economics fail vs the 4–6 unit
     # multiplex envelope. Computed once, reused below for the wire field
     # so the frontend can show "currently a 4-storey building" inline.
-    existing_max_h = _existing_max_building_height(parcel, massing_index)
+    existing_max_h = _existing_max_building_height(parcel, massing_index, _W.get('address_points_index'))
     if existing_max_h is not None and existing_max_h >= EXISTING_BUILDING_HEIGHT_THRESHOLD_M:
         return {'skip': 'tall_existing_building'}
     # --- gate stage 3d: implied-FSI vs zone-FSI mismatch (added 2026-05-09) ---
@@ -372,6 +372,30 @@ def _process_parcel(parcel_or_record) -> dict:
         distinct = {pt.address_full.upper().strip() for pt in ap_records}
         address_point_count = len(distinct)
         ap_attached_verdict, _ = ap_src.classify_attachment_from_points(ap_records)
+        # Address-record drift gate (added 2026-05-11 — 106 Eastwood Rd
+        # case: parcel polygon's ADDRESS field said "106 Eastwood Rd" but
+        # the Address Points inside the polygon resolved to a different
+        # street ("143 Edgewood Ave"). The wire-attached address was
+        # unverifiable against the city's own location database. If the
+        # parcel's claimed address doesn't appear in any AP inside the
+        # polygon, flag the parcel so the elite gate can reject it.
+        # Falls back to "not suspect" when no parcel.address is present
+        # (handled by the existing "addressed" filter upstream).
+        if parcel.address and ap_records:
+            parcel_addr_norm = heritage_src.normalize_address(parcel.address)
+            ap_addrs_norm = {pt.address_norm for pt in ap_records}
+            if parcel_addr_norm and parcel_addr_norm not in ap_addrs_norm:
+                # No matching address point inside the polygon — drift.
+                # Mark on the wire so elite gate + frontend can react.
+                # We DON'T outright skip here — leave the parcel in
+                # broader tier with a flag; elite tier rejects via gate.
+                address_drift_suspect = True
+            else:
+                address_drift_suspect = False
+        else:
+            address_drift_suspect = False
+    else:
+        address_drift_suspect = False
 
     # Structure type — four-tier waterfall:
     #   1. Permit-derived (city building-permit STRUCTURE_TYPE record) — ~32 %
@@ -600,13 +624,28 @@ def _process_parcel(parcel_or_record) -> dict:
             'lotGeometry': (lambda lo, sh, o: {
                 'longAxisM': lo, 'shortAxisM': sh, 'orientationDeg': o,
             })(*_lot_geometry(parcel)),
-            'neighborHeights': _neighbor_heights(rep_pt, massing_index),
+            'neighborHeights': (_nh_for_feat := _neighbor_heights(rep_pt, massing_index)),
             'existingMaxBuildingHeightM': (
                 round(existing_max_h, 1) if existing_max_h is not None else None
             ),
             'existingStructureType': existing_structure_type,
             'existingStructureSource': existing_structure_source,
             'addressPointCount': int(address_point_count),
+            'addressDriftSuspect': bool(address_drift_suspect),
+            # Geometry-suspect flag (added 2026-05-11). True when the
+            # height-attribution likely reflects a catastrophic polygon
+            # mis-draw in Toronto's Property Boundaries dataset — either:
+            #   (a) Tall (≥12 m) on low coverage (<20%) — 807 Glencairn
+            #       pattern (apartment-neighbour spillover)
+            #   (b) Existing height exactly matches a neighbour-height
+            #       (within 0.1 m) — 177 Symons pattern
+            # Used by `is_elite` in build_parcels_top.py as a hard reject.
+            # Affected parcels drop to broader tier (still reachable) so
+            # devs willing to verify on Street View can find them, but
+            # elite stays 100%-trust.
+            'geometrySuspect': bool(
+                _compute_geometry_suspect(existing_max_h, coverage, _nh_for_feat)
+            ),
             'existingUnitsApprox': existing_units_approx,
             'existingUnitsBasis': existing_units_basis,
             # OSM commercial-holdover amenity (added 2026-05-09): the
@@ -1093,33 +1132,42 @@ SIDE_YARD_CLEAR_M = 1.5  # cross-building threshold (was 0.4 against parcel edge
 MIN_CLASSIFIER_BUILDING_M2 = 50.0
 
 
-def _existing_max_building_height(parcel, massing_index) -> float | None:
-    """Height of the building whose centroid sits inside this parcel.
+def _existing_max_building_height(parcel, massing_index, address_points_index=None) -> float | None:
+    """Height of the building anchored to THIS parcel's address point(s).
 
-    2026-05-11 second rewrite. The earlier "largest-intersection-wins"
-    rule didn't catch 807 Glencairn or 177 Symons — Toronto's Property
-    Boundaries polygons are sometimes drawn with enough drift that a
-    neighbour's tall building has a LARGER intersection with our parcel
-    than the actual on-lot bungalow does. Largest-overlap fails when
-    polygon boundaries don't match reality.
+    2026-05-11 third rewrite. Prior rules (largest-overlap, then centroid-
+    proximity) both failed on 807 Glencairn and 177 Symons because
+    Toronto's Property Boundaries polygons for those parcels are mis-drawn
+    enough that the neighbour's apartment-block footprint AND centroid sit
+    inside the wrong polygon. Geometry algorithms reading the polygon as
+    truth will be wrong as long as the polygon is wrong.
 
-    Centroid proximity is the rigorous fix: of all buildings whose
-    footprint intersects this parcel, return the height of the one
-    whose **own centroid sits inside the parcel polygon**. The bungalow
-    on 807 Glencairn has its centroid inside 807 Glencairn's polygon;
-    the neighbouring apartment block's centroid sits in its own parcel.
-    Geometrically unambiguous, immune to polygon drift.
+    The data-source fix: Address Points are an independent city dataset
+    that records WHERE the front door of each address is located. They
+    don't suffer from the boundary drift that affects Property Boundaries.
+    For each candidate building, ask "where is the nearest registered
+    address to this building's centroid?" If that address sits inside
+    THIS parcel's polygon, the building belongs here. If it sits in a
+    neighbour's polygon, the building belongs to the neighbour — even if
+    our own polygon also (wrongly) contains the building's centroid.
 
-    If multiple buildings have centroids inside the parcel (rare —
-    typically only on parcels with both a main residence and a real
-    coach-house / laneway suite), pick the tallest. That preserves
-    the "tallest building on this lot" semantic when it's genuinely
-    on this lot. If no building's centroid is inside the parcel,
-    return None (vacant or boundary-mismatched parcel).
+    Algorithm:
+      1. For each building intersecting the parcel polygon:
+      2.   Find the nearest address point (across the whole city) to
+           the building's centroid.
+      3.   Test whether THAT address point sits inside this parcel.
+      4.   If yes → eligible for height attribution.
+      5.   If no → it's a neighbour's building; skip.
+      6. Among eligible buildings, return the tallest height.
+
+    Falls back to the centroid-proximity rule when `address_points_index`
+    is None (defensive — should not happen in normal builds).
     """
     tree, buildings = massing_index
     parcel_geom = parcel.geometry
     best_height: float | None = None
+    ap_tree = address_points_index.tree if address_points_index is not None else None
+    ap_points = address_points_index.points if address_points_index is not None else None
     for idx in tree.query(parcel_geom):
         b = buildings[idx]
         if b.height_m is None:
@@ -1128,13 +1176,75 @@ def _existing_max_building_height(parcel, massing_index) -> float | None:
             if not parcel_geom.intersects(b.geometry):
                 continue
             centroid = b.geometry.centroid
-            if not parcel_geom.contains(centroid):
-                continue
+            if ap_tree is not None:
+                # STRtree.nearest returns the index of the geometry nearest
+                # to the query point. The result is one of the ~750K
+                # city-registered address points — the city's authoritative
+                # record of "where is the front door for this number?"
+                nearest_idx = ap_tree.nearest(centroid)
+                nearest_ap = ap_points[nearest_idx]
+                if not parcel_geom.contains(nearest_ap):
+                    continue
+            else:
+                # Centroid-proximity fallback for builds without an AP index.
+                if not parcel_geom.contains(centroid):
+                    continue
         except Exception:
             continue
         if best_height is None or b.height_m > best_height:
             best_height = b.height_m
     return best_height
+
+
+def _compute_geometry_suspect(existing_max_h, coverage, neighbor_heights) -> bool:
+    """Heuristic: does this parcel's height-attribution look like a
+    catastrophic polygon mis-draw (vs a real on-lot building)?
+
+    Two independent triggers, either fires the flag:
+
+      (a) **Tall on narrow**: existing height ≥ 12 m AND coverage < 20%.
+          A 4-storey-ish building on what reads as a small footprint is
+          geometrically incoherent for typical residential teardown
+          candidates. 807 Glencairn (14.5 m / 17.2%) is the canonical
+          case — the height comes from a neighbour's apartment block
+          whose footprint lies inside our mis-drawn polygon.
+
+      (b) **Exact neighbour match on a tall reading**: existing height
+          ≥ 9 m AND matches one of the four neighbor-direction averages
+          within 0.1 m. The 9 m floor matters — two adjacent 2-storey
+          detached homes (typical Toronto stock at ~6 m) routinely share
+          a height by virtue of being similar buildings, NOT because of
+          spillover. The spillover hypothesis only makes sense when the
+          height reads as apartment-block scale (~3+ storeys). 177 Symons
+          (9.1 m matching N-side neighbour 9.1 m) is the canonical case.
+
+    Returns False on missing data (existing_max_h is None, coverage
+    is None or 0, etc.) to avoid false-flagging clean cases.
+    """
+    if existing_max_h is None or existing_max_h <= 0:
+        return False
+    if coverage is None or coverage <= 0:
+        return False
+    # (a) Tall + narrow
+    if existing_max_h >= 12.0 and coverage < 0.20:
+        return True
+    # (b) Exact neighbour-height match on a narrow footprint. Requires
+    # BOTH height ≥ 9 m AND coverage < 25%. Both conditions matter:
+    # - Real 3-storey detached homes on full residential lots have
+    #   25%+ coverage (large footprint) and often share heights with
+    #   neighbouring same-vintage 3-storey homes — that's natural
+    #   uniform-stock pattern, not spillover (46 High Park Blvd case,
+    #   11.7m exact-match on 25.8% cov).
+    # - Spillover cases combine a tall reading with a SMALL footprint
+    #   — the bungalow is real, the height comes from a neighbour's
+    #   apartment block creeping into the polygon (177 Symons St, 9.1m
+    #   on 21.4% cov; 1030 Danforth Ave, 9.2m on 20.0% cov).
+    if existing_max_h >= 9.0 and coverage < 0.25 and neighbor_heights:
+        for k in ('nAvgM', 'sAvgM', 'eAvgM', 'wAvgM'):
+            nh = neighbor_heights.get(k)
+            if nh is not None and nh > 0 and abs(nh - existing_max_h) < 0.1:
+                return True
+    return False
 
 
 def _classify_existing_structure(parcel, building_tree, building_geoms) -> str:

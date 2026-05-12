@@ -7,6 +7,18 @@
     <meta name="theme-color" content="#2f6a4f">
     <title>BloomTO — Toronto sixplex & multiplex hot list</title>
 
+    <!-- Google Analytics (gtag.js) — same property as hometurf / kidsevents,
+         so all three sites roll up under one GA dashboard. Loaded async so
+         it doesn't block initial paint. Per Google's recommendation it lives
+         as high in <head> as possible to capture the earliest pageview. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1GZN9MX2P4"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-1GZN9MX2P4');
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet">
@@ -127,23 +139,48 @@
             .glass-card.mb-4 { margin-bottom: 0.5rem; }
             .filter-bar { margin-bottom: 8px; gap: 8px; }
             #stats { font-size: 12px; line-height: 1.35; margin-top: 6px; }
-            .nearby-bar {
-                display: flex; justify-content: space-between; align-items: center;
-                gap: 8px;
-                background: rgba(47, 106, 79, 0.08);
-                border: 1px solid rgba(47, 106, 79, 0.25);
-                color: var(--cot-green);
-                border-radius: 6px;
-                padding: 6px 10px;
-                margin-bottom: 6px;
-                font-size: 12px;
-            }
-            .nearby-bar strong { font-weight: 600; }
-            .nearby-bar button {
-                border: none; background: transparent; color: var(--cot-green);
-                cursor: pointer; font-size: 14px; padding: 0 4px; line-height: 1;
-            }
-            .nearby-bar button:hover { color: #0b3d1f; }
+        }
+        /* .nearby-bar — was previously wrapped inside @media (max-width: 640px),
+           so on desktop the button rendered with browser-default styling and
+           the gap was ignored. Hoisted out so the styling applies at every
+           width. Cancel pill is clearly separated from the address label. */
+        .nearby-bar {
+            /* Use flex-start (default) so the address text and the Cancel
+               button sit naturally next to each other with the 16px gap
+               honored. justify-content: space-between (previous) pushed
+               them to opposite ends of the bar, which felt visually
+               disconnected — the Cancel button orphaned at the right edge. */
+            display: flex; align-items: center;
+            gap: 16px;
+            background: rgba(47, 106, 79, 0.08);
+            border: 1px solid rgba(47, 106, 79, 0.25);
+            color: var(--cot-green);
+            border-radius: 6px;
+            padding: 8px 8px 8px 12px;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+        .nearby-bar strong { font-weight: 600; }
+        .nearby-bar button {
+            flex-shrink: 0;
+            border: 1px solid rgba(47, 106, 79, 0.35);
+            background: var(--surface);
+            color: var(--cot-green);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px 12px;
+            line-height: 1.2;
+            border-radius: 999px;
+            transition: background 0.12s ease, border-color 0.12s ease;
+        }
+        .nearby-bar button:hover {
+            background: rgba(47, 106, 79, 0.12);
+            border-color: var(--cot-green);
+        }
+        @media (max-width: 640px) {
+            .nearby-bar button { min-height: 32px; padding: 6px 14px; }
         }
         .gradient-text {
             color: var(--tor-blue);
@@ -251,6 +288,24 @@
             margin-left: 4px;
             background: #ffedd5;
             color: #9a3412;
+            cursor: help;
+        }
+        /* Laneway-abuts badge — rare-but-valuable signal. When a parcel
+           abuts a public laneway, the dev can stack a laneway suite (per
+           By-law 569-2013, May 2018) on top of the main multiplex →
+           potential +1 dwelling unit on the same lot. Blue tone to
+           differentiate from the green "true detached" signal. */
+        .laneway-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            margin-left: 4px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
             cursor: help;
         }
         /* Bulletproof-detached gold star — strongest positive structural
@@ -567,11 +622,24 @@
             color: var(--ink);
         }
         #methodology-dialog .md-body {
-            padding: 14px 18px 18px;
+            padding: 14px 18px 32px;
             font-size: 13px; line-height: 1.55;
             color: var(--ink);
             overflow-y: auto;
             overscroll-behavior: contain;
+        }
+        /* Extra bottom breathing room on mobile — iOS Safari + Android Chrome
+           sometimes clip the final line of scrollable content against the
+           dialog edge when the address bar is showing. Padding-bottom + a
+           sentinel margin on the last child guarantees the final bullet
+           clears the dialog frame even at the worst-case viewport height. */
+        @media (max-width: 640px) {
+            #methodology-dialog .md-body {
+                padding-bottom: 48px;
+            }
+            #methodology-dialog .md-body > *:last-child {
+                margin-bottom: 16px;
+            }
         }
         #methodology-dialog .md-body h3 {
             font-size: 13px; font-weight: 700;
@@ -654,17 +722,24 @@
             color: #fff;
             outline: none;
         }
-        /* Bigger touch target on mobile so a finger reliably hits it without
-           making the icon visually larger (pseudo-element padding trick). */
+        /* Bigger touch target on mobile so a finger reliably hits it
+           without making the icon visually larger (pseudo-element pad).
+           2026-05-11 bump: 28→40 px after Opera-on-Android reports that
+           taps near the ⓘ inside a <button> (e.g., "→ Units ⓘ" column
+           header) were landing on the parent button and triggering sort
+           instead of the popover. The 40×40 hit area meets Apple HIG +
+           Google Material recommendations (44 dp / 8mm). The capture-
+           phase click handler still uses .closest('.def-icon') so any
+           tap inside this hit zone is correctly routed to the popover. */
         @media (max-width: 640px) {
-            .def-icon { width: 16px; height: 16px; font-size: 10px; }
+            .def-icon { width: 16px; height: 16px; font-size: 10px; position: relative; }
             .def-icon::after {
                 content: '';
                 position: absolute;
-                width: 28px; height: 28px;
-                margin: -6px;
+                width: 40px; height: 40px;
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
             }
-            .def-icon { position: relative; }
         }
         #def-popover {
             position: fixed;
@@ -693,6 +768,35 @@
             letter-spacing: 0.02em;
         }
         #def-popover .def-body { color: var(--ink); }
+        /* Close X — top-right corner of the popover. Big enough to thumb-
+           tap (32×32 hit area) without taking visual space from the term
+           label. Sits in the popover's positioned context (no need for
+           position: relative on the parent since #def-popover is fixed). */
+        #def-popover .def-close {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 28px;
+            height: 28px;
+            border: 0;
+            background: transparent;
+            color: var(--ink-muted);
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        #def-popover .def-close:hover {
+            background: rgba(0, 0, 0, 0.06);
+            color: var(--ink);
+        }
+        #def-popover .def-term {
+            padding-right: 28px;  /* avoid title colliding with the X */
+        }
         #def-popover .def-cite {
             display: block;
             margin-top: 5px;
@@ -2006,14 +2110,28 @@
             gap: 6px;
             width: 100%;
             min-width: 0;
+            /* flex-wrap added 2026-05-11 — on Android Chrome the badges
+               (DETACHED, Demo permit, etc.) appended after the address
+               were pushing the star button past the right edge. Chrome
+               doesn't respect the .addr's `min-width: 0` + `nowrap` +
+               `overflow:hidden` shrink the same way iOS Safari does
+               (inline-block badges block ellipsis on Chrome). Wrapping
+               lets badges fall to a second line cleanly when they
+               don't fit. */
+            flex-wrap: wrap;
         }
         .pick .head .head-row .star { flex-shrink: 0; }
         .pick .head .addr {
             font-size: 14px; font-weight: 600;
             color: var(--ink);
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            flex: 1; min-width: 0;
+            /* `white-space: normal` was `nowrap` — relaxed so the address
+               and its trailing badges can wrap to a second line on narrow
+               viewports rather than clipping the star button. */
+            white-space: normal;
+            flex: 1 1 0%;
+            min-width: 0;
             max-width: 100%;
+            word-break: break-word;
         }
         .pick .head .addr.addr-pending { color: var(--ink-mute2); font-style: italic; }
         .pick .head .meta {
@@ -2832,6 +2950,16 @@
            Three across at desktop, stack at <520px. Numbers in monospace
            tabular for the dollar-figure read; labels in the regular UI font.
            Card backgrounds desaturated so the numbers carry the visual weight. */
+        /* Underwriting-snapshot KPI grid: 3 cards side-by-side at every
+           width. On mobile we tighten padding / gap / fonts so all three
+           cards keep their content visible at 412px (Pixel/iPhone), per
+           user preference for compact-density over stacking. */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            margin-top: 6px;
+        }
         .kpi-card {
             background: #ffffff;
             border: 1px solid rgba(47, 106, 79, 0.18);
@@ -2855,6 +2983,19 @@
             font-size: 11px; color: #4b5563; line-height: 1.4; margin-top: 4px;
         }
         .kpi-card .kpi-cite { color: #9ca3af; font-size: 10px; }
+        @media (max-width: 640px) {
+            .kpi-grid { gap: 6px; }
+            .kpi-card { padding: 6px 7px; }
+            .kpi-card .kpi-label {
+                font-size: 9px;
+                letter-spacing: 0.02em;
+                margin-bottom: 3px;
+            }
+            .kpi-card .kpi-num { font-size: 16px; }
+            .kpi-card .kpi-num.kpi-muted { font-size: 14px; }
+            .kpi-card .kpi-sub { font-size: 10px; margin-top: 3px; }
+            .kpi-card .kpi-cite { font-size: 9px; }
+        }
         .kpi-card .kpi-pop {
             margin-top: 6px; padding-top: 6px;
             border-top: 1px dashed rgba(47, 106, 79, 0.18);
@@ -3102,9 +3243,9 @@
                 <button class="col-btn" data-sort="area" title="Sort by lot area (largest first)">Lot (m²)</button>
                 <button class="col-btn" data-sort="footprint" title="Existing structure on the lot — footprint area (m²) and rough storey count (height ÷ 3, derived from 3D Massing). 'vacant' when no structure recorded. Sort: smallest footprint first.">Existing</button>
                 <button class="col-btn" data-sort="subway" title="Nearest higher-order TTC — subway (S) or streetcar (C). Sort by distance, closest first. Cell shows 'S 200m' / 'C 50m'. Bus excluded (most Toronto parcels are bus-close; bus distance doesn't move PSF comps the way subway/streetcar does — bus distance lives in the detail panel Site notes).">TTC</button>
-                <button class="col-btn" data-sort="units" title="Existing → max units. Existing = address points on parcel polygon (vacant = 0). Max = streamlined multiplex pathway target — 6 in T&amp;EY + Ward 23 (June 2025 sixplex carve-out), 4 citywide otherwise. '+' suffix means the underlying zone (FSI / RM / CR) supports MORE than that, but via Site Plan Approval (mid-rise pathway), not the streamlined multiplex by-law. Sort: highest max first.">→ Units</button>
+                <button class="col-btn" data-sort="units" title="Existing → max units. Existing = address points on parcel polygon (vacant = 0). Max = streamlined multiplex pathway target — 6 in T&amp;EY + Ward 23 (June 2025 sixplex carve-out), 4 citywide otherwise. '+' suffix means the underlying zone (FSI / RM / CR) supports MORE than that, but via Site Plan Approval (mid-rise pathway), not the streamlined multiplex by-law. Sort: highest max first.">→ Units <span class="def-icon" data-def="units-arrow" role="button" tabindex="0" aria-label="Definition of existing → target units">i</span></button>
                 <button class="col-btn" data-sort="permits_nb" title="Permit activity in this parcel's neighborhood over the last 5 years (sample size). Sort: most first.">Nbhd permits</button>
-                <button class="col-btn" data-sort="trees" title="Sort by mature tree count (most first)">Trees</button>
+                <button class="col-btn" data-sort="trees" title="Mature trees (≥30 cm DBH) on or near the parcel — protected under Toronto's Tree Bylaw. More trees = more permit + arborist + replanting friction. Sort: most first.">Trees <span class="def-icon" data-def="tree-bylaw" role="button" tabindex="0" aria-label="Definition of Toronto Tree Bylaw">i</span></button>
                 <button class="col-btn" data-sort="savings" title="DC-waiver savings per pick — $113,938 (Multiples 2+ BR rate, June 26 2025) × (max_units − 1), since unit 1 always pays. Toronto By-law 1137-2022 + EX24.2 (effective July 24, 2025). HST/GST rebates and other unverified industry estimates not stacked. Sort: highest savings first.">$ Saved <span class="def-icon" data-def="bill-185" role="button" tabindex="0" aria-label="Definition of Bill 185">i</span></button>
             </div>
             <div id="picks" class="pick-list"></div>
@@ -5128,6 +5269,17 @@
             const label = _AMENITY_LABELS[t] || t;
             return ` <span class="amenity-holdover-badge" title="OSM tags this parcel as a ${label.toLowerCase()} (commercial-holdover signal). The underlying zoning may permit residential — meaning this is a buy-out-the-lease teardown candidate, not a clean SFH play. Verify on Street View before underwriting.">${label}</span>`;
         }
+        function lanewayBadge(r) {
+            // Rare-but-valuable signal: parcel abuts a public laneway,
+            // which unlocks the laneway-suite path (By-law 569-2013, May
+            // 2018) — a permittable secondary structure on the rear lot
+            // IN ADDITION TO the main multiplex. Potential +1 dwelling
+            // unit's worth of revenue. Visible-at-a-scan blue chip so
+            // the 7-ish elite parcels carrying this upside don't get
+            // lost on the list.
+            if (r.abutsLaneway !== true) return '';
+            return ` <span class="laneway-badge" title="Parcel boundary touches a public laneway. Unlocks laneway-suite eligibility (Toronto Zoning By-law 569-2013 · Laneway Suites, May 2018) — a permittable secondary rear-lot structure ON TOP of the main multiplex. Free pre-approved permit-ready plans from City Planning. Rear access also helps construction logistics.">LANEWAY</span>`;
+        }
         function semiBadge(r) {
             // Inline warn-orange chip on broader-tier rows where the parcel's
             // current structure is semi-detached. Elite (default) excludes
@@ -5572,12 +5724,29 @@
                 } else {
                     out.push({ kind: 'good', text: 'Vacant lot — no demolition required; straight to ground-up 4-plex or sixplex build' });
                 }
-            } else if (cover != null && _footprintM2 < 500) {
-                out.push({ kind: 'good', text: `Existing footprint ${Math.round(_footprintM2)} m² (cover ${Math.round(cover * 100)}%) — small enough for clean teardown to a 4-plex or sixplex rebuild` });
-            } else if (cover != null && _footprintM2 >= 500 && _footprintM2 < 2000) {
-                out.push({ kind: 'caution', text: `Existing footprint ${Math.round(_footprintM2).toLocaleString()} m² — substantial existing structure (small apartment / commercial); teardown costs material` });
-            } else if (cover != null && _footprintM2 >= 2000) {
-                out.push({ kind: 'caution', text: `Existing footprint ${Math.round(_footprintM2).toLocaleString()} m² — likely tower / apartment / plaza; not a teardown play` });
+            } else if (cover != null) {
+                // Teardown-friendliness uses FLOOR AREA, not just footprint.
+                // A 200 m² × 1-storey bungalow ≠ 200 m² × 3-storey Tudor —
+                // demo cost is roughly linear in floor area (≈$50-100/m²
+                // before salvage/abatement). Storeys derived from
+                // existingMaxBuildingHeightM ÷ 3 m/storey, defaulting to 1
+                // if height is unknown so we don't penalize parcels missing
+                // 3D Massing data.
+                const _h = r.existingMaxBuildingHeightM;
+                const _storeys = _h != null && _h > 0 ? Math.max(1, Math.round(_h / 3)) : 1;
+                const _floorArea = Math.round(_footprintM2 * _storeys);
+                const _scaleLabel = _storeys === 1 ? '1-storey'
+                                 : _storeys === 2 ? '2-storey'
+                                 : `${_storeys}-storey`;
+                if (_floorArea < 400) {
+                    out.push({ kind: 'good', text: `${_scaleLabel} existing, ~${_floorArea} m² floor area — clean teardown for a 4-plex or sixplex rebuild.` });
+                } else if (_floorArea < 800) {
+                    out.push({ kind: 'caution', text: `${_scaleLabel} existing, ~${_floorArea} m² floor area — moderate teardown. Demo cost is real (~$30-60K range depending on salvage / abatement); not a bungalow play.` });
+                } else if (_floorArea < 1800) {
+                    out.push({ kind: 'caution', text: `${_scaleLabel} existing, ~${_floorArea} m² floor area — substantial existing structure. Teardown economics need to clear the demolition cost before the multiplex math works.` });
+                } else {
+                    out.push({ kind: 'caution', text: `${_scaleLabel} existing, ~${_floorArea} m² floor area — likely apartment / commercial / plaza; not a teardown play.` });
+                }
             }
             // Solar consideration removed 2026-05-06 — `solarScore` is a
             // BloomTO P95-normalized + shadow-adjusted score, not a raw city
@@ -5928,11 +6097,36 @@
                 const idx = nbVals.findIndex(x => x != null && x > 0 && Math.abs(x - existingH) < 0.05);
                 return idx < 0 ? null : ['N', 'S', 'E', 'W'][idx];
             })();
+            // Teardown-tier tag — inline mini-label next to the height,
+            // colour-coded by total floor area (footprint × storeys).
+            // Mirrors the row-table colour cue + the Considerations bullet;
+            // each surface communicates the same signal at its own level of
+            // detail. Clean = green, moderate = amber, heavy = red.
+            // (NB: `_cov` is scoped to consider(); detailHtml() reads
+            // r.buildingCoverageRatio directly — referencing _cov here
+            // would throw ReferenceError and kill the panel render.)
+            const _detailFp = (r.buildingCoverageRatio || 0) * (r.lotAreaM2 || 0);
+            const _detailStoreys = (existingH != null && existingH > 0)
+                ? Math.max(1, Math.round(existingH / 3)) : 1;
+            const _detailFloorArea = Math.round(_detailFp * _detailStoreys);
+            const _tearTag = (() => {
+                if (existingH == null || _detailFp === 0) return '';
+                if (_detailFloorArea < 400) {
+                    return ` · <span style="color:#15803d;font-weight:500;font-size:11px">~${_detailFloorArea} m² · clean teardown</span>`;
+                }
+                if (_detailFloorArea < 800) {
+                    return ` · <span style="color:#b45309;font-weight:500;font-size:11px">~${_detailFloorArea} m² · moderate teardown</span>`;
+                }
+                if (_detailFloorArea < 1800) {
+                    return ` · <span style="color:#9a3412;font-weight:600;font-size:11px">~${_detailFloorArea} m² · heavy teardown</span>`;
+                }
+                return ` · <span style="color:#9f1239;font-weight:600;font-size:11px">~${_detailFloorArea} m² · not a teardown play</span>`;
+            })();
             const existingHtml = (() => {
                 if (existingH == null) {
                     return `<div class="sub" style="color:#15803d">Vacant${structSuffix}</div>`;
                 }
-                return `<div class="sub"><strong>${existingH.toFixed(1)} m</strong>${structSuffix}</div>`;
+                return `<div class="sub"><strong>${existingH.toFixed(1)} m</strong>${_tearTag}${structSuffix}</div>`;
             })();
 
             return `
@@ -5957,7 +6151,7 @@
                      reader scrolls into the detail sections below. -->
                 <section>
                     <h4>Underwriting snapshot</h4>
-                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px">
+                    <div class="kpi-grid">
                         ${(() => {
                             // ── KPI 1: Pro-forma anchor (per-unit only) ──
                             // 2026-05-11: dropped the maxUnits×median total.
@@ -5979,7 +6173,7 @@
                             const sample = r.nbPermitSampleSize ?? nb.sampleSize ?? 0;
                             const costLine = median != null
                                 ? `<div class="kpi-num">${fmtCad(median)}<span style="font-size:13px;font-weight:500;color:var(--ink-muted);margin-left:4px">/unit</span></div>
-                                   <div class="kpi-sub">median declared hard cost · <span class="kpi-cite">${sample} comparable permits in ${r.neighborhood || 'this neighbourhood'}</span></div>`
+                                   <div class="kpi-sub"><strong>${r.neighborhood || 'Neighbourhood'}</strong> median declared hard cost · <span class="kpi-cite">${sample} comparable permits over the last 5 years</span></div>`
                                 : `<div class="kpi-num kpi-muted">—</div>
                                    <div class="kpi-sub">insufficient permit comp <span class="kpi-cite">(need ≥10; have ${sample})</span></div>`;
                             return `<div class="kpi-card kpi-pro-forma">
@@ -6539,6 +6733,21 @@
         }
 
         function openDetail(r) {
+            // Push a browser history state on open. Always include the
+            // parcelId so the popstate handler can re-open this exact
+            // parcel if the user backs into it from a Nearby view. If
+            // we already have a detail state for THIS parcel (e.g., user
+            // clicked the same parcel twice), don't stack.
+            if (!history.state || history.state.bloomtoPanel !== 'detail'
+                    || history.state.parcelId !== r.parcelId) {
+                history.pushState({ bloomtoPanel: 'detail', parcelId: r.parcelId }, '');
+            }
+            openDetailVisual(r);
+        }
+        // openDetailVisual: render + slide-in only, no history navigation.
+        // Called by openDetail (after pushing state) and by the popstate
+        // listener (when backing into a detail state from a deeper view).
+        function openDetailVisual(r) {
             detailCurrent = r;
             const panel = document.getElementById('detail-panel');
             const overlay = document.getElementById('detail-overlay');
@@ -6654,7 +6863,10 @@
             });
         }
 
-        function closeDetail() {
+        // closeDetailVisual: pure visual close (no history navigation).
+        // Called by the popstate listener — must NOT call history.back()
+        // or we'd recurse infinitely (back → popstate → close → back…).
+        function closeDetailVisual() {
             const panel = document.getElementById('detail-panel');
             const overlay = document.getElementById('detail-overlay');
             panel.classList.remove('open');
@@ -6662,6 +6874,59 @@
             setTimeout(() => { panel.hidden = true; }, 220);
             hideSelectionRing();
         }
+        // closeDetail: public entry point. If we pushed a history state
+        // when the panel opened, navigate back (which fires popstate →
+        // closeDetailVisual). Otherwise close directly. This makes the
+        // browser/Android back button work the same as the X / overlay /
+        // Esc paths — one source of truth.
+        function closeDetail() {
+            if (history.state && history.state.bloomtoPanel === 'detail') {
+                history.back();
+            } else {
+                closeDetailVisual();
+            }
+        }
+        // Listen for back-button navigation (browser back + Android system
+        // back, both fire popstate). Dispatch based on the state we just
+        // navigated TO (history.state after the pop). Each branch is one
+        // hop down the stack — back goes home → list → detail → nearby
+        // and reversing that chain reverses the visual progression.
+        window.addEventListener('popstate', () => {
+            const newState = history.state;
+            const panel = document.getElementById('detail-panel');
+            const panelOpen = panel && !panel.hidden;
+
+            // We popped TO a detail state (came back from a nearby view).
+            // Re-open that exact parcel and clear any nearby filter.
+            if (newState && newState.bloomtoPanel === 'detail' && newState.parcelId != null) {
+                if (nearbyFilter) {
+                    nearbyFilter = null;
+                    selectedIdx = null;
+                    render();
+                    fitBoundsToFiltered(applyFilters());
+                }
+                // Find the parcel by id in whatever row set is currently
+                // loaded (elite or broader). If we can't find it (rare —
+                // tier switched while panel was open), drop the state and
+                // exit cleanly so the user isn't stuck.
+                const activeRows = (broaderMode && broaderRows) ? broaderRows : (eliteRows || []);
+                const target = activeRows.find(row => row.parcelId === newState.parcelId);
+                if (target) {
+                    if (!panelOpen) openDetailVisual(target);
+                }
+                return;
+            }
+
+            // We popped TO a state with no bloomtoPanel (or null) = home.
+            // Close anything open so the visual returns to the plain list.
+            if (panelOpen) closeDetailVisual();
+            if (nearbyFilter) {
+                nearbyFilter = null;
+                selectedIdx = null;
+                render();
+                fitBoundsToFiltered(applyFilters());
+            }
+        });
 
         document.getElementById('detail-close').addEventListener('click', closeDetail);
         document.getElementById('detail-overlay').addEventListener('click', closeDetail);
@@ -6681,6 +6946,10 @@
                 starBtn.textContent = on ? '★' : '☆';
                 starBtn.setAttribute('aria-label', on ? 'Remove from saved' : 'Save to watchlist');
             });
+            // Update the header's ☆ Saved (N) count. The row-inline star
+            // already does this; previously the detail-panel save button
+            // didn't, so the header count stayed stale until next refresh.
+            syncSavedToggleUI();
         });
         function syncDetailSaveButton(on) {
             const btn = document.getElementById('detail-save');
@@ -6725,7 +6994,7 @@
             }, 1500);
         });
         document.getElementById('detail-nearby').addEventListener('click', () => {
-            // Filter listings to other multiplex sites within 500m of the
+            // Filter listings to other multiplex sites within 1km of the
             // currently-open parcel. Closes the detail panel and scrolls the
             // listings into view so the dev can scan the local pocket.
             if (!detailCurrent || detailCurrent.lat == null || detailCurrent.lng == null) return;
@@ -6743,13 +7012,19 @@
                 boundsRestricted = false;
                 syncBoundsBtnUI();
             }
-            closeDetail();
+            // Close detail panel visually (no history.back) and PUSH a new
+            // 'nearby' state on top of the detail state. Back from Nearby
+            // pops to the detail state → popstate handler re-opens the
+            // source detail. Chain becomes: home → detail-A → nearby-from-A
+            // → back returns to detail-A → back returns to list → back
+            // leaves site. Stash the source parcelId so we can re-open it.
+            closeDetailVisual();
+            history.pushState({ bloomtoPanel: 'nearby', sourceParcelId: r.parcelId }, '');
             render();
             fitBoundsToFiltered(applyFilters());
-            // Bring the listings into view on mobile (where the panel covered
-            // the list). Desktop already sees the listings on the left.
-            const listings = document.getElementById('picks');
-            if (listings) listings.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll-to-listings removed 2026-05-11 — user prefers the page
+            // to stay where it is when toggling Nearby on/off. Consistency
+            // beats the "help the user find where the list is" assumption.
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !document.getElementById('detail-panel').hidden) closeDetail();
@@ -6791,6 +7066,10 @@
                 pop.style.top = top + 'px';
             }
 
+            // Close X button — appended to every popover open() so mobile
+            // users have an explicit dismiss target (tap-outside also works
+            // but isn't obvious without prior experience).
+            const closeBtn = `<button type="button" class="def-close" aria-label="Close definition">&times;</button>`;
             function open(icon) {
                 // Site-note tiles carry their content as data-* attributes
                 // (parcel-specific values), not via the static GLOSSARY.
@@ -6802,7 +7081,8 @@
                     const tip = icon.dataset.tip || '';
                     const termHtml = label
                         + (val ? ` <span style="color:var(--ink-muted);font-weight:500;font-size:11px;letter-spacing:0;text-transform:none">· ${escapeHtml(val)}</span>` : '');
-                    pop.innerHTML = `<div class="def-term">${termHtml}</div>`
+                    pop.innerHTML = closeBtn
+                        + `<div class="def-term">${termHtml}</div>`
                         + `<div class="def-body">${escapeHtml(tip)}</div>`;
                 } else {
                     const key = icon.dataset.def;
@@ -6813,7 +7093,8 @@
                     }
                     const citeHtml = entry.cite
                         ? `<span class="def-cite">${entry.cite}</span>` : '';
-                    pop.innerHTML = `<div class="def-term">${entry.term}</div>`
+                    pop.innerHTML = closeBtn
+                        + `<div class="def-term">${entry.term}</div>`
                         + `<div class="def-body">${entry.body}${citeHtml}</div>`;
                 }
                 pop.hidden = false;
@@ -6829,6 +7110,17 @@
             // handler has already fired by then. Capture phase + stopPropagation
             // + stopImmediatePropagation = the click never reaches the parent.
             document.addEventListener('click', (e) => {
+                // Close X tapped → close popover. Check this BEFORE the
+                // generic "click inside popover" path so the X actually
+                // dismisses (otherwise the popover would absorb its own
+                // click and stay open).
+                if (e.target.closest('.def-close')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    close();
+                    return;
+                }
                 // Two trigger types share the popover:
                 //   1. .def-icon  → looks up GLOSSARY[data-def]
                 //   2. .site-note-tile → uses inline data-label/data-val/data-tip
@@ -7056,6 +7348,16 @@
                 body: 'Toronto\'s mandatory green-building code. Every new residential construction permit issued since May 2022 must meet Tier 1 minimums on greenhouse-gas intensity (GHGI), total energy use (TEUI), and thermal energy demand (TEDI). Tier 2 is voluntary today and qualifies for a development-charge refund, but is becoming mandatory in 2026. Tier 3 is the deepest voluntary tier (near net-zero) and lines up with the city\'s 2030 emissions targets.',
                 cite: 'Toronto Green Standard V4 · mandatory since May 2022',
             },
+            'tree-bylaw': {
+                term: 'Toronto Tree Bylaw',
+                body: 'Trees with trunk diameter ≥30 cm (measured at 1.4 m height — DBH) are protected on private property. Removing or injuring one requires a permit + a letter from an ISA-certified arborist. Process: application (~$140 per tree) + cash-in-lieu of replanting (~$585 per tree) + up to 30 business days review + a neighbour notice / objection window. Each protected tree typically adds 4-8 weeks and $1-3K to your project. A new Distinctive Tree category for trees ≥61 cm DBH takes effect September 1, 2026 with stricter protection. Counts shown are mature street + on-parcel trees ≥30 cm DBH from Toronto\'s Tree Inventory dataset.',
+                cite: 'Toronto Municipal Code Ch. 813 (Private) + Ch. 658 (Street)',
+            },
+            'units-arrow': {
+                term: 'Units — existing → target',
+                body: 'Left number = <strong>existing units</strong>: count of city-registered municipal addresses inside this parcel polygon (Toronto Open Data Address Points). It\'s the number of separate dwellings the city recognizes — could be a duplex, a single-family + basement suite, a single + laneway suite, etc. <strong>It\'s a lower bound</strong> — unregistered (illegal) basement apartments don\'t show up here, so actual units could be higher.<br><br>Right number = <strong>by-law target</strong>: the streamlined multiplex pathway maximum. <strong>6 in Toronto–East York District + Ward 23</strong> (sixplex carve-out, June 2025); <strong>4 citywide</strong> otherwise. Vacant lots show as 0.<br><br>A <strong>"+"</strong> suffix on the target (e.g., "6+") means the underlying zone (FSI / RM / CR) supports more units via Site Plan Approval — that\'s the mid-rise pathway, not the streamlined multiplex by-law. Surfaced for situational awareness; not the easy-path play.',
+                cite: 'Address Points (existing) · By-law 569-2013 (target)',
+            },
         };
 
         // City-wide policy constants the dev panel cites in dollar figures.
@@ -7244,6 +7546,11 @@
                 // score/softScore drop on 2026-05-07.
                 if (bounds && !bounds.contains([r.lat, r.lng])) return false;
                 if (nearbyFilter && r.lat != null && r.lng != null) {
+                    // Exclude the anchor parcel itself — "nearby" means
+                    // OTHER parcels in this pocket, not the one we
+                    // searched from. The button label "(N)" was already
+                    // counting OTHERS only; the filter result now matches.
+                    if (r.parcelId === nearbyFilter.parcelId) return false;
                     const d = haversineM(nearbyFilter.lat, nearbyFilter.lng, r.lat, r.lng);
                     if (d > nearbyFilter.radiusM) return false;
                 }
@@ -7517,6 +7824,27 @@
                 const storeys = Math.max(1, Math.round(h / 3));
                 return `${fpM2}m² · ${storeys} fl`;
             })();
+            // Teardown-difficulty colour cue on the Existing cell.
+            // Uses FLOOR AREA (footprint × storeys), not footprint alone —
+            // a 200 m² × 1-storey bungalow ≠ a 200 m² × 3-storey Tudor.
+            // Demo cost ≈ linear in floor area: clean teardown (<400 m²)
+            // gets no class; moderate (400-800) gets a warn tint; heavy
+            // (≥800) gets the stronger warn-hot. Vacant gets no class
+            // (we don't want to muddy "no structure" with teardown colour).
+            const _fpStoreys = r.existingMaxBuildingHeightM > 0
+                ? Math.max(1, Math.round(r.existingMaxBuildingHeightM / 3))
+                : 1;
+            const _fpFloorArea = fpM2 === 0 ? 0 : fpM2 * _fpStoreys;
+            const _fpTearClass = (fpM2 === 0 || r.existingStructureType === 'vacant') ? ''
+                : _fpFloorArea < 400 ? ''
+                : _fpFloorArea < 800 ? 'val-warn'
+                : 'val-warn cell-hot';
+            const _fpTearTitle = (fpM2 === 0) ? ''
+                : `Estimated total floor area ≈ ${Math.round(_fpFloorArea).toLocaleString()} m² (${fpM2} m² × ${_fpStoreys} storey${_fpStoreys === 1 ? '' : 's'}). `
+                + (_fpFloorArea < 400 ? 'Clean teardown — small existing structure.'
+                   : _fpFloorArea < 800 ? 'Moderate teardown — demo cost is real (~$30-60K).'
+                   : _fpFloorArea < 1800 ? 'Heavy teardown — substantial existing structure to demo.'
+                   : 'Not a teardown play — likely apartment / commercial / plaza.');
             // existing → max units. Replaces the old YES/no sixplex flag
             // with a comparison rendering (more dopamine: dev sees the
             // upside delta inline).
@@ -7622,7 +7950,7 @@
                 <div class="pick ${rankClass(i)} ${heroClass} ${hotClass}" data-i="${i}" data-key="${k}">
                     <div class="head">
                         <div class="head-row">
-                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${trueDetachedBadge(r)}${multiUnitAddressBadge(r)}${semiBadge(r)}${amenityHoldoverBadge(r)}${signalBadgesHtml(r)}</div>
+                            <div class="${addrClass}">${addr}${freshPermitBadge(r)}${visitDeltaBadge(r)}${trueDetachedBadge(r)}${lanewayBadge(r)}${multiUnitAddressBadge(r)}${semiBadge(r)}${amenityHoldoverBadge(r)}${signalBadgesHtml(r)}</div>
                             <button class="star ${watched ? 'on' : ''}" data-action="star" aria-label="${watched ? 'Remove from saved' : 'Save to watchlist'}">${watched ? '★' : '☆'}</button>
                         </div>
                         <div class="meta">${r.neighborhood}</div>
@@ -7644,7 +7972,7 @@
                             return `<div class="cell ${cls}" data-col="activity" title="${tip}">${display}</div>`;
                         })()}
                         <div class="cell" data-col="lot">${lotDisplay}</div>
-                        <div class="cell" data-col="footprint">${fpDisplay}</div>
+                        <div class="cell ${_fpTearClass}" data-col="footprint" title="${_fpTearTitle}">${fpDisplay}</div>
                         <div class="cell ${popSubway}" data-col="subway" title="${_ttcTip}">${subDisplayShort}</div>
                         <div class="cell ${sxClass} ${popSixplex}" data-col="sixplex" title="${sxTitle}">${sxText}</div>
                         <div class="cell" data-col="permits">${permitsDisplay}</div>
@@ -7705,10 +8033,16 @@
                 if (pickObserver) {
                     pickObserver.observe(document.getElementById('picks-sentinel'));
                 }
-            } else if (!broaderMode && (broaderRows == null || broaderRows.length > pickRows.length)) {
+            } else if (!broaderMode && !nearbyFilter && (broaderRows == null || broaderRows.length > pickRows.length)) {
                 // End-of-list CTA — only when we've shown every elite row
-                // and the broader set has more to offer. Mirrors the header
+                // AND the broader set has more to offer. Mirrors the header
                 // tier-toggle but at the natural moment the user runs out.
+                //
+                // Skip when a Nearby filter is active — "that's every elite
+                // pick" is misleading there because Nearby shows a geographic
+                // subset, not the cohort. The "Browse all candidates" action
+                // would also wipe the Nearby filter, which isn't what the user
+                // expects from an end-of-list button.
                 list.insertAdjacentHTML('beforeend',
                     `<div id="picks-end-cta" class="picks-end-cta">
                         That's every elite pick. <button type="button" id="picks-end-cta-btn">Browse all candidates →</button>
@@ -7856,14 +8190,26 @@
             if (!stats) return;
             if (nearbyFilter) {
                 stats.hidden = false;
-                stats.innerHTML = `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM >= 1000 ? (nearbyFilter.radiusM/1000) + 'km' : nearbyFilter.radiusM + 'm'} of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Clear nearby filter">✕</button></div>`;
+                stats.innerHTML = `<div class="nearby-bar"><span><strong>📍 Within ${nearbyFilter.radiusM >= 1000 ? (nearbyFilter.radiusM/1000) + 'km' : nearbyFilter.radiusM + 'm'} of ${escapeHtml(nearbyFilter.label)}</strong></span><button type="button" id="nearby-clear" aria-label="Back to source parcel">← Back</button></div>`;
                 const clearBtn = document.getElementById('nearby-clear');
                 if (clearBtn) {
                     clearBtn.addEventListener('click', () => {
-                        nearbyFilter = null;
-                        selectedIdx = null;
-                        render();
-                        fitBoundsToFiltered(applyFilters());
+                        // Route through history.back if we have a 'nearby'
+                        // state on the stack — the popstate listener does
+                        // the actual clear (and re-opens the source detail).
+                        // Button label "← Back" reflects this navigation
+                        // semantic. If Nearby ever becomes reachable from
+                        // somewhere that isn't a detail panel (chip filter,
+                        // map-view, etc), revert the label to "Cancel" —
+                        // "Back" would be misleading without a prior view.
+                        if (history.state && history.state.bloomtoPanel === 'nearby') {
+                            history.back();
+                        } else {
+                            nearbyFilter = null;
+                            selectedIdx = null;
+                            render();
+                            fitBoundsToFiltered(applyFilters());
+                        }
                     });
                 }
             } else {

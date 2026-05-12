@@ -42,11 +42,18 @@ _log = logging.getLogger("bloomto.build_parcels_top")
 # RA/RAC excluded, sane footprint, addressed).
 
 ELITE_TRANSIT_BUFFER_M = 500
-ELITE_MIN_LOT_M2 = 350
+# Lowered 2026-05-11 from 350 → 250 m² to include classic downtown
+# Toronto 25-ft-frontage lots (~232-280 m²) common in Trinity-Bellwoods,
+# Little Italy, Roncesvalles, Riverside, Leslieville. These are highly
+# laneway-active neighbourhoods + walkable transit + multiplex-friendly
+# zoning — the prior 350 m² floor was structurally excluding the
+# best-aligned-with-Toronto-net-zero parcels in favour of inner-suburban
+# bigger lots that have no laneway access.
+ELITE_MIN_LOT_M2 = 250
 ELITE_MIN_MAX_UNITS = 4
 
 BROADER_TRANSIT_BUFFER_M = 1500
-BROADER_MIN_LOT_M2 = 250
+BROADER_MIN_LOT_M2 = 200  # was 250 — keep elite as a strict subset
 BROADER_MIN_MAX_UNITS = 3
 
 # Existing-structure gate (2026-05-07). Elite is "spicy" — only parcels where a
@@ -58,16 +65,21 @@ BROADER_MIN_MAX_UNITS = 3
 ELITE_STRUCTURE_TYPES = frozenset({"detached", "vacant"})
 BROADER_STRUCTURE_TYPES = frozenset({"detached", "vacant", "semi"})
 
-# Curated `parcels-top.json` Path B threshold (sixplex-eligible + comfortable
-# lot for 4–6 unit multiplex without site-fitting compromise). Chosen by user
-# direction 2026-05-07 — well above the by-law's ~360m² multiplex minimum.
-CURATED_PATH_B_MIN_LOT_M2 = 500
-# Path B top-N cap. Sixplex-eligible territory (T&EY District + Ward 23) is
-# larger than it intuitively feels — full Path B uncapped at 500m² lot is
-# ~1,800 parcels, more than the curated front needs. Capping by lot area
-# desc gives the dev "the biggest sixplex-eligible lots that are also above
-# the 500m² floor." Single-primitive cut, defensible.
-CURATED_PATH_B_TOP_N = 200
+# Curated `parcels-top.json` Path B threshold + cap.
+#
+# 2026-05-11 — lowered min lot 500 → 250 m² so classic Toronto 25-ft-
+# frontage downtown lots (Trinity-Bellwoods, Little Italy, Roncesvalles,
+# Riverside, Leslieville — laneway-rich, multiplex-active areas) can
+# enter the elite cohort. Sixplex math IS tighter on smaller lots but
+# the by-law accommodates them. The prior 500 m² floor was structurally
+# excluding the most net-zero-aligned parcels in favour of inner-suburban
+# 700+ m² lots that have no laneway access.
+#
+# TOP_N bumped 200 → 500 since the smaller-lot pool expands the candidate
+# set significantly. Sort still lot-area DESC so the dev sees biggest
+# lots first when browsing.
+CURATED_PATH_B_MIN_LOT_M2 = 250
+CURATED_PATH_B_TOP_N = 500
 
 # 500 m² footprint upper bound — see prior comments. Existing structure
 # above this is most likely apartment/mid-rise (would have been caught by
@@ -358,6 +370,23 @@ def is_elite(props: dict) -> bool:
     # surfacing `back_lot_candidate` in meta.stats; this gate uses the
     # same signal as a hard-exclusion for the elite cohort.
     if props.get("abutsLaneway") and (props.get("addrToStreetM") or 0) >= 15:
+        return False
+    # Geometry-suspect exclusion (added 2026-05-11 — 807 Glencairn /
+    # 177 Symons pattern). Set by ETL when height-attribution looks
+    # like a catastrophic polygon mis-draw — tall (≥12 m) on narrow
+    # (<20% cov), or exactly matches a neighbour-height within 0.1 m.
+    # Three rebuild iterations couldn't fix these algorithmically (the
+    # source polygons in Property Boundaries are wrong), so we hard-
+    # exclude from elite to keep cover-list trust 100%. Affected parcels
+    # remain in broader for devs who want to investigate.
+    if props.get("geometrySuspect"):
+        return False
+    # Address-drift exclusion (added 2026-05-11 — 106 Eastwood Rd
+    # pattern). Parcel's stated address didn't match any Address Point
+    # inside its polygon. Can't underwrite what you can't physically
+    # locate. Reject from elite; broader keeps them with a frontend
+    # caution.
+    if props.get("addressDriftSuspect"):
         return False
     structure_type = props.get("existingStructureType", "unknown")
     if structure_type not in ELITE_STRUCTURE_TYPES:
