@@ -9,15 +9,17 @@ __pycache__/
 tools/cache/
 cache/
 
-# ETL outputs — regenerable from `python3 tools/build_parcels.py` +
-# `python3 tools/build_parcels_top.py`. parcels.geojson is ~250 MB and
-# changes every rebuild; not appropriate for git history.
-data/parcels.geojson
-data/parcels-top.json
-data/parcels-broader.json
+# Legacy BloomTO ETL outputs (kept under legacy/bloomto/data when the
+# archived ETL is ever re-run; never appropriate for git history).
+legacy/bloomto/data/parcels.geojson
+legacy/bloomto/data/parcels-top.json
+legacy/bloomto/data/parcels-broader.json
+legacy/bloomto/audit/*.PRE.md
 
-# Pre-rebuild snapshot files saved by the audit comparison step
-audit/*.PRE.md
+# DemoCalcTO ETL outputs (large or regenerable per rebuild)
+data/democalc-permits-raw.json
+data/democalc-aggregates.json
+data/*.geojson
 
 # Editor / OS scrap
 *.swp
@@ -27,9 +29,10 @@ Thumbs.db
 
 # Build/run logs
 /tmp/bloomto-rebuild.log
+/tmp/democalcto-rebuild*.log
 *.log
 
-# Cron-runtime artifacts (signals.json refresh wrapper)
+# Cron-runtime artifacts
 tools/.signals.lock
 tools/logs/
 

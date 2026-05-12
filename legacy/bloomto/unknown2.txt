@@ -1,0 +1,2485 @@
+Local Emissions for Net Zero 
+(LENZ) Modelling Suite – Toronto 
+
+Non-technical documentation 
+
+                          For the City of Toronto 
+
+Version 1.0 – August 2023 
+
+Photo by Scott Webb from Pexels 
+
+i 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+LENZ Modelling Suite - Toronto 
+
+Acknowledgements 
+
+Land acknowledgement 
+
+The City of Toronto acknowledges that we are on the traditional territory of many nations including the 
+Mississaugas of the Credit, the Anishnabeg, the Chippewa, the Haudenosaunee, and the Wendat peoples 
+and  is  now  home  to  many  diverse  First  Nations,  Inuit,  and  Métis  peoples.  The  City  of  Toronto  also 
+acknowledges that Toronto is covered by Treaty 13 signed with the Mississaugas of the Credit, and the 
+Williams Treaties signed with multiple Mississaugas and Chippewa bands. 
+
+General acknowledgement 
+
+The City of Toronto would like to acknowledge the community members and staff from across the city 
+that contributed to the development of the Local Emissions for Net Zero (LENZ) Modelling Suite. The City 
+of Toronto is grateful to all leaders and community members who have contributed their time to help 
+advance the city’s efforts to address climate change. 
+
+ii 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+About the project team 
+
+ESMIA Consultants 
+
+in  3E  (energy-economy-environment) 
+ESMIA  provides  expertise 
+integrated  system  modelling  for  deriving  and  analyzing  optimal 
+economic,  energy  and  climate  strategies.  ESMIA  puts  forward  a 
+scientific  approach  guided  by  sophisticated  mathematical  models. 
+The  goal  behind  our  implication  is  to  offer  solutions  that  allow 
+achieving energy and climate goals without compromising economic 
+growth.  For  20  years,  the  ESMIA  consultants  provide  a  full  range  of  services  for  the  development  of 
+economy-wide energy system models for high-profile organizations worldwide. They also provide advisory 
+services  that  focus on  analyzing  complex  problems  such  as  energy  security,  electrification,  technology 
+roadmap  and  energy  transitions.  ESMIA  benefits  from  its  own  integrated  suite  of  models,  including  in 
+particular: The North American TIMES Energy Model (NATEM) combined with the North American general 
+Equilibrium Model (NAGEM). 
+
+Sustainable Energy Systems Integration and Transition Group (SESIT) 
+
+Integration  and 
+The  Sustainable  Energy  Systems 
+Transitions  Group 
+led  by  Madeleine 
+MacPherson  at  the  University  of  Victoria.  The  group 
+focuses on energy systems integration – the process of coordinating the operation and planning of our 
+energy systems over a variety of spatial-temporal scales and infrastructure systems (transport, buildings, 
+electricity,  water).  Their  work  involves  the  development  and  application  of  energy  system  software, 
+designed  to  address  research  and  policy  questions  related  to  variable  renewable  energy  integration, 
+demand response initiatives, utility-scale and behind-the-meter storage technologies, and electric vehicle 
+integration. 
+
+(SESIT) 
+
+is 
+
+We acknowledge data support provided by the Sustainability Solution Group (SSG). 
+
+iii 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+City of Toronto – Project team 
+
+  Ezzat Jaroudi  
+ 
+Jessica Murray  
+  Marvin Quitoras 
+  Sean Severin 
+
+ESMIA Consultants – Consulting team 
+
+  Romain Chaffanjon 
+  Elizaveta Kuznetsova 
+  Nolwen Stéphan 
+  Kathleen Vaillancourt 
+  Alison Bailie 
+  Mathilde K. Bourque 
+
+SESIT - Support team 
+
+ 
+Jacob Monroe 
+  Madeleine Seatle 
+  Madeleine McPherson 
+  Ahnaf Ahmed 
+  Evan Dungate 
+
+Technical Advisory Group  
+
+We  acknowledge  the  support  provided  by  the  Technical  Advisory  Group  for  the  development  and 
+application of LENZ. 
+
+Joerg Wittenbrinck, Ontario Ministry of Energy, Northern Development and Mines 
+John Robinson, University of Toronto, Munk School of Global Affairs and Public Policy 
+
+  Aakash Harpalani, The Atmospheric Fund (TAF), Research and Innovation 
+  Alec Warzin, Natural Resources Canada, Renewable and Electrical Energy Division 
+  Clayton Barrows, National Renewable Energy Laboratory 
+  Daniel Posen, University of Toronto, Department of Civil & Mineral Engineering 
+ 
+ 
+  Kevin Palmer-Wilson, Environment and Climate Change Canada 
+  Ozge Kaplan, EPA's Center for Environmental Measurement and Modeling 
+  Peter Massie, Natural Resources Canada, Office of Energy Research and Development 
+  Robert Stupka, C40 Cities 
+  Taco Niet, Simon Fraser University 
+
+iv 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Table of contents 
+
+_Toc141083055 
+
+How to use this document ? .................................................................................................. 1 
+
+1. 
+
+Introduction to Local Energy for Net Zero ........................................................................ 2 
+
+1.1.  What is the purpose of LENZ? ...................................................................................................  3 
+
+1.2.  What is LENZ made up of? ........................................................................................................  4 
+
+1.3.  What are the key features and limitations of LENZ? ................................................................  9 
+
+2.  How can LENZ be used? ................................................................................................ 12 
+
+2.1.  What types of scenarios can be modelled? ..............................................................................  13 
+
+2.2. 
+
+TEMOA-TO, a long-term planning model .................................................................................. 15 
+
+2.2.1. 
+
+Scope & assumptions .......................................................................................................... 15 
+
+2.2.2. 
+
+Results interpretations ........................................................................................................ 19 
+
+2.3. 
+
+SILVER-TO & the Linking Tool, a short-term planning model .................................................... 20 
+
+2.3.1. 
+
+Scope & assumptions .......................................................................................................... 20 
+
+2.3.2. 
+
+Results interpretations ........................................................................................................ 24 
+
+3.  Typical use cases for LENZ ............................................................................................. 26 
+
+3.1. 
+
+Carbon accountability through carbon budgets .......................................................................  27 
+
+3.2. 
+
+Accelerate significant reduction of natural gas ......................................................................... 28 
+
+3.3. 
+
+Establish building performance targets ....................................................................................  29 
+
+3.4. 
+
+Increase low carbon transportation options ............................................................................. 30 
+
+3.5. 
+
+Increase local renewable energy & storage .............................................................................. 31 
+
+3.6. 
+
+Resilience of electric power supply ........................................................................................... 32 
+
+3.7. 
+
+Energy affordability ................................................................................................................... 33 
+
+3.8. 
+
+Employment .............................................................................................................................. 34 
+
+3.9. 
+
+Social cost of inaction ...............................................................................................................  35 
+
+v 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+List of figures 
+
+Figure 1. Illustration of the components of LENZ ......................................................................................... 5 
+Figure 2. Type of scenarios modelled using LENZ ....................................................................................... 13 
+Figure 3. Schematic cost-optimality representation of LENZ and TransformTO NZS scenarios ................. 14 
+Figure 4. Modelling scope related to GHG emitting sectors ....................................................................... 15 
+Figure 5. Steps to build a comprehensive database for TEMOA-TO........................................................... 17 
+Figure 6. Results of the NZ40-TTO scenario of the case study from TEMOA-TO ........................................ 19 
+Figure 7. The regional transmission system supplying Toronto ................................................................. 21 
+Figure 8. Example of load profile break down done by the Linking Tool for a winter day ......................... 23 
+Figure 9. How electricity demand profile of the City may be reshaped in the future? .............................. 25 
+Figure 10. Cumulated investment costs ..................................................................................................... 27 
+Figure 11. Natural consumption in net-zero scenario ................................................................................ 28 
+Figure 12. Retrofitting level in existing buildings ........................................................................................ 29 
+Figure 13. Car & Light-truck vehicle kilometres travelled ........................................................................... 30 
+Figure 14. Capacity deployment for local energy ....................................................................................... 31 
+Figure 15. Impact on seasonal peak demand supplied from the electricity grid........................................ 32 
+Figure 16. Subsidies to be paid as bill rebates to decrease energy poverty in Toronto ............................. 33 
+Figure 17. Net person-year of employment required and the projected annual labour force in Toronto 34 
+Figure 18. Cumulative Social cost of carbon ............................................................................................... 35 
+
+List of tables 
+
+Table 1. Difference between simulation and optimization models .............................................................. 9 
+Table 2. List of data sources used to build the TEMOA-TO model ............................................................. 18 
+
+vi 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+List of acronyms 
+
+ACRONYM 
+
+DEFINITION 
+
+3E 
+
+CO2 
+
+EV 
+
+GHG 
+
+IESO 
+
+IPCC 
+
+LENZ 
+
+Energy-economy-environment 
+
+Carbon dioxide 
+
+Electric vehicles 
+
+Greenhouse gas 
+
+Independent Electricity System Operator 
+
+Intergovernmental Panel on Climate Change 
+
+Local Emissions for Net-Zero Modelling Suite - Toronto 
+
+NATEM 
+
+The North American TIMES Energy Model 
+
+NZS 
+
+OPT 
+
+PV 
+
+SILVER 
+
+SILVER-TO 
+
+TEMOA 
+
+Net Zero Strategy 
+
+Optimal net zero scenario 
+
+Photovoltaic panel 
+
+Strategic Integration of Large-capacity Variable Energy Resources 
+
+Strategic Integration of Large-capacity Variable Energy Resources - Toronto 
+
+Tools for Energy Model Optimization and Analysis  
+
+TEMOA-TO 
+
+Tools for Energy Model Optimization and Analysis - Toronto 
+
+vii 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Glossary 
+
+TERM 
+
+DEFINITION 
+
+Capacity 
+expansion model 
+
+Model that is used for long-term planning in the GHG emitting system. This model 
+allows to identify least-cost solutions in terms of future investments in energy and 
+waste  system  given  multiple  factors  such  as  demand  projections,  technology 
+performance and costs, fuel prices and new policies. 
+
+e.g., Tools for Energy Model Optimization and Analysis – Toronto (TEMOA-TO) 
+
+Deep retrofit 
+
+Deep  retrofit  refers  to  various  measures  that  are  mainly  focused  on  the 
+improvements of building envelops which achieve 75 per cent of thermal energy 
+gain (energy savings from heating or cooling) and 15 per cent of electricity gain in 
+residential, commercial, or institutional buildings. 
+
+Electrification of 
+end-use energy 
+
+The electrification of end-use energy refers to the transition from using traditional 
+fossil fuels for various end-use applications, such as transportation, heating, and 
+cooling,  to  using  electricity  as  the  primary  energy  source.  The  goal  of 
+electrification  of  end-use  energy  is  to  reduce  greenhouse  gas  emissions  and 
+increase energy efficiency. 
+
+Energy mix 
+
+Combination of energy sources that a country or a region uses to meet its energy 
+needs. 
+
+Energy poverty 
+
+Energy burden defined as the percentage of household income spent on energy 
+(electricity, natural gas, central heating etc.). 
+
+Energy service 
+
+Term used in energy modeling to refer to the service that is provided by energy 
+(typically through the technologies), which is separated from the energy itself. For 
+example, people want to travel from one place to another. They use energy (e.g., 
+gasoline)  for  this  service  but  the  demand  is  for  the  service  itself  rather  than  a 
+particular fuel. Thus, gasoline use can be replaced by electricity or physical activity 
+to meet the same service (travel). 
+
+Equity (energy) 
+
+Evaluates the accessibility and affordability of energy within the city. 
+
+Greenhouse gas 
+
+Gases that trap heat in the Earth's atmosphere and contribute to the greenhouse 
+effect. These gases are naturally present in the atmosphere but human activities, 
+especially  fossil  fuel  combustion  and  deforestation,  are  significantly  increasing 
+their concentration (anthropogenic greenhouse gases). 
+
+LENZ Modelling 
+Suite – Toronto 
+(LENZ) 
+
+A suite that comprises more than one model interacting via internal or external 
+links  (i.e.,  requiring  the  intervention  of  the  user).  The  LENZ  Modelling  Suite  – 
+Toronto is referred to as LENZ all through this document. 
+
+e.g., TEMOA-TO + the Linking Tool + SILVER-TO 
+
+viii 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+TERM 
+
+DEFINITION 
+
+The Linking tool 
+
+A tool that ensures communication between the two or more models to maximize 
+their complementarity and to reinforce the value for decision-makers. 
+
+Load ramp 
+
+Net load 
+
+e.g., the Linking Tool for passing TEMOA-TO output to SILVER-TO 
+
+Load ramp provides an indication about the speed of electricity load change. Load 
+ramp-down,  referring  to  the  speed  of  load  decrease  (MW/h),  is  typically 
+associated with the load decrease from the morning peak to the intra-peak load 
+level  (around  midday  for  current  load  profile).  Load  ramp-up,  referring  to  the 
+speed of load increase (MW/h), is typically associated with the load increase from 
+the intra-peak load level to the evening peak. 
+
+Net load of the city refers to the difference between the total electricity demand, 
+and the distributed electricity generation connected at the distribution grid level, 
+and  must  be  supplied  by  the  transmission  system.  A  particular  case  of  a  PV 
+generation effect on electricity demand is the net load reshaped as a duck belly 
+(so-called duck curve effect). 
+
+Net zero 
+
+Equilibrium  where  the  quantity  of  greenhouse  gases  emitted  is  offset  by  the 
+amount that is removed from the atmosphere and stored. 
+
+Optimal power 
+flow  
+
+Optimal power flow represents the non-linear problem of determining the best 
+operating  levels  for  electric  power  plants  to  meet  demand  given  throughout  a 
+transmission network by minimizing total operating cost. 
+
+Optimal dispatch  Optimal  dispatch  is  the  optimal  allocation  of  individual  generating  units  (units’ 
+commitment)  to  produce  electric  power  at  the  lowest  cost  to  reliably  serve 
+consumers,  recognizing  any  operational  limit  of  generation  and  transmission 
+facilities. 
+
+Optimality 
+
+Optimization 
+model 
+
+Peak load 
+
+System  configuration  or  net  zero  pathway  which  represented  the  lowest  (or 
+minimum) cost solution for satisfying service demands under various constraints. 
+
+Computational framework used to identify the optimal solution among a set of 
+possible alternatives, subject to constraints and objectives, in order to maximize 
+or minimize a specific outcome. 
+
+Peak load is the highest amount of electric power that consumers (here the city) 
+draw from the grid in a set period of time (here one hour). 
+
+ix 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+TERM 
+
+DEFINITION 
+
+Production cost 
+model 
+
+A model that is used for short-term planning in the electricity sector. These models 
+allow to identify least-cost solutions in terms of electricity produced by different 
+generation units and electricity production costs of a given power system, given 
+multiple  factors  such  as  temporal  and  geographic  load  distribution,  generating 
+unit locations, and transmission constraints. They simulate unit commitments and 
+optimal dispatch. 
+
+e.g., Strategic Integration of Large-capacity Variable Energy Resources – Toronto 
+(SILVER-TO) 
+
+Renewable energy  Energy source that is naturally replenished and can be used repeatedly without 
+
+the depletion of resources (also called clean energy). 
+
+Resilience 
+(energy) 
+
+The ability to avoid, prepare for, minimize, adapt to, and recover from anticipated 
+and  unanticipated  energy  disruptions  in  order  to  ensure  energy  availability 
+sufficient to cover demand. 
+
+Simulation model 
+
+Computational  representation  of  a  real-world  system  or  process  used  to 
+understand  and  explore  its  potential  behaviour  under  different  scenarios  or 
+conditions. 
+
+Unit commitment   Unit  commitment  is  the  process  of  selecting  the  units  from  the  available 
+
+generators to meet the power demand. 
+
+List of scenarios 
+
+ACRONYM 
+
+DEFINITION 
+
+MODELLED WITH 
+
+DON 
+
+Do-nothing 
+
+BAP-TTO 
+
+Business-as-planned 
+
+NZ40-OPT 
+
+Net Zero by 2040 – Optimal  
+
+NZ40-TTO 
+
+Net Zero by 2040 – TransformTO 
+
+NZ50-OPT 
+
+Net Zero by 2050 – Optimal 
+
+NZ50-TTO 
+
+Net Zero by 2050 – TransformTO 
+
+BAP 
+
+NZ40 
+
+NZ50 
+
+Business-as-planned 
+
+Net Zero by 2040 
+
+Net Zero by 2050 
+
+LENZ 
+
+LENZ 
+
+LENZ 
+
+LENZ 
+
+LENZ 
+
+LENZ 
+
+CityInsight 
+
+CityInsight 
+
+CityInsight 
+
+x 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+How to use this document? 
+
+The present “Local Emissions for Net Zero (LENZ) Modelling Suite – Toronto” or LENZ as it is referred to in 
+this document, is a powerful and efficient suite of tools that aims to support the City to actively test the 
+implementation options of the net zero transition pathway and refine climate policies and programs as 
+needed with cost optimality considerations, as well as investigate the operational aspect of the electricity 
+grid. 
+
+This document is a general presentation of LENZ and its capabilities, specifically designed for non-technical 
+modellers  or  users.  It  outlines  the  added  value  and  advantages  of  LENZ  by  answering  the  following 
+questions. 
+
+  Section 1:  
+
+What is LENZ, what are its principal components, and what makes it special? 
+
+  Section 2:  How can LENZ be used to model different scenarios and what is the scope of 
+
+each of its components? 
+
+  Section 3:  What are typical use cases of LENZ, and what kind of insights can it provide? 
+
+This  is  a  non-technical  documentation  intended  for  decision  makers or anyone  with  limited  modelling 
+background.  As  a  stand-alone  document,  it  encompasses  all  the  fundamental  knowledge  needed  to 
+understand and interpret the results of LENZ and how it differs from the previous modelling approach. A 
+video tutorial,  also  designed  for non-technical users,  is available  and  aligns with  this document. Three 
+other resource materials are also available as support materials to take a deeper dive into description of 
+the three models and their main functionalities, as well as instructions on how to use them for scenario 
+analysis. The first is a Case Study conducted on the five critical steps of the TransformTO NZS is the focus 
+of a separate report and includes more extensive analysis of the results of LENZ. The other two resources 
+the user can also refer to are the technical documentation1 complemented by the suite of technical video 
+tutorials for more in-depth information on the construction and the functionality of LENZ. 
+
+1 ESMIA Consultants (2023). Local Emissions for Net Zero Modelling Suite – Toronto: Technical Documentation. 
+
+1 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+SECTION 1 
+
+1. Introduction to Local 
+Emissions for Net Zero 
+
+Photo by Maarten van den Heuvel Pexels 
+
+2 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+With proper understanding of the climate crisis, City Council’s 2019 declaration of a climate emergency2 
+shifts Toronto’s focus to align its actions with the challenges of this crisis. In committing to the fight against 
+climate change, the City has set a consistent target of reducing its emissions in line with Intergovernmental 
+Panel  on  Climate  Change’s  (IPCC)  recommended  pathway  to  meet  net  zero  greenhouse  gases  (GHG) 
+emissions by 2050 or sooner. To meet this ambitious target, one of the keys for the City is to provide itself 
+with powerful and efficient tools such as the present LENZ. The reason LENZ was developed is presented 
+through section 1.1. The main components and originality of the tool are explained in section 1.2, and 
+section 1.3 ends with LENZ’s modelling features and limitations.  
+
+1.1.  What is the purpose of LENZ? 
+
+In December 2021, the City of Toronto adopted its TransformTO Net-zero Strategy (NZS) 3 that aims to 
+outline a pathway to reach net zero GHG emissions by 2040. The Technical Report4 of the NZS contained 
+the analysis of the technical, financial, and social/behavioural feasibility of the proposed climate actions. 
+In this context, four main scenarios had been developed using the CityInsight5 simulation model to identify 
+priorities in terms of climate actions: “Do-Nothing”, Business as Planned (BAP), Net Zero by 2050 (NZ50) 
+pathway, and Net Zero 2040 (NZ40) pathway. 
+
+However, the NZS study did not provide the City with in-house modelling tools that could be used on a 
+continuous  basis  to  refine  priorities  as  new  information  becomes  available  and  underlying  conditions 
+change. The study considered long-term strategies at the scale of years but did not address operational 
+challenges that can occur when analyzing energy systems at a higher time resolution such as days or hours. 
+Some of these challenges that can occur are the inability of distributed energy resources to meet peak 
+load demands, the load in transmission lines exceeding a threshold, and excessive load ramp up or down. 
+Finally, the modelling exercise in the NZS was done using a proprietary model that is not easily accessible.  
+
+In this context, a subsequent project led to the development of LENZ based exclusively on open-source 
+tools and code using Python language for greater transparency. Leading by example, the City can use LENZ 
+to discussion with decision makers to contribute to the definition of net zero GHG and policies, and for 
+the  public  to  develop  a  sense  of  engagement.  LENZ  aims  to  support  the  City  to  actively  test  the 
+implementation options of the net zero transition pathway and refine climate policies and programs as 
+needed with cost optimality considerations, as well as investigate the operational aspect of the electricity 
+grid. The model would also come with documentation in the form of manuals and videos. 
+
+2 City of Toronto (2019). MM10.3 - Declaring a Climate Emergency and Accelerating Toronto’s Climate Action Plan - 
+by Mayor John Tory, seconded by Councillor Mike Layton. 
+3 City of Toronto (2021). TransformTO Net Zero Strategy: A climate action pathway to 2030 and betond. p.8. 
+4 City of Toronto (2021). TransformTO Net Zero Strategy Technical Report. 
+5 SSG - Sustainable Solutions Group (2023). Tools: CityInsight.  
+
+3 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+1.2.  What is LENZ made up of? 
+
+The project undertaken aimed at developing a suite of open-source energy and waste system and GHG 
+emissions models to support TransformTO NZS implementation for the City. LENZ operates on two stand-
+alone models connected through the Linking Tool (Figure 1): 
+
+  A long-term capacity expansion model of the energy and waste management system from 2016 
+to 2050, defining pathways to reach the GHG commitments comparable to TransformTO NZS; and 
+  A short-term electricity production cost model, assuring hourly balance between power supply 
+and  demand  and  identifying  where  Toronto’s  electrical  grid  may  face  excessive  load  and  load 
+ramp, and understand what future upgrades might be required.  
+
+The long-term component of LENZ is based on the open-source platform named Tools for Energy Model 
+Optimization and Analysis6 (TEMOA), and the model developed is referred to as TEMOA-Toronto (TEMOA-
+TO).  Similarly,  the  short-term  component  is  based  on  the  open-source  platform  named  Strategic 
+Integration of Large-capacity Variable Energy Resources7 (SILVER) and the model developed is referred to 
+as SILVER-Toronto (SILVER-TO). The two models are linked with the third component of LENZ, the Linking 
+Tool. A complete overview of the three components of LENZ is provided in this document (see sections 
+2.2 and 2.3).  
+
+6 TEMOA (2020). TEMOA Cloud. NC State University. 
+7 SESIT Group (2022). SILVER. 
+
+Photo by Andre Furtado from Pexels  
+
+4 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Figure 1. Illustration of the components of LENZ 
+
+5 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Long-term  energy  and  waste  system  and  GHG  planning  models  excel  at  tracking  changes  in  installed 
+technology8 – for example, purchases of new technology as the economy expands, the old technology 
+retires, or new manufacturing needs emerge. These models (also known as capacity expansion models) 
+typically  cover  the  time  of  investment  planning  cycles,  several  decades  for  energy  and  waste  system 
+investment (such as 2016-2050 for this project). Therefore, long-term planning models, such as TEMOA-
+TO, are perfect for the development of net zero transition plans. By using this model, the decision-maker 
+will be able to address questions like: 
+
+  How should the energy mix evolve and what type of energy must increase or decrease? 
+
+  What type of technology should be added or retired and with what capacity? 
+
+  When should investments be made? 
+
+TEMOA-TO tracks changes to the GHG emitting sectors by identifying the least-cost mix of energy and 
+waste  system  resources  (technologies  and  fuels)  to  meet  a  projected  energy  demand,  taking  into 
+consideration  new  policies,  technological 
+advancement,  changing  fuel  prices  and 
+carbon  emission  constraints.  To  do  this, 
+TEMOA-TO  identifies  and  imports  the  total 
+energy  production  required  to  address 
+energy  demands  in  Toronto.  The  model  is 
+built  annually;  however,  it  would  require 
+tremendous  calculation  power  to  solved  it 
+annually from 2016 to 2050 in a realistic time. 
+By default, the resolution9 used is a one-year 
+basis  from  2016  to  2025,  and  five-years 
+increment until 2050, which provides a good 
+balance  between  solving  time  and  period 
+
+Photo by Nicholas C from Pexels  
+
+resolution. 
+
+8 Technology is the generic term for any equipment used in the energy system. The stock of technologies evolve over 
+the model’s timing horizon as equipment is purchased and/or retired and as the economy changes with evolving 
+needs for goods and services. 
+
+9  The  resolution  is  the  interval  of  time  between  each  calculation  in  a  model.  Further  details  are  provided  in  the 
+technical documentation. 
+
+6 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+The downside of long-term energy and waste system and GHG planning models are not able to capture 
+the full spectrum of the operation decisions that happen within one year. This disadvantage is a particular 
+challenge for modelling the electric sector. The solution identified by TEMOA-TO, which is based on the 
+total power generation over a year, may be not ideal for short-term operations (e.g., at hourly, daily basis). 
+A  common  example  is  in  the  case  of  renewable  energy  generators,  such  as  photovoltaic  panels  (PV), 
+operating under net metering10 can increase the load ramp-up and ramp-down on the grid, which requires 
+additional investment to balance the variations and protect the grid equipment. 
+
+To  address  these  issues,  LENZ  includes  the  short-term  planning  model  SILVER-TO,  developed  for 
+evaluating the impact of high variable renewable penetration on electricity grids. The model takes the 
+electricity system configuration of Toronto, including power demand and generator centers, as well as 
+transmission and distribution infrastructure, renewable generation, and demand profiles, and identifies 
+the least-cost balancing strategy, as well as infrastructure risks and weak points. SILVER-TO uses hourly 
+resolution  for  solving  optimal  power  flow  problem  to  optimize  power  generation  unit  commitment 
+(optimal  power  dispatch)  under  various  constraints,  such  as  generator  minimum  output,  transmission 
+stability and voltage constraints. SILVER-TO is structured to address power production and consumption 
+balancing,  reliability  of  power  grid  and  potential  stress  on  the  existing  power  grid,  that  may  become 
+vulnerable to blackouts. 
+
+Optimal power flow models such as SILVER-TO are also limited by the extent of their operational planning 
+horizon due to the same computational limits as those of long-term planning models. Power flow models 
+address this limit by typically covering shorter periods, such as a one-year period. By using this model, the 
+decision-maker will be able to address questions like: 
+
+  When/how should power generators operate the equipment to meet power demand? 
+
+  What is the role of electric storage and what are optimal charging/discharging strategies? 
+
+  Will the transmission grid be able to ensure a resilient supply of electric power to address 
+
+future demand under increasing demand peaks? 
+
+10 Net metering is a billing mechanism that allows residential and commercial customers who generate their own 
+electricity from solar power or other renewable sources to send excess electricity back to the grid and receive credits 
+on their utility bills. 
+
+7 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+The  Linking  Tool  is  used  to  exchange  data  between  TEMOA-  TO  and  SILVER-TO,  allowing  the  user  to 
+generate  SILVER-TO  inputs  from  TEMOA-TO  results.  In  this  way,  a  yearly  capacity  expansion  plan  for 
+Toronto can be broken down and assigned to power infrastructure nodes depending on real constraints. 
+For the inputs to TEMOA-TO from SILVER-TO, the Linking Tool transforms possible operational risks into 
+recommendations that the decision-maker may use for the consequent run of TEMOA-TO. Linking both 
+models is the key to identifying the least-cost pathway for GHG emitting sectors evolution in Toronto that 
+is also operationally reliable and less costly. 
+
+8 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+1.3. What are the key features and limitations of LENZ? 
+
+Many types of models exist that study the interactions between GHG emitting sectors and their impacts 
+on the environment and the economy (referred to as 3E models (Energy-Environment-Economy). While 
+historically 3E models were classified into two broad categories, most models today are hybrids and stand 
+in between these two extremes:  
+
+  Bottom-up models use a techno-economic approach and include a very detailed description of 
+energy systems, with supply-demand technologies and energy flows. They are typically used to 
+study long-term evolution of energy systems, technology innovations, and GHG mitigation options 
+and costs.  
+
+  Top-down models use a macro-economic approach and include a complete representation of the 
+economy  and  monetary  flows.  They  are  typically  used  to  study  macroeconomic  impacts  (jobs, 
+GDP, etc.) of energy and climate policies. 
+
+Achieving  ambitious  GHG  reduction  targets,  such  as  net  zero  goals,  necessarily  involves  major 
+transformations  of  GHG  emitting  sectors.  Consequently,  bottom-up  models  are  more  appropriate  to 
+provide answers to this complex problem. This category can be further split into two main sub categories: 
+simulation and optimization. A comparison between the two types is found in Table 1.  
+
+Table 1. Difference between simulation and optimization models 
+
+Type of model 
+
+Simulation 
+
+Optimization 
+
+Example of 
+applications 
+
+Aim at 
+
+CityInsight (Used in the NZS) 
+
+LENZ 
+
+Assess  impacts  of  changes/policies 
+on GHG emitting sectors 
+
+Provide  optimal  GHG  emitting  sectors 
+configuration (cost, energy, GHG) 
+
+Decision making 
+
+Biased,  external  decision  provided 
+by the user 
+
+Least biased, internally optimized by the 
+model 
+
+Best suited for  
+
+Business as usual scenarios 
+Specific policy scenarios 
+
+Energy transition scenarios 
+Deep GHG mitigation scenarios  
+
+Policy types that can 
+be modelled 
+
+Behavioral change 
+Planned technology shift  
+Energy switch 
+
+Behavioral change 
+Planned technology shift  
+Energy switch 
+Financial incentive 
+Carbon Tax 
+
+9 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Optimization  models  of  3E  systems  provide  a  rigorous 
+analytical basis for studying net zero transitions in a detailed 
+multi-sector and multi-fuel framework.  
+
+  Optimization  models 
+
+provide 
+
+detailed 
+representation  of  the  technological  changes  required  in 
+the  long-term,  as  well  as  their  costs,  to  meet  growing 
+demands and/or to reach specific goals. 
+
+very 
+
+a 
+
+ 
+
+In  addition,  they  provide  advanced 
+features  that 
+simulation  models  lack.  Specifically,  they  optimize  the 
+system  configuration  to  meet  the  total  demand  at  the 
+lowest  cost.  They  consider  system  constraints  such  as 
+resource 
+limits,  renewable  targets,  GHG  taxes  or 
+mitigation targets, and energy policies. The optimization 
+feature  in  models  comes  at  a  computational  cost  as  it 
+typically takes longer to run an optimization model than a 
+simulation model. 
+
+The  TEMOA  platform  used  to  build  TEMOA-TO  is  gaining  in 
+popularity,  as  one  of  the  most  advanced  open-source 
+platforms; it has been used in several projects in Canada and 
+the United States such as the study on US Energy-related GHG 
+emissions  in  absence  of  federal  climate  policy11,  or  on  the 
+symbiotic  relationship  of  solar  power  and  energy  storage  in 
+providing capacity value12. It has a rigorous methodology, well 
+documented  and 
+through  a 
+collaborative network of modellers. The optimization feature 
+is an advantage over the previous simulation model CityInsight 
+used to develop the NZS. 
+
+is  constantly 
+
+improved 
+
+Photo by Cheryl Prince from Pexels  
+
+11 H. Eshraghi A. R. de Queiroz J. F. DeCarolis (2018). US Energy-Related Greenhouse Gas Emissions in the Absence 
+of Federal Climate Policy. Environmental Science & Technology, 52(17): 9595-604. 
+12 D. Sodano J. F. DeCarolis A. R. de Queiroz J. X. Johnson (2021).  The Symbiotic Relationship of Solar Power and 
+Energy Storage in Providing Capacity Value. Renewable Energy, 177: 823-832. 
+
+10 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+LENZ CAN: 
+
+  Reproduce historical GHG emissions and provide future projections; 
+  Provide three types of computation modes to assess scenarios: 
+
+o  based on policies,  
+o  based on GHG targets, or  
+o  based on policies and GHG targets; 
+
+  Provide a least-cost investment roadmap following the City’s NZS; 
+  Assist in the design of new policies and assess their impacts on energy mix, GHG emissions and 
+
+cost; 
+
+  Assess  energy  security  and  resilience  of  the  City’s  NZS  against  energy  market  disruptions 
+
+(shocks on energy prices, shocks on energy availability); 
+ 
+Identify the sectors and end-uses with the lowest and highest GHG emission abatement cost; 
+  Explore  diverse  scenarios  that  represent  a  range  of  possible  futures,  including  system 
+transformations in energy use and GHG emitting sectors (building, transportation, and waste); 
+  Annually verify the City's trajectory towards net zero emissions, audit the impact of existing 
+
+policies and correct them to reach the target; 
+
+  Evaluate the implications of decarbonization pathways on hourly power demands and hourly 
+
+net power demand in each transformer zone; 
+
+  Evaluate  benefits  and  risks  of  different  decarbonization  pathways  (i.e.,  transition  cost  to 
+
+society, emission reduction potentials, risks in relation with power supply); 
+
+  Provide  a  decision-support  tool  (to  be  run  together  or  separately)  to  the  user  with  the 
+possibility to customize and test various inputs (e.g., policies, technology characteristics and 
+various assumptions). 
+
+LENZ CANNOT: 
+
+  Capture impacts of the COVID-19 pandemic on GHG emissions (but could capture impacts of 
+
+defined similar extreme events); 
+
+  Account for some GHG emissions such as biogenic carbon, carbon embodied in material, non-
+organic waste recycling, and land use change (however, the tool reports GHGs as per the GHG 
+Protocol for Cities); 
+
+  Evaluate GHG emissions based on consumption of imported goods. The methodology focuses 
+on  geographic  boundaries  (sector-based  GHG  emissions  inventory)  and  mainly  considers 
+emissions generated within the limits of Toronto; 
+
+  Assess  the  physical  impacts  of  climate  change  and  corresponding  adaptation  measures 
+(however,  this  report  provides  the  analysis of  mitigation  actions  that  may  help  to  enhance 
+resilience); 
+
+  Capture detailed macroeconomic impacts such as the impact on GDP or employment; 
+  Evaluate the perspective of specific stakeholders, like households or investors, when assessing 
+individual actions. This would involve applying varying discount rates based on which entity is 
+making the investment. 
+
+11 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+SECTION 2 
+
+2. How can LENZ be used? 
+
+Photo by Lisa Simpson from Pexels  
+
+12 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+This section begins with the first part discussing the various scenarios that can be modelled using LENZ, 
+followed by an overview of LENZ's individual models in the second and third part. 
+
+2.1.  What types of scenarios can be modelled?  
+
+The types of scenarios that can be modelled with LENZ can be classified into three categories, namely: 
+policy based, target based and hybrid scenarios (Figure 2).  
+
+Policy-based scenarios include planned policies but exclude explicit GHG emission goals such as net zero 
+targets. While policy-based scenarios have a great value to analyse the impacts of planned policies on GHG 
+emission reductions, there is no guarantee a priori that these policies will meet the net zero target.  
+
+Target-based scenarios, contrary to policy-based scenarios, exclude planned policies, but include explicit 
+GHG emission goals such as net zero targets. In these scenarios, also called pure optimal scenarios, the 
+model generates cost-optimal pathways to reach GHG emissions targets without being constrained by any 
+other sector policies or goals. By default, they guarantee that the GHG emissions target is met, and their 
+results can be used a posteriori to define the most cost optimal policies required to get there.  
+
+Hybrid  scenarios,  include  both  planned  policies  and  GHG  emission  goals,  such as  net  zero target. The 
+planned policies will bring some GHG emission reductions while the GHG targets will guarantee that the 
+solutions  meet  the  net  zero  target.  In  these  scenarios,  the  model  generates cost-optimal  pathways  to 
+reach net zero targets while being constrained by other sector policies or goals. By definition, there is less 
+room for optimization in these scenarios and the solutions are likely to be more costly than with the target-
+based scenarios. 
+
+Figure 2. Type of scenarios modelled using LENZ 
+
+13 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+LENZ has been developed with six native scenarios based on the four scenarios as in the TransformTO NZS 
+to provide insightful recommendations in terms of cost optimality and robustness of policies. In addition, 
+the six different scenarios that are found in LENZ are: 
+
+1.  DON: A Do-Nothing scenario to compare and make sure the GHG projections were aligned with 
+the  Do-Nothing  scenario  of  the  TransformTO  NZS  (labeled  BAU  in  the  NZS).  This  scenario 
+represents what would happen if the current energy and waste system is preserved until 2050. 
+2.  BAP-TTO: A Business-as-planned scenario to assess the impact of the TransformTO NZS policies 
+on GHG emissions (policy-based scenario). It is useful to assess the impact of the current policies 
+on  GHG  emissions  combined  with  the  natural  evolution  of  the  system  resulting  from  market 
+competition between technologies and energy costs.  
+
+3.  NZ50-TTO: A hybrid scenario, representing how the City may achieve net zero GHG by 2050 while 
+
+considering the policies and targets of the TransformTO NZS. 
+
+4.  NZ50-OPT:  A target  based  or  pure-optimal scenario, representing the  cost-optimal  pathway to 
+
+reach net zero GHG by 2050. 
+
+5.  NZ40-TTO: A hybrid scenario, representing how the City may achieve net zero GHG by 2040 while 
+
+considering the policies and targets of the TransformTO NZS. 
+
+6.  NZ40-OPT:  A target  based or pure-optimal  scenario,  representing  the  cost-optimal  pathway to 
+
+reach net zero GHG by 2040. 
+
+As explained earlier in this section, LENZ will generate cost optimal pathways for both types of net zero 
+scenarios.  However,  the  hybrid  scenario  (TTO)  has  policies  imposed  on  it  which  translate  into  more 
+constraints  than  the  target-based  scenario  (OPT)  and  as  result,  the  TTO  scenario  has  less  flexibility  to 
+explore cost optimal solutions. This will result in the TTO scenario having a less economical solution than 
+the OPT scenario as illustrated in Figure 3.  
+
+Figure 3. Schematic cost-optimality representation of LENZ and TransformTO NZS scenarios 
+
+14 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+LENZ Modelling Suite - Toronto 
+
+2.2. 
+
+TEMOA-TO, a long-term planning model 
+
+TEMOA-TO  is  a  capacity  expansion  model  for  long-term  planning  of  energy,  waste  and  GHG  emitting 
+systems based on the TEMOA open-source platform which is written using Python programming language. 
+TEMOA-TO can  be  used  to  model  policies included  in  the  NZS and  identify  least-cost configurations  of 
+energy and waste systems under different socio-economic conditions. This section first outlines the scope 
+and assumptions of TEMOA-TO, providing a comprehensive understanding of its structure and underlying 
+construction principles. Subsequently, it presents examples of results obtained with TEMOA-TO. 
+
+2.2.1. Scope & assumptions 
+
+TEMOA-TO projects the evolution of energy and waste systems, as well as GHG emissions at either annual 
+level  or  with  5-years  increment,  on  a  long-term  horizon  (2016-2050)  for  the  City  of  Toronto.  The 
+subsections below describes the definition of the energy and waste system modeled and the methodology 
+applied to build it. 
+
+Scope of the model 
+
+TEMOA-TO  focuses  on  long-term  planning  of  the  GHG  emitting  sectors  (buildings,  transportation,  and 
+waste)  of  the  city.  These  sectors  align  with  the  GHG  Protocol  for  Cities  (GPC)13,  and  the  sector-based 
+emissions  inventory  the  City  reports  annually.  Additionally,  as  local  generation  is  expected  to  grow,  it 
+includes a module representing the energy sector, both distributed energy resources and energy imports. 
+Figure 4 shows how the modelling scope relates to the sector-based GHG inventory from the City14. 
+
+Figure 4. Modelling scope related to GHG emitting sectors 
+
+13 Green House Gas Protocol for Cities https://ghgprotocol.org/ghg-protocol-cities 
+14 City of Toronto (2022). 2020 Sector-Based Greenhouse Gas Emissions Inventory. 
+
+15 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Photo by Jude Joshua from Pixabay  
+
+Reaching GHG net zero target requires a drastic change in both energy supply and demand. Increase of 
+low-carbon transportation options, expansion of local renewable energy and storage, significant reduction 
+of natural gas use, and building performance targets are the four key drivers for the deep decarbonization 
+of the Toronto’s economy.  
+
+TEMOA-TO is used to model the NZS policies and targets. It is calibrated with the energy figures reported 
+in CityInsight and with data provided by the City. The model is finely calibrated by energy type and sector 
+for  the  base  year  with  a  maximum  four  per  cent  difference  in  energy  consumption  and  five  per  cent 
+difference in GHG emissions (please refer to the technical documentation15 for more information on the 
+benchmarking process).  
+
+Building a comprehensive database 
+
+The development of  a system model  like TEMOA-TO involves  first  the  development of  comprehensive 
+databases  from  a large  amount  and variety of  specific data  sources. This is a very  important task  that 
+requires  to  be  performed  meticulously.  Figure  5  describes  the  approach  used  to  build  the  TEMOA-TO 
+databases. 
+
+15 ESMIA Consultants (2023). Local Emissions for Net Zero Modelling Suite – Toronto: Technical Documentation. 
+
+16 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Figure 5. Steps to build a comprehensive database for TEMOA-TO 
+
+Raw data are collected from multiple sources (see Table 2) 
+
+Step 1: 
+Compile 
+
+
+
+
+
+City-owned datasets and SSG-owned processed datasets from the CityInsight model 
+were used as the starting point.  
+Those datasets were enhanced with open-source data from annual reports (e.g., Via 
+Rail,  Ports  Toronto,  TTC),  other  modelling  initiatives  (e.g.,  Google  Environmental 
+Insights) and private sector data. 
+
+Raw data are formatted, broken down and adapted for the adequate 
+representation of the energy, waste and GHG systems of the city of Toronto 
+
+Step 2: 
+Format 
+
+Step 3: 
+Calibrate 
+
+Step 5: 
+Project 
+
+Step 6: 
+Constraint 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+For  example,  total  energy  consumption  data  (e.g.,  total  electricity  consumed  in 
+residential buildings) are further broken down into multiple end-use demands and 
+technologies  (e.g.,  electricity  consumed  by  heat  pumps  to  provide  cooling)  using 
+multiple data sources including NATEM and NRCAN datasets.  
+For example, Canadian and Ontario specific data are adapted to the Toronto context. 
+
+Data are further refined to replicate the City’s sector-based GHG inventory 
+
+Adjustment to input data and model parameters such as efficiencies are done to be 
+able  to  replicate  energy  consumption  and  GHG  figures  available  in  official 
+publications such as the GHG Inventory.  
+
+Some data are projected to the 2050 modelling horizon  
+and used as input in TEMOA-TO 
+
+Techno-economic parameters such as performance and capital cost are projected for 
+a  wide  range  of  new  technologies  available  in  the  model  database  for  future 
+investments. These projections are based on an extensive literature review as well as 
+from the NATEM model. 
+Demands for energy services are projected using macroeconomic drivers specific to 
+the city such as population and employment projections. 
+
+User constraints are built in the model to capture resource limitations,  
+and/or to model specific targets or policies 
+
+Constraints representing the technical feasibility of technology deployment (e.g., the 
+maximum potential deployment for PV panel is 7350 MW in a given region). 
+Constraints representing targets and policies from the TransformTO NZS (e.g., a ban 
+on natural gas appliances by 2040). 
+
+17 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Table 2. List of data sources used to build the TEMOA-TO model 
+
+Type of data 
+
+Sources 
+
+Existing system per sector 
+
+Calibration data 
+
+New technology 
+
+Demographic projection 
+
+Net zero strategy 
+
+18 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+2.2.2. Results interpretations 
+
+TEMOA-TO  model  can  provide  various  insights  including:  GHG  emissions,  costs  (investment  and 
+operational), energy mix supply, and capacity deployment. Figure 6 shows aggregated examples of these 
+results. Note that since the model database is broken down at the technology level, higher granular results 
+may be obtained. 
+
+Figure 6. Results of the NZ40-TTO scenario of the case study from TEMOA-TO 
+
+(a)  GHG emissions per sector 
+
+(b)  Cumulated investment cost for society 
+
+(c)  Energy supply mix 
+
+(d)  Car & light-truck vehicle kilometers 
+
+travelled 
+
+A general advice for result interpretation is not to consider these results as forecasts or as the most likely 
+outcomes, but rather as ideal outcomes to meet a certain target at the minimum cost and under specific 
+conditions. 
+
+19 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+2.3. 
+
+SILVER-TO & the Linking Tool, a short-term planning model 
+
+SILVER-TO is a production cost model for short-term planning of electricity systems based on the SILVER 
+platform (OS) written using Python programming language. SILVER-TO can be used to identify least-cost 
+operation strategies for the electricity system and to address power supply and demand balancing under 
+variable operation conditions. 
+
+The Linking Tool ensures communication between TEMOA-TO and SILVER-TO models to maximize their 
+complementarity  and  to  reinforce  the value  for  decision  makers.  The  Linking  Tool  transforms  possible 
+operational  risks  into  recommendations  that  the  decision-maker  may  use  for  the  consequent  run  of 
+TEMOA-TO. Like the two other models, the Linking Tool is written using Python programming language. 
+
+The next sub-sections outline the scope and results interpretations of the two models presented above. 
+
+2.3.1. Scope & assumptions 
+
+SILVER-TO focuses on grid-operator scale and is used to evaluate the impact of a Toronto energy transition 
+(such  as  electrification  of  end-use  appliances,  deployment  of  renewable  generation  like  PV  and  wind 
+turbines etc.) on the transmission power system. It allows unit commitment and power flow calculation 
+at an hourly level for critical years between 2016 and 2050. This transmission system supplying Toronto is 
+described below. 
+
+The Linking Tool is a Python based tool built especially for LENZ and is used to link TEMOA-TO and SILVER-
+TO models. Linking both models is the key to identifying the least-cost pathway for GHG emitting sectors 
+evolution in Toronto that is also operationally reliable and less costly. An overview of the methodology 
+used in the Linking Tool is provided below. 
+
+The transmission system supplying Toronto 
+
+Power grid is composed of two grid levels that are distinguished mainly by their voltage levels. Electricity 
+power is carried from the centralized conventional generators connected to the high voltage transmission 
+grid  down  through  the  lower  voltage  transmission  levels  towards  distribution  grids  to  which  most 
+consumers  are  connected.  Ontario  transmission  grid,  operated  by  the  Independent  Electricity  System 
+Operator  (IESO),  is  composed  on  the  extra-high  voltage  (500  kV),  high  voltage  (230  kV  and  115  kV). 
+Distribution low-voltage grid (less than 50 kV) is operated by distribution companies (Toronto Hydro for 
+the city). Electricity power generators depending on their capacity may be connected to transmission and 
+distribution  grids.  Transmission-connected  generators  are  typically  conventional  generators,  such  as 
+nuclear  and  gas plants,  as  well  as  renewable  generators of  large-capacity (e.g., wind  and  solar  farms). 
+Distribution-connected  generation,  also  known  as  embedded  generation,  is  small-scale  generation 
+located  within  local  distribution  companies’  territories  (e.g.,  rooftop  solar).  Most  consumers  are 
+connected to the low-voltage distribution grid. In Toronto, only few large-scale consumers are directly 
+connected  to  the  transmission  grid.  Those  large-scale  consumers,  such  as  steel  arc  furnaces,  may  be 
+connected to the high-voltage level under contractual agreement. 
+
+20 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Figure 7. The regional transmission system supplying Toronto16 
+
+The  Toronto  power  grid  includes  a  gas-fired  power  plant  (Portland  Energy  Center)  connected  at  the 
+transmission level at Hearn switching station (Figure 7). This power plant is managed by IESO17 within the 
+Ontario generation portfolio to address provincial electricity power demand. Electric power generators 
+connected  to  the  transmission  grid  are  large-scale  generators,  such  as  nuclear  plants  operated  by  the 
+Ontario Power Generation (OPG) or renewable generators (including hydro power plants) operated by the 
+Brookfield Renewable Partners. The amount and the schedule of power generation produced by these 
+plants are defined via the electricity market where the electricity is sold by suppliers (i.e., generators) to 
+distributors (that sell the electricity to end-use consumers). IESO predicts Ontario electric power demand 
+24-hour in advance and receives bids from generators indicating the amount the amount of electricity 
+they can  produce  and  at what  price.  The IESO  reviews  and  accepts bids, starting  from  the  lowest-cost 
+options, until enough energy is secured to meet Ontario’s demand18. Therefore, the amount of electricity 
+at  each  time  step  (e.g.,  hour)  produced  by  transmission-connected  generators  will  be  defined  by  the 
+electricity  demand  of  the  entire  province,  as  well  as  export  commitments  (if  any).  Toronto  Hydro  will 
+purchase the electricity from the market to cover the city electricity demand from the grid. 
+
+16 IESO - Independent Electricity System Operator (2019). Toronto Region: Integrated Regional Resource Plan. 
+17 More details on Transmission-Connected Generation at https://www.ieso.ca/en/Power-Data/Supply-
+Overview/Transmission-Connected-Generation  
+18 More details on the IESO electricity pricing at https://www.ieso.ca/en/Learn/Electricity-Pricing-Explained/The-
+Value-of-Electricity-Markets  
+
+21 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Scope of SILVER-TO and the Linking Tool 
+
+In SILVER-TO, the city is mainly supplied through power imports from the province at different 230 kV 
+transmission  stations,  and  from  the  Portland  Energy  Center  gas-fired  power  plant  at  Hearn  switching 
+station. The electricity generated by renewables sources or battery discharging are considered consumed 
+locally (at distribution level) and do not feed into the grid19. With SILVER-TO, the power system operation 
+cost  is  optimized  by  minimizing  power  generation  costs  subject  to  meeting  electricity  demands  and 
+reliability requirements. The SILVER-TO model utilizes data from various sources, including the TEMOA-
+TO  model,  which  provides  outputs  at  the  city  level.  However,  the  data  must  be  broken  down  to  the 
+transmission level and at hourly resolution to be useful for SILVER-TO inputs. To accomplish this, various 
+methods are used, such as population rates by areas or power generation potential. 
+
+The Linking Tool is an essential component to break down the data from TEMOA-TO for SILVER-TO, which 
+is responsible for projecting geographically and hourly the total net load that must be met by the power 
+grid.  This  projection  considers  several  factors  such  as  load  profile,  generation  capacity,  residential 
+batteries, electric vehicles use, and grid constraints. By analyzing these factors, the Linking Tool ensures 
+that the power grid can provide reliable and sufficient energy to meet the demand at any given time. 
+
+WHAT IS THE DIFFERENCE BETWEEN LOAD PROFILE AND TOTAL NET LOAD? 
+
+- 
+
+The  load  profile  is  a  representation  of  the  variation  in  electrical  power  demand  over  a 
+specific  period.  The  shape  of  load  profile  in  a transmission  zone  depends on the  type  of 
+consumers  and  their  consumption  habits.  The  shape  of  load  profile  in  a  city  where  the 
+majority of power consumers are households and small businesses will be different from the 
+load profile shape of a large jurisdiction (e.g., a province or a country). Typically, provincial 
+and  country load  profiles will  be  impacted  by the  large-scale consumers  (e.g., industries) 
+whose power demand will be more constant throughout the entire day. As a consequence, 
+the shape of the provincial or country profile will be “flatter” than the shape of the load 
+profile in the city. In 2020, Toronto Hydro distribution company supplied 697,000 residential 
+consumers, 83,000 commercial consumers and 44 large-scale users. 
+
+Electric power consumers by category in Toronto 
+
+0.2%
+
+56%
+
+43%
+
+Residential
+
+Commercial
+
+Industrial
+
+- 
+
+The total net load refers to the actual power demand that must be met by the power grid 
+after accounting for factors such as load profile, generation capacity, residential batteries 
+and electric vehicles use, and grid constraints. 
+
+19 Although SILVER-TO gives the possibility of integrating centralized renewable generation (as well as storage) at a 
+grid, we observe that in reality there is not enough space in Toronto to deploy such high-capacity generators that 
+would be directly connected to the transmission grid. Please refer to the technical documentation for further details. 
+
+22 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+In more concrete terms, part of the data used for the SILVER-TO model comes from the TEMOA-TO model, 
+and the Linking Tool ensures the data conversion and transfer. The outputs of TEMOA-TO, reported at the 
+city level for a season or a year, must be broken down spatially by transformer zone, and temporally by 
+hour  for  SILVER-TO.  Spatial  break  down  is  done  based  on  the  load  in  different  transmission  nodes. 
+Temporal  break  down  to  generate  representative  patterns  for  energy  consumption  and  production 
+patterns is done using a dedicated approach for each type of TEMOA-TO data (e.g., load profile, PV, electric 
+vehicles (EV) etc.) (see Figure 8 for an example of load profile break down). The final goal is to estimate a 
+total net load at the level of each transformer zone in Toronto for a selected year. The total net load is 
+defined as the electricity demand plus electricity used to charge batteries and EV, minus generation from 
+variable renewable generation. 
+
+Figure 8. Example of load profile break down done by the Linking Tool for a winter day 
+
+23 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+2.3.2. Results interpretations 
+
+The total  net  load calculated  by the  Linking Tool  will be  strongly  affected  by electrification of  end-use 
+energy20,  distributed  generation,  storage,  and  electric vehicles,  creating important  ramp-up  and  ramp-
+down  effects  and  accentuating  peaks.  The  Linking  Tool  processed  TEMOA-TO  results  to  provide  the 
+different energy transition measures and calculated the total net load. Figure 9 illustrates the impacts of 
+the different energy transition measures on the total net load. This total net load is then used as an input 
+for SILVER-TO model.  
+
+The ramp-up and ramp-down effects and the accentuation of peaks in net load that needs to be supplied 
+by the grid may lead to two major effects: 
+
+ 
+
+ 
+
+increase of the load level that may require transmission lines to operate at more than 40 per 
+cent of their maximum capacities, increasing resistive heating and generating higher energy 
+losses; and 
+
+increase  of  load  variation  of  transmission  lines  that  may  result  in  additional  equipment 
+stress. 
+
+SILVER-TO  tests  the  operational  viability  of  a  specific  energy  transition  strategy  from  the  power  grid 
+operational perspective for a certain time period (e.g., year, season). SILVER-TO model includes an excel-
+based dashboard of outputs with overview of key statistics for a user-selected operational time period. 
+Those metrics are designed to quickly identify the risks for the transmissions system supplying Toronto. 
+For example, the user can choose the threshold leading to the increase of heat losses on the line and the 
+dashboard will automatically show a summary of the number of lines at risk.  
+
+20 The electrification of end-use energy refers to the transition from using traditional fossil fuels (e.g., natural gas) 
+for  various  end-use  applications, such  as  transportation,  heating,  and  cooling,  to  using  electricity  as  the  primary 
+energy  source.  The  goal of  electrification  of  end-use  energy  is  to  reduce  greenhouse  gas  emissions  and increase 
+energy efficiency. 
+
+24 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+Figure 9. How electricity demand profile of the City may be reshaped in the future? 
+
+To be supplied from the grid 
+
+Impact of different energy transition measures 
+
+TODAY 
+
+-
+
+-
+
+Day load is higher 
+than night load 
+Not well 
+
+End-use electrification 
+(gas phase-out): 
+- Overall demand increase 
+
+Transport options electrification (EV): 
+- Demand increase for transport charging 
+
+at public station and at home 
+
+Increase 
+
+Increase 
+
+Increase of distributed  
+PV generation: 
+- Demand decreases during 
+
+periods when PV 
+generation is available 
+(electricity is consumed 
+from the local source (PV) 
+and not from the grid) 
+
+Decrease 
+
+TOMORROW 
+
+- High demand variability 
+- High and well pronounced 
+
+demand peaks 
+
+PEAK 
+
+IMPORTANT 
+RAMPS 
+
+Increase of distributed  
+wind generation: 
+- Demand decrease during 
+periods when wind 
+generation is available  
+
+Use of battery storage: 
+- Discharging batteries during 
+high demand periods 
+
+Decrease 
+
+Decrease 
+
+25 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+SECTION 3 
+
+3. Typical use cases for LENZ 
+
+Photo by Tom Dubois from Pexels 
+
+26 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+This section presents examples do demonstrate some of the use cases of LENZ and is by no means 
+exhaustive. The examples are based on the scenarios developed in LENZ and discussed in detail in the 
+Case Study. The examples focus on the five critical steps identified in the Net Zero Strategy, as well as 
+resilience, energy affordability, employment, and social cost of inaction in the city of Toronto.  
+
+3.1. 
+
+Carbon accountability through carbon budgets 
+
+The  City  will  establish  a  carbon  budget  to  track  climate  actions  against  annual  emission 
+limits to drive accountability.  
+LENZ  can  provide  insights  on  the  cumulative  costs  of  scenarios  to  identify  cost-effective 
+solutions to reach GHG emissions targets. 
+
+Insight from the Case Study as an example: Toronto’s net zero by 2040 pathway is achievable 
+with different implementation paths, each with trade-offs (based on TEMOA-TO). 
+
+Figure 10. Cumulated investment costs 
+
+A  comparison  of  the  cumulated  cost  from  the  Case 
+Study for example suggests that achieving net zero by 
+2040 with the NZ40-OPT scenario may imply 31 per 
+cent  less  investment  costs  compared  to  the  NZ40-
+TTO scenario (Figure 10).  
+
+The TransformTO NZS is built mostly on ‘safe bets’21, 
+defined  as  existing  technologies  that  are  already 
+commercially available and face no major constraints 
+to widespread implementation which is reflected in 
+the polices. Optimal NZ40 includes both ‘safe bets’ as 
+well  as  emerging  technologies  with  high  impact. 
+While the cost is less in the NZ40-OPT scenario than 
+the NZ40-TTO scenario, there is more risk associated 
+in  the  first  due to the  uncertainties  inherent to the 
+limited confidence in emerging technologies.  
+
+21  “Safe  bets”  are solutions  that  show  up  no  matter  how  Canada's  transition  plays  out.  They  leverage  existing 
+technologies  that  face  no  major  barriers  to  scaling.  Canadian  Climate  Institute  (2023).  Online  information. 
+https://climateinstitute.ca/safe-bets-and-wild-cards/  
+
+27 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.2. 
+
+Accelerate significant reduction of natural gas 
+
+To achieve the targets, the City of Toronto must limit dependence on natural gas.  
+LENZ can provide a forecast of natural gas consumption in the future for different scenarios to assess 
+the trade-offs between different policies. 
+
+Insight from the Case Study as an example: Residual natural gas may be required as a resilience 
+measure (based on TEMOA-TO). 
+
+Figure 11. Natural consumption in net-zero scenario 
+
+Natural gas phase out may be reasonable for carbon 
+emission  reduction  in  Toronto.  Figure  11  shows 
+natural  gas  consumption  in  net  zero  scenario,  it 
+suggests different level of consumption by 2050. 
+
+As suggested by the NZ40-OPT scenario, the option 
+leading to only partial natural gas grid abandonment 
+is highly recommended under net zero strategy. The 
+use  of  natural  gas  as  a  backup  will  still  result  in  a 
+reduction  of  carbon  emissions  in  the  City  while 
+contributing to the resilience of energy supply. 
+
+28 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.3. 
+
+Establish building performance targets 
+
+Toronto will establish emissions performance targets for buildings to reach Net Zero by 2040.  
+LENZ can assess different the level of retrofits required in buildings to reduce energy usage and the 
+technologies required to replace gas appliances. 
+
+Insight from the Case Study as an example: Upgrade building to high efficiency through deep-
+retrofit is not the cost-optimal path (based on TEMOA-TO). 
+
+Figure 12. Retrofitting level in existing buildings 
+
+Figure  12  retrofit  level  refers  to  the  thermal  energy 
+gains  in  buildings.  The  scenarios  suggest  different 
+level of retrofit for existing buildings.  
+
+75% 
+
+25% 
+
+The  NZ40-TTO  scenario  suggests  deep  retrofits  with 
+75 per cent of thermal gains, for all existing buildings 
+by 2050. The NZ40-OPT scenario suggests retrofit with 
+25 per cent of thermal gains. This gain is aligned with 
+a  standard  retrofit,  including  energy  assessment, 
+recommissioning, 
+insulation 
+improvements. The optimal level of retrofit depends 
+in fact on various criteria (vintage, archetype, size, and 
+use) and would need to be further assessed for each 
+building  type.  However,  to  avoid  extra  costs,  the 
+target of the TransformTO NZS could be revised to a 
+more  flexible  set  of  targets  starting  with  the  most 
+cost-effective options. 
+
+priority 
+
+and 
+
+29 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.4. 
+
+Increase low carbon transportation options 
+
+In  addition  to  increasing  the  active  and  public  transportation,  Toronto  will  advance  options  to 
+incentivize  electric  vehicle  adoption  and  disincentivize  the  use  of  carbon  polluting  gasoline  and 
+diesel vehicles.  
+LENZ can estimate the level of electrification of vehicles required and the role alternative renewable 
+fuels can play in the transition based on different policies. 
+
+Insight from the Case Study as an  example: Complete electrification of conventional  vehicle 
+stock is not resilient nor cost-effective (based on TEMOA-TO). 
+
+Figure 13. Car & Light-truck vehicle kilometres travelled 
+
+To  achieve  a  resilient  and  sustainable  transportation 
+system,  a  multi-faceted  approach 
+is  required  to 
+decarbonize transportation, as per Figure 13. 
+
+Behavioral  change  should  be  the  priority.  Encouraging 
+people to use alternative transportation, such as public 
+transportation (22 per cent of trips by 2040), biking (23 
+per cent of trips by 2040), and walking (22 per cent of 
+trips by 2040). Finally, for residual vehicle trips especially 
+trips  and 
+for 
+commercial 
+trips,  decreasing  GHG 
+emissions may include electrifying vehicles (75 per cent 
+of  light  vehicles  by  2040  in  NZ40-OPT)  supported  by 
+charging station deployment. 
+
+longer  passenger 
+
+transportation 
+
+transportation 
+
+30 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.5. 
+
+Increase local renewable energy & storage 
+
+By increasing opportunities for local renewable generation to be located within the City's boundary, 
+Toronto will contribute to a decarbonized electricity supply.  
+LENZ can determine the capacity of renewable generation sources and electricity storage that needs 
+to be deployed. 
+
+Insight from the Case Study as an example: Increased local renewable energy & storage may 
+supply a growing electricity demand (based on LENZ). 
+
+Figure 14. Capacity deployment for local energy 
+
+To decrease electricity consumption from the grid, PV 
+generation scale-up to 7,000 MW or greater, followed 
+by expansion of onsite battery storage capacities that 
+is suitable to go beyond 2,000 MW.  
+
+Scaling-up of wind power capacity should be done with 
+caution and is estimated to reach 2,000 MW by 2050. 
+Wind generation may create pronounced undesirable 
+variations not only during the day (such as solar), but 
+also  during  the  night.  Wind  power  generators 
+deployment  must  be  followed  by  an  additional 
+increase  in  battery  storage  and  the  deployment  of 
+additional  technologies  for  continuous  balancing  of 
+wind generation variability. 
+
+31 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.6. 
+
+Resilience of electric power supply 
+
+The energy transition in Toronto is marked by the phase-out of conventional fuels (such as natural 
+gas), massive electrification of end-uses, and expansion of distributed renewable capacity which will 
+result in major changes to electricity generation and demand trends.  
+Using LENZ, the risks associated with the shifting trends can be evaluated and different mitigation 
+strategy can be tested to design strategies that result in a resilient electric power supply. 
+
+Insight from the Case Study as an example: Net zero pathways create considerable risk for 
+resilience of electricity supply after 2030 (based on SILVER-TO). 
+
+Figure 15. Impact on seasonal peak demand supplied from the electricity grid 
+
+Seasonal peak demand may increase over time with 
+end-use electrification (Figure 15) 
+
+The  City  may  adopt  different  actions  to  mitigate 
+power  demand  peak  increase  by  incentivising  the 
+expansion  in  battery  storage  capacity,  incentivising 
+particular  user  behaviours  (e.g.,  coordinated  EV 
+changing during specific time periods), or reinforcing 
+standards for building retrofits. If these measures are 
+not  sufficient,  more  advanced  actions  could  be 
+considered (e.g., the adoption of seasonal storage at 
+the city level and grid upgrades at power grid level). 
+
+32 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.7. 
+
+Energy affordability 
+
+Dependence on electricity where rates may be susceptible to increases that would add pressure on 
+low-income households and push a larger fraction of the residents into energy poverty.  
+LENZ  can  evaluate  the  impact  of  policies  on  financially  vulnerable  residents  and  determine  the 
+subsidies and rebates that would provide energy security to residents at risk. 
+
+Insight from the Case Study as an example: 2.5 Million CA$ per year will be required to help 
+50,000 low-income households to pay their electricity bills (derived from TEMOA-TO). 
+
+Figure 16. Subsidies to be paid as bill rebates to decrease energy poverty in Toronto 
+
+Figure 16 shows that under net-zero, electricity rates 
+are  susceptible  to  increase.  This  may  drive  the 
+increase  of  electricity  bills  for  Toronto  consumers, 
+likely  creating  the  need  to  support  low-income 
+households with bill rebates to mitigate their energy 
+poverty22.  The  Case  Study  modelling  indicates  that 
+up  to  2.5  Million  CA$  may  be  needed  annually  for 
+electricity bill rebates to keep energy poverty in the 
+city  under  the  six  per  cent  threshold.  In  addition, 
+other  support  actions  will  be  required  to  ensure  a 
+just  energy  transition  in  the  city,  such  as  subsidies 
+for 
+in 
+renewable  generation  and  residential  storage,  and 
+support for low- and medium-income households to 
+implement building retrofit measures. 
+
+low-income  households  for 
+
+investment 
+
+22 Energy burden defined as the percentage of household income spent on energy (electricity, natural gas, central 
+heating etc.). 
+
+33 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.8. 
+
+Employment 
+
+The  adoption  of  net  zero  strategies  in  different  jurisdictions  will  increase  competition  to  attract 
+workers holding key qualifications able to implement and deliver the change needed.  
+LENZ  can  assess  the  job  market  requirements  and  estimate  the  size  of  qualified  labor  power 
+required to avoid labour shortage that would compromise the set targets. 
+
+Insight from the Case Study as an example: The City may face an important shortage of 
+qualified labour after 2030 (derived from TEMOA-TO) 
+
+Figure 17. Net person-year of employment required and the projected annual labour force in Toronto 
+
+Figure 17 compares the pace of net person-years of employment required for net-zero by 2040 scenarios 
+with the projected annual labour force increase in Toronto. Negative values indicate that conventional 
+jobs elimination outpaces clean jobs creation, which may increase unemployment. 
+
+The adoption of net zero strategies in different jurisdictions will increase competition to attract workers 
+holding key qualifications. In net zero by 2040 scenarios, Toronto may require a considerable net person-
+year  addition  after  2030.  Attracting  workers  from  other  sectors  and  new  qualified  labour  may  not  be 
+sufficient to address the labour needed to implement the net zero strategy. This creates a risk of labour 
+shortage.  The  City  will  be  required  to  implement  particular  programs,  such  as  relocation  support  and 
+different social benefits, to attract a large enough qualified labour force. 
+
+34 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+LENZ Modelling Suite - Toronto 
+
+3.9. 
+
+Social cost of inaction 
+
+Social  cost  of  inaction  refers  to  the  economic,  social,  and  environmental  costs  that  are  incurred 
+when action is not taken to address a particular issue or problem. It is the cost that society as a 
+whole pays when no action is taken to prevent or mitigate negative outcomes.  
+LENZ can estimate the cost society will incur under different scenarios and can be used to evaluate 
+the  return  on  investment  of  implementing  different  solutions  from  those  scenarios  and  the 
+economic gains Toronto can benefit from. 
+
+Insight from the Case Study as an example: Failure to act can result in considerable costs for 
+society (derived from TEMOA-TO) 
+
+Figure 18. Cumulative Social cost of carbon 
+
+Social cost of inaction refers to the economic, social, 
+and  environmental  costs  that  are  incurred  when 
+action  is  not  taken  to  address  a  particular  issue  or 
+problem.  It  is  the  cost  that  society  as  a  whole  pays 
+when  no  action  is  taken  to  prevent  or  mitigate 
+negative  outcomes.  To  measure  the  cost  of  inaction 
+for the climate crisis, the social cost of carbon is most 
+often used as per Figure 18. 
+
+Under  current  policies,  the  City  is  engaged  on  the 
+Business-As-Planned  scenario  GHG  trajectory,  the 
+cumulative  cost  of  the  BAP-TTO  scenario  between 
+2016 and 2040 may be around 20 Billion (2016) CA$ in 
+the  average  case23.  Addressing  the  climate  crisis 
+globally by reaching net  zero  by  2040 would  imply a 
+significant economic gain for the city of Toronto with 
+an  average  estimate  of  6  Billion  (2012)  CA$  in  the 
+average case. 
+
+23 A wide range of social cost of carbon are used, the average case represents an average with a 3 per cent Discount 
+Rate. 
+
+35 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
