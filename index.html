@@ -5769,6 +5769,33 @@
             if (r.existingStructureType === 'semi') out.push({ kind: 'caution', text: 'Semi-detached — multiplex is permitted by-law but party-wall structural work + neighbour coordination materially raise the cost vs a detached teardown. Surfaced in the broader tier; the elite cover-list excludes attached structures.' });
             if (r.existingStructureType === 'vacant') out.push({ kind: 'good', text: 'Vacant lot — no demolition cost; cleanest path to a 4-plex or sixplex rebuild' });
 
+            // "Apartment-block masquerade" caution — rare-but-strong
+            // signal. Fires only when the structure is implausibly large
+            // for a single-family detached home: 5+ storeys (≥ 14 m)
+            // AND wide footprint (≥ 25% coverage) AND geometric capacity
+            // ≥ 10 units. Calibrated to catch the 191 Dunn Ave pattern
+            // (Parkdale Victorian with 5-storey scale, almost certainly
+            // converted to unauthorized multi-unit) without false-flagging
+            // legit 3-storey single-family Tudors. Looser thresholds
+            // (e.g., 3-storey + approx ≥ 5) triggered on 63% of elite
+            // — basically every multi-storey detached home — which is
+            // noise, not signal. The dev who sees this caution knows to
+            // title-search / MPAC-check before assuming a single-family
+            // teardown play; the absence of caution means the wire's
+            // existing-unit count is probably right.
+            const _ap = r.addressPointCount || 0;
+            const _approx = r.existingUnitsApprox || 0;
+            const _hForCap = r.existingMaxBuildingHeightM || 0;
+            const _covForCap = r.buildingCoverageRatio || 0;
+            if (_approx >= 10 && _hForCap >= 14 && _covForCap >= 0.25 && (_approx - _ap) >= 5) {
+                const _capStoreys = Math.max(1, Math.round(_hForCap / 3));
+                const _capFloor = Math.round(_covForCap * (r.lotAreaM2 || 0) * _capStoreys);
+                out.push({
+                    kind: 'caution',
+                    text: `Building scale (${_capStoreys}-storey, ~${_capFloor.toLocaleString()} m² floor) is implausibly large for a single-family detached — capacity at Toronto's 90 m²/unit residential average works out to ~${_approx} units. Wire reads only ${_ap} registered municipal address${_ap === 1 ? '' : 'es'}. Almost certainly an older converted-Victorian / Edwardian residence holding unauthorized multi-unit suites (Parkdale / Annex / Cabbagetown pattern). Title search + MPAC before assuming a teardown play — this is likely a value-add or refinance opportunity, not a multiplex-by-law candidate.`,
+                });
+            }
+
             return out;
         }
 
