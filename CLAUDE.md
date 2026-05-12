@@ -1,98 +1,70 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code working in this repository.
 
-## Project Status
+## Project
 
-**Pivoted from BloomTO 2026-05-12.** The previous codebase (Toronto multiplex parcel filtering) is preserved verbatim under `legacy/bloomto/` and should not be imported into active DemoCalcTO code. See `legacy/bloomto/CLAUDE.md` for the historical project doc.
+**RootedTO** — a Toronto map of cultural commercial corridors, surfacing legacy storefronts, heritage designation gaps, and the "developer math" (zoning unused density vs. land value) for racialized commercial districts at risk of displacement.
 
-**DemoCalcTO** is a Toronto demolition cost benchmarking tool. Users enter a Toronto address → get the median + quartile demolition cost for that structure type in that neighbourhood, sourced from city building-permit filings (CKAN) and supplemented with published contractor price ranges.
+**Pivoted to RootedTO 2026-05-12.** Two prior codebases are archived under `legacy/` (`bloomto/` — multiplex parcel filtering; the abandoned `democalcto/` pivot — demolition cost benchmarking, never shipped). Do not import from `legacy/`.
 
-- **MVP target:** early June 2026.
-- **Product spec:** `PRD_DemoCalc.md` + `pivot_statement.md` (in user's workspace, not in repo).
-- **Architecture:** Python ETL → static JSON → Apache + vanilla JS UI. Same tech as legacy BloomTO; no Node/React/Postgres.
+## Architecture
 
-## Architectural Direction (Read Before Suggesting)
+Same stack as predecessors: Python ETL → static JSON → Apache + vanilla HTML/JS. No backend, no DB, no build step, no React, no Node.
 
-- **Wire-only data exchange.** ETL produces flat JSON, served as static files. No backend API, no database, no live queries against permits data. The aggregate table is small (< 100 KB).
-- **One PHP file.** `geocode-proxy.php` is the *only* PHP runtime, and is API-only for Google address autocomplete. Do not propose additional PHP files.
-- **No build step.** Vanilla HTML/CSS/JS in a single `index.html`, plus the static JSON. No bundler, no npm, no React.
-- **CKAN is the authoritative source.** Demolition permits + building permits + neighbourhood polygons all come from Toronto Open Data, cached locally under `tools/cache/`.
+## Launch corridors (v1)
 
-If a request reaches for a Node backend, Postgres, React, or anything from BloomTO's retired heavyweight direction, surface the contradiction before implementing.
+12 Toronto ethnic commercial corridors:
+- Eglinton W / Little Jamaica · Spadina/Dundas / West Chinatown · Gerrard/Broadview / East Chinatown · Danforth / Greektown · College W / Little Italy · Dundas W / Little Portugal · Bloor / Koreatown · Gerrard E / Little India · Roncesvalles · St. Clair W / Corso Italia · Kensington Market · Queen W / Parkdale
 
-## Data Honesty (MANDATORY)
+Inner-suburb communities (v2+, residential tower / strip-mall mode):
+- Thorncliffe Park · Crescent Town · Albion · Markham/Lawrence · Eglinton/Brimley · Jane/Finch
 
-The CKAN building-permits `EST_CONST_COST` field is **systematically under-reported** — developers lowball declared values to reduce city application fees. Calibration suggests filed costs run 15–40% below actual contractor invoice prices. Two non-negotiables:
+## Validated CKAN data layers
 
-1. **Always disclose the bias.** The UI must label the figure as "**filed median**" — never "actual" or "typical."
-2. **Validate against public contractor pricing.** Maintain a small calibration set (~10–20 anchor points from contractor SEO pages, BILD case studies, RedFlagDeals threads). If filed-median diverges from anchors by > 50%, the aggregate is dropping out of the trust zone — investigate.
+| Layer | Dataset | Refresh |
+|---|---|---|
+| Legacy storefronts + closure feed | `municipal-licensing-and-standards-business-licences-and-permits` | Daily |
+| Heritage designations | `heritage-register` (zipped SHP, ~12.3k properties) | Quarterly |
+| Heritage Conservation Districts | `heritage-conservation-districts` (32 polygons) | Quarterly |
+| Corridor polygons | `business-improvement-areas` (86 BIAs) | Weekly |
+| Pending pressure | `development-applications` + `committee-of-adjustment-applications` | Daily |
+| Unused density math | `zoning-by-law` overlays + `3d-massing` | As-available |
+| Tenant displacement (v3) | `apartment-building-registration` + `apartment-building-evaluation` | Monthly / Daily |
+| Cultural attribution | StatCan Census 2021, DA-level (ethnic origin, mother tongue, place of birth) | — |
+| Lobbyist activity (v4) | `lobbyist-registry` | Daily |
 
-When the user proposes a specific dollar figure for the page, verify it via WebSearch / WebFetch before writing into code, copy, or memory. (Same rule as legacy BloomTO.)
+## NOT a usable cultural-asset source
 
-## Working on the Site
+- `cultural-hotspot-points-of-interest` — branded as a community asset map; on inspection it's a **City tourism walking-tour catalogue** (Art / History / Mural points). Zero POIs in 8 of 12 launch corridors. **Do not use.**
 
-```bash
-# Serve locally for dev
-cd /var/www/html/democalcto
-python3 -m http.server 8000
+## Cultural attribution policy (non-negotiable)
 
-# Or hit it through Apache directly at
-#   http(s)://joshuaopolko.com/democalcto/
-```
+- **Corridor-level attribution only** from sourced data (StatCan Census DA demographics, partner-org member lists, cuisine inference on business names).
+- **No user-facing ethnicity submission form.** Do not ask Torontonians to fill in racial score cards.
+- **No surname-based ethnicity classifiers in public output.** Internal analytics fine; never publish inferred ethnicity from a person's legal name.
+- Every cultural label on a parcel card must be sourced ("per Census" / "per BBPA directory" / "cuisine inferred from name").
 
-When changing the site:
-- Design tokens live in the single `<style>` block at the top of `index.html`.
-- App logic + data fetch live in the `<script>` block at the bottom.
-- Data is fetched from `data/democalc.json` (or similar single-file aggregate — TBD as MVP lands).
+## Heritage asymmetry is a feature, not a bug
 
-## Hosting
+The Heritage Register designates ~288 properties in Kensington Market vs. **3** in Little Jamaica. Zero of the 12 ethnic commercial corridors sit inside a confirmed-designated Heritage Conservation District. Surface this asymmetry as a homepage metric — it IS the press hook.
 
-Apache + mod_php (PHP 7.4) on `joshuaopolko.com` shared host. Practical implications:
+## Survey reference
 
-- Files placed in `/var/www/html/democalcto/` are served at `http(s)://joshuaopolko.com/democalcto/`.
-- The `.htaccess` default-denies everything except `index.html` — when adding a new file path the browser needs, widen the allow-list explicitly.
-- File ownership is `john:www-data` with group-write — keep new files in that group.
-- `python3 -m http.server` for local dev avoids `file://` CORS issues with `fetch()`.
-
-## Source layout
-
-Active modules under `tools/sources/` (each an isolated data loader):
-
-- `_address.py` — address normalization (uppercase, strip suffixes, etc.)
-- `_http.py` — HTTP retry + cache helpers
-- `address_points.py` — Toronto Address Points (for address geocoding)
-- `building_permits.py` — Building Permits CSV loader. Demolition Folder (DM) permits are the primary cost signal.
-- `demo_permits.py` — Demolition Permits CSV loader (separate from active building permits).
-- `neighborhoods.py` — neighbourhood polygon assignment (address → neighbourhood name).
-
-Anything not on that list lives under `legacy/bloomto/tools/sources/` and is not part of the active codebase. The `building_permits.py` module still contains some BloomTO-era code (luxury-suite back-derivation, nearby-multiplex-permit index, builder-activity counter) — usable for analytics, but not load-bearing for DemoCalc.
+`data/ckan_survey.md` (CSV/JSON datasets, 556 KB, 312 ok) and `data/ckan_survey_supplement.md` (non-CSV formats: XLSX/XLS/ZIP/PDF/DOCX/KML/XML/SPSS/etc., 1.9 MB, 181 datasets) are the structural inventory of every Toronto CKAN dataset. **They verify file integrity only — not semantic fitness.** Always run a manual spot-check (pull the data, look at the actual values) before trusting a dataset for a new use case.
 
 ## Secrets
 
-`/var/secrets/democalcto.env` (root:www-data 640) holds `GOOGLE_API_KEY` and referer/rate-limit knobs. Never inline, never echo, never commit. Filename kept as `bloomto.env` for now; can rename later.
+`/var/secrets/democalcto.env` (filename retained, not renamed alongside the project) holds `GITHUB_TOKEN` + `GOOGLE_API_KEY`. Never inline, never echo, never commit.
 
-## Data Source Notes
+## Hosting
 
-- **Toronto Open Data Demolition Folder (DM) permits**: primary signal. ~67 permits in current cache with declared cost; widening to a 5-year window will improve sample size.
-- **Toronto Open Data Building Permits**: contains demolition-related permits with structure-type tagging. Filter to `PERMIT_TYPE = "Demolition Folder (DM)"` for pure-demo signal.
-- **Contractor SEO pages** (Wallace Excavation, Super Human Demolition, Almar, etc.): published price ranges, useful for calibration anchor points.
-- **Reddit / RedFlagDeals forum threads**: actual contractor quotes shared by consumers, surprisingly good signal.
-- **LinkedIn**: not viable. Aggressive anti-scraping. Requires rotating proxies + risk of account bans. Skip.
-
-## Workflow
-
-For changes that affect the wire data shape:
-1. Update the ETL (`tools/build_*.py`).
-2. Run the ETL → produces fresh `data/*.json`.
-3. Update the frontend (`index.html`) to consume the new field.
-4. Verify in browser before declaring done.
-5. Run any unit tests (`tools/tests/`).
-6. Commit + deploy via rsync (see `legacy/bloomto/CLAUDE.md` for the rsync command pattern — preserved for reference).
+Apache on `joshuaopolko.com`. Prod folder at `/var/www/html/rootedto/`. `.htaccess` default-denies everything except the explicit allow-list. File ownership `john:www-data`.
 
 ## What NOT to do
 
-- Don't import from `legacy/bloomto/`. That code is archived; cherry-pick functions into the active tree if needed.
-- Don't propose a database, ORM, message queue, or any backend service. Static JSON aggregate is the architecture.
-- Don't add a build step.
-- Don't claim "actual" or "real" demolition costs anywhere in the UI — only "filed", "declared", or "permitted."
+- Don't import from `legacy/`.
+- Don't use `cultural-hotspot-points-of-interest` as a community asset map.
+- Don't add user-facing ethnicity tagging UI.
+- Don't add a backend, DB, build step, or framework.
+- Don't claim a business is ethnically X without a sourced attribution (Census DA / partner-org list / cuisine inference).
