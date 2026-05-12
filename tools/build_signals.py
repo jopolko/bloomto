@@ -36,6 +36,7 @@ if __package__ in (None, ""):
 
 from tools.sources._address import normalize_address
 from tools.sources import (
+    building_permits as bperm_src,
     coa_applications as coa_src,
     demo_permits as demo_src,
     property_violations as viol_src,
@@ -139,14 +140,78 @@ def _severance_payload(apps) -> dict:
     }
 
 
-def _demo_payload(permits) -> dict:
-    """Per-parcel demo-permit payload — surface the most recent + count."""
+import re as _re
+
+# Builder-activity classifier (queued 2026-05-11 from 53 Johnston Ave). Counts
+# how many permits a given BUILDER_NAME appears on citywide; classifies as a
+# qualitative label devs scan-read inline ("active operator (8 permits)").
+
+_BUILDER_TRAILING_RE = _re.compile(
+    r"\s+(INC|LTD|LIMITED|CORP|CORPORATION|CO|COMPANY|LLP)\.?\s*$",
+    flags=_re.IGNORECASE,
+)
+
+
+def _normalize_builder_name(name: str | None) -> str | None:
+    """Uppercase, strip whitespace, drop trailing entity suffix.
+    `"Afshin Namdar Inc."` and `"AFSHIN NAMDAR LTD"` collapse to
+    `"AFSHIN NAMDAR"` for citywide aggregation.
+    """
+    if not name:
+        return None
+    s = name.strip().upper()
+    # Strip until no more trailing suffix matches (handles "X CO INC")
+    for _ in range(3):
+        new = _BUILDER_TRAILING_RE.sub("", s).strip().rstrip(".").strip()
+        if new == s:
+            break
+        s = new
+    return s or None
+
+
+def _classify_builder_activity(count: int) -> str:
+    if count == 1:
+        return "first permit on file"
+    if count <= 3:
+        return "occasional builder"
+    return "active operator"
+
+
+def _build_builder_activity_counter(permits) -> dict[str, int]:
+    """Citywide count of permits per normalized BUILDER_NAME, across the
+    full unjoined permit list. Each permit's builder gets a count.
+    """
+    from collections import Counter
+    counter: Counter = Counter()
+    for p in permits:
+        norm = _normalize_builder_name(getattr(p, "builder_name", None))
+        if norm:
+            counter[norm] += 1
+    return dict(counter)
+
+
+def _demo_payload(permits, builder_counter: dict[str, int] | None = None) -> dict:
+    """Per-parcel demo-permit payload — surface the most recent + count.
+
+    `builder_counter` is the citywide `{normalized_builder: count}` map.
+    Attaches `builderActivityCount` + `builderActivityLabel` to the
+    payload when a builder is named on the most-recent permit. Null
+    when the source permit has no BUILDER_NAME (~25% of records).
+    """
     permits = sorted(
         permits,
         key=lambda p: max(p.application_date or "", p.issued_date or ""),
         reverse=True,
     )
     p = permits[0]
+    norm_builder = _normalize_builder_name(p.builder_name)
+    activity_count = (
+        builder_counter.get(norm_builder)
+        if (builder_counter and norm_builder) else None
+    )
+    activity_label = (
+        _classify_builder_activity(activity_count) if activity_count else None
+    )
     return {
         "permitNum": p.permit_num,
         "applicationDate": p.application_date or None,
@@ -158,6 +223,8 @@ def _demo_payload(permits) -> dict:
         "proposedUse": p.proposed_use,
         "dwellingUnitsLost": p.dwelling_units_lost,
         "builderName": p.builder_name,
+        "builderActivityCount": activity_count,
+        "builderActivityLabel": activity_label,
         "extraCount": len(permits) - 1,
     }
 
@@ -238,6 +305,25 @@ def main():
     violations = viol_src.fetch_property_violations(args.cache, since_iso=violations_since)
     pzrs = pzr_src.fetch_preliminary_zoning_reviews(args.cache, since_iso=pzr_since)
 
+    # 5-year builder-activity counter across BOTH demolition AND
+    # building permits (2026-05-12). The signal-display window is
+    # 365d, but the builder *classifier* counts EVERY permit (demos +
+    # active building permits) a normalized BUILDER_NAME appears on
+    # in the last 5 years. A custom-home builder with no demos still
+    # gets credit for their building permits; a demo-heavy builder
+    # whose only recent activity was 2 years ago still gets credit
+    # for those older demos.
+    builder_counter_since = (date.today() - timedelta(days=5*365)).isoformat()
+    demos_for_counter = demo_src.fetch_demo_permits(args.cache, since_iso=builder_counter_since)
+    # Building-permit counter (CSV pass, ~80MB). Independent of the
+    # multiplex-relevance filter used for compute_permits — every permit
+    # with a BUILDER_NAME counts.
+    building_counter_5y = bperm_src.compute_builder_counter_all_permits(args.cache, window_years=5)
+    _log.info(
+        "builder_activity_window: 5-year fetch — %d demo permits + %d builder-named active permits",
+        len(demos_for_counter), sum(building_counter_5y.values()),
+    )
+
     # Address-join each
     sev_by_pid, sev_m, sev_u = _join_to_parcels(severances, addr_index)
     demo_by_pid, demo_m, demo_u = _join_to_parcels(demos, addr_index)
@@ -256,8 +342,20 @@ def main():
     by_parcel: dict[str, dict] = {}
     for pid, apps in sev_by_pid.items():
         by_parcel.setdefault(pid, {})["severance"] = _severance_payload(apps)
+    # Build the citywide builder-activity counter — UNION of demo
+    # permits + building permits, 5-year window. Each permit row counts
+    # once (multi-trade permits inflate counts slightly, but that's
+    # correct: a builder filing 4 trade permits IS more committed than
+    # a one-off owner-builder filing only the main permit).
+    builder_counter = _build_builder_activity_counter(demos_for_counter)
+    for name, count in building_counter_5y.items():
+        builder_counter[name] = builder_counter.get(name, 0) + count
+    _log.info(
+        "builder_activity: %d unique normalized builders (5y, demos+building permits union)",
+        len(builder_counter),
+    )
     for pid, permits in demo_by_pid.items():
-        by_parcel.setdefault(pid, {})["demoPermit"] = _demo_payload(permits)
+        by_parcel.setdefault(pid, {})["demoPermit"] = _demo_payload(permits, builder_counter)
     for pid, viols in viol_by_pid.items():
         by_parcel.setdefault(pid, {})["violation"] = _violation_payload(viols)
     for pid, pzrs in pzr_by_pid.items():

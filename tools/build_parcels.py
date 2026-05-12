@@ -569,6 +569,21 @@ def _process_parcel(parcel_or_record) -> dict:
         parcel.geometry, bike_tree, bike_lines,
     )
 
+    # Nearby-multiplex-permit comp (queued 2026-05-12 from 83 Twenty Seventh
+    # case). Query the 250m radius around this parcel's centroid for recent
+    # multiplex permits (≥3 units, last 5 years). Drops the parcel's own
+    # permits so they don't count as their own comp.
+    nearby_multiplex_index = _W.get('nearby_multiplex_index')
+    nearby_builder_counter = _W.get('nearby_builder_counter')
+    nearby_multiplex_payload = None
+    if nearby_multiplex_index is not None:
+        nearby_multiplex_payload = permits_src.query_nearby_multiplex(
+            nearby_multiplex_index,
+            (rep_pt.x, rep_pt.y),
+            parcel_own_permit_indices=set(local_permit_claims),
+            builder_activity_counter=nearby_builder_counter,
+        )
+
     postwar = (
         POSTWAR_BUILT_YEAR_MIN <= built_year <= POSTWAR_BUILT_YEAR_MAX
         and heritage_status is None
@@ -608,6 +623,7 @@ def _process_parcel(parcel_or_record) -> dict:
             'inFloodingStudyArea': in_flooding_area,
             'inRegulatedArea': in_regulated_area,
             'permits': permits_payload,
+            'nearbyMultiplexPermits': nearby_multiplex_payload,
             'neighborhoodPermitComp': None,
             'neighborhoodCanopyPct': nb_canopy_pct,
             'streetTreeCount': street_tree_count,
@@ -982,7 +998,7 @@ def _load_rapidto_index(cache_dir: Path) -> STRtree:
 
 
 def _abuts_laneway(parcel, centreline_tree, laneway_idx,
-                   buffer_deg: float = 2.7e-5) -> bool:
+                   buffer_deg: float = 7.5e-5) -> bool:
     """True iff the parcel's boundary touches a centreline feature flagged
     as a Toronto laneway (FEATURE_CODE == 201700). Mirrors the corner-lot
     test's buffer geometry. Used for the laneway-suite-eligibility flag.
@@ -1457,6 +1473,8 @@ def assemble_parcel_payload(
     include_non_eligible: bool,
     workers: int = 1,
     amenity_holdover_index=None,
+    nearby_multiplex_index=None,
+    nearby_builder_counter=None,
 ) -> dict:
     """Build the GeoJSON FeatureCollection payload (no I/O).
 
@@ -1549,6 +1567,8 @@ def assemble_parcel_payload(
         'permit_structure_type_by_addr': permit_structure_type_by_addr,
         'osm_structure_type_by_addr': osm_structure_type_by_addr,
         'address_points_index': address_points_index,
+        'nearby_multiplex_index': nearby_multiplex_index,
+        'nearby_builder_counter': nearby_builder_counter,
         'tax_exempt_addrs': tax_exempt_addrs,
         'permit_freshness_cutoff': permit_freshness_cutoff,
         'nb_canopy_by_name': nb_canopy_by_name,
@@ -1899,7 +1919,30 @@ def main(argv=None) -> int:
 
     t = _stage("load Address Points (Toronto One Address Repository, ~525K records)")
     address_points_index = ap_src.build_address_points_index(cache)
+    # Build an `address_norm -> Point(lon, lat)` lookup once, reused by the
+    # nearby-permit comp index below + (potentially) other consumers.
+    # 525K records × small dict is fine in RAM.
+    ap_records_by_norm = {
+        rec.address_norm: rec.point
+        for rec in address_points_index.records if rec.address_norm
+    }
     _done("address points", t)
+
+    t = _stage("build nearby-multiplex-permit index (250m radius)")
+    nearby_multiplex_index = permits_src.build_nearby_multiplex_index(
+        permit_index, ap_records_by_norm,
+    )
+    # Citywide builder-activity counter (same algorithm as build_signals.py
+    # for demo permits) — tags the nearest-comp builder so the dev sees
+    # "by 270 SHE BUILD LP · active operator (6)" inline on the comp.
+    nearby_builder_counter = permits_src.build_builder_activity_counter_from_permits(
+        permit_index.permits,
+    )
+    _log.info(
+        "nearby_builder_activity: %d unique normalized builders across %d permits",
+        len(nearby_builder_counter), len(permit_index.permits),
+    )
+    _done("nearby multiplex index", t)
 
     t = _stage("load cycling network (per-parcel distance index)")
     bike_tree, bike_lines = cycling_src.load_cycling_index(cache)
@@ -1952,6 +1995,8 @@ def main(argv=None) -> int:
         ttc_station_index=ttc_station_index,
         landuse_index=landuse_index,
         amenity_holdover_index=amenity_holdover_index,
+        nearby_multiplex_index=nearby_multiplex_index,
+        nearby_builder_counter=nearby_builder_counter,
         flood_index=flood_index,
         trca_index=trca_index,
         rapidto_tree=rapidto_tree,

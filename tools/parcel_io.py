@@ -46,6 +46,13 @@ FEATURE_PROPERTIES = (
     "inFloodingStudyArea",
     "inRegulatedArea",
     "permits",
+    "nearbyMultiplexPermits",  # {count, nearestDistM, nearestDate,
+                               # nearestUnitsCreated} or None — recent
+                               # multiplex permits (≥3 units, last 5y)
+                               # within 250m of this parcel's centroid,
+                               # excluding this parcel's own permits.
+                               # On-block comp evidence stronger than
+                               # the neighborhood-median.
     "neighborhoodPermitComp",
     "neighborhoodCanopyPct",
     "streetTreeCount",

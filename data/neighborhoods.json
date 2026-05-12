@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generatedAt": "2026-05-07T23:58:24Z",
+    "generatedAt": "2026-05-12T04:15:33Z",
     "sourceVersions": {
       "neighborhoods": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/fc443770-ef0a-4025-9c2c-2cb558bfab00/resource/0719053b-28b7-48ea-b863-068823a93aaa/download/neighbourhoods-4326.geojson",
       "solar_to": "https://ckan0.cf.opendata.inter.prod-toronto.ca/dataset/304aaee3-11cb-41c4-96a3-adef31f63ed5/resource/f5f37d23-85c9-4af8-b8a5-369523778f93/download/solarto-map-4326.csv",
@@ -572,8 +572,8 @@
       "avgHouseholdIncome": 284400,
       "medDwellingValue": 3000000,
       "avgDwellingValue": 3456000,
-      "permitsRecentCount": 30,
-      "permitsPer1kDwellings": 5.91
+      "permitsRecentCount": 31,
+      "permitsPer1kDwellings": 6.11
     },
     {
       "name": "O'Connor-Parkview",
@@ -692,8 +692,8 @@
       "avgHouseholdIncome": 184000,
       "medDwellingValue": 1500000,
       "avgDwellingValue": 1938000,
-      "permitsRecentCount": 36,
-      "permitsPer1kDwellings": 2.21
+      "permitsRecentCount": 38,
+      "permitsPer1kDwellings": 2.33
     },
     {
       "name": "Rockcliffe-Smythe",
@@ -852,8 +852,8 @@
       "avgHouseholdIncome": 120000,
       "medDwellingValue": 950000,
       "avgDwellingValue": 1153000,
-      "permitsRecentCount": 4,
-      "permitsPer1kDwellings": 0.65
+      "permitsRecentCount": 5,
+      "permitsPer1kDwellings": 0.81
     },
     {
       "name": "Victoria Village",
@@ -1112,8 +1112,8 @@
       "avgHouseholdIncome": 173200,
       "medDwellingValue": 1510000,
       "avgDwellingValue": 1616000,
-      "permitsRecentCount": 20,
-      "permitsPer1kDwellings": 4.08
+      "permitsRecentCount": 19,
+      "permitsPer1kDwellings": 3.88
     },
     {
       "name": "East End-Danforth",
@@ -1352,8 +1352,8 @@
       "avgHouseholdIncome": 135400,
       "medDwellingValue": 1070000,
       "avgDwellingValue": 1153000,
-      "permitsRecentCount": 32,
-      "permitsPer1kDwellings": 2.52
+      "permitsRecentCount": 31,
+      "permitsPer1kDwellings": 2.44
     },
     {
       "name": "Greenwood-Coxwell",
@@ -1512,8 +1512,8 @@
       "avgHouseholdIncome": 111500,
       "medDwellingValue": 1200000,
       "avgDwellingValue": 1274000,
-      "permitsRecentCount": 41,
-      "permitsPer1kDwellings": 7.72
+      "permitsRecentCount": 43,
+      "permitsPer1kDwellings": 8.1
     },
     {
       "name": "Wychwood",
@@ -1572,8 +1572,8 @@
       "avgHouseholdIncome": 133000,
       "medDwellingValue": 1400000,
       "avgDwellingValue": 1448000,
-      "permitsRecentCount": 45,
-      "permitsPer1kDwellings": 6.58
+      "permitsRecentCount": 40,
+      "permitsPer1kDwellings": 5.85
     },
     {
       "name": "Thorncliffe Park",
@@ -1912,8 +1912,8 @@
       "avgHouseholdIncome": 124000,
       "medDwellingValue": 1300000,
       "avgDwellingValue": 1352000,
-      "permitsRecentCount": 36,
-      "permitsPer1kDwellings": 5.31
+      "permitsRecentCount": 37,
+      "permitsPer1kDwellings": 5.45
     },
     {
       "name": "Westminster-Branson",
@@ -2092,8 +2092,8 @@
       "avgHouseholdIncome": 81700,
       "medDwellingValue": 650000,
       "avgDwellingValue": 683000,
-      "permitsRecentCount": 5,
-      "permitsPer1kDwellings": 0.99
+      "permitsRecentCount": 4,
+      "permitsPer1kDwellings": 0.79
     },
     {
       "name": "Kensington-Chinatown",
@@ -2252,8 +2252,8 @@
       "avgHouseholdIncome": 130200,
       "medDwellingValue": 1400000,
       "avgDwellingValue": 1472000,
-      "permitsRecentCount": 25,
-      "permitsPer1kDwellings": 7.72
+      "permitsRecentCount": 24,
+      "permitsPer1kDwellings": 7.41
     },
     {
       "name": "Playter Estates-Danforth",
@@ -2492,8 +2492,8 @@
       "avgHouseholdIncome": 102500,
       "medDwellingValue": 1000000,
       "avgDwellingValue": 1104000,
-      "permitsRecentCount": 71,
-      "permitsPer1kDwellings": 8.22
+      "permitsRecentCount": 65,
+      "permitsPer1kDwellings": 7.53
     },
     {
       "name": "Yonge-Eglinton",
@@ -2572,8 +2572,8 @@
       "avgHouseholdIncome": 100600,
       "medDwellingValue": 1000000,
       "avgDwellingValue": 1237000,
-      "permitsRecentCount": 37,
-      "permitsPer1kDwellings": 7.02
+      "permitsRecentCount": 35,
+      "permitsPer1kDwellings": 6.64
     },
     {
       "name": "Rustic",
@@ -2732,8 +2732,8 @@
       "avgHouseholdIncome": 92700,
       "medDwellingValue": 950000,
       "avgDwellingValue": 1006000,
-      "permitsRecentCount": 27,
-      "permitsPer1kDwellings": 5.12
+      "permitsRecentCount": 26,
+      "permitsPer1kDwellings": 4.93
     },
     {
       "name": "Eglinton East",
@@ -3032,8 +3032,8 @@
       "avgHouseholdIncome": 110900,
       "medDwellingValue": 1000000,
       "avgDwellingValue": 1084000,
-      "permitsRecentCount": 37,
-      "permitsPer1kDwellings": 4.69
+      "permitsRecentCount": 36,
+      "permitsPer1kDwellings": 4.56
     },
     {
       "name": "Weston-Pelham Park",
@@ -3052,8 +3052,8 @@
       "avgHouseholdIncome": 94700,
       "medDwellingValue": 900000,
       "avgDwellingValue": 905000,
-      "permitsRecentCount": 14,
-      "permitsPer1kDwellings": 3.34
+      "permitsRecentCount": 15,
+      "permitsPer1kDwellings": 3.58
     },
     {
       "name": "Avondale",
@@ -3092,8 +3092,8 @@
       "avgHouseholdIncome": 89400,
       "medDwellingValue": 900000,
       "avgDwellingValue": 883000,
-      "permitsRecentCount": 13,
-      "permitsPer1kDwellings": 2.03
+      "permitsRecentCount": 12,
+      "permitsPer1kDwellings": 1.88
     },
     {
       "name": "Dorset Park",

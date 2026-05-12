@@ -258,7 +258,7 @@ def is_corner_lot(
     centreline_tree: STRtree,
     centreline_name_ids: list[int],
     *,
-    buffer_deg: float = 2.7e-5,
+    buffer_deg: float = 7.5e-5,
 ) -> bool:
     """Single-parcel corner-lot test (used by the streaming parcel ETL).
 
@@ -291,12 +291,16 @@ def compute_corner_lots(
     parcels: Iterable[Parcel],
     cache_dir: Path,
     *,
-    buffer_deg: float = 2.7e-5,
+    buffer_deg: float = 7.5e-5,
 ) -> dict[str, bool]:
     """Return `{parcel_id: is_corner}` based on centreline-touching the parcel.
 
-    `buffer_deg = 2.7e-5` ≈ 3 m at Toronto's latitude — tight enough that
-    the buffered parcel boundary touches *adjacent* streets only, not the
+    `buffer_deg = 7.5e-5` ≈ 8.3 m at Toronto's latitude — wide enough to
+    bridge the typical Toronto road from property-line to centreline
+    (curb-to-centreline ~5m + setback ~0-1m). The earlier 2.7e-5 (~3m)
+    only reached the centreline of narrow laneways, missing virtually
+    every actual corner (only 2/521 elite, 9/20K broader detected).
+    Wide enough to catch adjacent streets without reaching the
     next-block-over road across the way.
 
     Algorithm: for each parcel, buffer the boundary linestring (not the

@@ -13,6 +13,7 @@ Usage:
 import argparse
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -20,6 +21,29 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from tools import parcels_top_io
+
+
+# Luxury-street blacklist — (street, neighborhood) tuples identified via
+# Street View visual classification (2026-05-12). Same data lives in
+# index.html as the `LUXURY_STREETS` JS Set; both consult the canonical
+# tools/luxury_streets.json. Belt-and-suspenders gate for the page.
+_LUXURY_FILE = Path(__file__).resolve().parent / "luxury_streets.json"
+try:
+    with _LUXURY_FILE.open(encoding="utf-8") as _fp:
+        _LUXURY_STREETS = frozenset(
+            tuple(t) for t in json.load(_fp).get("luxury_streets", [])
+        )
+except FileNotFoundError:
+    _LUXURY_STREETS = frozenset()
+
+_STREET_RE = re.compile(r"^\d+[A-Za-z]?\s+(.+?)$")
+
+
+def _street_part(addr: str | None) -> str | None:
+    if not addr:
+        return None
+    m = _STREET_RE.match(addr.strip())
+    return m.group(1) if m else None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -335,6 +359,15 @@ def _passes_shared(props: dict) -> bool:
     nb_med_value = props.get("nbMedDwellingValue") or 0
     if nb_med_value > DWELLING_VALUE_CEILING_CAD:
         return False
+    # Luxury-street blacklist (added 2026-05-12). 36 (street, neighborhood)
+    # tuples where Street View visual inspection + multiplex-math math (6-unit
+    # acquisition ceiling ~$2.1-2.5M) showed the parcel is too expensive to
+    # underwrite as a teardown play. Mirrored in index.html `LUXURY_STREETS`
+    # const; source of truth: tools/luxury_streets.json.
+    street = _street_part(props.get("address"))
+    nb = props.get("neighborhood")
+    if street and nb and (street, nb) in _LUXURY_STREETS:
+        return False
     return True
 
 
@@ -381,6 +414,22 @@ def is_elite(props: dict) -> bool:
     # remain in broader for devs who want to investigate.
     if props.get("geometrySuspect"):
         return False
+    # Active-demolition exclusion (added 2026-05-12). When the parcel
+    # already has a residential-construction permit ≥1 unit created
+    # filed in the last 18 months, someone has bought it, gotten
+    # permits, and is tearing down. The teardown is happening — just
+    # not by us. Per the page's "Multiplex Plays" framing, this parcel
+    # is no longer an acquisition opportunity; it's competitive intel
+    # better surfaced via the nearby-multiplex-permit comp on
+    # SURROUNDING parcels. Affected parcels remain in broader for devs
+    # who want to track the dev cluster.
+    permits = props.get("permits") or {}
+    recent_count = permits.get("recentCount") or 0
+    if recent_count >= 1:
+        # Any recent unit-creating permit means redev is in motion.
+        # The permits payload aggregates only multiplex-relevant rows
+        # (DWELLING_UNITS_CREATED ≥ 1), so a non-zero count is enough.
+        return False
     # Address-drift exclusion (added 2026-05-11 — 106 Eastwood Rd
     # pattern). Parcel's stated address didn't match any Address Point
     # inside its polygon. Can't underwrite what you can't physically
@@ -403,6 +452,20 @@ def is_elite(props: dict) -> bool:
     ap = props.get("addressPointCount") or 0
     if height >= 14.0 and coverage >= 0.25 and approx >= 10 and (approx - ap) >= 5:
         return False
+    # Storey ceiling for the elite cohort (added 2026-05-12 — 304 Indian /
+    # 92 Pine / Parkdale Victorian conversions class). 4+ storey "detached"
+    # buildings in Toronto are functionally never single-family residences;
+    # they are converted multi-unit apartment buildings (Parkdale / Annex /
+    # High Park / Beaches Victorians converted decades ago). Even when the
+    # classifier and 3D Massing data say "detached", the structure carries
+    # tenants and significant improvement value — not a multiplex teardown.
+    # 3-storey and shorter detached homes stay in elite regardless of
+    # footprint; we trust developers to judge the teardown math themselves
+    # given honest data. Vacant lots have no structure so always pass.
+    if props.get("existingStructureType") != "vacant" and height > 0:
+        storeys = max(1, round(height / 3))
+        if storeys >= 4:
+            return False
     structure_type = props.get("existingStructureType", "unknown")
     if structure_type not in ELITE_STRUCTURE_TYPES:
         return False
@@ -520,6 +583,86 @@ def main():
         p["nbMedDwellingValue"] = nb.get("medDwellingValue", 0)
         p["nbAvgDwellingValue"] = nb.get("avgDwellingValue", 0)
         p["nbPermitsPer1kDwellings"] = nb.get("permitsPer1kDwellings", 0)
+
+    # Laneway-suite-permit back-derivation (added 2026-05-12). Toronto
+    # Centreline + OSM both have gaps on some Roncesvalles / Caledonia-
+    # Fairbank back-lanes; the laneway-suite permit set is independent
+    # ground truth (every laneway suite must abut a real lane by the
+    # 2018 by-law). OR the signal into `abutsLaneway`. Done at projection
+    # time so we don't need a full ETL rebuild to ship this fix.
+    #
+    # Two-stage flip:
+    #   Stage A — exact-address match: 1303 permits → ~6 elite flips
+    #   Stage B — same-street block propagation: any parcel on the same
+    #             street within ±LANE_PROP_RANGE house numbers of a
+    #             laneway-suite permit also flips. A Toronto residential
+    #             block typically spans ±25 house numbers (each side).
+    #             So a permit at 164 Macdonell would flag every Macdonell
+    #             address from 139-189 as having lane access. This loses
+    #             some precision (catches parcels on adjacent blocks of
+    #             short streets) in exchange for much higher recall on
+    #             blocks where city/OSM data has lane gaps.
+    LANE_PROP_RANGE = 25
+    try:
+        import re as _re
+        from collections import defaultdict as _dd
+        from tools.sources import building_permits as _permits_src
+        from tools.sources._address import normalize_address as _norm_addr
+        from pathlib import Path as _Path
+        _cache_dir = _Path(__file__).resolve().parent / "cache"
+        _laneway_suite_addrs = _permits_src.compute_laneway_suite_address_set(_cache_dir)
+
+        # Stage A: exact-address match.
+        _flipped_exact = 0
+        for f in features:
+            p = f.setdefault("properties", {})
+            addr = p.get("address") or ""
+            if not addr or p.get("abutsLaneway"):
+                continue
+            if _norm_addr(addr) in _laneway_suite_addrs:
+                p["abutsLaneway"] = True
+                p["lanewayPermitOnParcel"] = True  # transparency for the row
+                _flipped_exact += 1
+
+        # Stage B: extract (street, LO_NUM) from each permit address →
+        # build a same-street number-set lookup. Then for each parcel,
+        # check if any permit's LO_NUM is within ±LANE_PROP_RANGE of
+        # the parcel's LO_NUM on the same street.
+        _NUM_RE = _re.compile(r'^(\d+)[A-Z]?\s+(.+?)$')
+        _street_to_nums: dict[str, set] = _dd(set)
+        for addr in _laneway_suite_addrs:
+            m = _NUM_RE.match(addr)
+            if m:
+                _street_to_nums[m.group(2)].add(int(m.group(1)))
+
+        _flipped_block = 0
+        for f in features:
+            p = f.setdefault("properties", {})
+            if p.get("abutsLaneway"):
+                continue
+            addr = p.get("address") or ""
+            if not addr:
+                continue
+            m = _NUM_RE.match(_norm_addr(addr))
+            if not m:
+                continue
+            lo_num = int(m.group(1))
+            street = m.group(2)
+            perm_nums = _street_to_nums.get(street)
+            if not perm_nums:
+                continue
+            # Any permit number within ±LANE_PROP_RANGE on the same street
+            if any(abs(lo_num - pn) <= LANE_PROP_RANGE for pn in perm_nums):
+                p["abutsLaneway"] = True
+                _flipped_block += 1
+
+        _log.info(
+            "laneway-suite back-derivation: %d exact-address flips, "
+            "%d same-street block-prop flips (±%d house numbers)",
+            _flipped_exact, _flipped_block, LANE_PROP_RANGE,
+        )
+    except Exception as _e:
+        _log.warning("laneway-suite back-derivation skipped: %s", _e)
 
     # Citywide total (every parcel processed, not just score-positive ones)
     # — sourced from the master GeoJSON's meta. The frontend uses this for

@@ -27,6 +27,7 @@ clicks through to Street View.
 | `landuse=industrial` / `building=industrial` / `warehouse` | Light industrial |
 | `landuse=brownfield`                   | Environmental remediation, special case |
 | `landuse=construction` / `building=construction` | Already developing — too late |
+| `power=substation` / `power=plant` / `landuse=utility` | Hydro substations & utility yards (added 2026-05-12, 109 Shaw case) |
 
 ## What we KEEP IN (deliberate carve-out)
 
@@ -164,6 +165,18 @@ OVERPASS_QUERY = f"""
   way["shop"="car_repair"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
   way["shop"="furniture"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
   way["shop"="department_store"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  // Utility infrastructure (added 2026-05-12): Hydro / power substations
+  // and utility yards. 109 Shaw St case: parcel is the Toronto Hydro
+  // Bellwoods substation but city zoning reads "R (d1.0) (x806)" — the
+  // x806 use-exception isn't parsed by our ETL, and the classifier sees
+  // the substation building footprint as "detached." OSM tags substations
+  // as `power=substation`; folding them into the exclusion query catches
+  // the physical-use truth without needing to parse Toronto's full
+  // Schedule of Exceptions.
+  way["power"="substation"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["power"="plant"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["man_made"="substation"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
+  way["landuse"="utility"]({TORONTO_BBOX[0]},{TORONTO_BBOX[1]},{TORONTO_BBOX[2]},{TORONTO_BBOX[3]});
 );
 out body geom tags;
 """.strip()
@@ -237,6 +250,14 @@ def _classify(tags: dict) -> str | None:
         return "industrial"
     if l == "brownfield":
         return "brownfield"
+    # Utility (added 2026-05-12 — 109 Shaw St Toronto Hydro Bellwoods
+    # substation case). OSM tags Hydro substations as power=substation
+    # and increasingly landuse=utility. Catches the physical-use truth
+    # without relying on Toronto's Schedule of Exceptions (x806 etc.).
+    p = tags.get("power", "")
+    m = tags.get("man_made", "")
+    if p in ("substation", "plant") or m == "substation" or l == "utility":
+        return "utility"
     # Institutional umbrella — government / hospital / university / college /
     # courthouse / townhall / prison / school / kindergarten / place of
     # worship / library / community centre / fire station / religious or
@@ -292,9 +313,12 @@ def _fetch_overpass(cache_path: Path) -> dict:
         with cache_path.open(encoding="utf-8") as fp:
             return json.load(fp)
     _log.info("osm_landuse: fetching from Overpass API…")
-    resp = requests.get(
+    # POST not GET — the query string grew past the Overpass GET URI limit
+    # after the 2026-05-12 utility-infra additions. Overpass accepts either
+    # method with `data=` as form body or URL param.
+    resp = requests.post(
         OVERPASS_URL,
-        params={"data": OVERPASS_QUERY},
+        data={"data": OVERPASS_QUERY},
         headers={"User-Agent": "BloomTO/1.2 (https://joshuaopolko.com/bloomto)"},
         timeout=300,
     )

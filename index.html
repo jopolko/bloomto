@@ -277,7 +277,6 @@
             margin-left: 4px;
         }
         .visit-badge.new { background: #2f6a4f; color: white; }
-        .visit-badge.up  { background: #0a4ca8; color: white; padding: 1px 5px; }
         .semi-badge {
             display: inline-block;
             padding: 1px 6px;
@@ -1339,6 +1338,43 @@
             min-width: 180px;
             flex: 0 1 220px;
         }
+        /* Wraps the search input + an absolutely-positioned × clear
+           button. The wrapper inherits the input's flex sizing; the
+           input fills 100% of the wrapper and reserves right-padding
+           for the button. The button reveals only when the input has
+           a value (toggled in the input handler). */
+        .search-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            flex: 0 1 220px;
+            min-width: 180px;
+        }
+        .search-wrap .search-input-compact {
+            flex: 1 1 auto;
+            min-width: 0;
+            width: 100%;
+            padding-right: 28px;
+        }
+        .search-clear {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: 0;
+            padding: 2px 6px;
+            font-size: 16px;
+            line-height: 1;
+            color: var(--ink-muted);
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .search-clear:hover { background: var(--rule); color: var(--ink); }
+        @media (max-width: 640px) {
+            .search-wrap { flex: 1 1 auto; min-width: 0; min-height: 44px; }
+            .search-clear { font-size: 20px; padding: 4px 10px; }
+        }
         @media (max-width: 900px) {
             .magazine-header { flex-wrap: wrap; }
             .magazine-actions { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
@@ -1664,6 +1700,70 @@
         @keyframes signals-live-pulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.55); }
             50%      { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+        }
+        /* Inline listings status (replaces the daily-picks cards retired
+           2026-05-12). One thin line: "Showing N of M · K with active
+           owner signal · X new since last visit." Click-to-filter on
+           the active-signal segment. Stable layout to avoid the cards'
+           filter-shift problem. */
+        .listings-status {
+            padding: 6px 10px;
+            margin: 0 0 6px;
+            font-size: 12.5px;
+            color: var(--ink-muted);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            line-height: 1.5;
+        }
+        .listings-status strong { color: var(--ink); font-weight: 700; }
+        .listings-status .status-sep { color: var(--ink-mute2); user-select: none; }
+        .listings-status .status-signal-link {
+            background: transparent;
+            border: 0;
+            padding: 0;
+            font: inherit;
+            color: #b45309;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .listings-status .status-signal-link:hover { color: #92400e; }
+        .listings-status .status-signal-link.active {
+            background: #fef3c7;
+            color: #92400e;
+            text-decoration: none;
+            padding: 1px 8px;
+            border-radius: 4px;
+        }
+        .listings-status .status-delta { color: #15803d; font-weight: 600; }
+        /* Builder-activity inline tag on demo-permit signal cards. Muted
+           grey so it doesn't compete with the primary status text. */
+        .builder-activity-tag {
+            color: var(--ink-muted);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .builder-name { font-weight: 600; color: var(--ink); }
+        /* Nearby-multiplex-permit comp — green callout to mirror the
+           "active comp" energy. */
+        .nearby-comp-line {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #15803d;
+            font-weight: 600;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .nearby-comp-line strong { color: #14532d; }
+        .listings-status .status-signal-segment {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         @media (max-width: 640px) {
             .money-hero { padding: 18px 18px; gap: 10px; }
@@ -3182,14 +3282,18 @@
         <div class="max-w-7xl mx-auto flex items-center justify-between flex-wrap gap-3" style="padding-left:18px;padding-right:18px">
             <div>
                 <h1 class="text-2xl font-bold"><a href="./" class="gradient-text title-link" aria-label="Reload BloomTO">BloomTO</a></h1>
-                <p class="text-xs text-gray-600 mt-0.5">Toronto Multiplex Plays · Updated <span id="last-updated">…</span> · Data from <a target="_blank" rel="noopener" href="https://open.toronto.ca/">Toronto Open Data</a> · <button type="button" class="methodology-link" id="methodology-link">How we picked these</button></p>
+                <p class="text-xs text-gray-600 mt-0.5">Clean teardowns in Toronto · Updated <span id="last-updated">…</span> · Data from <a target="_blank" rel="noopener" href="https://open.toronto.ca/">Toronto Open Data</a> · <button type="button" class="methodology-link" id="methodology-link">How we picked these</button></p>
             </div>
             <div class="magazine-actions">
                 <span id="actions-total" class="actions-total" aria-live="polite" title="Total DC-waiver savings across the currently-loaded set. Per parcel: $113,938 (Multiples 2+ BR rate, June 26 2025) × (target units − 1), since unit 1 always pays the full DC under By-law 1137-2022 + EX24.2 (Jul 24 2025). HST + GST rebates excluded — sale-price-driven, not parcel-fixed."></span>
-                <input id="search" class="search-input search-input-compact"
-                       placeholder="Filter…" type="text"
-                       aria-label="Filter listings"
-                       title="Free-text filter — matches address, neighborhood, zone class, structure type, and keywords. Try: 'detached', 'vacant', 'sixplex', 'RM', 'corner', 'laneway', 'postwar', 'fast food', or any address / neighborhood fragment.">
+                <span class="search-wrap">
+                    <input id="search" class="search-input search-input-compact"
+                           placeholder="Filter…" type="text"
+                           aria-label="Filter listings"
+                           title="Free-text filter — matches address, neighborhood, zone class, structure type, and keywords. Try: 'detached', 'vacant', 'sixplex', 'RM', 'corner', 'laneway', 'postwar', 'fast food', or any address / neighborhood fragment.">
+                    <button id="search-clear" class="search-clear" type="button"
+                            aria-label="Clear filter" title="Clear filter" hidden>×</button>
+                </span>
                 <button id="saved-toggle" class="saved-toggle" type="button"
                         aria-pressed="false"
                         title="Toggle filter to your starred parcels. Star saved in this browser only.">
@@ -3223,13 +3327,15 @@
                  column + signal badges; the standalone banner was
                  redundant. renderFreshnessBanner() guards on missing
                  element and no-ops. -->
-            <!-- Daily picks strip — two real-signal cards (newest +
-                 underdog) above the listings. Hottest dropped 2026-05-08:
-                 default sort is activity desc so row #1 IS the hottest
-                 parcel; the Hot column with source icons gives the same
-                 dopamine inline. Populated by renderDailyPicksStrip();
-                 hidden when neither slot has a qualifying parcel. -->
-            <div id="daily-picks" class="daily-picks" hidden></div>
+            <!-- Inline listings status (replaces the daily-picks cards
+                 retired 2026-05-12). Shows: "Showing N of M" when
+                 filtered, "K with active owner signal" (click-to-filter)
+                 when signals exist, "X new since last visit" when delta
+                 > 0. Stable layout — text changes but the line stays put
+                 to avoid the layout-shift the cards caused. Hidden when
+                 no segments would render. Populated by
+                 renderListingsStatus(). -->
+            <div id="listings-status" class="listings-status" hidden></div>
             <!-- Weekly-delta strip 2026-05-09 — populated by
                  renderWeeklyDelta(). Compares THIS rebuild's elite set
                  to the prior rebuild (parcels-top-prev.json) for added
@@ -3391,14 +3497,17 @@
             <p>A parcel has to check every one of these:</p>
             <ul>
                 <li><strong>Walking distance to higher-order transit</strong> — within 500m of subway or streetcar. This is the Major Transit Station Area zone where the Bill 185 parking-minimum waiver applies and tenant demand is strongest.</li>
-                <li><strong>Lot at least 350 m²</strong> — room for a 4-6 unit footprint without site-fitting compromise.</li>
+                <li><strong>Lot at least 250 m²</strong> — including classic Toronto 25-ft-frontage downtown lots in laneway-rich neighbourhoods (Trinity-Bellwoods, Little Italy, Roncesvalles, Riverside, Leslieville).</li>
                 <li><strong>Zoning allows 4+ units as-of-right</strong> under the streamlined multiplex pathway (citywide 4-cap, or the Toronto–East York + Ward 23 sixplex carve-out from June 2025).</li>
-                <li><strong>Clean teardown story</strong> — the existing building is detached, or the lot is vacant. Semis appear in the broader list; row-houses and unconfirmed structures are excluded everywhere.</li>
+                <li><strong>Clean teardown</strong> — detached or vacant. We trust you to judge the teardown math against your own pro-forma; we just show honest existing-building data (height, coverage, approx units) so you can do it fast.</li>
+                <li><strong>Not 4+ storeys</strong> — 4+ storey "detached" buildings in Toronto are functionally never single-family residences. They're converted multi-unit apartment blocks (Parkdale / Annex / High Park / Beaches Victorian conversions decades old). Hard-excluded from elite; they live in the broader list as value-add / refinance plays, not multiplex new-builds.</li>
                 <li><strong>Structure type confirmed by city data</strong> — a building-permit record, an OpenStreetMap building tag, or a Toronto Address Points cross-confirmation. Best-guess classifications don't make this list.</li>
+                <li><strong>Geometry checks out</strong> — we reject parcels where Toronto's Property Boundaries polygons read as catastrophically mis-drawn (apartment-block heights credited to neighbouring bungalow polygons) and parcels whose stated address doesn't match any address point inside the polygon.</li>
+                <li><strong>Visually verified not luxury-estate stock</strong> — every neighbourhood with elite candidates was inspected at the street level using advanced AI visual analysis of Google Street View, classifying each block as teardown-candidate or estate-luxury. Streets where walled gardens, custom new-builds, or heritage Tudor mansions dominate (e.g., Riverside Dr in High Park-Swansea, Ava Rd in Humewood-Cedarvale, Long Cres in The Beaches) were excluded because $3M+ acquisition won't pencil against a 6-unit multiplex pro-forma. Cohort-level data signals (lot area, coverage, neighbourhood income) can't separate Coe Hill Dr (multiplex play) from Riverside Dr (estate) within the same neighbourhood — visual review can.</li>
             </ul>
 
             <h3>What you're seeing</h3>
-            <p>~260 parcels citywide that pass every check. Not a ranking — a set of <em>structurally clean teardown candidates within walking distance of higher-order transit, where the regulatory and economic pieces line up before you spend a minute underwriting.</em></p>
+            <p>Every parcel is a legitimate teardown candidate where the regulatory pieces line up before you spend a minute underwriting. No apartment buildings masquerading as detached, no boundary-drift mystery parcels, no school fields or utility substations. You bring the pro-forma; we bring the shortlist.</p>
 
             <h3>What this isn't</h3>
             <p>It isn't financial advice. It isn't a guarantee that any specific parcel is for sale, or for sale at a price that pencils. And it isn't a complete pro forma — we surface the inputs that distinguish good parcels from bad, so you spend real time modelling the few worth modelling instead of all of them.</p>
@@ -3659,6 +3768,60 @@
         const INSTITUTIONAL_MAX_COVER_STRIP = 0.30;
         const PLAZA_AREA_M2 = 5000;
         const PLAZA_ZONES = new Set(['CR', 'CRE']);
+        // Luxury / estate streets identified via Street View visual
+        // classification (2026-05-12). Keys are "{street}|{neighborhood}".
+        // Source of truth: tools/luxury_streets.json — keep in sync.
+        // Apply via looksInstitutional() Pattern 11. Same JSON also drives
+        // the matching gate in tools/build_parcels_top.py is_elite() so
+        // the wire and the frontend agree post-rebuild.
+        const LUXURY_STREETS = new Set([
+            "Albany Ave|Annex",
+            "Arlington Ave|Humewood-Cedarvale",
+            "Ava Rd|Humewood-Cedarvale",
+            "Balsam Ave|The Beaches",
+            "Beech Ave|The Beaches",
+            "Bellefair Ave|The Beaches",
+            "Bracondale Hill Rd|Wychwood",
+            "Camberwell Rd|Humewood-Cedarvale",
+            "Cavendish St|The Beaches",
+            "Chiltern Hill Rd|Humewood-Cedarvale",
+            "Christie St|Wychwood",
+            "Dewbourne Ave|Humewood-Cedarvale",
+            "Glen Ames|The Beaches",
+            "Glen Cedar Rd|Humewood-Cedarvale",
+            "Glen Davis Cres|East End-Danforth",
+            "Glen Manor Dr|The Beaches",
+            "Glen Manor Dr W|The Beaches",
+            "High Park Ave|High Park North",
+            "High Park Gdns|High Park-Swansea",
+            "Hillcrest Dr|Wychwood",
+            "Howland Ave|Annex",
+            "Humbercrest Blvd|Lambton Baby Point",
+            "Humberview Rd|Lambton Baby Point",
+            "Humewood Dr|Humewood-Cedarvale",
+            "Humewood Gdns|Humewood-Cedarvale",
+            "Indian Grv|High Park-Swansea",
+            "Kenilworth Ave|The Beaches",
+            "Kennedy Ave|High Park North",
+            "Kingswood Rd|The Beaches",
+            "Leonard Crcl|The Beaches",
+            "Long Cres|The Beaches",
+            "Neville Park Blvd|The Beaches",
+            "Parkside Dr|High Park-Swansea",
+            "Peveril Hill S|Humewood-Cedarvale",
+            "Pine Cres|The Beaches",
+            "Riverside Dr|High Park-Swansea",
+            "Rostrevor Rd|Humewood-Cedarvale",
+            "Rusholme Rd|Dufferin Grove",
+            "Rushton Rd|Humewood-Cedarvale",
+            "South Kingsway|High Park-Swansea",
+            "Southwood Dr|The Beaches",
+            "Springmount Ave|Corso Italia-Davenport",
+            "Strathearn Rd|Humewood-Cedarvale",
+            "Traymore Cres|Lambton Baby Point",
+            "Willow Ave|The Beaches",
+            "Wychwood Ave|Humewood-Cedarvale",
+        ]);
         // 500 m² is the footprint heuristic for "existing structure too big
         // for a teardown-to-multiplex play." Above it, the existing build is
         // an apartment / tower / plaza — not a 4-plex or 6-plex teardown
@@ -3749,13 +3912,18 @@
                 && _zfsi_holdover >= 1.0) {
                 return true;
             }
-            // Pattern 10 (added 2026-05-09): implied-FSI vs zone-FSI
-            // mismatch — 1 Leonard Crcl case. A 17.8m / 5-6 storey
-            // building on an RD-zoned d=0.35 FSI cap = ~1.2 implied FSI =
-            // 3.4× the zone cap. That's a non-conforming apartment tagged
-            // as "detached" in stale permit data, not an SFH. Threshold
-            // 2× zone FSI leaves headroom for legit pre-WW2 stock that
-            // mildly exceeds modern setbacks.
+            // Pattern 10 (added 2026-05-09, threshold loosened 2026-05-12):
+            // implied-FSI vs zone-FSI mismatch — 1 Leonard Crcl case. A
+            // 17.8m / 5-6 storey building on an RD-zoned d=0.35 FSI cap
+            // = ~1.2 implied FSI = 3.4× zone cap. Original 3× threshold
+            // was tuned pre-storey-only-gate. Now that the storey-only
+            // gate catches 4+ storey apartment masquerades upstream,
+            // Pattern 10 was over-firing on legit 3-storey pre-war
+            // detached homes on modern-tightened d=0.35 lots (87
+            // Hillcrest, 12 Glen Ames, 29 South Kingsway). Loosened to
+            // > 4× — leaves headroom for pre-WW2 Beaches/Humewood/
+            // Wychwood stock while still catching the original 1
+            // Leonard Crcl class plus other ~5× outliers.
             const _h = r.existingMaxBuildingHeightM;
             // zoneFsi often comes through null on the wire even when the
             // zoneString carries the d= density value (e.g. "RD (f10.0;
@@ -3771,10 +3939,23 @@
                 const _storeys = Math.max(1, Math.round(_h / 3));
                 // Implied FSI = floor area / lot area = cover × storeys.
                 const _impliedFsi = cover * _storeys;
-                if (_impliedFsi > 3.0 * _zfsi) return true;
+                if (_impliedFsi > 4.0 * _zfsi) return true;
             }
             // Patterns 1 & 2 require unaddressed
-            if (addressed) return false;
+            if (addressed) {
+                // Pattern 11 (added 2026-05-12): luxury-street blacklist.
+                // 47 (street, neighborhood) tuples identified via Street
+                // View visual classification — Tudor mansions, walled-
+                // garden estates, custom new-build pockets in Humewood-
+                // Cedarvale / Beaches / High Park-Swansea / Wychwood /
+                // Lambton Baby Point / Annex where multiplex teardown
+                // math doesn't pencil. Belt-and-suspenders with the same
+                // filter in tools/build_parcels_top.py is_elite(). Source
+                // of truth: tools/luxury_streets.json.
+                const street = (r.address || '').match(/^\d+[A-Za-z]?\s+(.+?)$/);
+                if (street && LUXURY_STREETS.has(`${street[1]}|${r.neighborhood}`)) return true;
+                return false;
+            }
             if (area > INSTITUTIONAL_AREA_M2 && cover < INSTITUTIONAL_MAX_COVER_LARGE) return true;
             if (aspect > INSTITUTIONAL_ASPECT_STRIP && cover < INSTITUTIONAL_MAX_COVER_STRIP) return true;
             return false;
@@ -4140,7 +4321,7 @@
         //   2. Today's spotlight — date-seeded deterministic pick from
         //      top-N. Same parcel for everyone today, different tomorrow.
         //   3. localStorage visit-delta — tracks last-seen top parcels
-        //      so on return we can surface ↑ "moved up" / NEW badges.
+        //      so on return we can surface NEW badges on fresh entries.
         // ════════════════════════════════════════════════════════════════
 
         // ---- 1. Live CKAN permit delta ----
@@ -4457,7 +4638,20 @@
                     ? `<div class="signal-block-meta"><strong>${escapeHtml(d.currentUse || '?')}</strong> → <strong>${escapeHtml(d.proposedUse || '?')}</strong></div>`
                     : '';
                 const desc = escapeHtml(d.description || '').slice(0, 400);
-                const builder = d.builderName ? ` · Builder: ${escapeHtml(d.builderName)}` : '';
+                // Builder-activity (2026-05-12 queued ETL — citywide
+                // count of permits per normalized BUILDER_NAME, classified
+                // as first-permit-on-file / occasional / active operator).
+                // Surfaced inline so devs can read competitive intel at a
+                // glance: "8 permits, 5 yrs · active operator".
+                let builderText = '';
+                if (d.builderName) {
+                    builderText = ` · Builder: ${escapeHtml(d.builderName)}`;
+                    if (d.builderActivityCount && d.builderActivityLabel) {
+                        const n = d.builderActivityCount;
+                        builderText += ` <span class="builder-activity-tag" title="${escapeHtml(d.builderActivityLabel)} — ${n} permit${n===1?'':'s'} in last 5 years across Toronto.">· ${escapeHtml(d.builderActivityLabel)} (${n})</span> <span class="def-icon" data-def="builder-activity" role="button" tabindex="0" aria-label="Definition of builder activity">i</span>`;
+                    }
+                }
+                const builder = builderText;
                 const more = d.extraCount ? ` · <em>+${d.extraCount} more permit${d.extraCount===1?'':'s'} on this lot</em>` : '';
                 blocks.push(`
                     <div class="signal-block signal-block-demo">
@@ -4936,100 +5130,97 @@
             </button>`;
         }
 
+        // The picks cards (LIVE + NEWEST) were retired 2026-05-12 — they
+        // mostly recycled content already visible in the row badges and
+        // the cohort title, and they shifted layout dramatically when
+        // filtering narrowed the cohort. The function keeps its old
+        // name (called from render()) but now just populates a thin
+        // inline status line above the listings + preserves the
+        // visit-snapshot write so the per-row NEW badge keeps working.
         function renderDailyPicksStrip(rows) {
-            const el = document.getElementById('daily-picks');
-            if (!el) return;
-            const picks = computeDailyPicks(rows);
-            const cards = [liveCardHtml(rows)];
-            // Each slot has its own color theme — fresh teal for "newest",
-            // hot orange for "hottest", premium violet for "underdog". The
-            // distinct hues mean the eye picks each card up at a glance,
-            // particularly on mobile where they stack vertically.
-            // 2026-05-08 — HOTTEST card dropped. Default sort is `activity`
-            // desc (hot-first), so row #1 of the table is already the hottest
-            // parcel; the card just opened that same row's detail panel.
-            // The Hot column with source icons (🔨/🔪/⚠/📋/🔧 + days)
-            // surfaces the same dopamine inline on every row. Two-card strip:
-            // NEWEST (delta the table can't show) + UNDERDOG (high-savings
-            // pick ranked outside top 10).
-            // 2026-05-09: Underdog card dropped. After the strict zone
-            // filter (R-family only) trimmed the cohort, the underdog
-            // slot frequently went blank/greyed because there weren't
-            // enough parcels outside the top 10 to qualify. Two-card
-            // strip (LIVE + Newest) is always populated.
-            const slotMeta = [
-                {
-                    key: 'newest',
-                    cls: 'pick-card-newest',
-                    icon: '↑',
-                    label: 'Newest',
-                    fallback: 'No new cover-list entries this visit. Toronto Open Data refreshes daily — come back tomorrow.',
-                    tip: 'Compares the current cover-list to a snapshot from your last visit (stored in your browser only). On a first-ever visit this slot falls back to the elite parcel with the freshest permit, so you always see the kind of signal this card tracks.',
-                },
-            ];
-
-            // Compact KPI strip per card — 1–2 stats relevant to the slot's
-            // theme. Gives a "card has substance" feel before the dev clicks.
-            const kpiFor = (slot, r) => {
-                if (!r) return '';
-                const lot = r.lotAreaM2 != null ? `${r.lotAreaM2.toLocaleString()} m²` : '—';
-                const units = r.maxUnits != null ? `<strong>${r.maxUnits}</strong>` : '—';
-                if (slot.key === 'underdog') {
-                    const sv = stackedSavingsFor(r).savings || 0;
-                    const dollars = sv >= 1_000_000 ? `$${(sv/1_000_000).toFixed(2)}M`
-                                                    : `$${Math.round(sv/1000)}K`;
-                    return `<div class="pick-card-kpis">
-                        <span class="pick-card-kpi"><span class="kpi-num">${dollars}</span><span class="kpi-lab">stacked $</span></span>
-                        <span class="pick-card-kpi"><span class="kpi-num">${lot}</span><span class="kpi-lab">lot</span></span>
-                    </div>`;
-                }
-                // newest
-                return `<div class="pick-card-kpis">
-                    <span class="pick-card-kpi"><span class="kpi-num">${units}</span><span class="kpi-lab">max units</span></span>
-                    <span class="pick-card-kpi"><span class="kpi-num">${lot}</span><span class="kpi-lab">lot</span></span>
-                </div>`;
-            };
-
-            for (const slot of slotMeta) {
-                const r = picks[slot.key];
-                if (!r) {
-                    cards.push(`<div class="pick-card pick-card-empty ${slot.cls}" title="${escapeHtml(slot.tip)}">
-                        <div class="pick-card-icon">${slot.icon}</div>
-                        <div class="pick-card-body">
-                            <div class="pick-card-head">${slot.label}</div>
-                            <div class="pick-card-empty-msg">${escapeHtml(slot.fallback)}</div>
-                        </div>
-                    </div>`);
-                    continue;
-                }
-                const wireAddr = (r.address && r.address !== 'None None') ? r.address : (resolvedAddress(r) || 'Unaddressed parcel');
-                const why = r._pickWhy || '';
-                const k = parcelKey(r);
-                cards.push(`<button type="button" class="pick-card ${slot.cls}" data-key="${escapeHtml(k)}" title="${escapeHtml(slot.tip)}">
-                    <div class="pick-card-icon">${slot.icon}</div>
-                    <div class="pick-card-body">
-                        <div class="pick-card-head">${slot.label}</div>
-                        <div class="pick-card-addr">${escapeHtml(wireAddr)}</div>
-                        ${kpiFor(slot, r)}
-                        <div class="pick-card-why">${escapeHtml(why)}</div>
-                    </div>
-                </button>`);
+            // 1) Persist visit snapshot (was inside the old liveCardHtml).
+            //    The per-row NEW badge depends on this being written
+            //    once per page-load.
+            if (signalsByParcelId.size > 0 && !_signalsSnapshotWritten) {
+                const allSignalPids = [...signalsByParcelId.keys()].sort();
+                writeSignalsVisitSnapshot(
+                    allSignalPids,
+                    buildCurrentSignalsByKind(),
+                    signalsGeneratedAt || new Date().toISOString(),
+                );
+                _signalsSnapshotWritten = true;
             }
-            el.innerHTML = cards.join('');
+
+            // 2) Hide the retired daily-picks element if any deploy
+            //    cached older HTML still has it in the DOM.
+            const oldEl = document.getElementById('daily-picks');
+            if (oldEl) { oldEl.hidden = true; oldEl.innerHTML = ''; }
+
+            // 3) Build the inline status line. Three optional segments:
+            //    "Showing N of M" (filter-active), "K with active owner
+            //    signal" (click-to-filter), "X new since last visit".
+            //    Hide the whole line when no segment qualifies.
+            const el = document.getElementById('listings-status');
+            if (!el) return;
+
+            const cohortRows = (broaderMode && broaderRows) ? broaderRows : (eliteRows || []);
+            // Use the same baseline filter the renderer applies in
+            // applyFilters() — so the denominator matches what the user
+            // would see with no user-level filter active (otherwise the
+            // line reads "Showing 508 of 521" on first load because 13
+            // ETL rows are dropped by the frontend safety pattern).
+            const cohortN = cohortRows.filter(r => !looksInstitutional(r)).length;
+            const visibleN = rows.length;
+            const filtered = visibleN !== cohortN;
+
+            let signalsN = 0;
+            for (const r of rows) if (hasAnySignal(r)) signalsN++;
+            const signalsActive = activePresets.has('any_signal');
+
+            let visitDeltaN = 0;
+            if (signalsByParcelId.size > 0) {
+                const allSignalPids = [...signalsByParcelId.keys()].sort();
+                const delta = computeNewSinceLastVisit(allSignalPids);
+                if (delta.count != null && delta.count > 0) visitDeltaN = delta.count;
+            }
+
+            const segments = [];
+            // Always "Showing X of Y" — same format regardless of filter
+            // state, so the line width barely changes when the user
+            // toggles active-signal or other filters (just the first
+            // number updates). "Clean teardowns" noun is in the subtitle
+            // already, no need to repeat. Default reads "Showing 516 of
+            // 516" so the user can watch the numbers break down as
+            // filters land.
+            segments.push(`<span>Showing <strong>${visibleN.toLocaleString()}</strong> of ${cohortN.toLocaleString()}</span>`);
+            if (signalsN > 0) {
+                const clickTip = signalsActive
+                    ? `Click to clear the filter and show all ${cohortN.toLocaleString()} parcels.`
+                    : `Click to filter to just the ${signalsN} ${signalsN===1?'parcel':'parcels'} carrying an active signal.`;
+                segments.push(
+                    `<span class="status-signal-segment">`
+                    + `<button type="button" id="status-signal-link" class="status-signal-link ${signalsActive ? 'active' : ''}" title="${escapeHtml(clickTip)}">${signalsActive ? '✓ ' : ''}<strong>${signalsN.toLocaleString()}</strong> with active owner signal</button>`
+                    + ` <span class="def-icon" data-def="active-owner-signal" role="button" tabindex="0" aria-label="Definition of active owner signal">i</span>`
+                    + `</span>`
+                );
+            }
+            if (visitDeltaN > 0) {
+                segments.push(`<span class="status-delta"><strong>${visitDeltaN.toLocaleString()}</strong> new since last visit</span>`);
+            }
+
+            if (segments.length === 0) {
+                el.hidden = true;
+                el.innerHTML = '';
+                return;
+            }
+            el.innerHTML = segments.join('<span class="status-sep">·</span>');
             el.hidden = false;
-            el.querySelectorAll('button.pick-card[data-key]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const k = btn.dataset.key;
-                    const r = pickRows.find(row => parcelKey(row) === k)
-                           || allRows.find(row => parcelKey(row) === k);
-                    if (r) openDetail(r);
-                });
-            });
-            // LIVE card — citywide stat, click toggles the any_signal preset
-            // (same behavior as the prior money-hero signals-pill button).
-            const liveBtn = document.getElementById('signals-pill');
-            if (liveBtn && liveBtn.tagName === 'BUTTON') {
-                liveBtn.addEventListener('click', () => {
+
+            // Wire the active-signal filter toggle (re-attached each
+            // render because the button is re-built via innerHTML).
+            const linkBtn = document.getElementById('status-signal-link');
+            if (linkBtn) {
+                linkBtn.addEventListener('click', () => {
                     if (activePresets.has('any_signal')) {
                         const restoreTarget = viewHistory.get('any_signal') || null;
                         viewHistory.delete('any_signal');
@@ -5193,7 +5384,9 @@
         // ---- 3. localStorage visit deltas ----
         const VISIT_KEY_LAST = 'bloomto:visit:lastSeenAt';
         const VISIT_KEY_TOP = 'bloomto:visit:topParcelKeys';
-        // parcelKey → 'new' | 'up' (entered top set, or moved up since last visit)
+        // parcelKey → 'new' (entered top set since last visit). The 'up'
+        // (rank-improved) delta was removed 2026-05-12 per user direction —
+        // arrows next to parcels felt like noise rather than signal.
         let visitDeltaByKey = new Map();
         let lastVisitAt = null;
 
@@ -5223,8 +5416,6 @@
                 const k = parcelKey(r);
                 if (!lastSet.has(k)) {
                     result.set(k, 'new');
-                } else if (lastRanks.has(k) && lastRanks.get(k) > i) {
-                    result.set(k, 'up');
                 }
             });
             // Persist current top keys for next visit.
@@ -5318,7 +5509,6 @@
             const d = visitDeltaByKey.get(k);
             if (!d) return '';
             if (d === 'new') return `<span class="visit-badge new" title="New entry to the top-100 since your last visit.">NEW</span>`;
-            if (d === 'up')  return `<span class="visit-badge up" title="Moved up in ranking since your last visit.">↑</span>`;
             return '';
         }
         function freshTimeAgo(ms) {
@@ -5480,8 +5670,11 @@
             const matureT = r.matureTreeCount || 0;
             if (matureT >= 3) a -= 6;
             else if (matureT >= 1) a -= 3;
-            // Sewer-flood study area — insurance + foundation friction.
-            if (r.inFloodingStudyArea) a -= 3;
+            // `inFloodingStudyArea` score penalty removed 2026-05-12 — the
+            // basement-flooding-study-area dataset reads true on 100% of
+            // Toronto parcels, so this was a uniform -3 with no signal.
+            // The discriminating TRCA Reg 41/24 flag (`inRegulatedArea`)
+            // remains a hard exclusion.
 
             return Math.max(0, Math.min(100, Math.round(a)));
         }
@@ -5765,7 +5958,10 @@
             if ((r.lotAreaM2 || 0) < 200 && (r.lotAreaM2 || 0) >= 100) out.push({ kind: 'caution', text: `Small lot (${r.lotAreaM2} m²) — multiplex unit count may be constrained` });
             if (!addr || addr === 'None None') out.push({ kind: 'caution', text: 'Unaddressed in source — verify civic address before pro forma' });
             if (r.inRegulatedArea) out.push({ kind: 'caution', text: 'Within TRCA Regulated Area (Ont. Reg. 41/24) — riverine floodplain / valley / wetland overlay. TRCA approval REQUIRED before any building permit; new residential rarely granted on regulated land. Hard buy/no-buy gate — verify with TRCA before pro forma.' });
-            if (r.inFloodingStudyArea && !r.inRegulatedArea) out.push({ kind: 'caution', text: 'Within Toronto basement-flooding-study-area (combined-sewer service zone) — historical surcharge events affect insurance premiums + foundation drainage requirements at site-plan approval.' });
+            // `inFloodingStudyArea` caution removed 2026-05-12 — the
+            // dataset reads true on 100% of Toronto parcels, so this
+            // fired on every row and provided no signal. TRCA Reg 41/24
+            // (`inRegulatedArea`) remains the discriminating flag.
             if (r.existingStructureType === 'semi') out.push({ kind: 'caution', text: 'Semi-detached — multiplex is permitted by-law but party-wall structural work + neighbour coordination materially raise the cost vs a detached teardown. Surfaced in the broader tier; the elite cover-list excludes attached structures.' });
             if (r.existingStructureType === 'vacant') out.push({ kind: 'good', text: 'Vacant lot — no demolition cost; cleanest path to a 4-plex or sixplex rebuild' });
 
@@ -6203,9 +6399,34 @@
                                    <div class="kpi-sub"><strong>${r.neighborhood || 'Neighbourhood'}</strong> median declared hard cost · <span class="kpi-cite">${sample} comparable permits over the last 5 years</span></div>`
                                 : `<div class="kpi-num kpi-muted">—</div>
                                    <div class="kpi-sub">insufficient permit comp <span class="kpi-cite">(need ≥10; have ${sample})</span></div>`;
+                            // Nearby-multiplex-permit comp (2026-05-12 ETL
+                            // addition). Renders inline under the per-unit
+                            // anchor when a recent multiplex permit exists
+                            // within 250m — a stronger on-block precedent
+                            // than the neighbourhood median above.
+                            const ncCount = r.nearbyMultiplexCount;
+                            const ncDist = r.nearbyMultiplexNearestDistM;
+                            const ncDate = r.nearbyMultiplexNearestDate;
+                            const ncUnits = r.nearbyMultiplexNearestUnitsCreated;
+                            const ncBuilder = r.nearbyMultiplexNearestBuilderName;
+                            const ncBuilderCount = r.nearbyMultiplexNearestBuilderActivityCount;
+                            const ncBuilderLabel = r.nearbyMultiplexNearestBuilderActivityLabel;
+                            // Builder + activity tag is informational only.
+                            // Considered click-to-filter (2026-05-12) but
+                            // we only have ~20K of 528K parcels in our
+                            // cohort — a builder's full citywide
+                            // footprint is partially invisible, so a
+                            // click-to-filter would be misleading.
+                            const ncBuilderText = ncBuilder
+                                ? ` · by <span class="builder-name">${escapeHtml(ncBuilder)}</span>${(ncBuilderCount && ncBuilderLabel) ? ` <span class="builder-activity-tag">· ${escapeHtml(ncBuilderLabel)} (${ncBuilderCount})</span>` : ''}`
+                                : '';
+                            const nearbyCompLine = (ncCount && ncCount > 0)
+                                ? `<div class="nearby-comp-line">📍 <span>Nearest comp: <strong>${ncUnits}-unit multiplex permit ${ncDist}m away</strong> (${ncDate})${ncBuilderText}${ncCount > 1 ? ` · ${ncCount} multiplex permits within 250m, last 5y` : ''}</span> <span class="def-icon" data-def="nearby-multiplex-comp" role="button" tabindex="0" aria-label="Definition of nearby multiplex comp">i</span></div>`
+                                : '';
                             return `<div class="kpi-card kpi-pro-forma">
                                 <div class="kpi-label">Pro-forma anchor <span class="def-icon" data-def="pro-forma-anchor" role="button" tabindex="0" aria-label="Definition of Pro-forma anchor">i</span></div>
                                 ${costLine}
+                                ${nearbyCompLine}
                             </div>`;
                         })()}
                         ${(() => {
@@ -6244,9 +6465,11 @@
                             items.push(r.inRegulatedArea
                                 ? { ok: false, label: 'TRCA-regulated · permit gate applies' }
                                 : { ok: true, label: 'No TRCA encumbrance' });
-                            items.push(r.inFloodingStudyArea
-                                ? { ok: false, label: 'Combined-sewer flood study area' }
-                                : { ok: true, label: 'Outside flood study area' });
+                            // `inFloodingStudyArea` row removed 2026-05-12 —
+                            // dataset is 100% true citywide, so this always
+                            // said "Combined-sewer flood study area". Wire
+                            // field stays for future use when we swap to a
+                            // discriminating flood source.
                             items.push(r.sixplexEligible
                                 ? { ok: true, label: 'Sixplex carve-out applies' }
                                 : { ok: null, label: '4-unit citywide cap' });
@@ -6794,14 +7017,30 @@
             // aren't other cover-list parcels within 1km before clicking. Disable
             // the button when count is 0; relabel as "Nearby (N)" when > 0.
             // Uses the currently-loaded row set (broader if toggled, else elite).
+            // The count must mirror what applyFilters() will actually surface
+            // after the click — same baseline + preset + search filters
+            // (was previously distance-only, which over-counted by skipping
+            // looksInstitutional drops + active filters).
             const nearbyBtn = document.getElementById('detail-nearby');
             if (nearbyBtn && r.lat != null && r.lng != null) {
                 const activeRows = (broaderMode && broaderRows) ? broaderRows : (eliteRows || []);
+                const presetFns = [];
+                for (const id of activePresets) {
+                    const p = PRESETS.find(x => x.id === id);
+                    if (p) presetFns.push(p.fn);
+                }
+                const q = searchQuery.trim().toLowerCase();
                 let nearbyN = 0;
                 for (const other of activeRows) {
                     if (other.parcelId === r.parcelId) continue;
                     if (other.lat == null || other.lng == null) continue;
-                    if (haversineM(r.lat, r.lng, other.lat, other.lng) <= 1000) nearbyN++;
+                    if (haversineM(r.lat, r.lng, other.lat, other.lng) > 1000) continue;
+                    if (looksInstitutional(other)) continue;
+                    let passPresets = true;
+                    for (const fn of presetFns) { if (!fn(other)) { passPresets = false; break; } }
+                    if (!passPresets) continue;
+                    if (q && !_searchHaystack(other).includes(q)) continue;
+                    nearbyN++;
                 }
                 nearbyBtn.textContent = nearbyN > 0 ? `Nearby (${nearbyN})` : 'Nearby (0)';
                 nearbyBtn.disabled = nearbyN === 0;
@@ -6992,31 +7231,46 @@
             // dialog. No extra libraries, no jsPDF.
             window.print();
         });
-        // iOS-specific: try the Google Maps app via comgooglemaps:// scheme,
-        // fall back to the static https URL after a delay if the app didn't
-        // open. iOS Universal Links route to the app from Safari but NOT
-        // reliably from third-party browsers (Edge / Chrome / Firefox iOS) —
-        // the scheme bypasses that whole issue. Android is unchanged; its
-        // intent URL already handles app-launch via the static href.
+        // Mobile maps-button handling. Tried three strategies (intent://
+        // with explicit package, geo: URI, comgooglemaps:// scheme) and
+        // each had a browser-specific failure mode on Android: intent://
+        // navigated literally in Opera; geo: triggered a "Maps or Uber?"
+        // OS chooser; HTTPS in a new tab stranded users on the Maps web
+        // view. The robust pattern is same-tab HTTPS — Android's App
+        // Links route Chrome/Maps cleanly when the Maps app is the
+        // registered handler, and other browsers show a single "Open in
+        // app?" prompt the user dismisses once. Either way the back
+        // stack is clean: one press returns to the BloomTO details panel.
+        //
+        // iOS keeps the `comgooglemaps://` dance because Universal Links
+        // don't reliably route Maps URLs from third-party iOS browsers.
         document.getElementById('detail-maps').addEventListener('click', (e) => {
             const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-            if (!/iPhone|iPad|iPod/i.test(ua)) return;  // not iOS, let href fire normally
+            const isIOS = /iPhone|iPad|iPod/i.test(ua);
+            const isAndroid = /android/i.test(ua);
+            if (!isIOS && !isAndroid) return;  // desktop — let target="_blank" fire normally
             if (!detailCurrent) return;
             const r = detailCurrent;
             const wireAddr = r.address && r.address !== 'None None' ? r.address : null;
             const addr = wireAddr || (typeof resolvedAddress === 'function' ? resolvedAddress(r) : null);
             const query = addr ? `${addr}, Toronto, ON` : `${r.lat},${r.lng}`;
-            const appUrl = `comgooglemaps://?q=${encodeURIComponent(query)}`;
-            const fallbackUrl = e.currentTarget.href;
+            const httpsUrl = e.currentTarget.href;
             e.preventDefault();
+            if (isAndroid) {
+                // Same-tab HTTPS — Maps app App Links handle the rest;
+                // back button returns straight to BloomTO with the
+                // details panel still open (the popstate listener
+                // re-opens it from the URL hash state).
+                window.location.href = httpsUrl;
+                return;
+            }
+            // iOS: scheme-first, https-fallback
+            const schemeUrl = `comgooglemaps://?q=${encodeURIComponent(query)}`;
             const start = Date.now();
-            window.location.href = appUrl;
-            // If document is still visible after 1.5s, the scheme didn't
-            // resolve (Google Maps app probably isn't installed). Fall
-            // back to the https URL so the user still gets a map view.
+            window.location.href = schemeUrl;
             setTimeout(() => {
                 if (document.visibilityState === 'visible' && Date.now() - start < 2500) {
-                    window.location.href = fallbackUrl;
+                    window.location.href = httpsUrl;
                 }
             }, 1500);
         });
@@ -7280,6 +7534,25 @@
                 term: 'Pro forma',
                 body: 'The financial model a developer builds before committing to a project — acquisition, construction, soft costs, financing, projected revenue. The "should I do this deal?" spreadsheet that lenders, partners, and the dev\'s own gut all rely on.',
             },
+            'active-owner-signal': {
+                term: 'Active owner signal',
+                body: 'A motivated-seller cue surfaced from three Toronto Open Data feeds (refreshed daily): Committee of Adjustment severance applications, building demolition permits, and City property-standards / unsafe / stop-work orders — within the last 12 months. Strong proxy for "this owner is doing something with the property" — splitting it, tearing down, or under regulatory pressure to act. Address-joined to parcels by the ETL.',
+                cite: 'Toronto Open Data · CKAN feeds',
+            },
+            'comp': {
+                term: 'Comp',
+                body: 'Real-estate shorthand for <em>comparable</em> — a recently built or sold similar property used as a benchmark for pricing, construction cost, or feasibility. Standard developer / broker / appraiser jargon. "What did the comp two blocks over come in at?" is a normal Tuesday morning question.',
+            },
+            'nearby-multiplex-comp': {
+                term: 'Nearby multiplex comp',
+                body: 'Recent multiplex permits (≥3 units created, last 5 years) filed within 250m of this parcel. On-block evidence that other developers have already underwritten a multiplex play in this micro-pocket. Stronger underwriting signal than the neighbourhood-median because it isolates the specific street network, not a coarse 2-4 km² polygon.',
+                cite: 'Toronto Open Data · Building Permits',
+            },
+            'builder-activity': {
+                term: 'Builder activity',
+                body: 'How many demolition permits this BUILDER_NAME appears on citywide in the last 5 years. <em>first permit on file</em> = likely owner-builder DIY (might be motivated to sell once permit fees + planning effort feel sunk). <em>occasional builder</em> = custom-build client, usually emotionally invested in the specific project. <em>active operator</em> = small dev or established small builder — might consider partnership or acquisition. Normalized so "ACME Builders Inc" and "Acme Builders Ltd" collapse to one name.',
+                cite: 'Toronto Open Data · Demolition Permits',
+            },
             'pro-forma-anchor': {
                 term: 'Pro-forma anchor',
                 body: 'A starting input for the cost line of your pro forma — median declared construction cost per unit from comparable building permits in this neighbourhood. It\'s an anchor, not a budget — under-declaration on permits + excluded soft costs mean you scale this with your own cost consultant before relying.',
@@ -7480,20 +7753,16 @@
                 ? `${addr}, Toronto, ON`
                 : `${r.lat},${r.lng}`;
             const encQuery = encodeURIComponent(query);
-            const httpsUrl = `https://www.google.com/maps/search/?api=1&query=${encQuery}`;
-            // Android intent URL — force-launches the Google Maps app when
-            // installed (no "Open with browser?" picker). Specifies the
-            // exact package (com.google.android.apps.maps) so Android Chrome
-            // routes the intent directly. If the app isn't installed,
-            // browser_fallback_url catches it and opens the https URL in
-            // the browser instead. iOS handles the https URL via Universal
-            // Links cleanly — no equivalent intent dance needed.
-            const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-            if (/android/i.test(ua)) {
-                const fallback = encodeURIComponent(httpsUrl);
-                return `intent://maps.google.com/maps?q=${encQuery}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${fallback};end`;
-            }
-            return httpsUrl;
+            // Always return the HTTPS Maps URL. On Android, the Maps app
+            // registers as the App Links handler for `https://www.google.com/maps/*`
+            // and launches automatically when installed — without leaving
+            // an `intent://` URL in the user's back stack (the awkward
+            // 2026-05-12 regression: clicking the button stranded users on
+            // the intent URL after returning from Maps). On iOS the click
+            // handler intercepts and tries `comgooglemaps://` first; the
+            // anchor's https href is its fallback when the scheme doesn't
+            // resolve.
+            return `https://www.google.com/maps/search/?api=1&query=${encQuery}`;
         }
         function popupHtml(r) {
             const badges = badgesFor(r);
@@ -8588,6 +8857,11 @@
                     lastUpdEl.textContent = formatted || 'recently';
                     if (p.generatedAt) lastUpdEl.title = `Cohort built ${p.generatedAt}`;
                 }
+                // Cohort count moved out of the subtitle 2026-05-12 — the
+                // always-visible #listings-status line below the header
+                // now carries the live count ("516 clean teardowns" /
+                // "Showing 23 of 516"), updating with filter + tier
+                // toggle. Subtitle stays evergreen.
                 // Methodology formula counts — fill |ELITE| from the loaded payload.
                 const fmCount = document.getElementById('formula-elite-count');
                 const fmPct   = document.getElementById('formula-pct');
@@ -8658,11 +8932,27 @@
                         if (signalsByParcelId.size > 0) render();
                     })
                     .catch(() => {});
-                document.getElementById('search').addEventListener('input', e => {
+                const _searchEl = document.getElementById('search');
+                const _searchClearEl = document.getElementById('search-clear');
+                const _syncClearVisibility = () => {
+                    if (_searchClearEl) _searchClearEl.hidden = !_searchEl.value;
+                };
+                _searchEl.addEventListener('input', e => {
                     searchQuery = e.target.value;
                     selectedIdx = null;
+                    _syncClearVisibility();
                     render();
                 });
+                if (_searchClearEl) {
+                    _searchClearEl.addEventListener('click', () => {
+                        _searchEl.value = '';
+                        searchQuery = '';
+                        selectedIdx = null;
+                        _syncClearVisibility();
+                        render();
+                        _searchEl.focus();
+                    });
+                }
                 // Column header click cycle (2026-05-06):
                 //   1st click on column X     → sort by X, natural direction
                 //                                (e.g., lot biggest first,

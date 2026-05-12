@@ -155,6 +155,13 @@ class BuildingPermit:
                          # parcel. Added 2026-05-09 for the existingUnitsApprox
                          # feature (Item 4 ETL pipeline).
     category: str        # one of KEPT_CATEGORIES
+    builder_name: str | None = None  # raw BUILDER_NAME from CSV (uppercase
+                                     # company / individual), or None when
+                                     # the permit has no builder recorded
+                                     # (~30% of records). Surfaced on the
+                                     # nearby-multiplex-permit comp wire to
+                                     # tell devs who's active in this micro-
+                                     # pocket. Added 2026-05-12.
 
 
 class PermitIndex(NamedTuple):
@@ -309,6 +316,7 @@ def compute_permits(
                 continue
 
             i = len(permits)
+            builder_raw = (row.get("BUILDER_NAME") or "").strip() or None
             permits.append(BuildingPermit(
                 permit_id=permit_id,
                 address=address,
@@ -319,6 +327,7 @@ def compute_permits(
                 units_created=units,
                 units_existing=units_existing,
                 category=category,
+                builder_name=builder_raw,
             ))
             normalized = normalize_address(address)
             if normalized:
@@ -364,6 +373,64 @@ PERMIT_STRUCTURE_TYPE_TO_ENUM = {
     # "Restaurant ...", "Hospital", etc., and "Laneway / Rear Yard Suite"
     # (an addition, not the main structure).
 }
+
+
+_NEW_DETACHED_GARAGE_RE = __import__("re").compile(
+    r"\b(new|build|construct|erect)[a-z\s]*?\bdetached\s*garage\b"
+)
+_LANE_REF_RE = __import__("re").compile(
+    r"\b(laneway|lane[\s-]?way|rear[\s-]?yard|rear[\s-]?lane)\b"
+)
+
+
+def compute_laneway_suite_address_set(cache_dir: Path) -> set[str]:
+    """Return the set of normalized addresses that have at least one
+    laneway-indicating permit on file. Used as a back-derived
+    laneway-abutment signal — Toronto Centreline + OSM both have
+    gaps on some Roncesvalles / Caledonia-Fairbank back-lanes, but
+    any address in this set abuts a real lane by construction-permit
+    ground truth.
+
+    Two patterns matched:
+      A. STRUCTURE_TYPE == "Laneway / Rear Yard Suite" (1303 addresses).
+         Every laneway suite must abut a real lane per the 2018 by-law.
+      B. PERMIT_TYPE description matches "new/build/construct DETACHED
+         garage" AND the description references "laneway" / "rear yard"
+         / "rear lane" (~242 net new addresses). A new detached garage
+         explicitly tied to a lane reference is strong evidence the
+         parcel abuts a lane — homeowner intentionally building
+         lane-facing accessory infrastructure.
+    """
+    csv_path = _ensure_cached(Path(cache_dir))
+    addrs: set[str] = set()
+    n_suite = 0
+    n_garage = 0
+    with csv_path.open("r", encoding="utf-8", newline="") as fp:
+        reader = csv.DictReader(fp)
+        for row in reader:
+            raw = _build_address(row)
+            if not raw:
+                continue
+            norm = normalize_address(raw)
+            if not norm:
+                continue
+            st = (row.get("STRUCTURE_TYPE") or "").strip()
+            if st == "Laneway / Rear Yard Suite":
+                if norm not in addrs:
+                    n_suite += 1
+                addrs.add(norm)
+                continue
+            # Pattern B: new detached garage + explicit lane reference
+            desc = (row.get("DESCRIPTION") or "").lower()
+            if _NEW_DETACHED_GARAGE_RE.search(desc) and _LANE_REF_RE.search(desc):
+                if norm not in addrs:
+                    n_garage += 1
+                addrs.add(norm)
+    _log.info(
+        "laneway_suite_addresses: %d unique addresses (%d from Laneway/Rear-Yard-Suite STRUCTURE_TYPE, %d net-new from new-detached-garage-with-lane-ref descriptions)",
+        len(addrs), n_suite, n_garage,
+    )
+    return addrs
 
 
 def build_structure_type_index(cache_dir: Path) -> dict[str, str]:
@@ -510,6 +577,249 @@ def aggregate_per_parcel(
         "recentMostRecentDate": max(p.issued_date for p in in_window).isoformat(),
         "denominatorSource": denominator_source,
     }
+
+
+# ----------------------------------------------------------------------------
+# Nearby-multiplex-permit comp (queued 2026-05-12 from 83 Twenty Seventh St
+# case). For each parcel, find the nearest recent multiplex permits within
+# 250m. Stronger underwriting evidence than the neighborhood-median comp
+# we already surface — "4-plex built 80m away last year" is an on-block
+# precedent, not a vibe-check.
+# ----------------------------------------------------------------------------
+
+NEARBY_COMP_MIN_UNITS = 3        # multiplex floor — same as aggregate_per_neighborhood
+NEARBY_COMP_WINDOW_YEARS = 5     # post-Bill 185 environment + a couple years before
+NEARBY_COMP_RADIUS_M = 250       # ≈ 3 typical Toronto blocks
+
+
+class NearbyMultiplexIndex(NamedTuple):
+    """Spatial index of recent multiplex permits in UTM (EPSG:26917).
+
+    `tree.geometries[i]` aligns with `permits[i]` and `points_utm[i]`.
+    Empty tree is allowed; consumers should check `len(permits) == 0`.
+    """
+    tree: STRtree
+    points_utm: list[Point]
+    permits: list[BuildingPermit]
+
+
+def build_nearby_multiplex_index(
+    permit_index: PermitIndex,
+    ap_records_by_norm: dict[str, Point] | None,
+    today: date | None = None,
+    min_units: int = NEARBY_COMP_MIN_UNITS,
+    window_years: int = NEARBY_COMP_WINDOW_YEARS,
+) -> NearbyMultiplexIndex:
+    """Build an STRtree of recent multiplex permits keyed by location.
+
+    `ap_records_by_norm` is the `{normalized_address: Point(lon, lat)}`
+    map derived from Toronto Address Points — supplies each permit's
+    coordinate (the permits CSV ships no lat/lng). Permits whose address
+    doesn't resolve to an Address Point are silently dropped.
+
+    Filters: `units_created >= min_units` AND `issued_date >=
+    today - window_years`. Returns an index in EPSG:26917 (Toronto UTM
+    metres) so per-parcel queries can compute distance directly in m.
+    """
+    if ap_records_by_norm is None or not ap_records_by_norm:
+        return NearbyMultiplexIndex(tree=STRtree([]), points_utm=[], permits=[])
+
+    from pyproj import Transformer
+    to_utm = Transformer.from_crs("EPSG:4326", "EPSG:26917", always_xy=True).transform
+
+    cutoff = freshness_cutoff(today=today, freshness_years=window_years)
+    points: list[Point] = []
+    kept: list[BuildingPermit] = []
+    matched = 0
+    unmatched = 0
+    for p in permit_index.permits:
+        if p.units_created < min_units:
+            continue
+        if p.issued_date < cutoff:
+            continue
+        ap_pt = ap_records_by_norm.get(normalize_address(p.address))
+        if ap_pt is None:
+            unmatched += 1
+            continue
+        x, y = to_utm(ap_pt.x, ap_pt.y)
+        points.append(Point(x, y))
+        kept.append(p)
+        matched += 1
+    _log.info(
+        "nearby_multiplex_index: %d multiplex permits in window, %d address-matched, %d unmatched",
+        matched + unmatched, matched, unmatched,
+    )
+    return NearbyMultiplexIndex(
+        tree=STRtree(points),
+        points_utm=points,
+        permits=kept,
+    )
+
+
+def query_nearby_multiplex(
+    index: NearbyMultiplexIndex,
+    parcel_centroid_lonlat: tuple[float, float] | None,
+    parcel_own_permit_indices: set[int] | None = None,
+    radius_m: float = NEARBY_COMP_RADIUS_M,
+    builder_activity_counter: dict[str, int] | None = None,
+) -> dict | None:
+    """Return the per-parcel `nearbyMultiplexPermits` payload, or None when
+    no permits qualify within the radius.
+
+    `parcel_own_permit_indices` lets the caller drop the parcel's own
+    permits so they don't count as "nearby comp" for themselves.
+
+    `builder_activity_counter` is the citywide
+    `{normalized_builder_name: count}` map (same one used by
+    build_signals.py for demo permits) — used to tag the nearest
+    permit's builder with an activity classification.
+
+    Returns:
+        {
+            "count": int,
+            "nearestDistM": int,
+            "nearestDate": "YYYY-MM-DD",
+            "nearestUnitsCreated": int,
+            "nearestBuilderName": str | None,
+            "nearestBuilderActivityCount": int | None,
+            "nearestBuilderActivityLabel": str | None,
+        }
+        or None when no permits within radius.
+    """
+    if parcel_centroid_lonlat is None or len(index.permits) == 0:
+        return None
+    from pyproj import Transformer
+    to_utm = Transformer.from_crs("EPSG:4326", "EPSG:26917", always_xy=True).transform
+    lon, lat = parcel_centroid_lonlat
+    cx, cy = to_utm(lon, lat)
+    centroid_utm = Point(cx, cy)
+    candidates = index.tree.query(centroid_utm.buffer(radius_m))
+    own = parcel_own_permit_indices or set()
+    nearest_dist = None
+    nearest_perm = None
+    count = 0
+    for ci in candidates:
+        if ci in own:
+            continue
+        pt = index.points_utm[ci]
+        d = centroid_utm.distance(pt)
+        if d > radius_m:
+            continue
+        count += 1
+        if nearest_dist is None or d < nearest_dist:
+            nearest_dist = d
+            nearest_perm = index.permits[ci]
+    if count == 0 or nearest_perm is None:
+        return None
+    # Builder classification for the nearest permit (same algorithm
+    # used by build_signals.py for demo permits). Done client-side
+    # here so build_parcels.py doesn't need to import build_signals.
+    builder_name = nearest_perm.builder_name
+    activity_count = None
+    activity_label = None
+    if builder_name and builder_activity_counter:
+        norm = _normalize_builder_for_activity(builder_name)
+        if norm:
+            activity_count = builder_activity_counter.get(norm)
+            if activity_count:
+                if activity_count == 1:
+                    activity_label = "first permit on file"
+                elif activity_count <= 3:
+                    activity_label = "occasional builder"
+                else:
+                    activity_label = "active operator"
+    return {
+        "count": count,
+        "nearestDistM": int(round(nearest_dist)),
+        "nearestDate": nearest_perm.issued_date.isoformat(),
+        "nearestUnitsCreated": int(nearest_perm.units_created),
+        "nearestBuilderName": builder_name,
+        "nearestBuilderActivityCount": activity_count,
+        "nearestBuilderActivityLabel": activity_label,
+    }
+
+
+# Mirror of build_signals.py:_normalize_builder_name. Kept here to avoid
+# the source module importing the entry-point script.
+import re as _re_builder
+_BUILDER_TRAILING_RE_B = _re_builder.compile(
+    r"\s+(INC|LTD|LIMITED|CORP|CORPORATION|CO|COMPANY|LLP)\.?\s*$",
+    flags=_re_builder.IGNORECASE,
+)
+
+
+def _normalize_builder_for_activity(name: str | None) -> str | None:
+    if not name:
+        return None
+    s = name.strip().upper()
+    for _ in range(3):
+        new = _BUILDER_TRAILING_RE_B.sub("", s).strip().rstrip(".").strip()
+        if new == s:
+            break
+        s = new
+    return s or None
+
+
+def build_builder_activity_counter_from_permits(permits) -> dict[str, int]:
+    """Citywide `{normalized_builder: count}` from all kept building
+    permits. Mirrors build_signals.py's demo-permit counter so the
+    nearby-multiplex-permit comp can tag the nearest permit's builder.
+    """
+    from collections import Counter
+    counter: Counter = Counter()
+    for p in permits:
+        n = _normalize_builder_for_activity(p.builder_name)
+        if n:
+            counter[n] += 1
+    return dict(counter)
+
+
+def compute_builder_counter_all_permits(
+    cache_dir: Path,
+    *,
+    window_years: int = 5,
+) -> dict[str, int]:
+    """Raw-CSV pass to count every permit (any STRUCTURE_TYPE, any
+    PERMIT_TYPE, any unit count) per normalized BUILDER_NAME within the
+    window. Used by build_signals.py to attribute builder activity
+    across BOTH demolition and building permits — a custom-home builder
+    with no demos still gets credit for their building permits.
+
+    Counts each individual permit row (one builder might appear on a
+    plumbing permit + a mechanical permit + a structural permit for the
+    same project — all 3 count). The threshold buckets are tuned to
+    this: 1 = first project, 2-3 = occasional, 4+ = active operator.
+    Inflating counts via multi-trade rollup is roughly correct here
+    because a builder filing 4 trade permits IS more committed than a
+    one-off owner-builder who files only the main permit.
+    """
+    import csv as _csv
+    from collections import Counter as _Counter
+    from datetime import date as _date, timedelta as _td
+    cutoff = _date.today() - _td(days=window_years * 365)
+    cutoff_iso = cutoff.isoformat()
+    csv_path = _ensure_cached(Path(cache_dir))
+    counter: _Counter = _Counter()
+    rows = 0
+    with csv_path.open("r", encoding="utf-8", newline="") as fp:
+        reader = _csv.DictReader(fp)
+        for row in reader:
+            iss = (row.get("ISSUED_DATE") or "")[:10]
+            applied = (row.get("APPLICATION_DATE") or "")[:10]
+            latest = max(iss, applied)
+            if not latest or latest < cutoff_iso:
+                continue
+            builder = (row.get("BUILDER_NAME") or "").strip()
+            norm = _normalize_builder_for_activity(builder)
+            if not norm:
+                continue
+            counter[norm] += 1
+            rows += 1
+    _log.info(
+        "builder_counter_all_permits: %d permits with builder names in last %dy → %d unique builders",
+        rows, window_years, len(counter),
+    )
+    return dict(counter)
 
 
 def aggregate_per_neighborhood(

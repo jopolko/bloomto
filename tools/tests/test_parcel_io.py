@@ -47,6 +47,7 @@ def _make_props(*, quality: str = "measured", solar_score=80,
             "recentMostRecentDate": None,
             "denominatorSource": "no_joined_permits",
         },
+        "nearbyMultiplexPermits": None,
         "neighborhoodPermitComp": {
             "medianCostPerUnit": None,
             "sampleSize": 0,

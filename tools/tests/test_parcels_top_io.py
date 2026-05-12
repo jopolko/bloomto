@@ -44,6 +44,7 @@ def _make_feature(*, address="100 Test St", lot_area_m2=500, lng=-79.4, lat=43.7
             "recentMostRecentDate": None,
             "denominatorSource": "no_joined_permits",
         },
+        "nearbyMultiplexPermits": None,
         "neighborhoodPermitComp": {
             "medianCostPerUnit": None,
             "sampleSize": 0,
