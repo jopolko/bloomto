@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the RootedTO corridor-aggregate dataset.
+"""Build the NowServingTO corridor-aggregate dataset.
 
 For each of the 12 launch corridors:
   1. Identify matching BIA polygon(s) from business-improvement-areas dataset
@@ -942,16 +942,16 @@ CUISINE_LABEL = {
     'italian':'Italian','chinese':'Chinese','japanese':'Japanese','korean':'Korean',
     'vietnamese':'Vietnamese','filipino':'Filipino','thai':'Thai',
     'indonesian':'Indonesian','malaysian':'Malaysian','burmese':'Burmese',
-    'south_asian':'South Asian (other)','pakistani':'Pakistani','afghan':'Afghan',
+    'south_asian':'South Asian','indian':'Indian','pakistani':'Pakistani','afghan':'Afghan',
     'bangladeshi':'Bangladeshi','tamil':'Tamil','tibetan':'Tibetan',
-    'caribbean':'Caribbean (other)','jamaican':'Jamaican','trinidadian':'Trinidadian','guyanese':'Guyanese','haitian':'Haitian',
+    'caribbean':'Caribbean','jamaican':'Jamaican','trinidadian':'Trinidadian','guyanese':'Guyanese','haitian':'Haitian',
     'greek':'Greek','portuguese':'Portuguese','polish':'Polish','french':'French',
     'irish_uk':'Irish/UK','german':'German','jewish_deli':'Jewish deli',
-    'eastern_eu':'Eastern European (other)','ukrainian':'Ukrainian','russian':'Russian','hungarian':'Hungarian',
-    'middle_east':'Middle Eastern (other)','lebanese':'Lebanese','turkish':'Turkish','syrian':'Syrian','persian':'Persian',
-    'latin':'Latin American (other)','mexican':'Mexican','salvadoran':'Salvadoran','peruvian':'Peruvian','colombian':'Colombian','brazilian':'Brazilian',
-    'african_horn':'East African (other)','ethiopian':'Ethiopian','eritrean':'Eritrean','somali':'Somali',
-    'african_west':'West African (other)','nigerian':'Nigerian','ghanaian':'Ghanaian','moroccan':'Moroccan',
+    'eastern_eu':'Eastern European','ukrainian':'Ukrainian','russian':'Russian','hungarian':'Hungarian',
+    'middle_east':'Middle Eastern','lebanese':'Lebanese','turkish':'Turkish','syrian':'Syrian','persian':'Persian',
+    'latin':'Latin American','mexican':'Mexican','salvadoran':'Salvadoran','peruvian':'Peruvian','colombian':'Colombian','brazilian':'Brazilian',
+    'african_horn':'East African','ethiopian':'Ethiopian','eritrean':'Eritrean','somali':'Somali',
+    'african_west':'West African','nigerian':'Nigerian','ghanaian':'Ghanaian','moroccan':'Moroccan',
 }
 log("Tagging businesses by cuisine pattern (inferred from Operating Name)…")
 cuisine_by_corridor = {slug: {} for slug in CORRIDOR_FSAS}
@@ -1190,7 +1190,11 @@ _CHAIN_DENYLIST = (
     'SUBWAY','MR. SUB','MR SUB','QUIZNOS','EXTREME PITA','PITA PIT',
     'APPLEBEE','OUTBACK','IHOP','DENNY','JACK ASTOR','SCORES','KELSEY',
     'MONTANA','EAST SIDE MARIO','BOSTON PIZZA','PIZZA NOVA','PIZZA PIZZA',
-    'PIZZAVILLE','LITTLE CAESAR','PAPA JOHN','DOMINO',
+    'PIZZAVILLE','LITTLE CAESAR','PAPA JOHN','DOMINO','PIZZA HUT','241 PIZZA',
+    'MUCHO BURRITO','BAR BURRITO','BURRITO BOYZ',
+    'THAI EXPRESS','EDO JAPAN','BENTO BENTO','FRESHII','BOOSTER JUICE',
+    'SECOND CUP','SMOKE\'S POUTINERIE','SMOKES POUTINERIE',
+    'HERO BURGER','HERO CERTIFIED','FIVE GUYS','NEW YORK FRIES',
     'CHIPOTLE','TACO BELL','TACO TIME',
     'DAIRY QUEEN','BASKIN-ROBBIN','BASKIN ROBBIN',
     'SWISS CHALET','ST-HUBERT','WHITE SPOT',
@@ -1198,8 +1202,15 @@ _CHAIN_DENYLIST = (
     'FRESHCO','METRO','SOBEYS','LOBLAWS','NO FRILLS','COSTCO','WALMART',
     'BENTO SUSHI', 'FAT BASTARD BURRITO',
 )
+import re as _re_chain
 def _is_chain(name_upper):
-    return any(c in name_upper for c in _CHAIN_DENYLIST)
+    """Start-of-name match only — avoids false positives like 'X & THAI EXPRESS' being
+    matched as the 'THAI EXPRESS' chain."""
+    n = (name_upper or '').strip()
+    for c in _CHAIN_DENYLIST:
+        if _re_chain.match(r'^' + _re_chain.escape(c) + r'(\b|$|[/#@,])', n):
+            return True
+    return False
 
 def _resolve_cuisine(name_upper, name_raw, address):
     """Returns (cuisine_key, source) or (None, None) to drop the entry.
@@ -1235,6 +1246,7 @@ def _places_lookup(name, address):
 opens_by_cuisine = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
 n_drop_unverified = 0; n_drop_closed = 0
+_seen_for_dedup = {}   # (name_upper, addr_upper) → entry with earliest issuedDate
 with open('/tmp/business_licences_alt.csv', encoding='utf-8', errors='replace') as f:
     rdr = csv.DictReader(f)
     for row in rdr:
@@ -1259,20 +1271,28 @@ with open('/tmp/business_licences_alt.csv', encoding='utf-8', errors='replace') 
             n_drop_unverified += 1; continue
         if pdata.get('businessStatus') != 'OPERATIONAL':
             n_drop_closed += 1; continue
-        n_tagged_365 += 1
-        if iss >= WINDOW_30: n_tagged_30 += 1
         entry = {
             'operatingName': op_raw,
             'cuisine': matched,
             'cuisineSource': source,
             'issuedDate': iss.strftime('%Y-%m-%d'),
             'daysOpen': max(0, (TODAY - iss).days),
-            'address': addr_full,
+            'address': addr1,  # street only; postal kept in addr_full for cache lookups
             'businessStatus': pdata.get('businessStatus'),
         }
         for k in ('website', 'mapsUrl', 'rating', 'reviewCount', 'matchedName', 'lat', 'lng'):
             if pdata.get(k) is not None: entry[k] = pdata[k]
-        opens_by_cuisine.setdefault(matched, []).append(entry)
+        # Dedupe by (name, address) — keep earliest issuedDate (true opening, not renewal)
+        dkey = (op_raw.upper(), addr1.upper())
+        existing = _seen_for_dedup.get(dkey)
+        if existing is None or entry['issuedDate'] < existing['issuedDate']:
+            _seen_for_dedup[dkey] = entry
+
+# Build by-cuisine + counts from deduped set
+for entry in _seen_for_dedup.values():
+    n_tagged_365 += 1
+    if entry['daysOpen'] <= 30: n_tagged_30 += 1
+    opens_by_cuisine.setdefault(entry['cuisine'], []).append(entry)
 for c in opens_by_cuisine:
     opens_by_cuisine[c].sort(key=lambda r: r['issuedDate'], reverse=True)
 no_cuisines = []

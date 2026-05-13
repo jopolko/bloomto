@@ -7,7 +7,7 @@ Enrich data/corridors.json newOpenings entries with Google Places data:
   - matched place name + lat/lng
 
 Cached in tools/cache/places_cache.json so re-runs are cheap.
-Reads GOOGLE_API_KEY from /var/secrets/rootedto.env.
+Reads GOOGLE_API_KEY from /var/secrets/nowservingto.env.
 
 Cost: ~$0.042 per uncached opening (Find Place + Place Details).
 Hard abort at $30 cumulative spend per run for safety.
@@ -20,7 +20,7 @@ from urllib.request import urlopen, Request
 ROOT = Path(__file__).resolve().parent.parent
 DATA_PATH = ROOT / 'data' / 'corridors.json'
 CACHE_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
-SECRETS = Path('/var/secrets/rootedto.env')
+SECRETS = Path('/var/secrets/nowservingto.env')
 
 COST_FINDPLACE = 0.017
 COST_DETAILS   = 0.025  # Basic + Contact + Atmosphere combined
@@ -40,7 +40,7 @@ API_KEY = load_api_key()
 
 def http_get_json(url, params, timeout=15):
     q = urlencode(params)
-    req = Request(f"{url}?{q}", headers={'User-Agent': 'rootedto-enrich/1.0'})
+    req = Request(f"{url}?{q}", headers={'User-Agent': 'nowservingto-enrich/1.0'})
     with urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode('utf-8'))
 

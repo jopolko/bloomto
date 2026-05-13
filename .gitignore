@@ -10,7 +10,7 @@ __pycache__/
 .claude.backup-*
 
 # Large legacy ETL caches (BloomTO/DemoCalcTO sources). The four small JSON caches
-# used by the active RootedTO openings pipeline ARE committed so a fresh clone can
+# used by the active NowServingTO openings pipeline ARE committed so a fresh clone can
 # warm-start without burning API credit:
 #   tools/cache/llm_cuisine_cache.json
 #   tools/cache/web_verify_cache.json
@@ -58,7 +58,7 @@ tools/.signals.lock
 tools/.openings.lock
 tools/logs/
 
-# Secrets — defensive. Real secrets live at /var/secrets/rootedto.env (outside this
+# Secrets — defensive. Real secrets live at /var/secrets/nowservingto.env (outside this
 # tree). Never commit anything matching .env in the repo.
 .env
 *.env

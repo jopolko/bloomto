@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /tools/
+Disallow: /legacy/
+
+Sitemap: https://nowservingto.com/sitemap.xml

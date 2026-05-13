@@ -76,42 +76,27 @@ if ! "$PYTHON" tools/inject_openings.py >> "$LOG_FILE" 2>&1; then
     log "ERROR: initial inject failed"; exit 1
 fi
 
-# Step 3: Haiku batch classification of any newly-encountered businesses
+# Step 3: cuisine classification via Anthropic Message Batches (async, 50% off).
+# Walks the CSV, picks up new entries + previous errors, submits one batch, polls
+# until done. Exits cleanly with no spend if nothing is missing.
 if [[ "${SKIP_LLM:-0}" != "1" ]]; then
-    log "→ llm_classify.py (sync top-up — fast for small delta)"
-    # Sync first picks up any small daily delta cheaply (no batch overhead).
-    # If many entries are uncached it'll auto-throttle to 45 RPM.
-    if ! "$PYTHON" -u tools/llm_classify.py >> "$LOG_FILE" 2>&1; then
-        log "WARN: llm_classify.py failed (non-fatal, will keep existing tags)"
+    log "→ llm_classify_batch.py (batch / async / Haiku — 50% off)"
+    if ! "$PYTHON" -u tools/llm_classify_batch.py >> "$LOG_FILE" 2>&1; then
+        log "WARN: batch classification failed (non-fatal, will keep existing tags)"
     fi
-    # Catch any remaining errors via Batch API (50% off, async).
-    if "$PYTHON" -c "
-import json, sys
-c = json.load(open('tools/cache/llm_cuisine_cache.json'))
-errs = sum(1 for v in c.values() if v.get('status') != 'ok')
-sys.exit(0 if errs > 0 else 1)
-"; then
-        log "→ llm_classify_batch.py (batch mop-up of errors)"
-        if ! "$PYTHON" -u tools/llm_classify_batch.py >> "$LOG_FILE" 2>&1; then
-            log "WARN: batch classification failed (non-fatal)"
-        fi
-    else
-        log "  no cache errors to retry — skipping batch"
-    fi
-
-    # Re-inject after classification
     log "→ inject_openings.py (post-classification)"
     "$PYTHON" tools/inject_openings.py >> "$LOG_FILE" 2>&1 || log "WARN: re-inject failed"
 else
     log "  SKIP_LLM=1 — skipping classification"
 fi
 
-# Step 4: web_search verification (operating? website?) — gates the page to verified-open
-# Tier-aware re-checks so weak links (Instagram / blog / no-link) get retried periodically.
+# Step 4: web_search verification via Message Batches (operating? website? cuisine?).
+# Walks the CSV, picks up entries needing first-time or tier-stale re-verification,
+# submits one batch, polls until done.
 if [[ "${SKIP_WEBSITES:-0}" != "1" ]]; then
-    log "→ llm_verify.py (web_search verification, tier-aware re-check)"
-    if ! "$PYTHON" -u tools/llm_verify.py >> "$LOG_FILE" 2>&1; then
-        log "WARN: web verification failed (non-fatal)"
+    log "→ llm_verify_batch.py (batch / async / Haiku + web_search — 50% off)"
+    if ! "$PYTHON" -u tools/llm_verify_batch.py >> "$LOG_FILE" 2>&1; then
+        log "WARN: batch web verification failed (non-fatal)"
     fi
 fi
 

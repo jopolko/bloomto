@@ -14,11 +14,11 @@ Guidance for Claude Code working in this repository.
 
 ## Project
 
-**RootedTO** — a daily-fresh directory of restaurants newly licensed in Toronto, classified by cuisine via Claude Haiku + web_search and surfaced as a single-page, no-build, static-HTML directory. Audience-first framing: an **immigrant looking for the newest Ethiopian / Tamil / Filipino / Salvadoran spot**, not a tourist looking for "ethnic food."
+**NowServingTO** — a daily-fresh directory of restaurants newly licensed in Toronto, classified by cuisine via Claude Haiku + web_search and surfaced as a single-page, no-build, static-HTML directory. Audience-first framing: an **immigrant looking for the newest Ethiopian / Tamil / Filipino / Salvadoran spot**, not a tourist looking for "ethnic food."
 
 The displacement-mapping framing was the previous iteration; it's been moved off the public surface (the data is still produced by `build_corridors.py` and available in `data/corridors.json`, but the page no longer leads with it).
 
-**Pivot history:** BloomTO (multiplex parcel filtering) → DemoCalcTO (demolition cost benchmarking, never shipped) → RootedTO/corridors (cultural displacement map, 2026-05-12) → RootedTO/openings (now-open directory, 2026-05-13). Prior codebases archived under `legacy/`. Do not import from `legacy/`.
+**Pivot history:** BloomTO (multiplex parcel filtering) → DemoCalcTO (demolition cost benchmarking, never shipped) → NowServingTO/corridors (cultural displacement map, 2026-05-12) → NowServingTO/openings (now-open directory, 2026-05-13). Prior codebases archived under `legacy/`. Do not import from `legacy/`.
 
 ## Architecture
 
@@ -73,13 +73,13 @@ Specific country buckets are preferred over umbrellas. Where a cuisine is meanin
 
 ## Secrets
 
-`/var/secrets/rootedto.env` holds `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` (only used historically by `enrich_places.py`), `GITHUB_TOKEN`, plus a few rate-limit / CORS configs. **Never inline, never echo, never commit.** Mode 640, owner `john:www-data`. Local on WSL has the same file; VPS has its own copy at the same path.
+`/var/secrets/nowservingto.env` holds `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY` (only used historically by `enrich_places.py`), `GITHUB_TOKEN`, plus a few rate-limit / CORS configs. **Never inline, never echo, never commit.** Mode 640, owner `john:www-data`. Local on WSL has the same file; VPS has its own copy at the same path.
 
 ## Hosting
 
-- Apache on `joshuaopolko.com`. Prod URL: **https://joshuaopolko.com/rootedto/**
+- Apache on `nowservingto.com`. Prod URL: **https://nowservingto.com/**. Old URL `joshuaopolko.com/rootedto/` 301-redirects to the new domain.
 - Prod path: `/var/www/html/rootedto/` (same dir as cron working dir — `cp` deploy step is a no-op)
-- VPS: DigitalOcean droplet, San Francisco. SSH `john@143.110.236.86:34522` via `~/.ssh/bloomto_deploy`
+- VPS: DigitalOcean droplet, San Francisco. SSH `john@143.110.236.86:34522` via `~/.ssh/nowservingto_deploy`
 - File ownership `john:www-data`. `.htaccess` default-denies everything except the explicit allow-list.
 - Crontab on VPS: `17 5 * * * /var/www/html/rootedto/tools/cron_daily_openings.sh` (UTC; runs ~1:17 AM Toronto)
 
@@ -94,5 +94,5 @@ Specific country buckets are preferred over umbrellas. Where a cuisine is meanin
 - Don't add user-submitted content (reviews, claims, ethnicity self-tagging). The whole moat is that the source-of-truth is the City's licence feed, not user input.
 - Don't break the "verified-open only" gate. A licence ≠ an operating restaurant; show only what's confirmed.
 - Don't classify Toronto chains as ethnic cuisine (Popeyes is not Caribbean). When a name suggests theme-without-substance, prefer `unknown`.
-- Don't hardcode `/home/josh/rootedto` paths in `tools/*.py` — derive from `Path(__file__).resolve().parent.parent` so dev (WSL) and prod (VPS) share the same code.
+- Don't hardcode `/home/josh/nowservingto` paths in `tools/*.py` — derive from `Path(__file__).resolve().parent.parent` so dev (WSL) and prod (VPS) share the same code.
 - Don't commit anything matching `*.env` or anything in `/var/secrets/`.

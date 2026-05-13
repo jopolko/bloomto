@@ -10,7 +10,7 @@ Auto-canary: submits 1 request first to confirm web_search-in-batch works.
 If the canary returns clean web_search_tool_result content, proceeds with
 the full batch. Otherwise fails fast with a clear error.
 
-Reads ANTHROPIC_API_KEY from /var/secrets/rootedto.env.
+Reads ANTHROPIC_API_KEY from /var/secrets/nowservingto.env.
 """
 import os, sys, csv, json, time
 from datetime import datetime, timezone, timedelta
@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 WEB_CACHE_PATH = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
 PLACES_CACHE_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
 LLM_CACHE_PATH = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
-SECRETS = Path('/var/secrets/rootedto.env')
+SECRETS = Path('/var/secrets/nowservingto.env')
 MODEL = 'claude-haiku-4-5-20251001'
 POLL_INTERVAL_SEC = 30
 RECHECK_DAYS = 7
@@ -30,7 +30,7 @@ CSV_PATH = '/tmp/business_licences_alt.csv'
 
 VALID_CUISINE_KEYS = {
     'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'south_asian','pakistani','afghan','bangladeshi','tamil','tibetan',
+    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan',
     'caribbean','jamaican','trinidadian','guyanese','haitian',
     'greek','portuguese','polish','french','irish_uk','german','jewish_deli',
     'eastern_eu','ukrainian','russian','hungarian',
@@ -43,14 +43,18 @@ VALID_CUISINE_KEYS = {
 SYSTEM_PROMPT = """You verify a Toronto restaurant's existence AND identify its cuisine
 from web search results. Many places are brand new with only sparse online presence — that's fine.
 
-You have access to web_search. Use one search to find evidence.
+You have access to web_search (up to 2 uses). First search: confirm the place exists and
+identify cuisine. SECOND search (only if needed): if your first search did NOT surface a
+Google Maps / Google Business listing URL for this restaurant, do one targeted search like
+`"<NAME>" "<address or street>" site:google.com/maps` to find one. A Google Maps profile
+is strongly preferred over Instagram/Facebook for the `website` field — see rules below.
 
 Return a single JSON object on ONE line, no markdown, no prose:
 {"operating":"yes|no|unclear","cuisine":"<key>","website":"<url or null>","evidence":"<one short sentence>"}
 
 Valid cuisine keys:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-south_asian, pakistani, afghan, bangladeshi, tamil, tibetan,
+south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan,
 caribbean, jamaican, trinidadian, guyanese, haitian,
 greek, portuguese, polish, french, irish_uk, german, jewish_deli,
 eastern_eu, ukrainian, russian, hungarian,
@@ -82,13 +86,21 @@ Rules for "operating":
 - "unclear" — search returned nothing at all relevant; no trace of the business anywhere
   online. Use sparingly — most new licences will have at least an Instagram post.
 
-Rules for "website" (return the BEST link you find, in this order of preference):
-1. The restaurant's own website (.com / .ca etc).
-2. An Instagram or Facebook page that clearly matches the restaurant name.
-3. A specific blogTO / Eater / Toronto Star / food-blog article about THIS restaurant
+Rules for "website" (return the BEST link you find, in this STRICT order of preference):
+1. The restaurant's own website (.com / .ca etc). Always wins if it exists.
+2. The restaurant's Google Maps / Google Business listing URL
+   (https://www.google.com/maps/place/... or https://maps.app.goo.gl/...).
+   MANDATORY: if a Google Maps profile for this restaurant exists at this address, you MUST
+   return it over any Instagram/Facebook/TikTok page — even if the social page is more
+   recently active. Maps profiles give hours, photos, reviews, directions, and a stable URL.
+   If your first search didn't surface a Maps URL, do a second search specifically to find one
+   (see instructions above) before falling back to social.
+3. An Instagram or Facebook page that clearly matches the restaurant name — ONLY if no Maps
+   listing exists or you genuinely cannot find one after a targeted Maps search.
+4. A specific blogTO / Eater / Toronto Star / food-blog article about THIS restaurant
    (not a generic "best of" list mentioning many places).
-4. A Yelp or TripAdvisor page for this specific restaurant.
-5. If nothing usable above, null.
+5. A Yelp or TripAdvisor page for this specific restaurant.
+6. If nothing usable above, null.
 Skip pure aggregator listings, licence-lookup pages, address directories."""
 
 def load_api_key():
@@ -164,7 +176,7 @@ def build_request(name, address):
             'model': MODEL,
             'max_tokens': 400,
             'system': SYSTEM_PROMPT,
-            'tools': [{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 1}],
+            'tools': [{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 2}],
             'messages': [{
                 'role': 'user',
                 'content': f"Restaurant: {name}\nAddress: {address}\n\nIs this place currently operating? What's its website if any?"

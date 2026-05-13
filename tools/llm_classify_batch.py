@@ -1,20 +1,40 @@
 #!/usr/bin/env python3
 """
-Submit a Message Batches job for the remaining cuisine-classification retries
-(entries with status='error' in tools/cache/llm_cuisine_cache.json). 50% cost
-discount, much higher rate limits, polls until done, merges results back into
-the cache.
+Submit a Message Batches job for cuisine classification. Picks up:
+  - Newly-licensed entries in the last 365 days that aren't yet in the cache
+  - Entries previously marked status='error' for retry
 
-Reads ANTHROPIC_API_KEY from /var/secrets/rootedto.env.
+50% off vs sync, much higher rate limits, polls until done, merges into the cache.
+Designed to be safe-to-call from the daily cron — exits cleanly with no spend if
+nothing is missing/errored.
+
+Reads ANTHROPIC_API_KEY from /var/secrets/nowservingto.env.
 """
-import os, sys, json, time
+import os, sys, csv, json, time
+from datetime import datetime, date, timedelta
 from pathlib import Path
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
+CSV_PATH = '/tmp/business_licences_alt.csv'
+FOOD_CATS = {
+    'EATING OR DRINKING ESTABLISHMENT',
+    'TAKE-OUT OR RETAIL FOOD ESTABLISHMENT',
+    'EATING ESTABLISHMENT',
+    'RETAIL STORE (FOOD)',
+}
+
+def _parse_d(s):
+    if not s: return None
+    s = s.strip()
+    for fmt in ('%Y-%m-%d','%Y/%m/%d','%m/%d/%Y','%Y-%m-%dT%H:%M:%S'):
+        try: return datetime.strptime(s.split(' ')[0], fmt).date()
+        except ValueError: pass
+    return None
+
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_PATH = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
-SECRETS = Path('/var/secrets/rootedto.env')
+SECRETS = Path('/var/secrets/nowservingto.env')
 MODEL = 'claude-haiku-4-5-20251001'
 POLL_INTERVAL_SEC = 30
 
@@ -22,7 +42,7 @@ SYSTEM_PROMPT = """You classify Toronto restaurants by cuisine from operating na
 
 Output: ONE lowercase key, no other text. Choose from:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-south_asian, pakistani, afghan, bangladeshi, tamil, tibetan,
+south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan,
 caribbean, jamaican, trinidadian, guyanese, haitian,
 greek, portuguese, polish, french, irish_uk, german, jewish_deli,
 eastern_eu, ukrainian, russian, hungarian,
@@ -34,13 +54,16 @@ african_west, nigerian, ghanaian, moroccan, unknown
 ALWAYS prefer the most SPECIFIC bucket. Only use the broader umbrella when the name fits a
 region but no specific country signal is present.
 
-South Asian:
-- pakistani: Karachi, Lahore, Punjabi, "halal pak", "Pak Punjab"
+South Asian — PREFER specific country over umbrella:
+- indian: pan-Indian, Mughlai, Punjabi-NOT-Pakistani, North/South Indian, "India", "Indian",
+  tandoori-house, masala-house, biryani-house (when not specifically Pakistani), naan house,
+  dosa, idli, thali, samosa house. THIS is the right bucket for most "South Asian" places.
+- pakistani: explicitly Pakistani — Karachi, Lahore, "halal pak", "Pak Punjab"
 - afghan: Kabul, Kandahar, mantu, kabuli pulao
-- bangladeshi: Dhaka, Bengali, "bangla"
+- bangladeshi: Dhaka, Bengali, "bangla", Bengali sweets
 - tamil: Sri Lankan Tamil or South Indian Tamil (Jaffna, Eelam, Madras, Chennai, kothu)
 - tibetan: Tibetan / Himalayan (momo, Lhasa, Shangri-La)
-- south_asian: generic pan-Indian umbrella (use only if no specific country signal)
+- south_asian: ONLY for genuinely multi-country South Asian buffets/mixes. Default to indian.
 
 Southeast Asian:
 - vietnamese: Pho, banh mi, Saigon, Hanoi
@@ -119,7 +142,7 @@ When uncertain whether there's any cultural signal at all, pick unknown."""
 
 VALID_KEYS = {
     'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'south_asian','pakistani','afghan','bangladeshi','tamil','tibetan',
+    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan',
     'caribbean','jamaican','trinidadian','guyanese','haitian',
     'greek','portuguese','polish','french','irish_uk','german','jewish_deli',
     'eastern_eu','ukrainian','russian','hungarian',
@@ -159,19 +182,46 @@ def http_request(method, url, data=None):
         raise
 
 def main():
-    cache = json.loads(CACHE_PATH.read_text())
-    err_keys = [k for k, v in cache.items() if v.get('status') == 'error']
-    print(f"cache state: total={len(cache)}, errors to retry={len(err_keys)}")
+    cache = json.loads(CACHE_PATH.read_text()) if CACHE_PATH.exists() else {}
+    print(f"cache state: total={len(cache)}")
 
-    if not err_keys:
-        print("nothing to retry — cache has no errors.")
+    # 1. Walk the CSV for entries in the last 365 days that aren't cached as 'ok'
+    cutoff = date.today() - timedelta(days=365)
+    targets = []  # list of (cache_key, name, address)
+    seen = set()
+    if Path(CSV_PATH).exists():
+        with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
+            rdr = csv.DictReader(f)
+            for row in rdr:
+                cat = (row.get('Category') or '').strip()
+                if cat not in FOOD_CATS: continue
+                if (row.get('Cancel Date') or '').strip(): continue
+                iss = _parse_d(row.get('Issued'))
+                if not iss or iss < cutoff: continue
+                name = (row.get('Operating Name') or '').strip()
+                if not name: continue
+                addr1 = (row.get('Licence Address Line 1') or '').strip()
+                addr3 = (row.get('Licence Address Line 3') or '').strip()
+                address = (addr1 + ' ' + addr3).strip() or '—'
+                key = f"{name.upper()}||{address.upper()}"
+                if key in seen: continue
+                seen.add(key)
+                ex = cache.get(key)
+                if ex and ex.get('status') == 'ok': continue  # already classified successfully
+                targets.append((key, name, address))
+    n_new = len([1 for k,_,_ in targets if k not in cache])
+    n_retry = len(targets) - n_new
+    print(f"  targets: {len(targets)} ({n_new} new, {n_retry} retries from previous errors)")
+
+    if not targets:
+        print("nothing to classify.")
         return
 
-    # Build batch payload — one request per error key
+    # 2. Build batch payload
     requests = []
-    for k in err_keys:
-        name, address = k.split('||', 1)
-        custom_id = 'r' + str(hash(k) & 0x7fffffff)  # deterministic but valid id
+    target_keys = []
+    for key, name, address in targets:
+        custom_id = 'c' + str(hash(key) & 0x7fffffff)
         requests.append({
             'custom_id': custom_id,
             'params': {
@@ -184,9 +234,9 @@ def main():
                 }],
             },
         })
+        target_keys.append(key)
 
-    # Custom_id needs to map back to cache_key. Build the lookup table.
-    id_to_key = {r['custom_id']: k for r, k in zip(requests, err_keys)}
+    id_to_key = {r['custom_id']: k for r, k in zip(requests, target_keys)}
 
     print(f"submitting batch of {len(requests)} requests…")
     submit_resp = http_request('POST', 'https://api.anthropic.com/v1/messages/batches', {'requests': requests})

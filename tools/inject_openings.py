@@ -73,16 +73,16 @@ CUISINE_LABEL = {
     'italian':'Italian','chinese':'Chinese','japanese':'Japanese','korean':'Korean',
     'vietnamese':'Vietnamese','filipino':'Filipino','thai':'Thai',
     'indonesian':'Indonesian','malaysian':'Malaysian','burmese':'Burmese',
-    'south_asian':'South Asian (other)','pakistani':'Pakistani','afghan':'Afghan',
+    'south_asian':'South Asian','indian':'Indian','pakistani':'Pakistani','afghan':'Afghan',
     'bangladeshi':'Bangladeshi','tamil':'Tamil','tibetan':'Tibetan',
-    'caribbean':'Caribbean (other)','jamaican':'Jamaican','trinidadian':'Trinidadian','guyanese':'Guyanese','haitian':'Haitian',
+    'caribbean':'Caribbean','jamaican':'Jamaican','trinidadian':'Trinidadian','guyanese':'Guyanese','haitian':'Haitian',
     'greek':'Greek','portuguese':'Portuguese','polish':'Polish','french':'French',
     'irish_uk':'Irish/UK','german':'German','jewish_deli':'Jewish deli',
-    'eastern_eu':'Eastern European (other)','ukrainian':'Ukrainian','russian':'Russian','hungarian':'Hungarian',
-    'middle_east':'Middle Eastern (other)','lebanese':'Lebanese','turkish':'Turkish','syrian':'Syrian','persian':'Persian',
-    'latin':'Latin American (other)','mexican':'Mexican','salvadoran':'Salvadoran','peruvian':'Peruvian','colombian':'Colombian','brazilian':'Brazilian',
-    'african_horn':'East African (other)','ethiopian':'Ethiopian','eritrean':'Eritrean','somali':'Somali',
-    'african_west':'West African (other)','nigerian':'Nigerian','ghanaian':'Ghanaian','moroccan':'Moroccan',
+    'eastern_eu':'Eastern European','ukrainian':'Ukrainian','russian':'Russian','hungarian':'Hungarian',
+    'middle_east':'Middle Eastern','lebanese':'Lebanese','turkish':'Turkish','syrian':'Syrian','persian':'Persian',
+    'latin':'Latin American','mexican':'Mexican','salvadoran':'Salvadoran','peruvian':'Peruvian','colombian':'Colombian','brazilian':'Brazilian',
+    'african_horn':'East African','ethiopian':'Ethiopian','eritrean':'Eritrean','somali':'Somali',
+    'african_west':'West African','nigerian':'Nigerian','ghanaian':'Ghanaian','moroccan':'Moroccan',
 }
 FOOD_CATS = {
     'EATING OR DRINKING ESTABLISHMENT',
@@ -99,6 +99,22 @@ def parse_d(s):
         except ValueError: pass
     return None
 
+# Map Toronto FSA (first 2 chars of postal) → former municipality / district.
+# Toronto's pre-1998 boroughs get treated as natural orientation anchors. Roughly:
+#   M1 = Scarborough, M2/M3 = North York, M4 = East York / midtown east,
+#   M5 = Downtown, M6 = West Toronto / York, M8/M9 = Etobicoke
+DISTRICT_BY_FSA = {
+    'M1': 'Scarborough', 'M2': 'North York', 'M3': 'North York',
+    'M4': 'East Toronto', 'M5': 'Downtown',  'M6': 'West Toronto',
+    'M7': 'Downtown',    'M8': 'Etobicoke',  'M9': 'Etobicoke',
+}
+def district_from_postal(addr_with_postal):
+    """Pull the first 2 chars of a Toronto postal code from any address string."""
+    import re
+    m = re.search(r'\bM[0-9][A-Z]\b', (addr_with_postal or '').upper())
+    if not m: return None
+    return DISTRICT_BY_FSA.get(m.group(0)[:2])
+
 # Chain denylist: substring match against UPPERCASE operating name. If any of these appears,
 # force cuisine to None regardless of what the LLM said. Cheap, deterministic safety net.
 # Add new chains to this list as you spot them.
@@ -109,7 +125,11 @@ CHAIN_DENYLIST = (
     'SUBWAY', 'MR. SUB', 'MR SUB', 'QUIZNOS', 'EXTREME PITA', 'PITA PIT',
     'APPLEBEE', 'OUTBACK', 'IHOP', 'DENNY', 'JACK ASTOR', 'SCORES', 'KELSEY',
     'MONTANA', 'EAST SIDE MARIO', 'BOSTON PIZZA', 'PIZZA NOVA', 'PIZZA PIZZA',
-    'PIZZAVILLE', 'LITTLE CAESAR', 'PAPA JOHN', 'DOMINO',
+    'PIZZAVILLE', 'LITTLE CAESAR', 'PAPA JOHN', 'DOMINO', 'PIZZA HUT', '241 PIZZA',
+    'MUCHO BURRITO', 'BAR BURRITO', 'BURRITO BOYZ',
+    'THAI EXPRESS', 'EDO JAPAN', 'BENTO BENTO', 'FRESHII', 'BOOSTER JUICE',
+    'SECOND CUP', 'SMOKE\'S POUTINERIE', 'SMOKES POUTINERIE',
+    'HERO BURGER', 'HERO CERTIFIED', 'FIVE GUYS', 'NEW YORK FRIES',
     'CHIPOTLE', 'TACO BELL', 'TACO TIME',
     'DAIRY QUEEN', 'BASKIN-ROBBIN', 'BASKIN ROBBIN',
     'SWISS CHALET', 'ST-HUBERT', 'WHITE SPOT',
@@ -119,8 +139,17 @@ CHAIN_DENYLIST = (
     'FAT BASTARD BURRITO',  # Canadian chain themed as Mexican
 )
 
+import re as _re
 def is_chain(name_upper):
-    return any(c in name_upper for c in CHAIN_DENYLIST)
+    """Match chain names ONLY at the start of the operating name. Chains typically
+    appear as 'CHAIN' or 'CHAIN LOCATION' or 'CHAIN #123'. This avoids false positives
+    like 'OM MA JOHN'S PIZZA & THAI EXPRESS' being matched as the chain 'THAI EXPRESS'."""
+    n = (name_upper or '').strip()
+    for c in CHAIN_DENYLIST:
+        # Match at start, followed by word boundary, end-of-string, or common location separators
+        if _re.match(r'^' + _re.escape(c) + r'(\b|$|[/#@,])', n):
+            return True
+    return False
 
 def keyword_classify(op_upper):
     for cuisine, keys in CUISINE_PATTERNS.items():
@@ -189,9 +218,14 @@ def verification_for(name, address):
         return out
     return None
 
-opens_365_by_cuisine = defaultdict(list)
+from urllib.parse import quote_plus
+# Dedupe by (operating_name, street_address). When Toronto's MLS issues two licence rows
+# for the same physical business (e.g. "Take-Out" + "Eating Establishment" categories, or
+# a renewed licence overlapping the old one), we want one entry. Keep the EARLIEST
+# Issued date — that's when the kitchen actually opened, not just when a category was added.
+seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0
 
 with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
     rdr = csv.DictReader(f)
@@ -217,21 +251,40 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             n_dropped_unverified += 1
             continue
 
-        n_tagged_365 += 1
-        if iss >= WINDOW_30: n_tagged_30 += 1
+        # Build candidate entry
         days_open = max(0, (REFERENCE_DATE - iss).days)
+        fallback_maps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
         entry = {
             'operatingName': op_raw,
             'cuisine': cuisine,
             'cuisineSource': source,
             'issuedDate': iss.isoformat(),
             'daysOpen': days_open,
-            'address': address_full,
+            'address': addr1,
+            'fallbackMapsUrl': fallback_maps,
         }
+        district = district_from_postal(address_full)
+        if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
-        opens_365_by_cuisine[cuisine].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp")
+        # Dedupe by (name_upper, addr_upper). Keep EARLIEST issuedDate.
+        dedup_key = (op_raw.upper(), addr1.upper())
+        existing = seen_entries.get(dedup_key)
+        if existing is None:
+            seen_entries[dedup_key] = entry
+        else:
+            n_deduped += 1
+            if iss.isoformat() < existing['issuedDate']:
+                seen_entries[dedup_key] = entry  # this row is earlier — keep it
+
+# Now bucket the deduped entries by cuisine and compute counts
+opens_365_by_cuisine = defaultdict(list)
+for entry in seen_entries.values():
+    n_tagged_365 += 1
+    if entry['daysOpen'] <= 30: n_tagged_30 += 1
+    opens_365_by_cuisine[entry['cuisine']].append(entry)
+
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:
@@ -255,7 +308,7 @@ all_recent = []
 for c, entries in opens_365_by_cuisine.items():
     all_recent.extend(entries)
 all_recent.sort(key=lambda r: r['issuedDate'], reverse=True)
-all_recent = all_recent[:300]
+all_recent = all_recent[:1500]  # large enough to include all 365-day verified-open
 
 # Inject
 data = json.load(open(DATA_PATH))
@@ -272,6 +325,121 @@ data['newOpenings'] = {
 }
 with open(DATA_PATH, 'w') as f:
     json.dump(data, f, separators=(',', ':'))
+
+# ── SEO/LLM-EO injection: sitemap + index.html static-feed + JSON-LD ItemList ──
+# Mirrors the dynamic feed for crawlers and no-JS visitors. Re-runs every cron.
+SITE_BASE = 'https://nowservingto.com'
+SITEMAP_PATH = f'{ROOT}/sitemap.xml'
+INDEX_PATH = f'{ROOT}/index.html'
+
+# Python-side cuisine palette mirrors the one in index.html. Used to color the pre-rendered
+# static cuisine pills so crawlers see proper structured visual styling too.
+PALETTE_HEX = {
+    'italian':'#c83624','caribbean':'#1a8a5a','south_asian':'#d4a017','indian':'#e88e2c',
+    'pakistani':'#a06030','afghan':'#7a5d3a','bangladeshi':'#b88820','chinese':'#b13e6a',
+    'vietnamese':'#4a8b8b','japanese':'#2f3aa3','korean':'#6b2456','filipino':'#e08226',
+    'tamil':'#8a5d20','tibetan':'#b15a25','greek':'#1f7a6a','portuguese':'#9b2538',
+    'polish':'#4a5a6a','french':'#5a3a7a','irish_uk':'#2a6a40','german':'#6a5a30',
+    'jewish_deli':'#4a4a8a','eastern_eu':'#7a4a4a','ukrainian':'#6a5a8a','russian':'#7a4a4a',
+    'hungarian':'#8a5050','middle_east':'#b87a25','lebanese':'#c89538','turkish':'#a8662a',
+    'syrian':'#9b5520','persian':'#8a4a25','latin':'#cc4a4a','mexican':'#d63d2a',
+    'salvadoran':'#c8553a','peruvian':'#b35b50','colombian':'#cc6248','brazilian':'#3d8a47',
+    'african_horn':'#a0522d','ethiopian':'#a0522d','eritrean':'#8a4528','somali':'#b06530',
+    'african_west':'#5a8a3a','nigerian':'#4a7a30','ghanaian':'#6a8a40','moroccan':'#b87a2a',
+    'jamaican':'#1f7a4a','trinidadian':'#2a9560','guyanese':'#3a8060','haitian':'#1a6855',
+    'thai':'#7a8a3a','indonesian':'#7a6a40','malaysian':'#5a7a55','burmese':'#8a7050',
+}
+
+def _esc(s):
+    """HTML-escape a string."""
+    if s is None: return ''
+    return (str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+            .replace('"', '&quot;').replace("'", '&#39;'))
+
+def _ago(days):
+    if days <= 1: return 'licensed today'
+    if days <= 60: return f'licensed {days}d ago'
+    if days <= 365: return f'licensed {round(days/30)}mo ago'
+    return f'licensed {days/365:.1f}y ago'
+
+# Build static HTML rows for the top 30 newest verified-open entries.
+top_for_static = all_recent[:30]
+static_rows_html = []
+for r in top_for_static:
+    color = PALETTE_HEX.get(r.get('cuisine'), '#777')
+    label = CUISINE_LABEL.get(r.get('cuisine'), r.get('cuisine') or '')
+    name = _esc(r['operatingName'])
+    addr = _esc(r.get('address') or '')
+    district = _esc(r.get('district') or '')
+    addr_html = f'{addr}<span class="oad-d"> · {district}</span>' if district else addr
+    issued = _esc(r['issuedDate'])
+    ago = _esc(_ago(r['daysOpen']))
+    link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+    name_html = f'<a href="{_esc(link)}" target="_blank" rel="noopener">{name}</a>' if link else name
+    static_rows_html.append(
+        f'<div class="open-row">'
+        f'<div class="od">{issued}<span class="ago">{ago}</span></div>'
+        f'<div class="on">{name_html}<span class="oad">{addr_html}</span></div>'
+        f'<div class="oc"><span class="pill" style="background:{color}">{_esc(label)}</span></div>'
+        f'</div>'
+    )
+static_block = '\n    '.join(static_rows_html)
+
+# Build JSON-LD ItemList — top 30 entries as Restaurant items
+ld_items = []
+for i, r in enumerate(top_for_static, 1):
+    rest = {
+        '@type': 'Restaurant',
+        'name': r['operatingName'],
+        'address': {'@type': 'PostalAddress', 'streetAddress': r.get('address') or '', 'addressLocality': 'Toronto', 'addressRegion': 'ON', 'addressCountry': 'CA'},
+        'servesCuisine': CUISINE_LABEL.get(r.get('cuisine'), r.get('cuisine') or ''),
+        'dateOpened': r.get('issuedDate'),
+    }
+    if r.get('website'): rest['url'] = r['website']
+    if r.get('rating'): rest['aggregateRating'] = {'@type': 'AggregateRating', 'ratingValue': r['rating'], 'reviewCount': r.get('reviewCount') or 1}
+    ld_items.append({'@type': 'ListItem', 'position': i, 'item': rest})
+ld_payload = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    'name': "Toronto's newest restaurants by cuisine",
+    'description': 'Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.',
+    'itemListElement': ld_items,
+}
+ld_json_str = json.dumps(ld_payload, separators=(',', ':'))
+
+# Rewrite the index.html markers in place
+import re
+try:
+    html = open(INDEX_PATH).read()
+    html = re.sub(
+        r'(<!-- STATIC-FEED-START[^>]*-->).*?(<!-- STATIC-FEED-END -->)',
+        f'\\1\n    {static_block}\n    \\2',
+        html, count=1, flags=re.DOTALL,
+    )
+    html = re.sub(
+        r'(<!-- LD-ITEMLIST-START -->).*?(<!-- LD-ITEMLIST-END -->)',
+        f'\\1\n{ld_json_str}\n\\2',
+        html, count=1, flags=re.DOTALL,
+    )
+    open(INDEX_PATH, 'w').write(html)
+    print(f"  pre-rendered {len(top_for_static)} static feed rows + JSON-LD ItemList into index.html")
+except Exception as e:
+    print(f"  WARN: index.html injection failed: {e}")
+
+# Write sitemap.xml with today's lastmod
+sitemap = (
+    '<?xml version="1.0" encoding="UTF-8"?>\n'
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    f'  <url>\n'
+    f'    <loc>{SITE_BASE}/</loc>\n'
+    f'    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n'
+    f'    <changefreq>daily</changefreq>\n'
+    f'    <priority>1.0</priority>\n'
+    f'  </url>\n'
+    '</urlset>\n'
+)
+with open(SITEMAP_PATH, 'w') as f: f.write(sitemap)
+print(f"  wrote sitemap.xml")
 
 print(f"Injected newOpenings into {DATA_PATH}")
 print(f"  {n_food_active_365:,} active food licences issued in last 365d")

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# One-shot deploy of RootedTO to the VPS.
+# One-shot deploy of NowServingTO to the VPS.
 #
 # Usage:
 #   tools/deploy_to_vps.sh user@vps-host[:port]              # full deploy
 #   tools/deploy_to_vps.sh --dry-run user@vps-host           # show what would happen
-#   tools/deploy_to_vps.sh --skip-secrets user@vps-host      # don't scp /var/secrets/rootedto.env
+#   tools/deploy_to_vps.sh --skip-secrets user@vps-host      # don't scp /var/secrets/nowservingto.env
 #
 # What it does (in order):
 #   1. Local cleanup: removes __pycache__, .signals/.openings lock files, stale logs
@@ -13,7 +13,7 @@
 #      Excludes legacy/, data/parcels.geojson, .venv, .git, .claude, big-data caches.
 #      Includes the 4 small JSON caches (LLM cuisine + web verify + Places + URL health)
 #      so first cron run is a cheap delta only.
-#   3. scp /var/secrets/rootedto.env to VPS:/var/secrets/rootedto.env with mode 600
+#   3. scp /var/secrets/nowservingto.env to VPS:/var/secrets/nowservingto.env with mode 600
 #      (skippable via --skip-secrets if you set it up manually)
 #   4. Remote bootstrap: build a .venv on the VPS, pip-install requirements
 #   5. Run the daily cron once manually as a smoke test, surface any failures
@@ -24,8 +24,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 LOCAL_ROOT="$(cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd)"
 REMOTE_ROOT='/var/www/html/rootedto'
-SECRETS_LOCAL='/var/secrets/rootedto.env'
-SECRETS_REMOTE='/var/secrets/rootedto.env'
+SECRETS_LOCAL='/var/secrets/nowservingto.env'
+SECRETS_REMOTE='/var/secrets/nowservingto.env'
 
 DRY_RUN=""
 SKIP_SECRETS=0
@@ -53,7 +53,7 @@ if [[ "$TARGET" == *:* ]]; then
 fi
 RSYNC_SSH="ssh -p $SSH_PORT -o StrictHostKeyChecking=accept-new"
 
-echo "==== RootedTO deploy ===="
+echo "==== NowServingTO deploy ===="
 echo "  local:      $LOCAL_ROOT"
 echo "  remote:     $SSH_TARGET:$REMOTE_ROOT (port $SSH_PORT)"
 echo "  dry-run:    ${DRY_RUN:-no}"
@@ -106,10 +106,10 @@ if [[ -z "$DRY_RUN" && $SKIP_SECRETS == 0 ]]; then
         echo "   WARN: $SECRETS_LOCAL doesn't exist locally — skipping"
     else
         # scp to ~ first, then sudo-move into place with proper perms
-        scp -P "$SSH_PORT" -o StrictHostKeyChecking=accept-new "$SECRETS_LOCAL" "$SSH_TARGET:rootedto.env.tmp"
+        scp -P "$SSH_PORT" -o StrictHostKeyChecking=accept-new "$SECRETS_LOCAL" "$SSH_TARGET:nowservingto.env.tmp"
         ssh -p "$SSH_PORT" "$SSH_TARGET" "
             sudo mkdir -p /var/secrets
-            sudo mv ~/rootedto.env.tmp $SECRETS_REMOTE
+            sudo mv ~/nowservingto.env.tmp $SECRETS_REMOTE
             sudo chown root:root $SECRETS_REMOTE
             sudo chmod 600 $SECRETS_REMOTE
             ls -la $SECRETS_REMOTE

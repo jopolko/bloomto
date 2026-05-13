@@ -5,7 +5,7 @@ last 365 days. Calls Claude Haiku 4.5 once per business with operating
 name + address, returns one of 22 cuisine keys or 'unknown'. Caches.
 
 Cost target: ~$0.40 for the full 2,000-business population.
-Reads ANTHROPIC_API_KEY from /var/secrets/rootedto.env.
+Reads ANTHROPIC_API_KEY from /var/secrets/nowservingto.env.
 """
 import os, sys, csv, json, time, threading
 from datetime import datetime, date, timedelta
@@ -34,7 +34,7 @@ class RateLimiter:
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE_PATH = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
-SECRETS = Path('/var/secrets/rootedto.env')
+SECRETS = Path('/var/secrets/nowservingto.env')
 CSV_PATH = '/tmp/bl1.csv'
 MODEL = 'claude-haiku-4-5-20251001'
 
@@ -46,7 +46,7 @@ LIMITER = RateLimiter(RATE_PER_MINUTE)
 
 VALID_KEYS = {
     'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'south_asian','pakistani','afghan','bangladeshi','tamil','tibetan',
+    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan',
     'caribbean','jamaican','trinidadian','guyanese','haitian',
     'greek','portuguese','polish','french','irish_uk','german','jewish_deli',
     'eastern_eu','ukrainian','russian','hungarian',
@@ -67,7 +67,7 @@ SYSTEM_PROMPT = """You classify Toronto restaurants by cuisine from operating na
 
 Output: ONE lowercase key, no other text. Choose from:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-south_asian, pakistani, afghan, bangladeshi, tamil, tibetan,
+south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan,
 caribbean, jamaican, trinidadian, guyanese, haitian,
 greek, portuguese, polish, french, irish_uk, german, jewish_deli,
 eastern_eu, ukrainian, russian, hungarian,
@@ -79,13 +79,16 @@ african_west, nigerian, ghanaian, moroccan, unknown
 ALWAYS prefer the most SPECIFIC bucket. Only use the broader umbrella when the name fits a
 region but no specific country signal is present.
 
-South Asian:
-- pakistani: Karachi, Lahore, Punjabi, "halal pak", "Pak Punjab"
+South Asian — PREFER specific country over umbrella:
+- indian: pan-Indian, Mughlai, Punjabi-NOT-Pakistani, North/South Indian, "India", "Indian",
+  tandoori-house, masala-house, biryani-house (when not specifically Pakistani), naan house,
+  dosa, idli, thali, samosa house. THIS is the right bucket for most "South Asian" places.
+- pakistani: explicitly Pakistani — Karachi, Lahore, "halal pak", "Pak Punjab"
 - afghan: Kabul, Kandahar, mantu, kabuli pulao
-- bangladeshi: Dhaka, Bengali, "bangla"
+- bangladeshi: Dhaka, Bengali, "bangla", Bengali sweets
 - tamil: Sri Lankan Tamil or South Indian Tamil (Jaffna, Eelam, Madras, Chennai, kothu)
 - tibetan: Tibetan / Himalayan (momo, Lhasa, Shangri-La)
-- south_asian: generic pan-Indian umbrella (use only if no specific country signal)
+- south_asian: ONLY for genuinely multi-country South Asian buffets/mixes. Default to indian.
 
 Southeast Asian:
 - vietnamese: Pho, banh mi, Saigon, Hanoi

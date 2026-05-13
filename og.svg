@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#faf7ee"/>
+      <stop offset="100%" stop-color="#f0e8d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="8" fill="#15110d"/>
+  <text x="80" y="200" font-family="Iowan Old Style, Charter, Georgia, serif" font-size="120" font-weight="800" fill="#15110d" letter-spacing="-3">NowServingTO</text>
+  <text x="80" y="305" font-family="Iowan Old Style, Charter, Georgia, serif" font-size="48" font-style="italic" fill="#7a746a">Toronto's <tspan font-weight="800" font-style="normal" fill="#c83624">newest</tspan> kitchens</text>
+  <text x="80" y="365" font-family="Iowan Old Style, Charter, Georgia, serif" font-size="48" font-style="italic" fill="#7a746a">— every cuisine, every morning.</text>
+  <g transform="translate(80,460)">
+    <rect width="14" height="14" fill="#c83624"/>
+    <text x="28" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Italian</text>
+    <rect x="120" width="14" height="14" fill="#1a8a5a"/>
+    <text x="148" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Caribbean</text>
+    <rect x="290" width="14" height="14" fill="#a0522d"/>
+    <text x="318" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Ethiopian</text>
+    <rect x="460" width="14" height="14" fill="#8a5d20"/>
+    <text x="488" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Tamil</text>
+    <rect x="570" width="14" height="14" fill="#e08226"/>
+    <text x="598" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Filipino</text>
+    <rect x="700" width="14" height="14" fill="#d63d2a"/>
+    <text x="728" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Mexican</text>
+    <rect x="850" width="14" height="14" fill="#1f7a6a"/>
+    <text x="878" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Greek</text>
+    <rect x="950" width="14" height="14" fill="#8a4a25"/>
+    <text x="978" y="13" font-family="-apple-system,sans-serif" font-size="22" fill="#45403a">Persian</text>
+  </g>
+  <text x="80" y="565" font-family="ui-monospace,Menlo,monospace" font-size="22" fill="#7a746a">nowservingto.com</text>
+</svg>

@@ -25,7 +25,7 @@ DATA_PATH = ROOT / 'data' / 'corridors.json'
 WEB_CACHE_PATH = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
 PLACES_CACHE_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
 LLM_CACHE_PATH = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
-SECRETS = Path('/var/secrets/rootedto.env')
+SECRETS = Path('/var/secrets/nowservingto.env')
 MODEL = 'claude-haiku-4-5-20251001'
 RATE_PER_MINUTE = 35   # web_search calls are heavier; leave more headroom
 WORKERS = 2
@@ -68,7 +68,7 @@ Return a single JSON object on ONE line, no markdown, no prose:
 
 Valid cuisine keys:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-south_asian, pakistani, afghan, bangladeshi, tamil, tibetan,
+south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan,
 caribbean, jamaican, trinidadian, guyanese, haitian,
 greek, portuguese, polish, french, irish_uk, german, jewish_deli,
 eastern_eu, ukrainian, russian, hungarian,
@@ -102,11 +102,14 @@ Rules for "operating":
 
 Rules for "website" (return the BEST link you find, in this order of preference):
 1. The restaurant's own website (.com / .ca etc).
-2. An Instagram or Facebook page that clearly matches the restaurant name.
-3. A specific blogTO / Eater / Toronto Star / food-blog article about THIS restaurant
+2. The restaurant's Google Maps / Google Business listing URL
+   (https://www.google.com/maps/place/... or https://maps.app.goo.gl/...).
+   Maps profiles give hours, photos, reviews, directions — strongly prefer over social.
+3. An Instagram or Facebook page that clearly matches the restaurant name.
+4. A specific blogTO / Eater / Toronto Star / food-blog article about THIS restaurant
    (not a generic "best of" list mentioning many places).
-4. A Yelp or TripAdvisor page for this specific restaurant.
-5. If nothing usable above, null.
+5. A Yelp or TripAdvisor page for this specific restaurant.
+6. If nothing usable above, null.
 Skip pure aggregator listings, licence-lookup pages, address directories."""
 
 def verify_one(name, address, retries=2):
@@ -190,7 +193,7 @@ RECHECK_UNCLEAR = 7
 
 VALID_CUISINE_KEYS = {
     'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'south_asian','pakistani','afghan','bangladeshi','tamil','tibetan',
+    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan',
     'caribbean','jamaican','trinidadian','guyanese','haitian',
     'greek','portuguese','polish','french','irish_uk','german','jewish_deli',
     'eastern_eu','ukrainian','russian','hungarian',

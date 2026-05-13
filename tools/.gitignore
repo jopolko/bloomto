@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 
 # Cache directory: see root .gitignore for which JSON files ARE committed
-# (small RootedTO caches) vs which are excluded (large legacy ETL caches).
+# (small NowServingTO caches) vs which are excluded (large legacy ETL caches).

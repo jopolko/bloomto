@@ -26,7 +26,18 @@ HEALTH_CACHE = ROOT / 'tools' / 'cache' / 'url_health_cache.json'
 CHECK_DAYS = 14
 TIMEOUT_SEC = 6
 WORKERS = 12
-UA = 'Mozilla/5.0 (compatible; rootedto-healthcheck/1.0)'
+UA = 'Mozilla/5.0 (compatible; nowservingto-healthcheck/1.0)'
+
+# Social platforms aggressively rate-limit HEAD probes and don't go silently dead the way
+# custom domains do. We trust them and skip the probe entirely.
+# Social platforms aggressively 429 our HEAD probes (they hate bots) but the pages
+# themselves are live for any human browser. We skip probing these — it's a probe
+# bypass, NOT a quality endorsement. The verifier prompt still prefers them LAST,
+# below own websites and Google Maps profiles.
+SKIP_PROBE_DOMAINS = ('instagram.com', 'facebook.com', 'tiktok.com', 'twitter.com', 'x.com', 'threads.net')
+
+# HTTP codes that mean "the page exists but I'm not letting you probe it." Treat as ok.
+SOFT_FAIL_CODES = {401, 403, 405, 429, 451, 503}
 
 def collect_urls():
     urls = set()
@@ -50,16 +61,37 @@ def needs_check(entry):
     if not entry.get('ok'): return age >= 3
     return age >= CHECK_DAYS
 
+def _host_of(url):
+    try:
+        from urllib.parse import urlparse
+        h = urlparse(url).netloc.lower()
+        return h[4:] if h.startswith('www.') else h
+    except Exception:
+        return ''
+
 def probe(url):
-    """Try HEAD first; some servers refuse, retry GET with range. Treat 200/3xx as OK."""
+    """Try HEAD first; some servers refuse, retry GET with range. Treat 200/3xx as OK,
+    AND treat known soft-fail codes (429/403/etc.) as OK since they mean the page exists
+    but is rate-limiting our probe. Skip social platforms entirely — they always rate-limit.
+    Flag cross-domain redirects (e.g. ethioeri.com 301→leonrent.com) as broken — the
+    original domain is parked/hijacked and the link is misleading."""
+    if any(d in url.lower() for d in SKIP_PROBE_DOMAINS):
+        return {'status': None, 'ok': True, 'reason': 'skipped (HEAD probe blocked by site; page assumed live for browser visitors)'}
+    origin_host = _host_of(url)
     for method in ('HEAD', 'GET'):
         try:
             req = Request(url, headers={'User-Agent': UA, 'Range': 'bytes=0-0'}, method=method)
             with urlopen(req, timeout=TIMEOUT_SEC) as r:
                 code = r.status
+                final_host = _host_of(r.geturl())
+                if origin_host and final_host and origin_host != final_host:
+                    return {'status': code, 'ok': False,
+                            'reason': f'cross-domain redirect: {origin_host} → {final_host} (domain hijack/parked)'}
                 return {'status': code, 'ok': 200 <= code < 400, 'reason': r.reason}
         except HTTPError as e:
-            # Some sites 403 HEAD but 200 GET; we already retry GET
+            if e.code in SOFT_FAIL_CODES:
+                # rate-limit / soft block — page exists, just won't let us probe it
+                return {'status': e.code, 'ok': True, 'reason': f'soft-fail {e.code} (page assumed live)'}
             if method == 'HEAD': continue
             return {'status': e.code, 'ok': False, 'reason': f'HTTP {e.code}'}
         except URLError as e:

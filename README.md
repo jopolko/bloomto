@@ -1,8 +1,8 @@
-# rootedto
+# NowServingTO
 
 **Toronto's newly-opened restaurants, by cuisine.** A daily-fresh directory of every restaurant licensed in the past 365 days, classified into 40+ cuisine buckets via Claude Haiku + web search, verified against Google Places and Bing, link-health-checked, and served as a static page.
 
-Live at **https://joshuaopolko.com/rootedto/**.
+Live at **https://nowservingto.com/**.
 
 ## What it does
 
@@ -55,14 +55,14 @@ Cuisines split out where meaningfully different: Italian, Chinese, Japanese, Kor
 
 ```bash
 # clone
-git clone https://github.com/jopolko/rootedto.git
-cd rootedto
+git clone https://github.com/jopolko/nowservingto.git
+cd nowservingto
 
 # venv + deps
 python3 -m venv .venv
 .venv/bin/pip install -r tools/requirements.txt
 
-# put credentials at /var/secrets/rootedto.env (chmod 600)
+# put credentials at /var/secrets/nowservingto.env (chmod 600)
 # required: ANTHROPIC_API_KEY=sk-ant-...
 # optional: GOOGLE_API_KEY (only needed if you want to re-enrich via Places)
 
@@ -72,7 +72,7 @@ tools/cron_daily_openings.sh
 # install daily cron (Toronto morning)
 crontab -e
 # add:
-#   17 5 * * * /path/to/rootedto/tools/cron_daily_openings.sh
+#   17 5 * * * /path/to/nowservingto/tools/cron_daily_openings.sh
 ```
 
 The four small caches under `tools/cache/*.json` are committed, so a fresh clone has ~900 verified entries to start with. Only the daily delta hits the API.
@@ -80,7 +80,7 @@ The four small caches under `tools/cache/*.json` are committed, so a fresh clone
 ## Layout
 
 ```
-rootedto/
+nowservingto/
 ├── index.html                          # the page; reads data/corridors.json
 ├── data/corridors.json                 # daily-refreshed wire file
 ├── tools/
