@@ -5,21 +5,42 @@ __pycache__/
 *.pyo
 *.pyd
 
-# ETL caches (re-downloadable from Toronto Open Data on next ETL run)
-tools/cache/
+# Claude Code per-machine state (settings, backups, command dirs)
+.claude/
+.claude.backup-*
+
+# Large legacy ETL caches (BloomTO/DemoCalcTO sources). The four small JSON caches
+# used by the active RootedTO openings pipeline ARE committed so a fresh clone can
+# warm-start without burning API credit:
+#   tools/cache/llm_cuisine_cache.json
+#   tools/cache/web_verify_cache.json
+#   tools/cache/places_cache.json
+#   tools/cache/url_health_cache.json
+tools/cache/*.geojson
+tools/cache/*.gdb
+tools/cache/*.zip
+tools/cache/*.csv
+tools/cache/coa_active.json
+tools/cache/demo_permits.json
+tools/cache/development_applications.json
+tools/cache/osm_*.json
+tools/cache/preliminary_zoning_reviews.json
+tools/cache/property_violations.json
 cache/
 
-# Legacy BloomTO ETL outputs (kept under legacy/bloomto/data when the
-# archived ETL is ever re-run; never appropriate for git history).
+# Legacy data outputs (regenerable; legacy/ tree is archived only)
 legacy/bloomto/data/parcels.geojson
 legacy/bloomto/data/parcels-top.json
 legacy/bloomto/data/parcels-broader.json
 legacy/bloomto/audit/*.PRE.md
 
-# DemoCalcTO ETL outputs (large or regenerable per rebuild)
+# DemoCalcTO ETL outputs
 data/democalc-permits-raw.json
 data/democalc-aggregates.json
+
+# Big shared data files (parcels GeoJSON ~400MB; CKAN survey docs are dev-only)
 data/*.geojson
+data/ckan_survey*.md
 
 # Editor / OS scrap
 *.swp
@@ -34,14 +55,10 @@ Thumbs.db
 
 # Cron-runtime artifacts
 tools/.signals.lock
+tools/.openings.lock
 tools/logs/
 
-# Local Claude Code state — per-machine, not for sharing
-.claude/settings.local.json
-.claude/scheduled_tasks.lock
-
-# Secrets — defensive guard. The real secrets file lives at
-# /var/secrets/bloomto.env on prod (outside this tree), but if anyone ever
-# drops a *.env file IN the repo it should never get committed.
+# Secrets — defensive. Real secrets live at /var/secrets/rootedto.env (outside this
+# tree). Never commit anything matching .env in the repo.
 .env
 *.env

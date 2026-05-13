@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RootedTO — Now Open in Toronto</title>
+<style>
+  :root {
+    --bg: #faf7ee;
+    --paper: #ffffff;
+    --ink: #15110d;
+    --ink2: #45403a;
+    --muted: #7a746a;
+    --line: #d9d2bf;
+    --rule: #15110d;
+    --accent: #c83624;
+    --moss: #4a6b2b;
+    --fresh: #1a7340;
+    /* cuisine palette */
+    --c-italian:    #c83624;
+    --c-caribbean:  #1a8a5a;
+    --c-sasian:     #d4a017;
+    --c-chinese:    #b13e6a;
+    --c-vietnam:    #4a8b8b;
+    --c-japan:      #2f3aa3;
+    --c-korean:     #6b2456;
+    --c-filipino:   #e08226;
+    --c-tamil:      #8a5d20;
+    --c-tibet:      #b15a25;
+    --c-greek:      #1f7a6a;
+    --c-portuguese: #9b2538;
+    --c-polish:     #4a5a6a;
+    --c-french:     #5a3a7a;
+    --c-irish_uk:   #2a6a40;
+    --c-german:     #6a5a30;
+    --c-jewish_deli:#4a4a8a;
+    --c-eastern_eu: #7a4a4a;
+    --c-mideast:    #b87a25;
+    --c-latin:      #cc4a4a;
+    --c-african_horn:#a0522d;
+    --c-african_west:#5a8a3a;
+    --serif: 'Iowan Old Style', 'Charter', Georgia, ui-serif, serif;
+    --sans: -apple-system, 'Helvetica Neue', ui-sans-serif, sans-serif;
+    --mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  .mast { border-bottom: 3px solid var(--rule); padding: 22px 0 16px; }
+  .mast .brand { font: 800 28px/1 var(--serif); letter-spacing: -0.02em; color: var(--ink); }
+  .mast .brand sup { font: 600 10px/1 var(--sans); letter-spacing: 0.08em; color: var(--muted); margin-left: 6px; vertical-align: super; text-transform: uppercase; }
+  .mast .sub { color: var(--muted); font: 400 14px/1.4 var(--serif); margin-top: 6px; font-style: italic; }
+  .mast .meta { float: right; color: var(--muted); font: 400 11px/1.4 var(--mono); }
+
+  /* "Communities losing ground" pressure panel */
+  .pressure { background: linear-gradient(180deg, #fdf5e4 0%, #faedd0 100%); border: 1px solid #d4a01733; border-radius: 10px; padding: 14px 18px; margin: 8px 0 24px; }
+  .pressure h3 { font: 700 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.12em; margin: 0 0 4px; color: #6a4f10; }
+  .pressure .ph-sub { font: italic 400 12.5px/1.4 var(--serif); color: var(--ink2); margin: 0 0 10px; }
+  .pressure .ph-sub strong { color: var(--ink); font-style: normal; font-weight: 600; }
+  .pressure-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px; }
+  .pr-row { display: grid; grid-template-columns: auto 1fr auto; grid-template-rows: auto auto; column-gap: 12px; row-gap: 2px; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.55); border: 1px solid rgba(212, 160, 23, 0.25); border-radius: 6px; cursor: pointer; transition: background 0.12s, border-color 0.12s; text-align: left; font: inherit; min-width: 0; }
+  .pr-row:hover { background: rgba(255,255,255,0.9); border-color: rgba(212, 160, 23, 0.55); }
+  .pr-row .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--prc, var(--muted)); grid-row: 1 / 3; grid-column: 1; align-self: center; }
+  .pr-row .lbl { grid-column: 2; grid-row: 1; font: 700 14px/1.15 var(--serif); color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pr-row .rate { grid-column: 2; grid-row: 2; font: 600 11px/1.2 var(--mono); color: #8a5d10; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .pr-row .cta { grid-column: 3; grid-row: 1 / 3; align-self: center; font: 700 10.5px/1.1 var(--sans); color: var(--fresh); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; padding-left: 6px; border-left: 1px solid rgba(212, 160, 23, 0.25); padding-left: 10px; }
+  .pr-row .cta::after { content: ' →'; margin-left: 2px; }
+
+  .cuisine-picker { display: flex; align-items: center; gap: 12px; margin: 24px 0 14px; flex-wrap: wrap; }
+  .cuisine-picker label { font: 700 10px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+  .cuisine-picker select { font: 600 14px/1.4 var(--serif); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 9px 36px 9px 14px; cursor: pointer; min-width: 220px; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2315110d' d='M6 8L0 2l1.4-1.4L6 5.2 10.6.6 12 2z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; transition: border-color 0.12s, box-shadow 0.12s; }
+  .cuisine-picker select:hover { border-color: var(--rule); }
+  .cuisine-picker select:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,17,13,0.08); }
+  .cuisine-picker .pcount { font: 600 12px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .open-feed { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0; margin-bottom: 28px; }
+  .open-row { display: grid; grid-template-columns: 110px 1fr 130px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #ece6d5; }
+  .open-row:last-child { border-bottom: 0; }
+  .open-row .od { font: 700 11.5px/1.2 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .open-row .od .ago { display: block; font: 700 9.5px/1.1 var(--sans); color: var(--moss); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 5px; }
+  .open-row[data-fresh="hot"] .od .ago { color: var(--fresh); font-size: 10.5px; }
+  .open-row[data-fresh="hot"] .od .ago::before { content: '★ '; }
+  .open-row .on { font: 700 15.5px/1.25 var(--serif); color: var(--ink); letter-spacing: -0.005em; }
+  .open-row .on a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.12s; }
+  .open-row .on a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+  .open-row .on a.ext::after { content: ' ↗'; font-size: 12px; color: var(--muted); font-weight: 500; vertical-align: 1px; }
+  .open-row .on a:hover.ext::after { color: var(--accent); }
+  .open-row .on a.maps::after { content: ' ◔'; font-size: 11px; color: var(--muted); font-weight: 500; vertical-align: 1px; opacity: 0.7; }
+  .open-row .on .rating { display: inline-block; margin-left: 10px; font: 700 12px/1 var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; vertical-align: 1px; white-space: nowrap; }
+  .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
+  .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
+  .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
+  .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
+  .open-row .oc { text-align: right; }
+  .open-row .oc .pill { font: 700 9.5px/1 var(--sans); padding: 5px 10px; border-radius: 99px; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .open-row[data-fresh="hot"] { background: rgba(45, 165, 92, 0.045); }
+  .open-feed .empty { padding: 28px 20px; color: var(--muted); font: italic 13px/1.4 var(--serif); text-align: center; }
+
+  footer { padding: 22px 0 50px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--rule); margin-top: 24px; }
+  footer .wrap { line-height: 1.6; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 0 14px; }
+    .mast .meta { display: none; }
+    .open-row { grid-template-columns: 1fr 90px; gap: 8px; padding: 12px 14px; }
+    .open-row .od { grid-column: 1 / 3; order: -1; display: flex; gap: 10px; align-items: baseline; }
+    .open-row .od .ago { display: inline; margin-top: 0; }
+    .open-row .on { grid-column: 1; }
+    .open-row .oc { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <span class="meta" id="masthead-meta">Loading…</span>
+    <span class="brand">RootedTO<sup>beta</sup></span>
+    <div class="sub">New restaurant openings in Toronto, by cuisine — daily-fresh from Toronto Open Data.</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="cuisine-picker">
+    <label for="cuisine-select">Cuisine</label>
+    <select id="cuisine-select" aria-label="Filter by cuisine"></select>
+    <span class="pcount" id="cuisine-pcount"></span>
+  </div>
+  <div class="open-feed" id="open-feed"></div>
+
+  <div class="pressure" id="pressure" hidden>
+    <h3>Eat where it matters</h3>
+    <p class="ph-sub">These cuisines lost the largest share of their footprint in the past year. <strong>Click any to find a newcomer →</strong></p>
+    <div class="pressure-rows" id="pressure-rows"></div>
+  </div>
+
+</main>
+
+<footer><div class="wrap">RootedTO — <a href="https://open.toronto.ca/dataset/municipal-licensing-and-standards-business-licences-and-permits/">Toronto Open Data · Business Licences</a>. Cuisine inferred from operating name (~24% tag rate). A "new" licence can mean a brand-new build, a same-space new operator, or a new location of an existing operator — all three are real "new" for the customer.</div></footer>
+
+<script>
+const CUISINE_PALETTE = {
+  italian:'var(--c-italian)', caribbean:'var(--c-caribbean)', south_asian:'var(--c-sasian)',
+  chinese:'var(--c-chinese)', vietnamese:'var(--c-vietnam)', japanese:'var(--c-japan)',
+  korean:'var(--c-korean)', filipino:'var(--c-filipino)', tamil:'var(--c-tamil)',
+  tibetan:'var(--c-tibet)', greek:'var(--c-greek)', portuguese:'var(--c-portuguese)',
+  polish:'var(--c-polish)', french:'var(--c-french)', irish_uk:'var(--c-irish_uk)',
+  german:'var(--c-german)', jewish_deli:'var(--c-jewish_deli)', eastern_eu:'var(--c-eastern_eu)',
+  middle_east:'var(--c-mideast)', latin:'var(--c-latin)',
+  african_horn:'var(--c-african_horn)', african_west:'var(--c-african_west)',
+  thai:'#7a8a3a',
+  pakistani:'#a06030', afghan:'#7a5d3a', bangladeshi:'#b88820', persian:'#8a4a25',
+  mexican:'#d63d2a', salvadoran:'#c8553a', peruvian:'#b35b50', colombian:'#cc6248', brazilian:'#3d8a47',
+  jamaican:'#1f7a4a', trinidadian:'#2a9560', guyanese:'#3a8060', haitian:'#1a6855',
+  lebanese:'#c89538', turkish:'#a8662a', syrian:'#9b5520',
+  ukrainian:'#6a5a8a', russian:'#7a4a4a', hungarian:'#8a5050',
+  ethiopian:'#a0522d', eritrean:'#8a4528', somali:'#b06530',
+  nigerian:'#4a7a30', ghanaian:'#6a8a40', moroccan:'#b87a2a',
+  indonesian:'#7a6a40', malaysian:'#5a7a55', burmese:'#8a7050',
+};
+const CUISINE_LABEL = {
+  italian:'Italian', chinese:'Chinese', japanese:'Japanese', korean:'Korean',
+  vietnamese:'Vietnamese', filipino:'Filipino', thai:'Thai',
+  indonesian:'Indonesian', malaysian:'Malaysian', burmese:'Burmese',
+  south_asian:'South Asian (other)', pakistani:'Pakistani', afghan:'Afghan',
+  bangladeshi:'Bangladeshi', tamil:'Tamil', tibetan:'Tibetan',
+  caribbean:'Caribbean (other)', jamaican:'Jamaican', trinidadian:'Trinidadian', guyanese:'Guyanese', haitian:'Haitian',
+  greek:'Greek', portuguese:'Portuguese', polish:'Polish', french:'French',
+  irish_uk:'Irish/UK', german:'German', jewish_deli:'Jewish deli',
+  eastern_eu:'Eastern European (other)', ukrainian:'Ukrainian', russian:'Russian', hungarian:'Hungarian',
+  middle_east:'Middle Eastern (other)', lebanese:'Lebanese', turkish:'Turkish', syrian:'Syrian', persian:'Persian',
+  latin:'Latin American (other)', mexican:'Mexican', salvadoran:'Salvadoran', peruvian:'Peruvian', colombian:'Colombian', brazilian:'Brazilian',
+  african_horn:'East African (other)', ethiopian:'Ethiopian', eritrean:'Eritrean', somali:'Somali',
+  african_west:'West African (other)', nigerian:'Nigerian', ghanaian:'Ghanaian', moroccan:'Moroccan',
+};
+
+const NAME_STOP = new Set(['THE','AND','OF','RESTAURANT','CAFE','BAR','GRILL','KITCHEN','TORONTO','INC','LTD','CO','CORP','CUISINE','HOUSE','SHOP','MARKET','STORE','FOOD','FOODS','SUPER','PLACE','SPOT','EATERY','BISTRO','PUB','BAKERY','DELI','DINER','LOUNGE']);
+function nameTokens(s) {
+  if (!s) return new Set();
+  const out = new Set();
+  s.toUpperCase().replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).forEach(w => {
+    if (w.length > 1 && !NAME_STOP.has(w)) out.add(w);
+  });
+  return out;
+}
+function nameJaccard(a, b) {
+  const A = nameTokens(a), B = nameTokens(b);
+  if (!A.size || !B.size) return 0;
+  let inter = 0; A.forEach(x => B.has(x) && inter++);
+  return inter / (A.size + B.size - inter);
+}
+
+function agoLabel(days) {
+  if (days <= 1)   return 'licensed today';
+  if (days <= 60)  return 'licensed ' + days + 'd ago';
+  if (days <= 365) return 'licensed ' + Math.round(days/30) + 'mo ago';
+  return 'licensed ' + (days/365).toFixed(1) + 'y ago';
+}
+
+fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
+  const no = data.newOpenings;
+  const gen = new Date(data.generatedAt);
+  document.getElementById('masthead-meta').textContent =
+    `Build ${gen.toISOString().slice(0,10)} ${gen.toISOString().slice(11,16)} UTC · ${(no && no.totalTagged365d) || 0} tagged openings · 12 mo`;
+
+  if (!no || !no.cuisines || !no.cuisines.length) {
+    document.getElementById('open-feed').innerHTML = '<div class="empty">No new-openings data in feed.</div>';
+    return;
+  }
+
+  const sel = document.getElementById('cuisine-select');
+  const pcountEl = document.getElementById('cuisine-pcount');
+  const feed = document.getElementById('open-feed');
+
+  // Build options: "All cuisines" first, then every cuisine alphabetical by label.
+  const totalCount = no.cuisines.reduce((s,c)=>s+c.count365d,0);
+  const allOpt = document.createElement('option');
+  allOpt.value = '__all';
+  allOpt.textContent = `All cuisines (${totalCount})`;
+  sel.appendChild(allOpt);
+  const sorted = [...no.cuisines].sort((a, b) => (a.label || a.key).localeCompare(b.label || b.key));
+  sorted.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.key;
+    opt.textContent = `${c.label} (${c.count365d})`;
+    sel.appendChild(opt);
+  });
+  pcountEl.textContent = `${totalCount} verified open`;
+
+  function renderFeed(filterKey) {
+    let rows;
+    if (filterKey === '__all') {
+      rows = no.recent.slice(0, 80);
+    } else {
+      rows = no.recent.filter(r => r.cuisine === filterKey);
+      // ensure we include cuisine's full set even if recent[] is capped — recent5 is the curated head
+      const c = no.cuisines.find(x => x.key === filterKey);
+      if (c && c.recent5) {
+        const seen = new Set(rows.map(r => r.operatingName + '|' + r.issuedDate));
+        c.recent5.forEach(r => { const k = r.operatingName+'|'+r.issuedDate; if (!seen.has(k)) { rows.unshift(r); seen.add(k); } });
+        rows.sort((a,b)=> a.issuedDate < b.issuedDate ? 1 : -1);
+      }
+      rows = rows.slice(0, 80);
+    }
+    feed.innerHTML = '';
+    if (!rows.length) {
+      feed.innerHTML = '<div class="empty">No tagged openings in this cuisine in the last 365 days.</div>';
+      return;
+    }
+    rows.forEach(r => {
+      const color = CUISINE_PALETTE[r.cuisine] || '#999';
+      const isHot = r.daysOpen <= 30;
+      const row = document.createElement('div');
+      row.className = 'open-row';
+      if (isHot) row.setAttribute('data-fresh', 'hot');
+      // Trust the Google match only if its name overlaps the licence name reasonably.
+      // Below threshold, suppress link AND rating — better to show no link than the wrong restaurant.
+      const trustMatch = !r.matchedName || nameJaccard(r.operatingName, r.matchedName) >= 0.34;
+      const link = trustMatch ? (r.website || r.mapsUrl) : null;
+      const linkClass = trustMatch && r.website ? 'ext' : (trustMatch && r.mapsUrl ? 'maps' : '');
+      const nameHtml = link
+        ? `<a class="${linkClass}" href="${link}" target="_blank" rel="noopener">${r.operatingName}</a>`
+        : r.operatingName;
+      const ratingHtml = (trustMatch && r.rating)
+        ? `<span class="rating">${r.rating.toFixed(1)}<span class="rc">· ${r.reviewCount ? r.reviewCount.toLocaleString() : '?'}</span></span>`
+        : '';
+      const unverifiedHtml = (!trustMatch && r.matchedName)
+        ? `<span class="unverified" title="Google's matched name (${r.matchedName}) differs too much from the licence name to trust — link suppressed">unverified</span>`
+        : '';
+      row.innerHTML = `
+        <div class="od">${r.issuedDate}<span class="ago">${agoLabel(r.daysOpen)}</span></div>
+        <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}<span class="oad">${r.address || '—'}</span></div>
+        <div class="oc"><span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>
+      `;
+      feed.appendChild(row);
+    });
+  }
+  function applyFilter(key) {
+    sel.value = key;
+    renderFeed(key);
+    const c = no.cuisines.find(x => x.key === key);
+    pcountEl.textContent = key === '__all' ? `${totalCount} verified open` : `${c ? c.count365d : 0} verified open`;
+  }
+  applyFilter('__all');
+  sel.addEventListener('change', e => applyFilter(e.target.value));
+
+  // ---- COMMUNITIES LOSING GROUND ----
+  // Renders the top 5 cuisines by 1-year closure rate that also have new openings
+  // currently on the page. Click a row → triggers the cuisine chip filter.
+  const cc = data.closuresByCuisine;
+  if (cc && cc.cuisines && cc.cuisines.length) {
+    const verifiedCounts = {};
+    no.cuisines.forEach(c => { verifiedCounts[c.key] = c.count365d; });
+    const pressureRanked = cc.cuisines
+      .filter(c => c.rate1y != null && c.active >= 30 && (verifiedCounts[c.key] || 0) >= 2)
+      .sort((a,b) => b.rate1y - a.rate1y)
+      .slice(0, 5);
+    if (pressureRanked.length) {
+      const panel = document.getElementById('pressure');
+      const rowsEl = document.getElementById('pressure-rows');
+      pressureRanked.forEach(c => {
+        const nv = verifiedCounts[c.key] || 0;
+        const color = CUISINE_PALETTE[c.key] || '#999';
+        const btn = document.createElement('button');
+        btn.className = 'pr-row';
+        btn.dataset.key = c.key;
+        btn.style.setProperty('--prc', color);
+        btn.innerHTML = `
+          <span class="dot"></span>
+          <span class="lbl">${CUISINE_LABEL[c.key] || c.label}</span>
+          <span class="rate">${c.rate1y.toFixed(0)}% closed, 12mo</span>
+          <span class="cta">${nv} newly open</span>`;
+        btn.addEventListener('click', () => {
+          sel.value = c.key;
+          sel.dispatchEvent(new Event('change'));
+          sel.scrollIntoView({behavior: 'smooth', block: 'center'});
+        });
+        rowsEl.appendChild(btn);
+      });
+      panel.hidden = false;
+    }
+  }
+
+}).catch(err => {
+  document.getElementById('open-feed').innerHTML = '<div class="empty">error loading data — see console</div>';
+  console.error(err);
+});
+</script>
+
+</body>
+</html>

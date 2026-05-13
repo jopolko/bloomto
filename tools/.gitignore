@@ -1,4 +1,6 @@
 .venv/
 __pycache__/
 *.pyc
-cache/
+
+# Cache directory: see root .gitignore for which JSON files ARE committed
+# (small RootedTO caches) vs which are excluded (large legacy ETL caches).
