@@ -145,13 +145,15 @@
   .fading .fc .fc-rate { font: 500 10.5px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
   .fading .fc .fc-down { font: 700 14px/1 var(--sans); color: var(--accent); margin-left: 1px; vertical-align: -1px; }
   @media (max-width: 600px) {
-    .fading { gap: 6px; margin: 16px 0 12px; }
-    .fading .fl { width: 100%; font-size: 9.5px; }
-    .fading .fc { padding: 4px 10px; font-size: 11.5px; }
-    /* Drop the % on mobile to fit all 3 chips on one line. The ↓ + Support label
-       still convey trending-down without the data-y exact number. */
-    .fading .fc .fc-rate { display: none; }
-    .fading .fc .fc-down { margin-left: 4px; }
+    /* Single-line layout: SUPPORT: [Filipino 35%↓] [West Afr 34%↓] [Latin Am 20%↓]
+       Tight padding + smaller font on chips, abbreviated label, all on one row. */
+    .fading { gap: 5px; margin: 14px 0 10px; flex-wrap: nowrap; align-items: center; }
+    .fading .fl { font-size: 9px; flex-shrink: 0; letter-spacing: 0.08em; }
+    .fading .fl::after { content: ':'; }
+    .fading .fc-row { display: flex; gap: 4px; flex-wrap: nowrap; min-width: 0; }
+    .fading .fc { padding: 3px 7px; font-size: 10.5px; flex-shrink: 0; }
+    .fading .fc .fc-rate { font-size: 9px; margin-left: 3px; }
+    .fading .fc .fc-down { font-size: 11px; margin-left: 1px; }
   }
 
   /* List ↔ Map view toggle + map container */
