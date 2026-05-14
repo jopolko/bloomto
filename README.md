@@ -45,12 +45,6 @@ Each verification result is cached with a `verified_at` timestamp. Tier-based re
 
 Cuisines split out where meaningfully different: Italian, Chinese, Japanese, Korean, Vietnamese, Filipino, Thai, Indonesian, Malaysian, Burmese, South Asian (other), Pakistani, Afghan, Bangladeshi, Tamil, Tibetan, Caribbean (other), Jamaican, Trinidadian, Guyanese, Haitian, Greek, Portuguese, Polish, French, Irish/UK, German, Jewish deli, Eastern European (other), Ukrainian, Russian, Hungarian, Middle Eastern (other), Lebanese, Turkish, Syrian, Persian, Latin American (other), Mexican, Salvadoran, Peruvian, Colombian, Brazilian, East African (other), Ethiopian, Eritrean, Somali, West African (other), Nigerian, Ghanaian, Moroccan.
 
-## Cost
-
-- Daily steady-state: **~$0.30/day** of Anthropic API credit (Haiku tokens + web_search calls for the 5–15 new licences per day, plus tier-aware re-checks)
-- ~$10/month total
-- Zero ongoing Google API spend (Places enrichment was a one-time $6 cold-start; tier-based recheck via Bing-backed web_search is plenty)
-
 ## Setup
 
 ```bash
