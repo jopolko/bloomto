@@ -479,27 +479,14 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
 
-        # fallbackMapsUrl: use the permit's authoritative NAME + ADDRESS as the
-        # Google Maps query. Both fields come from the City of Toronto licence
-        # data, which is the source of truth for what business should be at
-        # what address. Google's geocoder + business-search handles the rest —
-        # if the business is indexed, Maps shows the profile; if not, falls
-        # back to the address.
-        #
-        # The earlier worry about this format was EASTERN 828 CAFE & GRILL
-        # searching "EASTERN 828 CAFE & GRILL 828 EASTERN AVE" and getting
-        # the established car wash at the same address. That case is now
-        # caught upstream by the weak_match drop (no Places, no website,
-        # name-only cuisine) so it never reaches URL construction. Entries
-        # that DO reach here have at least one of: Places match, real website,
-        # or brand-inherited website — i.e., something attesting to the
-        # business's existence beyond the licence row.
-        if op_raw and addr1:
-            entry['fallbackMapsUrl'] = (
-                f"https://www.google.com/maps/search/?api=1"
-                f"&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
-            )
-        elif addr1:
+        # fallbackMapsUrl: address-only query. Including the operating name biases
+        # Google toward existing indexed locations of the same brand — e.g.,
+        # LENA'S ROTI's new 3999 Keele licence + "LENA'S ROTI" in the query has
+        # Maps return the older 4207 Keele Lena's location (the indexed one).
+        # Address-only forces Google's geocoder to resolve the exact unit,
+        # showing the address pin where the business actually IS. The geocoder
+        # is excellent at North American unit-level addresses.
+        if addr1:
             entry['fallbackMapsUrl'] = (
                 f"https://www.google.com/maps/?q={quote_plus(addr1 + ' Toronto, ON')}"
             )
