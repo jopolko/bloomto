@@ -101,14 +101,33 @@ def _coords_from_geocode(operating_name, address):
         pass
     return None
 
-def _nearby_fallback(lat, lng):
-    """Places Nearby Search at the geocoded coords. Filters to restaurants,
-    returns the top result (within 100m radius). The licence address pinpoints
-    a single business in most cases."""
+def _name_tokens(s):
+    import re
+    return {t for t in re.findall(r'[A-Z0-9]{2,}', (s or '').upper())
+            if t not in {'THE','AND','OF','INC','LTD','CO','LLC',
+                         'RESTAURANT','CAFE','BAR','GRILL','KITCHEN','HOUSE','SHOP',
+                         'PREMIUM','EXPRESS','TAKE','OUT','TAKEOUT','BISTRO','EATERY'}}
+
+def _name_overlap(a, b):
+    ta, tb = _name_tokens(a), _name_tokens(b)
+    if not ta or not tb: return 0.0
+    return len(ta & tb) / len(ta | tb)
+
+def _nearby_fallback(lat, lng, name_hint):
+    """Places Nearby Search at the geocoded coords. 250m radius accounts for
+    Nominatim's typical pin offset from Google's business location. Returns
+    the result with highest name overlap so we don't accidentally pick a
+    neighbouring restaurant in a strip mall."""
     r = http_get_json('https://maps.googleapis.com/maps/api/place/nearbysearch/json',
-        {'location': f'{lat},{lng}', 'radius': 100, 'type': 'restaurant', 'key': API_KEY})
+        {'location': f'{lat},{lng}', 'radius': 250, 'type': 'restaurant', 'key': API_KEY})
     cands = r.get('results') or []
-    return cands[0] if cands else None
+    if not cands: return None
+    # Rank by name overlap to disambiguate when several restaurants are nearby
+    scored = [(c, _name_overlap(name_hint, c.get('name', ''))) for c in cands]
+    scored.sort(key=lambda x: -x[1])
+    best, best_score = scored[0]
+    # Require at least one shared content-token (drops random nearby restaurants)
+    return best if best_score >= 0.2 else None
 
 def enrich_one(operating_name, address):
     addr_first = (address or '').split('M')[0].strip().rstrip(',')
@@ -120,7 +139,7 @@ def enrich_one(operating_name, address):
     if not cand or not _address_matches(addr_first, cand.get('formatted_address')):
         coords = _coords_from_geocode(operating_name, address)
         if coords:
-            nearby = _nearby_fallback(coords[0], coords[1])
+            nearby = _nearby_fallback(coords[0], coords[1], operating_name)
             if nearby:
                 cand = nearby  # Nearby Search has same shape (place_id + name + vicinity)
             else:
