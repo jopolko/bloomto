@@ -199,6 +199,50 @@ def is_chain(name_upper):
     """Combined chain check: manual denylist OR OSM-derived authoritative list."""
     return is_denylist_chain(name_upper) or is_osm_chain(name_upper)
 
+# Institutional / chain-parent detection by Client Name licence count.
+# A Client Name holding ≥10 distinct food licence addresses across the City of
+# Toronto is, in practice, always one of: (a) a national/regional chain parent
+# corporation, (b) a multi-location franchisee LLC, (c) an institutional food
+# service contractor (Aramark, Compass Group, Sodexo, TMU, hospital systems),
+# or (d) a grocery/retail-food chain (Loblaws, Metro, Bulk Barn, Walmart).
+# None of these belong in a "newest INDEPENDENT cultural-cuisine restaurants"
+# directory. This complements is_chain() (which keys off the consumer brand
+# name) by catching B2B operators whose Operating Name isn't a known consumer
+# brand at all — Aramark cafeterias inside hospitals, TMU food courts, etc.
+_INSTITUTIONAL_CLIENT_THRESHOLD = 10
+_INSTITUTIONAL_CLIENTS = None
+
+def _build_institutional_clients(csv_path):
+    from collections import defaultdict
+    client_addrs = defaultdict(set)
+    try:
+        with open(csv_path, encoding='utf-8', errors='replace') as f:
+            for row in csv.DictReader(f):
+                cat = (row.get('Category') or '').strip()
+                if cat not in FOOD_CATS: continue
+                if (row.get('Cancel Date') or '').strip(): continue
+                cn = (row.get('Client Name') or '').strip().upper()
+                addr1 = (row.get('Licence Address Line 1') or '').strip().upper()
+                if cn and addr1:
+                    client_addrs[cn].add(addr1)
+    except (FileNotFoundError, OSError):
+        return set()
+    return {cn for cn, addrs in client_addrs.items()
+            if len(addrs) >= _INSTITUTIONAL_CLIENT_THRESHOLD}
+
+def _ensure_institutional_clients():
+    global _INSTITUTIONAL_CLIENTS
+    if _INSTITUTIONAL_CLIENTS is None:
+        _INSTITUTIONAL_CLIENTS = _build_institutional_clients(CSV_PATH)
+    return _INSTITUTIONAL_CLIENTS
+
+def is_institutional_client(client_name_upper):
+    """True iff the Client Name corporation holds ≥10 food licences across
+    Toronto. Catches Aramark, Compass Group, TMU, hospital food contractors,
+    plus chain-parent franchisee LLCs that don't surface in consumer-brand
+    lists (OSM, our denylist)."""
+    return (client_name_upper or '').strip() in _ensure_institutional_clients()
+
 def keyword_classify(op_upper):
     for cuisine, keys in CUISINE_PATTERNS.items():
         for k in keys:
@@ -303,7 +347,7 @@ from urllib.parse import quote_plus
 # Issued date — that's when the kitchen actually opened, not just when a category was added.
 seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0
 
 # Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
 # destination restaurants. Three orthogonal signals catch them:
@@ -348,6 +392,13 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # licence. Caught by the City's own "Located inside X" conditions field.
         if _is_instore_kiosk(row):
             n_dropped_instore += 1
+            continue
+        # Institutional / chain-parent operator? Drop. Catches Aramark cafeterias,
+        # Compass Group contract kitchens, TMU food courts, etc. — and chain
+        # franchisee LLCs (10+ Tim Hortons/McDonald's locations under one corp).
+        client_name = (row.get('Client Name') or '').strip().upper()
+        if is_institutional_client(client_name):
+            n_dropped_institutional += 1
             continue
         op_raw = (row.get('Operating Name') or '').strip()
         if not op_raw: continue
@@ -409,7 +460,7 @@ for entry in seen_entries.values():
     for c in entry.get('cuisines') or [entry['cuisine']]:
         opens_365_by_cuisine[c].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_deduped} duplicate rows collapsed")
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:
