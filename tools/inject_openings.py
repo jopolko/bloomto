@@ -349,17 +349,17 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # recovered_at timestamps gate the 30-day re-attempt window, by which
         # point Google/Yelp/blogs may have indexed the place and a stronger
         # signal will arrive.
-        # Drop: no Places match + no website. We have no way to send the user
-        # to a verified location for this specific licence. Source of cuisine
-        # (Haiku web_search vs name-only) doesn't matter — the issue isn't
-        # cuisine confidence, it's that there's no link target we trust. The
-        # validator may have flagged is_same_business=no for an address-
-        # mismatched Places match and cleared mapsUrl; this rule catches those
-        # cases (LENA'S ROTI 3999 Keele — Places only has the 4207 location,
-        # validator cleared it, no website remains).
+        # Drop only when there's literally no evidence the place exists —
+        # no Places match AND no website AND cuisine came from name-only
+        # (no web_search evidence the operator is real). For multi-location
+        # indies where validator cleared an address-mismatched Places match
+        # but web_verify found the brand online (cuisine source = web_search),
+        # KEEP the entry — they may show in a brand-search even if Google
+        # hasn't indexed this specific location yet.
         if (not entry.get('matchedName')
             and not entry.get('mapsUrl')
-            and not entry.get('website')):
+            and not entry.get('website')
+            and source in ('llm', None)):
             n_dropped_weak_match += 1
             continue
 
