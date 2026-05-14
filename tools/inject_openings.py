@@ -370,7 +370,11 @@ all_recent.sort(key=lambda r: r['issuedDate'], reverse=True)
 all_recent = all_recent[:1500]  # large enough to include all 365-day verified-open
 
 # Inject
+from datetime import timezone
 data = json.load(open(DATA_PATH))
+# Stamp top-level generatedAt too — daily inject regenerates the dataset, so the
+# subtitle "updated <date>" should reflect today, not the last build_corridors run.
+data['generatedAt'] = datetime.now(timezone.utc).isoformat()
 data['newOpenings'] = {
     'asOf': REFERENCE_DATE.isoformat(),
     'windowDays': 365,
