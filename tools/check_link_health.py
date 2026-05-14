@@ -11,7 +11,7 @@ Cache: tools/cache/url_health_cache.json
 Re-checks any URL whose last check is older than CHECK_DAYS or that was
 previously not OK. Stable OK results are skipped to keep this fast.
 """
-import os, sys, json, time, socket
+import os, re, sys, json, time, socket
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -22,11 +22,23 @@ ROOT = Path(__file__).resolve().parent.parent
 PLACES_CACHE = ROOT / 'tools' / 'cache' / 'places_cache.json'
 WEB_CACHE = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
 HEALTH_CACHE = ROOT / 'tools' / 'cache' / 'url_health_cache.json'
+SECRETS = Path('/var/secrets/nowservingto.env')
 
 CHECK_DAYS = 14
 TIMEOUT_SEC = 6
 WORKERS = 12
 UA = 'Mozilla/5.0 (compatible; nowservingto-healthcheck/1.0)'
+MODEL = 'claude-haiku-4-5-20251001'
+
+def _load_api_key():
+    if not SECRETS.exists(): return None
+    for line in SECRETS.read_text().splitlines():
+        line = line.strip()
+        if line.startswith('ANTHROPIC_API_KEY='):
+            return line.split('=', 1)[1].strip().strip('"').strip("'")
+    return None
+
+ANTHROPIC_KEY = _load_api_key()
 
 # Social platforms aggressively rate-limit HEAD probes and don't go silently dead the way
 # custom domains do. We trust them and skip the probe entirely.
@@ -38,6 +50,118 @@ SKIP_PROBE_DOMAINS = ('instagram.com', 'facebook.com', 'tiktok.com', 'twitter.co
 
 # HTTP codes that mean "the page exists but I'm not letting you probe it." Treat as ok.
 SOFT_FAIL_CODES = {401, 403, 405, 429, 451, 503}
+
+# When the HTTP probe succeeds, we still need to know whether the page is the
+# legitimate business homepage — or whether the domain has been hijacked/parked
+# and is now serving SEO spam (gambling, pharmacy, crypto, "domain for sale", etc).
+# We delegate that judgment to Haiku rather than hardcoding token lists, so new
+# spam variants don't slip through. ~$0.001 per URL on sync pricing.
+SNIFF_BYTES = 32768  # 32 KB is plenty for <title> + visible body text
+
+SITE_REVIEW_PROMPT = """You audit whether a URL serves a legitimate business homepage,
+or whether the domain has been hijacked / parked / repurposed as SEO spam.
+
+Reply with exactly one JSON object on ONE line, no prose, no markdown:
+{"verdict":"legit|spam|off_topic","reason":"<one short sentence>"}
+
+- "legit": real business homepage in any language — restaurant, shop, services,
+  agency, personal portfolio for a chef/owner. Imperfect/unprofessional sites are fine.
+- "spam": gambling/casino/slots, online pharmacy, crypto/forex scams, link farms,
+  SEO bait, "domain for sale" or "buy this domain" parking. Especially common:
+  Indonesian/Russian-language gambling fronts that have nothing to do with the URL's
+  apparent purpose.
+- "off_topic": clearly a different business at a different address, an unrelated
+  personal site, an under-construction placeholder with no business identity.
+
+Be generous with "legit". Reserve "spam"/"off_topic" for clear cases."""
+
+def _strip_html(body_bytes):
+    """Best-effort HTML → text without BeautifulSoup.
+    Also strips inline CSS rules (@font-face / .class{...}) that website builders
+    like Squarespace/Vistaweb dump into the body — without this, the "text" sent
+    to the reviewer is dominated by font declarations and the page looks empty."""
+    try:
+        s = body_bytes.decode('utf-8', errors='replace')
+    except Exception:
+        return ''
+    title_m = re.search(r'<title[^>]*>(.*?)</title>', s, re.IGNORECASE | re.DOTALL)
+    title = (title_m.group(1).strip() if title_m else '')[:200]
+    s = re.sub(r'<script[^>]*>.*?</script>', ' ', s, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r'<style[^>]*>.*?</style>', ' ', s, flags=re.IGNORECASE | re.DOTALL)
+    # Squarespace/Wix/etc. dump huge inline scripts whose closing tag falls past our
+    # 32KB read window — strip anything from an unclosed <script>/<style> to end-of-input.
+    s = re.sub(r'<script\b[^>]*>.*$', ' ', s, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r'<style\b[^>]*>.*$', ' ', s, flags=re.IGNORECASE | re.DOTALL)
+    s = re.sub(r'<[^>]+>', ' ', s)
+    s = (s.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<')
+         .replace('&gt;', '>').replace('&#39;', "'").replace('&quot;', '"'))
+    # Strip inline CSS rules that escaped <style> tags. Builder platforms inline
+    # rules with complex selectors (attribute selectors, multi-selector commas) that
+    # the simple `.class { ... }` pattern doesn't catch — go broader here.
+    s = re.sub(r'@[a-z-]+\s+[^;]+;', ' ', s, flags=re.IGNORECASE)  # @charset, @import
+    s = re.sub(r'@[a-z-]+[^;{]*\{[^{}]*\}', ' ', s, flags=re.IGNORECASE)  # @font-face, @media (one level)
+    s = re.sub(r'[.#:\[][\w\s,.#:\[\]=\-_*>+~()"\']{0,200}?\{[^{}]{0,500}\}', ' ', s)  # broad selector { ... }
+    s = re.sub(r'\s+', ' ', s).strip()
+    return f"TITLE: {title}\n\nTEXT: {s[:2000]}"
+
+def _body_too_short_to_judge(page_text):
+    """SPA shells (Squarespace, Wix, etc.) deliver near-empty initial HTML — actual
+    content is JS-hydrated. Can't judge what isn't rendered. Two heuristics:
+    1. After stripping CSS/JS, body is too short to contain real content
+    2. After stripping, body is mostly symbols (CSS leftovers, JS object literals,
+       JSON dumps) — not prose. Either way: default to legit."""
+    if 'TEXT:' not in page_text: return True
+    body = page_text.split('TEXT:', 1)[1].strip()
+    if len(body) < 150: return True
+    alpha = sum(1 for c in body if c.isalpha())
+    if alpha / len(body) < 0.55: return True
+    return False
+
+def review_site(url):
+    """Fetch up to SNIFF_BYTES of the URL and ask Haiku whether it's a legit business
+    homepage. Returns a reason string if the page is spam/off-topic, else None.
+    Any error (fetch, parse, API) returns None — give the URL the benefit of the doubt."""
+    if not ANTHROPIC_KEY:
+        return None
+    try:
+        req = Request(url, headers={'User-Agent': UA, 'Range': f'bytes=0-{SNIFF_BYTES}'}, method='GET')
+        with urlopen(req, timeout=TIMEOUT_SEC) as r:
+            body = r.read(SNIFF_BYTES)
+    except Exception:
+        return None
+    page_text = _strip_html(body)
+    if not page_text or _body_too_short_to_judge(page_text):
+        return None
+    try:
+        payload = json.dumps({
+            'model': MODEL,
+            'max_tokens': 80,
+            'system': SITE_REVIEW_PROMPT,
+            'messages': [{'role': 'user', 'content': f"URL: {url}\n\n{page_text}"}],
+        }).encode('utf-8')
+        api = Request('https://api.anthropic.com/v1/messages', data=payload, headers={
+            'x-api-key': ANTHROPIC_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+        }, method='POST')
+        with urlopen(api, timeout=30) as r:
+            msg = json.loads(r.read())
+    except Exception:
+        return None
+    blocks = [b.get('text', '') for b in msg.get('content', []) if b.get('type') == 'text']
+    text = (blocks[-1] if blocks else '').strip()
+    for line in text.split('\n'):
+        s = line.strip().lstrip('`').strip()
+        if s.startswith('{') and s.endswith('}'):
+            try:
+                d = json.loads(s)
+                v = d.get('verdict')
+                if v in ('spam', 'off_topic'):
+                    return f"{v}: {d.get('reason','')[:160]}"
+                return None
+            except Exception:
+                continue
+    return None
 
 def collect_urls():
     urls = set()
@@ -87,6 +211,10 @@ def probe(url):
                 if origin_host and final_host and origin_host != final_host:
                     return {'status': code, 'ok': False,
                             'reason': f'cross-domain redirect: {origin_host} → {final_host} (domain hijack/parked)'}
+                if 200 <= code < 400:
+                    review = review_site(url)
+                    if review:
+                        return {'status': code, 'ok': False, 'reason': review}
                 return {'status': code, 'ok': 200 <= code < 400, 'reason': r.reason}
         except HTTPError as e:
             if e.code in SOFT_FAIL_CODES:

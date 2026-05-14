@@ -107,6 +107,14 @@ if ! "$PYTHON" -u tools/check_link_health.py >> "$LOG_FILE" 2>&1; then
     log "WARN: link health check failed (non-fatal)"
 fi
 
+# Step 5b: geocode addresses for entries missing lat/lng (powers the map view).
+# Uses free Nominatim @ 1 req/sec; the daily delta is ~5-15 addresses so this
+# adds ~10-20s per cron. Skips any address already geocoded.
+log "→ geocode_addresses.py (Nominatim — free, 1 req/sec)"
+if ! "$PYTHON" -u tools/geocode_addresses.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: geocoding failed (non-fatal — map will still work for already-geocoded entries)"
+fi
+
 # Step 6: final inject — merges verification + health-check results into corridors.json
 log "→ inject_openings.py (final, post-verify + post-health-check)"
 "$PYTHON" tools/inject_openings.py >> "$LOG_FILE" 2>&1 || log "WARN: final inject failed"

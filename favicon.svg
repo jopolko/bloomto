@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" ry="12" fill="#c83624"/>
+  <text x="32" y="48" text-anchor="middle"
+        font-family="Iowan Old Style, Charter, Georgia, 'Times New Roman', serif"
+        font-size="48" font-weight="800" fill="#faf7ee" letter-spacing="-1">N</text>
+</svg>

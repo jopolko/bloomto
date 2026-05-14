@@ -16,6 +16,7 @@ CSV_PATH = '/tmp/business_licences_alt.csv'  # shared with build_corridors.py
 LLM_CACHE_PATH = f'{ROOT}/tools/cache/llm_cuisine_cache.json'
 PLACES_CACHE_PATH = f'{ROOT}/tools/cache/places_cache.json'
 WEB_VERIFY_CACHE_PATH = f'{ROOT}/tools/cache/web_verify_cache.json'
+GEOCODE_CACHE_PATH = f'{ROOT}/tools/cache/geocode_cache.json'
 DATA_PATH = f'{ROOT}/data/corridors.json'
 
 # Load LLM cache for cuisine override
@@ -31,6 +32,10 @@ try:
     WEB_VERIFY_CACHE = json.load(open(WEB_VERIFY_CACHE_PATH))
 except FileNotFoundError:
     WEB_VERIFY_CACHE = {}
+try:
+    GEOCODE_CACHE = json.load(open(GEOCODE_CACHE_PATH))
+except FileNotFoundError:
+    GEOCODE_CACHE = {}
 try:
     URL_HEALTH_CACHE = json.load(open(f'{ROOT}/tools/cache/url_health_cache.json'))
 except FileNotFoundError:
@@ -191,8 +196,16 @@ def get_cuisine(name, address):
 
 def verification_for(name, address):
     """Returns dict of fields to merge if verified-open, else None. Drops the
-    website field when url_health_cache reports it as broken."""
-    key = f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
+    website field when url_health_cache reports it as broken. Coords come from
+    Places when available, else from the Nominatim geocode cache."""
+    name_up = (name or '').strip().upper()
+    addr_up = (address or '').strip().upper()
+    key = f"{name_up}||{addr_up}"
+    # Geocode cache is keyed by street address only (no postal code). Try the
+    # full key first, then a stripped-postal fallback to match older cache entries.
+    addr_no_postal = _re.sub(r'\s+[A-Z]\d[A-Z]\s*\d[A-Z]\d$', '', addr_up)
+    geo = GEOCODE_CACHE.get(key) or GEOCODE_CACHE.get(f"{name_up}||{addr_no_postal}")
+    geo_coords = (geo.get('lat'), geo.get('lng')) if (geo and geo.get('lat') and geo.get('lng')) else (None, None)
     # Source 1: Google Places
     p = PLACES_CACHE.get(key)
     if p and p.get('status') == 'ok':
@@ -203,6 +216,8 @@ def verification_for(name, address):
                 if p.get(k) is not None: out[k] = p[k]
             if out.get('website') and not url_is_alive(out['website']):
                 del out['website']  # let mapsUrl be the link instead
+            if out.get('lat') is None and geo_coords[0] is not None:
+                out['lat'], out['lng'] = geo_coords
             return out
         if bs in ('CLOSED_TEMPORARILY', 'CLOSED_PERMANENTLY'):
             return None
@@ -215,6 +230,8 @@ def verification_for(name, address):
         if p and p.get('status') == 'ok':
             for k in ('mapsUrl', 'rating', 'reviewCount', 'matchedName', 'lat', 'lng'):
                 if p.get(k) is not None: out.setdefault(k, p[k])
+        if out.get('lat') is None and geo_coords[0] is not None:
+            out['lat'], out['lng'] = geo_coords
         return out
     return None
 
