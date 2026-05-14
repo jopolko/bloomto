@@ -121,7 +121,13 @@
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
   .mast { padding: 22px 0 0; }
-  .mast .wrap { border-bottom: 3px solid var(--rule); padding-bottom: 16px; }
+  .mast .wrap { border-bottom: 3px solid var(--rule); padding-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .mast .mast-left { flex: 0 1 auto; min-width: 0; }
+  .mast .fading { margin: 0; flex: 0 1 auto; justify-content: flex-end; align-items: center; }
+  @media (max-width: 760px) {
+    .mast .wrap { flex-direction: column; align-items: stretch; gap: 12px; }
+    .mast .fading { justify-content: flex-start; }
+  }
   .mast .brand { font: 800 28px/1 var(--serif); letter-spacing: -0.02em; color: var(--ink); display: inline-block; text-decoration: none; }
   .mast .brand:hover { color: var(--accent); }
   .mast .brand sup { font: 600 10px/1 var(--sans); letter-spacing: 0.08em; color: var(--muted); margin-left: 6px; vertical-align: super; text-transform: uppercase; }
@@ -202,8 +208,21 @@
   .transit-panel .tp-phone { width: 100%; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
   .transit-panel .tp-phone:hover { background: var(--accent); }
   /* Phone button injected into LRM's walk/drive sidebar */
-  .leaflet-routing-container .lrm-phone-btn { display: block; width: calc(100% - 20px); margin: 8px 10px 10px; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
+  .leaflet-routing-container .lrm-actions { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .leaflet-routing-container .lrm-phone-btn { display: block; width: 100%; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
   .leaflet-routing-container .lrm-phone-btn:hover { background: var(--accent); }
+  .leaflet-routing-container .lrm-act-row { display: flex; gap: 6px; }
+  .leaflet-routing-container .lrm-fav,
+  .leaflet-routing-container .lrm-share,
+  .transit-panel .tp-fav,
+  .transit-panel .tp-share { flex: 1; padding: 8px 8px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; font: 600 11.5px/1 var(--sans); cursor: pointer; transition: border-color 0.12s, background 0.12s; }
+  .leaflet-routing-container .lrm-fav.fav-on,
+  .transit-panel .tp-fav.fav-on { color: var(--accent); border-color: var(--accent); }
+  .leaflet-routing-container .lrm-fav:hover,
+  .leaflet-routing-container .lrm-share:hover,
+  .transit-panel .tp-fav:hover,
+  .transit-panel .tp-share:hover { border-color: var(--ink); }
+  .transit-panel .tp-act-row { display: flex; gap: 6px; margin-top: 6px; }
   @media (max-width: 600px) {
     .transit-panel { width: calc(100% - 20px); right: 10px; max-height: 45vh; }
   }
@@ -264,6 +283,10 @@
   .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
   .open-row .oc { text-align: right; }
   .open-row .oc .pill { font: 700 9.5px/1 var(--sans); padding: 5px 10px; border-radius: 99px; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .open-row .oc .row-fav { background: transparent; border: 0; cursor: pointer; font: 17px/1 var(--sans); padding: 0 8px 0 0; color: var(--muted); transition: color 0.12s, transform 0.12s; vertical-align: -2px; }
+  .open-row .oc .row-fav.fav-on { color: var(--accent); }
+  .open-row .oc .row-fav:hover { color: var(--accent); transform: scale(1.1); }
+  .map-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   /* When the feed is filtered to a single cuisine, hide the redundant per-row cuisine pill
      and let the name column reclaim the space. */
   .open-feed.single-cuisine .open-row { grid-template-columns: 110px 1fr; }
@@ -290,17 +313,18 @@
 
 <header class="mast">
   <div class="wrap">
-    <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
-    <div class="sub">Toronto's <span class="hl">newest</span> restaurants — updated <span id="last-update">…</span>.</div>
+    <div class="mast-left">
+      <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
+      <div class="sub">Toronto's <span class="hl">newest</span> restaurants — updated <span id="last-update">…</span>.</div>
+    </div>
+    <div class="fading" id="fading" hidden>
+      <span class="fl">Support</span>
+      <div class="fc-row" id="fading-chips"></div>
+    </div>
   </div>
 </header>
 
 <main class="wrap">
-
-  <div class="fading" id="fading" hidden>
-    <span class="fl">Support</span>
-    <div class="fc-row" id="fading-chips"></div>
-  </div>
   <div class="filters">
     <div class="cuisine-picker">
       <button id="cp-trigger" class="cp-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Filter by cuisine">All cuisines</button>
@@ -311,6 +335,7 @@
       <div id="rp-panel" class="cp-panel" role="listbox" aria-labelledby="rp-trigger" hidden></div>
     </div>
     <button id="locate-btn" class="map-btn" type="button" aria-label="Find restaurants near me">📍 Near me</button>
+    <button id="saved-toggle" class="map-btn" type="button" aria-label="Show saved restaurants only">♡ Saved</button>
     <div class="view-toggle" role="tablist" aria-label="View mode">
       <button class="vt-btn vt-active" data-view="list" role="tab" aria-selected="true">List</button>
       <button class="vt-btn" data-view="map" role="tab" aria-selected="false">Map</button>
@@ -438,6 +463,24 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   const upd = document.getElementById('last-update');
   if (upd) upd.textContent = gen.toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' });
 
+  // Favorites: localStorage-backed set of saved slugs. No accounts, no backend.
+  function getSaved() { try { return new Set(JSON.parse(localStorage.getItem('nsto_saved') || '[]')); } catch { return new Set(); } }
+  function isSaved(slug) { return getSaved().has(slug); }
+  function toggleSaved(slug) {
+    const s = getSaved();
+    if (s.has(slug)) s.delete(slug); else s.add(slug);
+    localStorage.setItem('nsto_saved', JSON.stringify([...s]));
+    return s.has(slug);
+  }
+  let savedOnly = false;
+  function refreshSavedToggle() {
+    const btn = document.getElementById('saved-toggle');
+    if (!btn) return;
+    const n = getSaved().size;
+    btn.textContent = n ? `♥ Saved (${n})` : '♡ Saved';
+    btn.classList.toggle('active', savedOnly);
+  }
+
   if (!no || !no.cuisines || !no.cuisines.length) {
     document.getElementById('open-feed').innerHTML = '<div class="empty">No new-openings data in feed.</div>';
     return;
@@ -502,23 +545,38 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const mapJump = (r.lat && r.lng)
       ? `<button class="row-map-jump" type="button" aria-label="Solo this on map">📍</button>`
       : '';
+    const saved = r.slug && isSaved(r.slug);
+    const favHtml = r.slug
+      ? `<button class="row-fav ${saved ? 'fav-on' : ''}" type="button" aria-label="${saved ? 'Remove from saved' : 'Save for later'}">${saved ? '♥' : '♡'}</button>`
+      : '';
     row.innerHTML = `
       <div class="od">${r.issuedDate}<span class="ago">${agoLabel(r.daysOpen)}</span></div>
       <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}${mapJump}<span class="oad">${addrLine}</span></div>
-      <div class="oc"><span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>`;
+      <div class="oc">${favHtml}<span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>`;
+    const favBtn = row.querySelector('.row-fav');
+    if (favBtn) {
+      favBtn.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        const now = toggleSaved(r.slug);
+        favBtn.classList.toggle('fav-on', now);
+        favBtn.textContent = now ? '♥' : '♡';
+        favBtn.setAttribute('aria-label', now ? 'Remove from saved' : 'Save for later');
+        refreshSavedToggle();
+        if (savedOnly && !now) renderFeed();  // removed → drop from filtered view
+      });
+    }
     const jumpBtn = row.querySelector('.row-map-jump');
     if (jumpBtn) {
       jumpBtn.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation();
         focusedRow = r;
-        // Push a history state so the browser back button returns to list view
-        // (with the row still highlighted) instead of leaving the site.
+        paintFeed();  // re-render list with .row-focused on the clicked row
         history.pushState({nstoView: 'map-solo', slug: r.slug}, '', location.pathname + location.search + location.hash);
         setView('map');
         if (!mapInitialized) initMap();
         setTimeout(() => {
           if (!mapInstance) return;
-          renderMapPins();  // re-renders showing only focusedRow
+          renderMapPins();
           mapInstance.setView([r.lat, r.lng], 17);
           mapMarkers.eachLayer(m => m.openPopup());
         }, 100);
@@ -579,6 +637,10 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
         rows.sort((a,b)=> a.issuedDate < b.issuedDate ? 1 : -1);
       }
     }
+    if (savedOnly) {
+      const saved = getSaved();
+      rows = rows.filter(r => saved.has(r.slug));
+    }
     if (nearMeActive && userLatLng) {
       rows = rows.filter(r => r.lat && r.lng && haversineKm(userLatLng, [r.lat, r.lng]) <= nearMeRadius);
     } else if (currentRegion !== '__all') {
@@ -602,6 +664,10 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
         const seen = new Set(rows.map(r => r.operatingName + '|' + r.issuedDate));
         c.recent5.forEach(r => { const k = r.operatingName+'|'+r.issuedDate; if (!seen.has(k)) { rows.push(r); seen.add(k); } });
       }
+    }
+    if (savedOnly) {
+      const saved = getSaved();
+      rows = rows.filter(r => saved.has(r.slug));
     }
     if (nearMe && userLatLng) {
       // Entries without coords can't be evaluated for proximity — exclude them.
@@ -695,28 +761,18 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     }
   }
 
-  // Per-listing share link `/r/{slug}` — find the entry, scroll to its row in
-  // the list and (if user goes to map) open its popup.
+  // Per-listing share link `/r/{slug}` — focus the entry: highlights its row
+  // and scrolls to it. focusedRow makes paintFeed apply the .row-focused class.
   if (pathListingMatch) {
     const slug = pathListingMatch[1];
     const target = no.recent.find(r => r.slug === slug);
     if (target) {
-      // Clear any filters that might be hiding this entry
-      applyFilters('__all', '__all', false);
-      // Scroll to it and flash-highlight (no map auto-open — keep predictable)
+      focusedRow = target;
+      applyFilters('__all', '__all', false);  // also calls paintFeed → row-focused class applied
       setTimeout(() => {
-        const rows = document.querySelectorAll('.open-row');
-        for (const row of rows) {
-          if (row.textContent.includes(target.operatingName)) {
-            row.scrollIntoView({behavior: 'smooth', block: 'center'});
-            row.style.transition = 'background 0.4s';
-            row.style.background = 'rgba(212, 160, 23, 0.18)';
-            setTimeout(() => row.style.background = '', 1800);
-            break;
-          }
-        }
-      }, 150);
-      // Update title/canonical for the listing
+        const focusedEl = document.querySelector('.open-row.row-focused');
+        if (focusedEl) focusedEl.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }, 200);
       document.title = `${target.operatingName} — NowServingTO`;
       const link = document.querySelector('link[rel="canonical"]');
       if (link) link.setAttribute('href', `https://nowservingto.com/r/${slug}`);
@@ -819,6 +875,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   var mapInitialized = false;
   var routingControl = null;  // OSRM walk/drive route on the map, if any
   var focusedRow = null;       // when set, renderMapPins shows ONLY this row's pin
+  var currentDestSlug = null;  // slug of the route's destination (for save/share UX)
   var transitLayers = [];     // HERE transit route polylines on the map
   var transitPanel = null;    // DOM element for the transit instructions panel
 
@@ -870,23 +927,38 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
 
   function injectPhoneIntoRoutingPanel(destLat, destLng, encodedName) {
     const container = document.querySelector('.leaflet-routing-container');
-    if (!container || container.querySelector('.lrm-phone-btn')) return;
+    if (!container || container.querySelector('.lrm-actions')) return;
     const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
-    const btn = document.createElement('button');
-    btn.className = 'lrm-phone-btn';
-    btn.type = 'button';
-    btn.textContent = onMobile ? '🗺️ Directions' : '📱 To phone';
-    btn.addEventListener('click', () => {
-      if (onMobile) {
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank', 'noopener');
-      } else {
-        sendToPhone(destLat, destLng, encodedName || '');
-      }
+    const wrap = document.createElement('div');
+    wrap.className = 'lrm-actions';
+    const phoneLbl = onMobile ? '🗺️ Directions' : '📱 To phone';
+    const slug = currentDestSlug || '';
+    const saved = slug && isSaved(slug);
+    wrap.innerHTML = `
+      <button class="lrm-phone-btn" type="button">${phoneLbl}</button>
+      ${slug ? `<div class="lrm-act-row">
+        <button class="lrm-fav ${saved ? 'fav-on' : ''}" type="button">${saved ? '♥ Saved' : '♡ Save'}</button>
+        <button class="lrm-share" type="button">↗ Share</button>
+      </div>` : ''}`;
+    wrap.querySelector('.lrm-phone-btn').addEventListener('click', () => {
+      if (onMobile) window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank', 'noopener');
+      else sendToPhone(destLat, destLng, encodedName || '');
     });
-    container.appendChild(btn);
+    const favEl = wrap.querySelector('.lrm-fav');
+    if (favEl) favEl.addEventListener('click', () => {
+      const now = toggleSaved(slug);
+      favEl.classList.toggle('fav-on', now);
+      favEl.textContent = now ? '♥ Saved' : '♡ Save';
+      refreshSavedToggle();
+      paintFeed();  // refresh ♡ state on list rows too
+    });
+    const shareEl = wrap.querySelector('.lrm-share');
+    if (shareEl) shareEl.addEventListener('click', () => window.__nsShare(slug, shareEl));
+    container.appendChild(wrap);
   }
 
-  async function showTransit(destLat, destLng, encodedName) {
+  async function showTransit(destLat, destLng, encodedName, slug) {
+    currentDestSlug = slug || null;
     // Same userLatLng / geolocation flow as showRoute
     if (typeof L === 'undefined') { alert('Map library still loading.'); return; }
     if (!userLatLng) {
@@ -894,7 +966,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       navigator.geolocation.getCurrentPosition(pos => {
         userLatLng = [pos.coords.latitude, pos.coords.longitude];
         setNearMeActive(true);
-        showTransit(destLat, destLng);
+        showTransit(destLat, destLng, encodedName, slug);
       }, err => {
         const msg = err.code === 1 ? 'Permission denied.' : 'Location unavailable.';
         alert(msg);
@@ -1014,24 +1086,37 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       </div>`;
     }).join('');
     const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
-    const phoneCta = onMobile
-      ? `<button class="tp-phone" type="button">🗺️ Directions</button>`
-      : `<button class="tp-phone" type="button">📱 To phone</button>`;
+    const phoneLbl = onMobile ? '🗺️ Directions' : '📱 To phone';
+    const slug = currentDestSlug || '';
+    const saved = slug && isSaved(slug);
     transitPanel.innerHTML = `
       <div class="tp-head">
         <span class="tp-total">🚇 ${totalMin} min total</span>
         <button class="tp-close" type="button" aria-label="Clear transit route">×</button>
       </div>
       <div class="tp-steps">${steps}</div>
-      <div class="tp-foot">${phoneCta}</div>`;
+      <div class="tp-foot">
+        <button class="tp-phone" type="button">${phoneLbl}</button>
+        ${slug ? `<div class="tp-act-row">
+          <button class="tp-fav ${saved ? 'fav-on' : ''}" type="button">${saved ? '♥ Saved' : '♡ Save'}</button>
+          <button class="tp-share" type="button">↗ Share</button>
+        </div>` : ''}
+      </div>`;
     transitPanel.querySelector('.tp-close').addEventListener('click', clearTransit);
     transitPanel.querySelector('.tp-phone').addEventListener('click', () => {
-      if (onMobile) {
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank', 'noopener');
-      } else {
-        sendToPhone(destLat, destLng, encodedName || '');
-      }
+      if (onMobile) window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank', 'noopener');
+      else sendToPhone(destLat, destLng, encodedName || '');
     });
+    const favEl = transitPanel.querySelector('.tp-fav');
+    if (favEl) favEl.addEventListener('click', () => {
+      const now = toggleSaved(slug);
+      favEl.classList.toggle('fav-on', now);
+      favEl.textContent = now ? '♥ Saved' : '♡ Save';
+      refreshSavedToggle();
+      paintFeed();
+    });
+    const shareEl = transitPanel.querySelector('.tp-share');
+    if (shareEl) shareEl.addEventListener('click', () => window.__nsShare(slug, shareEl));
     document.getElementById('map-view').appendChild(transitPanel);
   }
   // Near-me is a proximity-based spatial filter that REPLACES the region pick.
@@ -1118,9 +1203,8 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const dist = userLatLng
       ? `<div class="pop-dist">${haversineKm(userLatLng, [r.lat, r.lng]).toFixed(1)} km away</div>`
       : '';
-    const shareUrl = r.slug ? `https://nowservingto.com/r/${r.slug}` : null;
-    const shareLink = shareUrl
-      ? `<button class="pop-share" onclick="window.__nsCopyShare('${shareUrl}', this)" title="Copy share link">🔗 Copy link</button>`
+    const shareLink = r.slug
+      ? `<button class="pop-share" onclick="window.__nsShare('${r.slug}', this)">↗ Share</button>`
       : '';
     // Always show route buttons. If location isn't granted yet, showRoute() will
     // prompt for it and auto-route once acquired.
@@ -1133,9 +1217,9 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       : `<button class="pop-btn" onclick="window.__nsSendToPhone(${r.lat},${r.lng},'${encName}')">📱 To phone</button>`;
     const routeBtns = `
       <div class="pop-routes">
-        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'walking','${encName}')">🚶 Walk</button>
-        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'driving','${encName}')">🚗 Drive</button>
-        <button class="pop-btn" onclick="window.__nsTransit(${r.lat},${r.lng},'${encName}')">🚇 TTC</button>
+        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'walking','${encName}','${r.slug||''}')">🚶 Walk</button>
+        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'driving','${encName}','${r.slug||''}')">🚗 Drive</button>
+        <button class="pop-btn" onclick="window.__nsTransit(${r.lat},${r.lng},'${encName}','${r.slug||''}')">🚇 TTC</button>
         ${phoneBtn}
       </div>`;
     return `
@@ -1146,25 +1230,41 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       ${routeBtns}
       ${shareLink}`;
   }
-  // Copy-to-clipboard for the share link inside a popup. Falls back to a manual
-  // prompt if clipboard API isn't available (older browsers).
-  window.__nsCopyShare = (url, btn) => {
-    const done = () => {
+  // Native share with full restaurant context. Web Share API opens the OS share
+  // sheet on mobile (Messages, Email, WhatsApp, etc.) and on desktop in supporting
+  // browsers. Falls back to clipboard copy on browsers without navigator.share.
+  window.__nsShare = async (slug, btn) => {
+    const r = no.recent.find(x => x.slug === slug);
+    if (!r) return;
+    const url = `https://nowservingto.com/r/${slug}`;
+    const cuisineLbl = CUISINE_LABEL[r.cuisine] || r.cuisine;
+    const ago = r.daysOpen <= 1 ? 'today'
+              : r.daysOpen <= 60 ? `${r.daysOpen} days ago`
+              : `${Math.round(r.daysOpen/30)} months ago`;
+    const where = r.district ? ` in ${r.district}` : '';
+    const text = `${r.operatingName} — newly-licensed ${cuisineLbl} kitchen${where}, opened ${ago}.`;
+    if (navigator.share) {
+      try { await navigator.share({ title: r.operatingName, text, url }); }
+      catch (e) { /* user dismissed */ }
+      return;
+    }
+    // Fallback: copy URL with the pitch text
+    const fallback = text + '\n' + url;
+    try {
+      await navigator.clipboard.writeText(fallback);
       const orig = btn.textContent;
       btn.textContent = '✓ Copied';
       btn.disabled = true;
       setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(done).catch(() => { prompt('Copy this link:', url); });
-    } else {
-      prompt('Copy this link:', url);
+    } catch {
+      prompt('Copy this link:', fallback);
     }
   };
 
   // Draw a real route (walking or driving) from userLatLng to [destLat, destLng] using
   // OSRM. Replaces any existing route. Exposed on window so popup HTML can call it.
-  function showRoute(destLat, destLng, profile, encodedName) {
+  function showRoute(destLat, destLng, profile, encodedName, slug) {
+    currentDestSlug = slug || null;
     if (typeof L === 'undefined' || !L.Routing) { alert('Routing library still loading — try again in a moment.'); return; }
     // If we don't have the user's location yet, kick off the geolocation flow and
     // chain into the route once it's granted. One-time consent gets both done.
@@ -1173,7 +1273,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       navigator.geolocation.getCurrentPosition(pos => {
         userLatLng = [pos.coords.latitude, pos.coords.longitude];
         setNearMeActive(true);  // also turn on the proximity filter
-        showRoute(destLat, destLng, profile, encodedName);  // re-enter now that we have coords
+        showRoute(destLat, destLng, profile, encodedName, slug);
       }, err => {
         const msg = err.code === 1 ? 'Permission denied — enable location in your browser.'
                   : err.code === 2 ? 'Location unavailable right now.'
@@ -1291,6 +1391,15 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   // 📍 Near me — visible in the filter row regardless of view. Locate-and-filter
   // works in both list and map view; no auto-switch.
   document.getElementById('locate-btn').addEventListener('click', locateUser);
+
+  // ♡ Saved toggle — filters list + map to only saved entries
+  refreshSavedToggle();
+  document.getElementById('saved-toggle').addEventListener('click', () => {
+    savedOnly = !savedOnly;
+    refreshSavedToggle();
+    renderFeed();
+    renderMapPins();
+  });
 
   // Browser back from the "📍 solo on map" state returns to list view + keeps
   // the row highlighted so the user can see where they were.
