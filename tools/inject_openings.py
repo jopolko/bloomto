@@ -431,7 +431,6 @@ for r in top_for_static:
     addr = _esc(r.get('address') or '')
     district = _esc(r.get('district') or '')
     addr_html = f'{addr}<span class="oad-d"> · {district}</span>' if district else addr
-    issued = _esc(r['issuedDate'])
     ago = _esc(_ago(r['daysOpen']))
     link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
     # Same-tab navigation — back button cleanly returns to NowServingTO (target="_blank"
@@ -439,7 +438,7 @@ for r in top_for_static:
     name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
     static_rows_html.append(
         f'<div class="open-row">'
-        f'<div class="od">{issued}<span class="ago">{ago}</span></div>'
+        f'<div class="od"><span class="ago">{ago}</span></div>'
         f'<div class="on">{name_html}<span class="oad">{addr_html}</span></div>'
         f'<div class="oc"><span class="pill" style="background:{color}">{_esc(label)}</span></div>'
         f'</div>'
