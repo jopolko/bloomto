@@ -400,7 +400,9 @@ for r in top_for_static:
     issued = _esc(r['issuedDate'])
     ago = _esc(_ago(r['daysOpen']))
     link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
-    name_html = f'<a href="{_esc(link)}" target="_blank" rel="noopener">{name}</a>' if link else name
+    # Same-tab navigation — back button cleanly returns to NowServingTO (target="_blank"
+    # on mobile would strand users on the Maps tab when they bounce back from the app).
+    name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
     static_rows_html.append(
         f'<div class="open-row">'
         f'<div class="od">{issued}<span class="ago">{ago}</span></div>'
