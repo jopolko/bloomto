@@ -145,16 +145,18 @@
   .fading .fc .fc-rate { font: 500 10.5px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
   .fading .fc .fc-down { font: 700 14px/1 var(--sans); color: var(--accent); margin-left: 1px; vertical-align: -1px; }
   @media (max-width: 600px) {
-    /* Single-line layout: SUPPORT: [Filipino 35%↓] [West Afr 34%↓] [Latin Am 20%↓]
-       Tight padding + smaller font on chips, abbreviated label, all on one row. */
-    .fading { gap: 5px; margin: 14px 0 10px; flex-wrap: nowrap; align-items: center; }
-    .fading .fl { font-size: 9px; flex-shrink: 0; letter-spacing: 0.08em; }
+    /* Single-line: SUPPORT: [chip1] [chip2] [chip3] — needs to fit a ~360px viewport
+       no matter how long the cuisine labels are, so tightened aggressively. */
+    .fading { gap: 4px; margin: 14px 0 10px; flex-wrap: nowrap; align-items: center; overflow: hidden; }
+    .fading .fl { font-size: 8.5px; flex-shrink: 0; letter-spacing: 0.06em; }
     .fading .fl::after { content: ':'; }
-    .fading .fc-row { display: flex; gap: 4px; flex-wrap: nowrap; min-width: 0; }
-    .fading .fc { padding: 3px 7px; font-size: 10.5px; flex-shrink: 0; }
-    .fading .fc .fc-rate { font-size: 9px; margin-left: 3px; }
-    .fading .fc .fc-down { font-size: 11px; margin-left: 1px; }
+    .fading .fc-row { display: flex; gap: 3px; flex-wrap: nowrap; min-width: 0; }
+    .fading .fc { padding: 2px 6px; font-size: 10px; flex-shrink: 0; }
+    .fading .fc .fc-rate { font-size: 8.5px; margin-left: 2px; }
+    .fading .fc .fc-down { font-size: 10.5px; margin-left: 0; }
   }
+  /* Belt-and-suspenders: never let the page scroll horizontally. */
+  body { overflow-x: hidden; }
 
   /* List ↔ Map view toggle + map container */
   .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
