@@ -71,26 +71,62 @@ def _address_matches(queried_addr, matched_addr):
     """Sanity-check that Google's match actually sits on the same street as the
     queried address. Places' fuzzy text search will confidently return a
     completely different restaurant when the name is garbled ("SONARBANGLA" →
-    "Ruposhi Bangla Restaurant" 5 km away) — without this, we cache wrong data."""
+    "Ruposhi Bangla Restaurant" 5 km away)."""
     import re
     if not queried_addr or not matched_addr: return False
     m = re.match(r'^\s*(\d+)\s+([A-Za-z]+)', queried_addr)
-    if not m: return True  # can't parse a street number — trust the match
+    if not m: return True
     num, street = m.group(1), m.group(2).upper()
     addr_up = matched_addr.upper()
     return num in addr_up and street in addr_up
 
+def _coords_from_geocode(operating_name, address):
+    """Pull lat/lng from the Nominatim geocode cache when find_place fails — we
+    can then use Places Nearby Search to find the actual business at those
+    coords, which works even when the name is run-together or has hidden
+    keywords like 'Premium' that wreck the text-based queries."""
+    try:
+        import json
+        from pathlib import Path
+        gc_path = Path(__file__).parent / 'cache' / 'geocode_cache.json'
+        if not gc_path.exists(): return None
+        c = json.loads(gc_path.read_text())
+        # Geocode cache key uses street-only (no postal), so strip postal first
+        import re
+        a = re.sub(r'\s+[A-Z]\d[A-Z]\s*\d[A-Z]\d$', '', (address or '').upper()).strip()
+        key = f"{(operating_name or '').strip().upper()}||{a}"
+        e = c.get(key)
+        if e and e.get('lat'): return (e['lat'], e['lng'])
+    except Exception:
+        pass
+    return None
+
+def _nearby_fallback(lat, lng):
+    """Places Nearby Search at the geocoded coords. Filters to restaurants,
+    returns the top result (within 100m radius). The licence address pinpoints
+    a single business in most cases."""
+    r = http_get_json('https://maps.googleapis.com/maps/api/place/nearbysearch/json',
+        {'location': f'{lat},{lng}', 'radius': 100, 'type': 'restaurant', 'key': API_KEY})
+    cands = r.get('results') or []
+    return cands[0] if cands else None
+
 def enrich_one(operating_name, address):
-    # Build query — name + first address line + city for disambiguation.
     addr_first = (address or '').split('M')[0].strip().rstrip(',')
     query = f"{operating_name} {addr_first} Toronto" if addr_first else f"{operating_name} Toronto"
     cand = find_place(query)
-    if not cand:
-        return {'status': 'not_found', 'query': query}
-    # Reject matches where Places returned a different street — common when the
-    # licence name is a run-together word Google can't reconnect.
-    if not _address_matches(addr_first, cand.get('formatted_address')):
-        return {'status': 'not_found', 'query': query, 'rejected_match': cand.get('name'), 'rejected_address': cand.get('formatted_address')}
+    # If the text query missed the actual restaurant (very common when the name
+    # is run-together like "SONARBANGLA" or has hidden marketing keywords like
+    # "Premium"), fall back to Nearby Search around the geocoded coords.
+    if not cand or not _address_matches(addr_first, cand.get('formatted_address')):
+        coords = _coords_from_geocode(operating_name, address)
+        if coords:
+            nearby = _nearby_fallback(coords[0], coords[1])
+            if nearby:
+                cand = nearby  # Nearby Search has same shape (place_id + name + vicinity)
+            else:
+                return {'status': 'not_found', 'query': query, 'note': 'no nearby match'}
+        else:
+            return {'status': 'not_found', 'query': query, 'note': 'no coords for nearby fallback'}
     details = place_details(cand['place_id'])
     if not details:
         return {'status': 'no_details', 'place_id': cand['place_id'], 'query': query}
