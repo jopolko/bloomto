@@ -121,13 +121,7 @@
   .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
 
   .mast { padding: 22px 0 0; }
-  .mast .wrap { border-bottom: 3px solid var(--rule); padding-bottom: 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
-  .mast .mast-left { flex: 0 1 auto; min-width: 0; }
-  .mast .fading { margin: 0; flex: 0 1 auto; justify-content: flex-end; align-items: center; }
-  @media (max-width: 760px) {
-    .mast .wrap { flex-direction: column; align-items: stretch; gap: 12px; }
-    .mast .fading { justify-content: flex-start; }
-  }
+  .mast .wrap { border-bottom: 3px solid var(--rule); padding-bottom: 16px; }
   .mast .brand { font: 800 28px/1 var(--serif); letter-spacing: -0.02em; color: var(--ink); display: inline-block; text-decoration: none; }
   .mast .brand:hover { color: var(--accent); }
   .mast .brand sup { font: 600 10px/1 var(--sans); letter-spacing: 0.08em; color: var(--muted); margin-left: 6px; vertical-align: super; text-transform: uppercase; }
@@ -135,34 +129,6 @@
   .mast .sub .hl { font-weight: 800; font-style: normal; color: var(--accent); letter-spacing: -0.005em; }
   .mast .sub #last-update { font-style: normal; font-weight: 600; color: var(--ink2); font-variant-numeric: lining-nums tabular-nums; }
 
-  /* Fading cuisines — compact strip above the filters; hidden on filtered views */
-  .fading { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 22px 0 18px; }
-  .fading .fl { font: 700 10.5px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
-  .fading .fl::after { content: ' :'; }
-  .fading .fc-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .fading .fc { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 99px; background: var(--paper); font: 600 12px/1 var(--serif); color: var(--ink2); cursor: pointer; transition: border-color 0.12s, color 0.12s, background 0.12s; flex-shrink: 0; }
-  .fading .fc:hover { border-color: var(--ink2); color: var(--ink); background: #fff; }
-  .fading .fc .fc-rate { font: 500 10.5px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
-  .fading .fc .fc-down { font: 700 14px/1 var(--sans); color: var(--accent); margin-left: 1px; vertical-align: -1px; }
-  @media (max-width: 600px) {
-    /* Mobile: drop the chip pill chrome and render as inline text links.
-       Reads as "Support: Filipino 35%↓  West African 34%↓  Latin American 20%↓"
-       — much more compact than padded pills while still obviously tappable
-       (dotted underline + accent arrow). */
-    .fading { gap: 8px; margin: 14px 0 10px; flex-wrap: wrap; align-items: baseline; }
-    .fading .fl { font-size: 9.5px; flex-shrink: 0; letter-spacing: 0.08em; }
-    .fading .fl::after { content: ':'; }
-    .fading .fc-row { display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; row-gap: 4px; }
-    .fading .fc {
-      background: transparent; border: 0; padding: 0; box-shadow: none;
-      font: 700 12px/1.2 var(--serif); color: var(--ink);
-      text-decoration: underline; text-decoration-style: dotted;
-      text-decoration-color: rgba(21,17,13,0.35); text-underline-offset: 3px;
-    }
-    .fading .fc:hover { color: var(--accent); text-decoration-color: var(--accent); transform: none; }
-    .fading .fc .fc-rate { font: 500 10px/1 var(--mono); color: var(--muted); margin-left: 3px; }
-    .fading .fc .fc-down { font-size: 12px; margin-left: 1px; }
-  }
   /* Belt-and-suspenders: never let the page scroll horizontally. */
   body { overflow-x: hidden; }
 
@@ -298,14 +264,8 @@
 
 <header class="mast">
   <div class="wrap">
-    <div class="mast-left">
-      <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
-      <div class="sub">Toronto's <span class="hl">newest</span> restaurants — updated <span id="last-update">…</span>.</div>
-    </div>
-    <div class="fading" id="fading" hidden>
-      <span class="fl">Support</span>
-      <div class="fc-row" id="fading-chips"></div>
-    </div>
+    <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
+    <div class="sub">Toronto's <span class="hl">newest</span> restaurants — updated <span id="last-update">…</span>.</div>
   </div>
 </header>
 
@@ -694,11 +654,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       ct.textContent = rowsFor(o.dataset.key, currentRegion, nearMeActive).length;
     });
   }
-  function syncFadingVisibility() {
-    const f = document.getElementById('fading');
-    if (!f || !window.__fadingVisible) return;
-    f.hidden = !(currentCuisine === '__all' && currentRegion === '__all');
-  }
   function applyFilters(cuisineKey, regionKey, updateHash=true) {
     // Clear single-listing focus when any filter changes — user is exploring,
     // not still looking at the original pinned entry.
@@ -707,7 +662,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     }
     currentCuisine = cuisineKey;
     currentRegion = regionKey;
-    syncFadingVisibility();
     // Recompute counts for both dropdowns under the new filter state
     updateOptionCounts();
     // Update cuisine trigger — count reflects current region (or near-me) too
@@ -834,35 +788,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     });
   }
 
-  // ---- FADING CUISINES ----
-  // Top 5 cuisines by 1-year closure rate that also have new openings on the page.
-  // Compact chip strip above the feed; hidden when any filter is active.
-  const cc = data.closuresByCuisine;
-  if (cc && cc.cuisines && cc.cuisines.length) {
-    const verifiedCounts = {};
-    no.cuisines.forEach(c => { verifiedCounts[c.key] = c.count365d; });
-    const fadingRanked = cc.cuisines
-      .filter(c => c.rate1y != null && c.active >= 30 && (verifiedCounts[c.key] || 0) >= 2)
-      .sort((a,b) => b.rate1y - a.rate1y)
-      .slice(0, 3);
-    if (fadingRanked.length) {
-      const chipsEl = document.getElementById('fading-chips');
-      fadingRanked.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'fc';
-        btn.dataset.key = c.key;
-        btn.innerHTML = `${CUISINE_LABEL[c.key] || c.label} <span class="fc-rate">${c.rate1y.toFixed(0)}%</span><span class="fc-down">↓</span>`;
-        btn.title = `${c.rate1y.toFixed(0)}% of ${c.label} licences closed in the last 12 months — click to find a newcomer`;
-        btn.addEventListener('click', () => {
-          applyFilters(c.key, '__all');
-          trigger.scrollIntoView({behavior: 'smooth', block: 'center'});
-        });
-        chipsEl.appendChild(btn);
-      });
-      window.__fadingVisible = true;
-      syncFadingVisibility();
-    }
-  }
 
   // ---- MAP VIEW ----
   // Leaflet + markercluster. Lazy-inits on first toggle to Map view.
