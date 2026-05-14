@@ -163,6 +163,9 @@
      instead of a rainbow of cuisine codes (cuisine is still shown in the popup). */
   .cuisine-pin span { display: block; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
   .user-pin span { display: block; width: 18px; height: 18px; border-radius: 50%; background: #2a72ff; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(42,114,255,0.3); }
+  /* Permanent name label next to a pin — only shown when filter narrows to ~25 or fewer entries */
+  .leaflet-tooltip.pin-label { background: rgba(255,255,255,0.95); border: 1px solid var(--line); border-radius: 4px; padding: 3px 7px; font: 700 11.5px/1.1 var(--sans); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.18); white-space: nowrap; }
+  .leaflet-tooltip.pin-label::before { display: none; }  /* hide default tooltip pointer arrow */
   .leaflet-popup-content { font: 14px/1.4 var(--serif); margin: 12px 14px; }
   .leaflet-popup-content .pop-name { font: 700 14px var(--serif); color: var(--ink); }
   .leaflet-popup-content .pop-addr { font: 12px var(--sans); color: var(--muted); margin-top: 2px; }
@@ -1068,6 +1071,9 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     mapMarkers.clearLayers();
     const rows = currentRows.filter(r => r.lat && r.lng);
     const PIN_COLOR = '#1a7340';  // var(--fresh) — same green as walking route
+    // Permanent name labels are useful when there are few pins (e.g. filtered to
+    // a small cuisine). Above ~25 they crowd the map and we let clicks reveal names.
+    const showLabels = rows.length <= 25;
     rows.forEach(r => {
       const m = L.marker([r.lat, r.lng], {
         icon: L.divIcon({
@@ -1077,6 +1083,14 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
           iconAnchor: [14, 14],
         }),
       });
+      if (showLabels) {
+        m.bindTooltip(r.operatingName, {
+          permanent: true,
+          direction: 'right',
+          offset: [10, 0],
+          className: 'pin-label',
+        });
+      }
       m.bindPopup(() => buildPopupHtml(r), { maxWidth: 280 });
       mapMarkers.addLayer(m);
     });
