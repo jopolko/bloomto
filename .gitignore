@@ -9,13 +9,14 @@ __pycache__/
 .claude/
 .claude.backup-*
 
-# Large legacy ETL caches (BloomTO/DemoCalcTO sources). The four small JSON caches
+# Large legacy ETL caches (BloomTO/DemoCalcTO sources). The five small JSON caches
 # used by the active NowServingTO openings pipeline ARE committed so a fresh clone can
 # warm-start without burning API credit:
 #   tools/cache/llm_cuisine_cache.json
 #   tools/cache/web_verify_cache.json
 #   tools/cache/places_cache.json
 #   tools/cache/url_health_cache.json
+#   tools/cache/osm_chain_set.json    ← OSM-derived chain brand list
 tools/cache/*.geojson
 tools/cache/*.gdb
 tools/cache/*.zip
@@ -24,6 +25,7 @@ tools/cache/coa_active.json
 tools/cache/demo_permits.json
 tools/cache/development_applications.json
 tools/cache/osm_*.json
+!tools/cache/osm_chain_set.json
 tools/cache/preliminary_zoning_reviews.json
 tools/cache/property_violations.json
 cache/
