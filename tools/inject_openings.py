@@ -245,24 +245,32 @@ n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
 n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0
 
 # Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
-# destination restaurants. The City's "Free Form Conditions Line 1" field labels
-# these explicitly ("LOCATED INSIDE FORTINO'S", "LOCATED WITHIN SOBEYS").
+# destination restaurants. Three orthogonal signals catch them:
+#   1. City's "Free Form Conditions" — "LOCATED INSIDE FORTINO'S", "WITHIN SOBEYS"
+#   2. Operating name = grocery-counter franchise brand (AFC, Zenshi, Bento Nouveau)
+#   3. Client Name = franchisor corp (Advanced Fresh Concepts)
 INSTORE_CHAINS = (
     'SOBEYS', 'LOBLAWS', 'FORTINO', 'METRO', 'FRESHCO', 'WHOLE FOODS',
     'WALMART', 'COSTCO', 'SHOPPERS DRUG MART', 'NO FRILLS', 'FOOD BASICS',
     'LONGO', 'FARM BOY', 'T&T', 'GALLERIA', 'PUSATERI',
 )
+KIOSK_BRAND_PATTERNS = (
+    'AFC SUSHI', 'AFC/', 'ZENSHI', 'BENTO NOUVEAU', 'BENTO SUSHI', 'GENJI',
+)
+KIOSK_CLIENTS = ('ADVANCED FRESH CONCEPTS',)
 
 def _is_instore_kiosk(row):
-    """A licence operating inside a grocery/retail store rather than as a standalone
-    restaurant — these aren't dining destinations. The City flags them explicitly."""
+    op = (row.get('Operating Name') or '').upper()
+    client = (row.get('Client Name') or '').upper()
+    if any(b in op for b in KIOSK_BRAND_PATTERNS): return True
+    if any(c in client for c in KIOSK_CLIENTS): return True
     cond = ' '.join([
         (row.get('Conditions') or ''),
         (row.get('Free Form Conditions Line 1') or ''),
         (row.get('Free Form Conditions Line 2') or ''),
     ]).upper()
-    if 'LOCATED' not in cond: return False
-    return any(c in cond for c in INSTORE_CHAINS)
+    if 'LOCATED' in cond and any(c in cond for c in INSTORE_CHAINS): return True
+    return False
 
 with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
     rdr = csv.DictReader(f)
