@@ -145,15 +145,23 @@
   .fading .fc .fc-rate { font: 500 10.5px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
   .fading .fc .fc-down { font: 700 14px/1 var(--sans); color: var(--accent); margin-left: 1px; vertical-align: -1px; }
   @media (max-width: 600px) {
-    /* Single-line: SUPPORT: [chip1] [chip2] [chip3] — needs to fit a ~360px viewport
-       no matter how long the cuisine labels are, so tightened aggressively. */
-    .fading { gap: 4px; margin: 14px 0 10px; flex-wrap: nowrap; align-items: center; overflow: hidden; }
-    .fading .fl { font-size: 8.5px; flex-shrink: 0; letter-spacing: 0.06em; }
+    /* Mobile: drop the chip pill chrome and render as inline text links.
+       Reads as "Support: Filipino 35%↓  West African 34%↓  Latin American 20%↓"
+       — much more compact than padded pills while still obviously tappable
+       (dotted underline + accent arrow). */
+    .fading { gap: 8px; margin: 14px 0 10px; flex-wrap: wrap; align-items: baseline; }
+    .fading .fl { font-size: 9.5px; flex-shrink: 0; letter-spacing: 0.08em; }
     .fading .fl::after { content: ':'; }
-    .fading .fc-row { display: flex; gap: 3px; flex-wrap: nowrap; min-width: 0; }
-    .fading .fc { padding: 2px 6px; font-size: 10px; flex-shrink: 0; }
-    .fading .fc .fc-rate { font-size: 8.5px; margin-left: 2px; }
-    .fading .fc .fc-down { font-size: 10.5px; margin-left: 0; }
+    .fading .fc-row { display: flex; gap: 10px; flex-wrap: wrap; min-width: 0; row-gap: 4px; }
+    .fading .fc {
+      background: transparent; border: 0; padding: 0; box-shadow: none;
+      font: 700 12px/1.2 var(--serif); color: var(--ink);
+      text-decoration: underline; text-decoration-style: dotted;
+      text-decoration-color: rgba(21,17,13,0.35); text-underline-offset: 3px;
+    }
+    .fading .fc:hover { color: var(--accent); text-decoration-color: var(--accent); transform: none; }
+    .fading .fc .fc-rate { font: 500 10px/1 var(--mono); color: var(--muted); margin-left: 3px; }
+    .fading .fc .fc-down { font-size: 12px; margin-left: 1px; }
   }
   /* Belt-and-suspenders: never let the page scroll horizontally. */
   body { overflow-x: hidden; }
