@@ -479,26 +479,30 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
 
-        # Build fallbackMapsUrl LAST. We have THREE possible signals to feed
-        # Google Maps for the address link:
-        #   1. Licence address text from the City data (authoritative)
-        #   2. Nominatim's geocoded lat/lng (approximate — Nominatim doesn't
-        #      know unit-level positions in strip malls)
-        #   3. Places mapsUrl when Places matched correctly (handled elsewhere)
+        # fallbackMapsUrl: use the permit's authoritative NAME + ADDRESS as the
+        # Google Maps query. Both fields come from the City of Toronto licence
+        # data, which is the source of truth for what business should be at
+        # what address. Google's geocoder + business-search handles the rest —
+        # if the business is indexed, Maps shows the profile; if not, falls
+        # back to the address.
         #
-        # PREFER ADDRESS TEXT over coords — Google's geocoder is dramatically
-        # more accurate than Nominatim for North American addresses, especially
-        # at unit/suite level (e.g., "3999 KEELE ST, #1/BLDNGF"). And NO business
-        # name in the query — that's what caused the EASTERN 828 CAFE search
-        # to return the car wash at the same address. Pure address geocode has
-        # no business-selection ambiguity.
-        if addr1:
+        # The earlier worry about this format was EASTERN 828 CAFE & GRILL
+        # searching "EASTERN 828 CAFE & GRILL 828 EASTERN AVE" and getting
+        # the established car wash at the same address. That case is now
+        # caught upstream by the weak_match drop (no Places, no website,
+        # name-only cuisine) so it never reaches URL construction. Entries
+        # that DO reach here have at least one of: Places match, real website,
+        # or brand-inherited website — i.e., something attesting to the
+        # business's existence beyond the licence row.
+        if op_raw and addr1:
+            entry['fallbackMapsUrl'] = (
+                f"https://www.google.com/maps/search/?api=1"
+                f"&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
+            )
+        elif addr1:
             entry['fallbackMapsUrl'] = (
                 f"https://www.google.com/maps/?q={quote_plus(addr1 + ' Toronto, ON')}"
             )
-        elif entry.get('lat') is not None and entry.get('lng') is not None:
-            # Address missing — fall back to coords-pin (Nominatim approximate)
-            entry['fallbackMapsUrl'] = f"https://www.google.com/maps/?q={entry['lat']},{entry['lng']}"
         else:
             entry['fallbackMapsUrl'] = ''
 
