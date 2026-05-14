@@ -382,10 +382,10 @@ def _esc(s):
             .replace('"', '&quot;').replace("'", '&#39;'))
 
 def _ago(days):
-    if days <= 1: return 'today'
-    if days <= 60: return f'{days}d ago'
-    if days <= 365: return f'{round(days/30)}mo ago'
-    return f'{days/365:.1f}y ago'
+    if days <= 1: return 'licensed today'
+    if days <= 60: return f'licensed {days}d ago'
+    if days <= 365: return f'licensed {round(days/30)}mo ago'
+    return f'licensed {days/365:.1f}y ago'
 
 # Build static HTML rows for the top 30 newest verified-open entries.
 top_for_static = all_recent[:30]
