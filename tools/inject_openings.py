@@ -408,6 +408,15 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         cuisines, source = get_cuisine(op_raw, address_full)
         if not cuisines: continue
 
+        # Unified-validator drop: Haiku looked at name + Places match + types +
+        # editorial + reviews and concluded this is not a consumer restaurant
+        # (institutional caterer, packaged-food brand, grocery counter, etc.).
+        # Authoritative — trumps the cuisine signal.
+        wv_e = WEB_VERIFY_CACHE.get(f"{op_raw.strip().upper()}||{address_full.strip().upper()}")
+        if wv_e and wv_e.get('validator_drop'):
+            n_dropped_unverified += 1   # bucket with other drops; could split out later
+            continue
+
         # Verification gate: Places=OPERATIONAL OR web_search verified-yes.
         verification = verification_for(op_raw, address_full)
         if verification is None:
