@@ -479,14 +479,24 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
 
-        # fallbackMapsUrl: address-only query. Including the operating name biases
-        # Google toward existing indexed locations of the same brand — e.g.,
-        # LENA'S ROTI's new 3999 Keele licence + "LENA'S ROTI" in the query has
-        # Maps return the older 4207 Keele Lena's location (the indexed one).
-        # Address-only forces Google's geocoder to resolve the exact unit,
-        # showing the address pin where the business actually IS. The geocoder
-        # is excellent at North American unit-level addresses.
-        if addr1:
+        # fallbackMapsUrl: the City permit's NAME + ADDRESS, full stop.
+        # This is the user's explicit rule (2026-05-14): permit data is the
+        # source of truth; use it consistently for every URL, validator
+        # judgment, and weak-match check. Stop trying to outsmart Google with
+        # different formats per failure mode.
+        #
+        # Worst-case behaviours we accept:
+        # - Brand at multiple locations → Google returns nearest indexed one
+        #   (Lena's 3999 Keele licence sends user to existing 4207 Keele
+        #   Lena's). Still the right brand operator, at minimum.
+        # - Address shared with prior tenant → Google returns the brand we
+        #   asked for if indexed; if not, falls back to address geocode.
+        if op_raw and addr1:
+            entry['fallbackMapsUrl'] = (
+                f"https://www.google.com/maps/search/?api=1"
+                f"&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
+            )
+        elif addr1:
             entry['fallbackMapsUrl'] = (
                 f"https://www.google.com/maps/?q={quote_plus(addr1 + ' Toronto, ON')}"
             )
