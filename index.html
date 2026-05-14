@@ -248,7 +248,8 @@
     .filters #locate-btn::before { content: '📍'; font-size: 14px; }
     .filters #saved-toggle { font-size: 0; padding: 7px 10px; }
     .filters #saved-toggle::before { content: '♡'; font-size: 16px; }
-    .filters #saved-toggle.active::before { content: '♥'; color: #fff; }
+    .filters #saved-toggle.has-saves::before { content: '♥'; color: var(--accent); }
+    .filters #saved-toggle.active::before { color: #fff; }
   }
   .filters .filter-clear { font: 600 11px/1 var(--sans); color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: 0; padding: 4px 6px; }
   .filters .filter-clear:hover { color: var(--accent); }
@@ -486,6 +487,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     if (!btn) return;
     const n = getSaved().size;
     btn.textContent = n ? `♥ Saved (${n})` : '♡ Saved';
+    btn.classList.toggle('has-saves', n > 0);
     btn.classList.toggle('active', savedOnly);
   }
 
