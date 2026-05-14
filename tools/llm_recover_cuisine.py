@@ -24,35 +24,37 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ROOT = Path(__file__).resolve().parent.parent
 WEB_VERIFY_PATH = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
+PLACES_CACHE_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
 SECRETS = Path('/var/secrets/nowservingto.env')
 MODEL = 'claude-haiku-4-5-20251001'
 UA = 'Mozilla/5.0 (compatible; nowservingto-cuisine/1.0)'
 SNIFF_BYTES = 32768
 WORKERS = 6
+SOCIAL_DOMAINS = ('instagram.com', 'facebook.com', 'tiktok.com')
 
 # Import the existing HTML stripper to reuse the proven SPA-shell handling
 sys.path.insert(0, str(ROOT / 'tools'))
 from check_link_health import _strip_html
 
-VALID_CUISINE_KEYS = {
-    'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'cambodian','laotian',
-    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan','sri_lankan','nepalese',
-    'caribbean','jamaican','trinidadian','guyanese','haitian','cuban','dominican',
-    'greek','portuguese','polish','french','irish_uk','german','jewish_deli','spanish',
-    'eastern_eu','ukrainian','russian','hungarian',
-    'middle_east','lebanese','turkish','syrian','persian','israeli','egyptian','yemeni','armenian','georgian',
-    'latin','mexican','salvadoran','peruvian','colombian','brazilian','argentinian','venezuelan',
-    'african_horn','ethiopian','eritrean','somali',
-    'african_west','nigerian','ghanaian','moroccan','senegalese','unknown',
-}
+# Cuisine taxonomy is the canonical one from cuisines.py — keeps this script
+# in lockstep with inject_openings' display labels so we can't silently tag
+# entries with a cuisine that has no label.
+from cuisines import VALID_CUISINE_KEYS
 
-SYSTEM_PROMPT = """You classify a Toronto restaurant by cuisine, using the actual content
-of its website. The website may be the original, a redirected target, or a brand site for
-a packaged-food line. Use menu words, "we serve…" copy, and About-Us hints to decide.
+SYSTEM_PROMPT = """You classify a Toronto restaurant by cuisine using the evidence provided.
+The evidence may include any subset of:
+  • WEBSITE CONTENT — the restaurant's own homepage and/or menu page (HTML stripped)
+  • GOOGLE PLACES EDITORIAL SUMMARY — Google's curated one-line description of the place
+  • RECENT GOOGLE REVIEWS — up to 5 customer reviews
+
+Use ALL provided sections to decide. Reviews often carry the strongest cultural-marker
+signals: "their kunafa is amazing", "best biryani in Scarborough", "the pupusas are
+authentic Salvadoran" — these dish-and-country mentions in reviews disambiguate cases
+where the website is generic or a JS shell. The editorial summary is Google's own
+classification ("Lebanese restaurant serving...") and is usually accurate.
 
 Return a single JSON object on ONE line, no prose:
-{"cuisine":"<key>","evidence":"<one short sentence quoting the menu/about clue>"}
+{"cuisine":"<key>","evidence":"<one short sentence quoting the strongest clue>"}
 
 Valid cuisine keys: italian, chinese, japanese, korean, vietnamese, filipino, thai,
 indonesian, malaysian, burmese, cambodian, laotian, south_asian, indian, pakistani,
@@ -145,14 +147,32 @@ def fetch_page_text(url):
         combined += f"\n\nMENU/ABOUT PAGE ({menu_url}): {menu_text}"
     return combined[:3200], final_url
 
-def classify_one(name, address, page_text):
+def _build_evidence_payload(page_text, places_reviews, places_editorial):
+    """Combine whatever evidence we have into a single user-message body.
+    Any source can be None/empty; at least one must be non-empty for this
+    to return non-None."""
+    sections = []
+    if page_text:
+        sections.append(f"WEBSITE CONTENT:\n{page_text}")
+    if places_editorial:
+        sections.append(f"GOOGLE PLACES EDITORIAL SUMMARY:\n{places_editorial}")
+    if places_reviews:
+        review_lines = '\n'.join(f"- {r[:400]}" for r in places_reviews[:5] if r)
+        if review_lines:
+            sections.append(f"RECENT GOOGLE REVIEWS:\n{review_lines}")
+    return '\n\n'.join(sections) if sections else None
+
+def classify_one(name, address, page_text=None, places_reviews=None, places_editorial=None):
+    body = _build_evidence_payload(page_text, places_reviews, places_editorial)
+    if not body:
+        return None, None
     payload = json.dumps({
         'model': MODEL,
         'max_tokens': 120,
         'system': SYSTEM_PROMPT,
         'messages': [{
             'role': 'user',
-            'content': f"Restaurant: {name}\nAddress: {address}\n\n{page_text}",
+            'content': f"Restaurant: {name}\nAddress: {address}\n\n{body}",
         }],
     }).encode('utf-8')
     req = Request('https://api.anthropic.com/v1/messages', data=payload, headers={
@@ -177,11 +197,48 @@ def classify_one(name, address, page_text):
                 continue
     return None, None
 
-def needs_recovery(entry):
+def _is_social(url):
+    return bool(url) and any(d in url.lower() for d in SOCIAL_DOMAINS)
+
+def _is_maps_url(url):
+    if not url: return False
+    l = url.lower()
+    return 'maps.google.' in l or 'goo.gl/maps' in l
+
+def best_website(verify_entry, places_entry):
+    """Pick the most fetchable website for cuisine recovery, in priority order:
+       1. Places' own-website (non-social, non-maps) — Google's authoritative pick
+       2. verify_cache's website if non-social
+       3. anything social — last resort; immigrant-run spots may live entirely on IG
+       Returns (url, source) or (None, None)."""
+    p_web = (places_entry or {}).get('website') if places_entry and places_entry.get('status') == 'ok' else None
+    v_web = verify_entry.get('website')
+    if p_web and not _is_social(p_web) and not _is_maps_url(p_web):
+        return p_web, 'places'
+    if v_web and not _is_social(v_web) and not _is_maps_url(v_web):
+        return v_web, 'verify'
+    # Fall back to social — Instagram bios often carry "Authentic Sichuan",
+    # "Halal Turkish bakery", etc. in the first line of accessible HTML.
+    if p_web and _is_social(p_web): return p_web, 'places-social'
+    if v_web and _is_social(v_web): return v_web, 'verify-social'
+    return None, None
+
+def _has_places_extras(places_entry):
+    if not places_entry or places_entry.get('status') != 'ok': return False
+    if places_entry.get('reviews'): return True
+    if places_entry.get('editorialSummary'): return True
+    return False
+
+def needs_recovery(entry, places_entry=None):
     if entry.get('status') != 'ok': return False
     if entry.get('operating') != 'yes': return False
-    if not entry.get('website'): return False
     if entry.get('cuisine') and entry.get('cuisine') != 'unknown': return False
+    # We can recover if EITHER (a) there's a fetchable website OR (b) Places
+    # has rich extras (reviews / editorial summary). Adding the Places-extras
+    # path unblocks the entries whose website is a JS shell but whose Google
+    # Maps profile has substantive review content.
+    url, _ = best_website(entry, places_entry)
+    if not url and not _has_places_extras(places_entry): return False
     # Skip entries we already tried in the last 30 days — they'll be re-attempted
     # naturally as the website-content situation evolves (e.g. brand-new sites
     # may have a fuller menu page after a month).
@@ -196,31 +253,53 @@ def needs_recovery(entry):
 
 def main():
     cache = json.loads(WEB_VERIFY_PATH.read_text())
-    targets = [(k, e) for k, e in cache.items() if needs_recovery(e)]
+    places = json.loads(PLACES_CACHE_PATH.read_text()) if PLACES_CACHE_PATH.exists() else {}
+    targets = [(k, e) for k, e in cache.items() if needs_recovery(e, places.get(k))]
+    # Tally what URL source each target will use, so we know what we're sending out
+    by_source = {}
+    for k, e in targets:
+        _, src = best_website(e, places.get(k))
+        by_source[src] = by_source.get(src, 0) + 1
     print(f"verify cache entries:        {len(cache)}")
     print(f"needing cuisine recovery:    {len(targets)}")
+    print(f"  fetch sources: {by_source}")
     if not targets:
         return
 
     def work(key, e):
         try:
-            text, final_url = fetch_page_text(e['website'])
-            if not text:
-                return key, None, None, 'no usable page content'
+            p = places.get(key) or {}
+            p_reviews = p.get('reviews') if p.get('status') == 'ok' else None
+            p_editorial = p.get('editorialSummary') if p.get('status') == 'ok' else None
+
+            url, src = best_website(e, p if p.get('status') == 'ok' else None)
+            text = None
+            if url:
+                text, _ = fetch_page_text(url)
+
+            # If website yielded no text AND Places has nothing either, give up.
+            if not text and not p_reviews and not p_editorial:
+                if url:
+                    return key, None, None, f'no usable page content (source={src})', src
+                return key, None, None, 'no website + no Places extras', None
+
             name = key.split('||')[0]
             address = key.split('||')[1] if '||' in key else ''
-            cuisine, evidence = classify_one(name, address, text)
-            return key, cuisine, evidence, None
+            cuisine, evidence = classify_one(name, address, text, p_reviews, p_editorial)
+            # If we ended up classifying from Places-extras only, mark source accordingly
+            effective_src = src if text else 'places_extras'
+            return key, cuisine, evidence, None, effective_src
         except Exception as ex:
-            return key, None, None, f"{type(ex).__name__}: {str(ex)[:60]}"
+            return key, None, None, f"{type(ex).__name__}: {str(ex)[:60]}", None
 
     now_iso = datetime.now(timezone.utc).isoformat()
     n_recovered = n_unknown = n_failed = 0
+    recovered_by_source = {}
     t0 = time.time()
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:
         futures = [ex.submit(work, k, v) for k, v in targets]
         for i, fut in enumerate(as_completed(futures), 1):
-            key, cuisine, evidence, err = fut.result()
+            key, cuisine, evidence, err, src = fut.result()
             # Always stamp recovered_at so we don't retry the same failure every
             # day — gives the natural 30-day re-attempt cycle via needs_recovery.
             cache[key]['recovered_at'] = now_iso
@@ -234,14 +313,18 @@ def main():
                     cache[key]['evidence'] = (evidence or 'page content recovery — still unknown')[:200]
             else:
                 n_recovered += 1
+                recovered_by_source[src] = recovered_by_source.get(src, 0) + 1
                 cache[key]['cuisine'] = cuisine
                 cache[key]['evidence'] = (evidence or '')[:200]
+                cache[key]['recovery_source'] = src
             if i % 10 == 0 or i == len(targets):
                 el = time.time() - t0
                 print(f"  [{i}/{len(targets)}] {el:.0f}s  recovered={n_recovered}  unknown={n_unknown}  failed={n_failed}")
                 WEB_VERIFY_PATH.write_text(json.dumps(cache, separators=(',', ':')))
     WEB_VERIFY_PATH.write_text(json.dumps(cache, separators=(',', ':')))
     print(f"\nDone in {time.time()-t0:.0f}s: recovered={n_recovered}  unknown={n_unknown}  failed={n_failed}")
+    if recovered_by_source:
+        print(f"recovered by source: {recovered_by_source}")
 
 if __name__ == '__main__':
     main()

@@ -23,7 +23,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 LOCAL_ROOT="$(cd -- "$SCRIPT_DIR/.." &> /dev/null && pwd)"
-REMOTE_ROOT='/var/www/html/rootedto'
+REMOTE_ROOT='/var/www/html/nowservingto'
 SECRETS_LOCAL='/var/secrets/nowservingto.env'
 SECRETS_REMOTE='/var/secrets/nowservingto.env'
 

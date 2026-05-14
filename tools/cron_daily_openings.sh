@@ -18,12 +18,12 @@
 #
 # Optional env (override at the cron line):
 #   ROOTED_DIR    repo root (default: derived from this script)
-#   WEB_ROOT      local prod dir for `cp` deploy (e.g. /var/www/html/rootedto)
+#   WEB_ROOT      local prod dir for `cp` deploy (e.g. /var/www/html/nowservingto)
 #   SKIP_LLM      "1" to skip the Haiku classification step
 #   SKIP_WEBSITES "1" to skip the web_search website-lookup step
 #
 # Suggested cron line (every morning 5:17 AM Toronto):
-#   17 5 * * *  WEB_ROOT=/var/www/html/rootedto /home/josh/rootedto/tools/cron_daily_openings.sh
+#   17 5 * * *  WEB_ROOT=/var/www/html/nowservingto /var/www/html/nowservingto/tools/cron_daily_openings.sh
 #
 set -euo pipefail
 
@@ -107,20 +107,43 @@ if ! "$PYTHON" -u tools/check_link_health.py >> "$LOG_FILE" 2>&1; then
     log "WARN: link health check failed (non-fatal)"
 fi
 
-# Step 5a: for entries the verifier left on social (Instagram/FB), ask Google Places
-# for the proper Maps profile or own-website. ~$0.017 × daily-delta-social = pennies.
-log "→ places_enrich_socials.py (upgrade social-link entries to Google Maps)"
+# Step 5a: ask Google Places about every operating-but-uncategorized entry we
+# haven't queried yet (no website OR a social website). Places frequently knows
+# the real restaurant URL even when our verifier only found the IG account, so
+# this populates places_cache for the downstream cuisine-recovery step to use.
+# Order matters: this must run BEFORE llm_recover_cuisine so Places' website
+# data is available. ~$0.017 × daily-delta = pennies.
+log "→ places_enrich_socials.py (upgrade social-link entries via Places)"
 if ! "$PYTHON" -u tools/places_enrich_socials.py >> "$LOG_FILE" 2>&1; then
-    log "WARN: social-link Places enrichment failed (non-fatal — entries stay on social)"
+    log "WARN: social-link Places enrichment failed (non-fatal)"
+fi
+log "→ places_recover_cuisine.py (Places lookup for entries with no/social website)"
+if ! "$PYTHON" -u tools/places_recover_cuisine.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: Places coverage expansion failed (non-fatal)"
 fi
 
-# Step 5b: cuisine-recovery pass — for entries the verifier left without a cuisine
-# (web_search couldn't determine), fetch the actual website + any linked menu page
-# and re-classify. ~$0.001 per recovery × ~5/day delta. Prevents the name-only
-# fallback from making wrong guesses (e.g. "Tumi Dumpling" → tibetan from name alone).
-log "→ llm_recover_cuisine.py (fetch site content + reclassify ambiguous entries)"
+# Step 5b: cuisine-recovery pass — for entries still without a cuisine, fetch
+# the best available website (Places' own-site preferred over verify-cache's
+# social URL; social used only as last resort) and classify via Haiku.
+# Order: Places-first → verify non-social → social fallback (immigrant-run
+# spots that live entirely on IG). ~$0.001 per recovery × ~10/day delta.
+log "→ llm_recover_cuisine.py (Places-first website fetch + reclassify)"
 if ! "$PYTHON" -u tools/llm_recover_cuisine.py >> "$LOG_FILE" 2>&1; then
     log "WARN: cuisine recovery failed (non-fatal — entries stay uncategorized)"
+fi
+
+# Step 5c: Layer 4 — for entries where the website fetch failed (SPA shells,
+# Cloudflare-blocked, PDF-only menus), use Haiku + web_search via the Message
+# Batches API to classify from Google's already-rendered/indexed view of the
+# site. Batch is 50% off ($5/1K web_search vs $10/1K sync) AND has much higher
+# per-org rate limits — sync would hit web_search throttling after ~80 calls.
+# Uses GHDB-style operators (filetype:pdf, site:blogto.com, intitle:menu,
+# quoted exact names, -aggregator exclusions) on the second search call.
+# Cost: ~$0.01/attempt × daily delta. The sync variant (llm_search_recover_cuisine.py)
+# is kept in the repo for manual / debugging use but not invoked by cron.
+log "→ llm_search_recover_batch.py (Haiku web_search recovery — Layer 4, batch / 50% off)"
+if ! "$PYTHON" -u tools/llm_search_recover_batch.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: batched search-based cuisine recovery failed (non-fatal)"
 fi
 
 # Step 5b: geocode addresses for entries missing lat/lng (powers the map view).

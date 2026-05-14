@@ -55,10 +55,16 @@ def find_place(query):
     return cands[0] if cands else None
 
 def place_details(place_id):
+    # `reviews` and `editorial_summary` are within the Atmosphere Data SKU we
+    # already hit (via `rating`/`user_ratings_total`), so adding them is free
+    # at our scale (well under the 10K/month per-SKU free tier on legacy API).
+    # They carry the cultural-marker signal name+website often lacks — e.g.
+    # reviews mention "their kunafa is the best" → Lebanese/Syrian markers
+    # name alone can't disambiguate.
     r = http_get_json(
         'https://maps.googleapis.com/maps/api/place/details/json',
         {'place_id': place_id,
-         'fields': 'name,website,types,rating,user_ratings_total,formatted_address,geometry/location,url,business_status',
+         'fields': 'name,website,types,rating,user_ratings_total,formatted_address,geometry/location,url,business_status,reviews,editorial_summary',
          'key': API_KEY}
     )
     if r.get('status') != 'OK': return None
@@ -158,6 +164,15 @@ def enrich_one(operating_name, address):
     if not details:
         return {'status': 'no_details', 'place_id': cand['place_id'], 'query': query}
     loc = (details.get('geometry') or {}).get('location') or {}
+    # Trim reviews to text-only and cap length — full review objects are bulky
+    # (author photos, profile URLs, timestamps) and we only need the prose for
+    # cultural-marker extraction downstream.
+    reviews_raw = details.get('reviews') or []
+    reviews_text = []
+    for r in reviews_raw[:5]:
+        t = (r.get('text') or '').strip()
+        if t: reviews_text.append(t[:600])
+    editorial = (details.get('editorial_summary') or {}).get('overview') if isinstance(details.get('editorial_summary'), dict) else None
     return {
         'status': 'ok',
         'place_id': cand['place_id'],
@@ -171,6 +186,8 @@ def enrich_one(operating_name, address):
         'lat': loc.get('lat'),
         'lng': loc.get('lng'),
         'businessStatus': details.get('business_status'),
+        'reviews': reviews_text,             # list[str] — up to 5 trimmed review texts
+        'editorialSummary': editorial,       # str or None — Google's curated description
         'query': query,
     }
 

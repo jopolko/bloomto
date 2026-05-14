@@ -74,21 +74,9 @@ CUISINE_PATTERNS = {
     'jewish_deli':   ['KOSHER','BAGEL','KNISH','SHTETL','SHWARTZ','UNITED BAKERS','MATZO','YIDDISH','SCHWARTZS'],
     'eastern_eu':    ['UKRAINIAN','RUSSIAN','BULGARIAN','HUNGARIAN','ROMANIAN','BORSCHT','PEROGY','PYROGY','VARENY','KYIV','KIEV','ODESA','PRAGUE','GOULASH','CZECH'],
 }
-CUISINE_LABEL = {
-    'italian':'Italian','chinese':'Chinese','japanese':'Japanese','korean':'Korean',
-    'vietnamese':'Vietnamese','filipino':'Filipino','thai':'Thai',
-    'indonesian':'Indonesian','malaysian':'Malaysian','burmese':'Burmese',
-    'south_asian':'South Asian','indian':'Indian','pakistani':'Pakistani','afghan':'Afghan',
-    'bangladeshi':'Bangladeshi','tamil':'Tamil','tibetan':'Tibetan',
-    'caribbean':'Caribbean','jamaican':'Jamaican','trinidadian':'Trinidadian','guyanese':'Guyanese','haitian':'Haitian',
-    'greek':'Greek','portuguese':'Portuguese','polish':'Polish','french':'French',
-    'irish_uk':'Irish/UK','german':'German','jewish_deli':'Jewish deli',
-    'eastern_eu':'Eastern European','ukrainian':'Ukrainian','russian':'Russian','hungarian':'Hungarian',
-    'middle_east':'Middle Eastern','lebanese':'Lebanese','turkish':'Turkish','syrian':'Syrian','persian':'Persian',
-    'latin':'Latin American','mexican':'Mexican','salvadoran':'Salvadoran','peruvian':'Peruvian','colombian':'Colombian','brazilian':'Brazilian',
-    'african_horn':'East African','ethiopian':'Ethiopian','eritrean':'Eritrean','somali':'Somali',
-    'african_west':'West African','nigerian':'Nigerian','ghanaian':'Ghanaian','moroccan':'Moroccan',
-}
+# Canonical cuisine taxonomy — defined in tools/cuisines.py so recovery scripts
+# share the same set. Adding a bucket there is enough; do NOT re-declare here.
+from cuisines import CUISINE_LABEL
 FOOD_CATS = {
     'EATING OR DRINKING ESTABLISHMENT',
     'TAKE-OUT OR RETAIL FOOD ESTABLISHMENT',
@@ -163,6 +151,9 @@ def keyword_classify(op_upper):
     return None
 
 VALID_LLM_KEYS = set(CUISINE_LABEL.keys())  # every key with a display label is valid
+# Collects cache cuisines that have no display label, surfaced at end of run as
+# a loud warning. Empty in steady state; growth means cuisines.py needs an entry.
+_CUISINE_LABEL_GAP = set()
 CUISINE_LABEL.setdefault('thai', 'Thai')
 
 def get_cuisine(name, address):
@@ -186,14 +177,23 @@ def get_cuisine(name, address):
     w = WEB_VERIFY_CACHE.get(key)
     if w and w.get('status') == 'ok' and w.get('operating') == 'yes':
         c = w.get('cuisine')
-        if c == 'unknown' or c is None: return None, None  # verifier checked, couldn't classify → drop
-        if c in VALID_LLM_KEYS: return c, 'web_search'
-    # 2. Name-only LLM classification — only when web_verify hasn't run at all
+        if c in VALID_LLM_KEYS and c != 'unknown':
+            return c, 'web_search'
+        if c and c != 'unknown':  # unrecognised cuisine key — surface in label-gap warning
+            _CUISINE_LABEL_GAP.add(c)
+        # Verifier returned unknown OR null — fall through to name-only cache.
+        # Trade-off (validated 2026-05-14): tightened name-only prompt has ~13%
+        # error rate vs the verifier on 581 GT entries. We accept that to recover
+        # ~280 legit entries whose SPA-shell websites the verifier couldn't read.
+        # Layer 4 batch + the 30-day Places re-fetch cycle will correct over time.
+    # 2. Name-only LLM classification — fallback when web_verify is null/unknown
     llm = LLM_CACHE.get(key)
     if llm and llm.get('status') == 'ok':
         c = llm.get('cuisine')
         if c == 'unknown': return None, None
         if c in VALID_LLM_KEYS: return c, 'llm'
+        if c:
+            _CUISINE_LABEL_GAP.add(c)
     # 3. Keyword fallback (only when both LLM passes are missing)
     kw = keyword_classify((name or '').upper())
     if kw: return kw, 'keyword'
@@ -535,3 +535,13 @@ print()
 print("Top cuisines by 12-month new-opening count:")
 for c in cuisines_out[:12]:
     print(f"  {c['label']:20s} {c['count365d']:>4} new (last 30d: {c['count30d']})   newest: {c['newest']['operatingName'][:42]}")
+
+# Loud sanity check: if any recovery script tagged a cuisine that cuisines.py
+# doesn't have a display label for, those entries were silently dropped above.
+# Surface it so the fix (add the key to cuisines.py CUISINE_LABEL) is obvious.
+if _CUISINE_LABEL_GAP:
+    print()
+    print(f"!!!!!!  WARNING: {len(_CUISINE_LABEL_GAP)} cuisine key(s) in cache but missing from cuisines.py CUISINE_LABEL:")
+    for c in sorted(_CUISINE_LABEL_GAP):
+        print(f"          {c!r}")
+    print("        These entries were SILENTLY DROPPED from the feed. Add them to tools/cuisines.py.")

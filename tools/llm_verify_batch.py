@@ -28,19 +28,10 @@ POLL_INTERVAL_SEC = 30
 RECHECK_DAYS = 7
 CSV_PATH = '/tmp/business_licences_alt.csv'
 
-VALID_CUISINE_KEYS = {
-    'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'cambodian','laotian',
-    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan','sri_lankan','nepalese',
-    'caribbean','jamaican','trinidadian','guyanese','haitian','cuban','dominican',
-    'greek','portuguese','polish','french','irish_uk','german','jewish_deli','spanish',
-    'eastern_eu','ukrainian','russian','hungarian',
-    'middle_east','lebanese','turkish','syrian','persian','israeli','egyptian','yemeni','armenian','georgian',
-    'latin','mexican','salvadoran','peruvian','colombian','brazilian','argentinian','venezuelan',
-    'african_horn','ethiopian','eritrean','somali',
-    'african_west','nigerian','ghanaian','moroccan','senegalese',
-    'unknown'
-}
+# Cuisine taxonomy is the canonical one from cuisines.py.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cuisines import VALID_CUISINE_KEYS
 
 SYSTEM_PROMPT = """You verify a Toronto restaurant's existence AND identify its cuisine
 from web search results. Many places are brand new with only sparse online presence — that's fine.

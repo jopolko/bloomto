@@ -94,12 +94,24 @@ Caribbean (cultural grouping — Guyana is geographically South America but culi
 - haitian: Haiti, Port-au-Prince, griot, diri
 - caribbean: generic Caribbean umbrella (Bahamian, Bajan, multi-island, "Caribbean Foods")
 
-Middle East / Mediterranean:
-- lebanese: Beirut, Lebanon, shawarma + manakish combo
-- turkish: Istanbul, Turkish, doner, baklava-shop
-- syrian: Damascus, Aleppo, Syrian
-- persian: Iran, Tehran, Isfahan, Shiraz, kabab koobideh, joojeh, ghormeh
-- middle_east: generic Mediterranean / Mid East umbrella (Mediterranean Grill, etc.)
+Middle East / Mediterranean (CRITICAL: a generic dish like "shawarma" or "kebab" alone
+does NOT pin a specific country — the name must carry a city/region/cultural marker
+to commit to a country bucket. Otherwise tag the middle_east umbrella):
+- lebanese: explicit signal — Beirut, Lebanon, Cedars, Maroush, Tarbouche, Habibi
+  Habibti, Falafel + Manakish combo, "Lebanese" in name, Levantine + Lebanese-specific dishes
+- turkish: explicit signal — Istanbul, Anatolia, Anatolian, Antep, Adana, Bursa, Pasha,
+  Sultan, Ottoman, Marmara, "Turkish" in name, doner-house (NOT just "donair")
+- syrian: explicit signal — Damascus, Aleppo, Homs, Sham, Levant + Syrian-specific, "Syrian"
+- persian: explicit signal — Iran, Tehran, Isfahan, Shiraz, Saadi, Rumi, Caspian, Pomegranate,
+  Pomelo, kabab koobideh, joojeh, ghormeh-sabzi, fesenjan, tahdig, "Persian"
+- egyptian: explicit signal — Cairo, Nile, Pharaoh, Koshary, Foul Medames, "Egyptian"
+- israeli: explicit signal — Tel Aviv, Jaffa, Eretz, Shakshuka-headliner, Sabich, "Israeli"
+- yemeni: explicit signal — Sanaa, Bilady, Yemen, Mocha (when food not coffee)
+- armenian: explicit signal — Yerevan, Ararat, Armenia, lahmajun + Armenian context
+- georgian: explicit signal — Tbilisi, Khachapuri, Khinkali, "Georgian" (the country, not US South)
+- middle_east: DEFAULT for any "shawarma", "kebab", "halal donair", "Mediterranean grill",
+  "shisha lounge" name that doesn't carry one of the country markers above. ALSO use for
+  "Mediterranean" + Levant ambiguity.
 
 Eastern European:
 - ukrainian: Kyiv, Ukrainian, varenyky, borscht-specific
@@ -160,21 +172,63 @@ are NOT consumer restaurants — return unknown:
   manufacturer/distributor operations.
 
 When uncertain between two specific buckets, pick the umbrella.
-When uncertain whether there's any cultural signal at all, pick unknown."""
+When uncertain whether there's any cultural signal at all, pick unknown.
 
-VALID_KEYS = {
-    'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'cambodian','laotian',
-    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan','sri_lankan','nepalese',
-    'caribbean','jamaican','trinidadian','guyanese','haitian','cuban','dominican',
-    'greek','portuguese','polish','french','irish_uk','german','jewish_deli','spanish',
-    'eastern_eu','ukrainian','russian','hungarian',
-    'middle_east','lebanese','turkish','syrian','persian','israeli','egyptian','yemeni','armenian','georgian',
-    'latin','mexican','salvadoran','peruvian','colombian','brazilian','argentinian','venezuelan',
-    'african_horn','ethiopian','eritrean','somali',
-    'african_west','nigerian','ghanaian','moroccan','senegalese',
-    'unknown'
-}
+PAN-CUISINE DISHES (dish words shared across 3+ unrelated cuisines — never commit
+to a specific bucket from these alone; require an additional country marker):
+- dumpling / dumplings / wonton → unknown (Chinese, Tibetan, Korean mandu, Japanese
+  gyoza, Polish pierogi all use this word). Tag chinese ONLY if name carries a
+  Chinese marker (Sichuan, Cantonese, Hong Kong, Chengdu, Shanghai, Beijing, etc.).
+- noodles / noodle-house → unknown unless country marker (Pho = vietnamese; ramen =
+  japanese; udon = japanese; lo mein = chinese; lamian = chinese; pad thai = thai).
+- curry / curries → unknown unless country marker (Thai curry, Japanese curry-house,
+  Indian-marker curry, Caribbean curry are all distinct).
+- bbq / grill / smokehouse / steakhouse → unknown unless country marker (Korean BBQ
+  with kimchi = korean; Texan BBQ = unknown; Brazilian churrasco = brazilian).
+- samosa / pakora / chaat → south_asian umbrella unless country marker (Indian samosa,
+  Pakistani samosa, East African sambusa, Middle Eastern sambusek all distinct).
+- biryani → south_asian umbrella unless country marker (Hyderabadi/Bangalore-style = indian;
+  Karachi/Sindhi = pakistani; Dhaka/Sylheti = bangladeshi; Colombo/Jaffna = sri_lankan/tamil).
+- roti → caribbean OR south_asian — needs context. Trinidadian/Guyanese roti wrap =
+  caribbean; Punjabi/Indian roti bread = indian. Default caribbean in Toronto context
+  ONLY if name has Caribbean signal; otherwise unknown.
+- kebab / kabob / kabab → middle_east umbrella unless country marker (Adana = turkish;
+  koobideh = persian; shish + Lebanese signal = lebanese; etc.).
+- shawarma → middle_east umbrella unless country marker (NEVER lebanese by default —
+  shawarma is equally claimed by Lebanese, Syrian, Turkish, Iraqi, Egyptian cooks).
+- pizza → italian (smoking gun) UNLESS chain-branded (Papa John's, Domino's, Pizza
+  Pizza, etc.) which → unknown per chain rule above.
+- sushi / ramen / izakaya / okonomiyaki → japanese (smoking gun).
+- pho / banh mi → vietnamese (smoking gun).
+- pad thai / tom yum → thai (smoking gun).
+- pupusa → salvadoran (smoking gun).
+- injera → african_horn (smoking gun).
+- jerk (in restaurant context, not "Jerk's Diner") → jamaican (smoking gun).
+- dim sum → chinese (smoking gun).
+- jollof → west african (smoking gun).
+- bagel / knish → jewish_deli (smoking gun).
+
+EXPLICIT FAILURE-MODE EXAMPLES — match these patterns:
+- "Tumi Dumpling House" → unknown (dumpling is pan-East-Asian; no country marker)
+- "Bombay Roti Hut" → indian (Bombay marker resolves roti ambiguity to indian)
+- "Caribbean Curry Express" → caribbean (Caribbean marker beats curry ambiguity)
+- "Shawarma Palace" / "Shawarma King" → middle_east (no country marker; umbrella)
+- "Maroush Lebanese Eatery" → lebanese (explicit Lebanese + Maroush marker)
+- "Adana Kebab House" → turkish (Adana is a Turkish city)
+- "Tehran Kabob" → persian (Tehran is the Iranian capital)
+- "Damascus Halal" → syrian (Damascus is the Syrian capital)
+- "Bangalore Donne Biryani" → indian (Bangalore = Indian city)
+- "Dhaka Sweet & Restaurant" → bangladeshi (Dhaka = Bangladeshi capital)
+- "Pizzeria Badiali" / "Trattoria X" / "Osteria Y" → italian (Italian-language tokens)
+- "Pho2gether" / "Pho 21" → vietnamese (pho = smoking gun)
+- "Bento Sushi" → japanese (sushi smoking gun overrides chain ambiguity)
+- "Soul Food Kitchen" / "Bayou Grill" / "Memphis BBQ Co" → unknown (American Southern)
+- "Asia-Pacific Kitchen" / "Pan-Asian Grill" → unknown (3+ region fusion)"""
+
+# Cuisine taxonomy is the canonical one from cuisines.py.
+import sys as _sys
+_sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cuisines import VALID_CUISINE_KEYS as VALID_KEYS
 
 def load_api_key():
     for line in SECRETS.read_text().splitlines():
