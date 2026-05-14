@@ -242,6 +242,14 @@
   .phone-modal .pm-url a:hover { color: var(--ink); }
 
   .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 24px 0 14px; }
+  @media (max-width: 600px) {
+    /* On narrow screens drop the labels off Near me + Saved so the row fits one line */
+    .filters #locate-btn { font-size: 0; padding: 7px 10px; }
+    .filters #locate-btn::before { content: '📍'; font-size: 14px; }
+    .filters #saved-toggle { font-size: 0; padding: 7px 10px; }
+    .filters #saved-toggle::before { content: '♡'; font-size: 16px; }
+    .filters #saved-toggle.active::before { content: '♥'; color: #fff; }
+  }
   .filters .filter-clear { font: 600 11px/1 var(--sans); color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: 0; padding: 4px 6px; }
   .filters .filter-clear:hover { color: var(--accent); }
   .cuisine-picker { position: relative; }
