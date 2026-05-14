@@ -67,6 +67,19 @@ def place_details(place_id):
 def cache_key(name, address):
     return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
 
+def _address_matches(queried_addr, matched_addr):
+    """Sanity-check that Google's match actually sits on the same street as the
+    queried address. Places' fuzzy text search will confidently return a
+    completely different restaurant when the name is garbled ("SONARBANGLA" →
+    "Ruposhi Bangla Restaurant" 5 km away) — without this, we cache wrong data."""
+    import re
+    if not queried_addr or not matched_addr: return False
+    m = re.match(r'^\s*(\d+)\s+([A-Za-z]+)', queried_addr)
+    if not m: return True  # can't parse a street number — trust the match
+    num, street = m.group(1), m.group(2).upper()
+    addr_up = matched_addr.upper()
+    return num in addr_up and street in addr_up
+
 def enrich_one(operating_name, address):
     # Build query — name + first address line + city for disambiguation.
     addr_first = (address or '').split('M')[0].strip().rstrip(',')
@@ -74,6 +87,10 @@ def enrich_one(operating_name, address):
     cand = find_place(query)
     if not cand:
         return {'status': 'not_found', 'query': query}
+    # Reject matches where Places returned a different street — common when the
+    # licence name is a run-together word Google can't reconnect.
+    if not _address_matches(addr_first, cand.get('formatted_address')):
+        return {'status': 'not_found', 'query': query, 'rejected_match': cand.get('name'), 'rejected_address': cand.get('formatted_address')}
     details = place_details(cand['place_id'])
     if not details:
         return {'status': 'no_details', 'place_id': cand['place_id'], 'query': query}
