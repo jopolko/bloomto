@@ -78,6 +78,14 @@ CRITICAL: American/Canadian chains = unknown regardless of theme.
   fusion without a clear country-of-origin cuisine → unknown.
 - A surname-only name without other ethnic signal → unknown.
 
+CRITICAL: Pan-Asian / Asia-Pacific / Asian fusion restaurants that draw from 3+ regional
+cuisines (e.g., Korean + Hawaiian + Vietnamese + Chinese) don't fit any single bucket.
+Return unknown — the directory promises a specific cuisine and fusion betrays that.
+- "Koha Pacific Kitchen" (Korean + Hawaiian poke + bao + banh mi) → unknown
+- "Bao Banh Bowl" / "Asia-Pacific Kitchen" / "Pan-Asian Grill" → unknown
+- A Korean restaurant that ALSO has a few sushi rolls is still korean — only flag
+  when the menu spans 3+ regional cuisines as roughly equal billing.
+
 CRITICAL: American Southern themes (New Orleans, Cajun, Creole, Bayou, Soul, Memphis BBQ,
 Texas BBQ, Tex-Mex non-Mexican) are NOT Caribbean or Latin. We have no taxonomy bucket
 for US Southern cuisine — return unknown.

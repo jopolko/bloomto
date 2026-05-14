@@ -144,6 +144,13 @@ Caribbean or Latin — no bucket exists for it, return unknown:
 - "New Orleans Seafood & Steakhouse" → unknown (NOT caribbean)
 - "Bayou Bar", "Memphis BBQ", "Big Easy Cafe" → unknown
 
+Pan-Asian / Asia-Pacific fusion (3+ regional Asian cuisines as roughly equal billing)
+doesn't fit any single bucket — return unknown:
+- "Koha Pacific Kitchen" (Korean + Hawaiian + Vietnamese + Chinese fusion) → unknown
+- "Asia-Pacific Kitchen", "Pan-Asian Grill" → unknown
+- A Korean place with a few sushi rolls is still korean; only flag when the menu
+  spans 3+ regional cuisines as roughly equal billing.
+
 Packaged-food brands and food manufacturers with a retail counter at their factory
 are NOT consumer restaurants — return unknown:
 - "SHIMLA FOODS TAKE OUT", "PATEL BROTHERS", "ROMA FOODS" → unknown
