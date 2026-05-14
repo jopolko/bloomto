@@ -242,7 +242,27 @@ from urllib.parse import quote_plus
 # Issued date — that's when the kitchen actually opened, not just when a category was added.
 seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0
+
+# Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
+# destination restaurants. The City's "Free Form Conditions Line 1" field labels
+# these explicitly ("LOCATED INSIDE FORTINO'S", "LOCATED WITHIN SOBEYS").
+INSTORE_CHAINS = (
+    'SOBEYS', 'LOBLAWS', 'FORTINO', 'METRO', 'FRESHCO', 'WHOLE FOODS',
+    'WALMART', 'COSTCO', 'SHOPPERS DRUG MART', 'NO FRILLS', 'FOOD BASICS',
+    'LONGO', 'FARM BOY', 'T&T', 'GALLERIA', 'PUSATERI',
+)
+
+def _is_instore_kiosk(row):
+    """A licence operating inside a grocery/retail store rather than as a standalone
+    restaurant — these aren't dining destinations. The City flags them explicitly."""
+    cond = ' '.join([
+        (row.get('Conditions') or ''),
+        (row.get('Free Form Conditions Line 1') or ''),
+        (row.get('Free Form Conditions Line 2') or ''),
+    ]).upper()
+    if 'LOCATED' not in cond: return False
+    return any(c in cond for c in INSTORE_CHAINS)
 
 with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
     rdr = csv.DictReader(f)
@@ -254,6 +274,12 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         iss = parse_d(row.get('Issued'))
         if not iss or iss < WINDOW_365: continue
         n_food_active_365 += 1
+        # Drop in-grocery-store kiosks: AFC sushi counters inside Sobeys/Loblaws/etc.
+        # are not consumer-destination restaurants even though they hold a take-out
+        # licence. Caught by the City's own "Located inside X" conditions field.
+        if _is_instore_kiosk(row):
+            n_dropped_instore += 1
+            continue
         op_raw = (row.get('Operating Name') or '').strip()
         if not op_raw: continue
         addr1 = (row.get('Licence Address Line 1') or '').strip()
@@ -309,7 +335,7 @@ for entry in seen_entries.values():
     if entry['daysOpen'] <= 30: n_tagged_30 += 1
     opens_365_by_cuisine[entry['cuisine']].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_deduped} duplicate rows collapsed")
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:
