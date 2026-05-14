@@ -441,9 +441,13 @@ try:
         f'\\1\n    {static_block}\n    \\2',
         html, count=1, flags=re.DOTALL,
     )
+    # Markers MUST sit outside <script type="application/ld+json"> so the script
+    # content stays pure JSON (Google's structured-data parser rejects HTML
+    # comments inside the script body).
+    ld_script_block = f'<script type="application/ld+json" id="ld-itemlist">{ld_json_str}</script>'
     html = re.sub(
         r'(<!-- LD-ITEMLIST-START -->).*?(<!-- LD-ITEMLIST-END -->)',
-        f'\\1\n{ld_json_str}\n\\2',
+        f'\\1\n{ld_script_block}\n\\2',
         html, count=1, flags=re.DOTALL,
     )
     open(INDEX_PATH, 'w').write(html)
