@@ -236,6 +236,50 @@ VALID_LLM_KEYS = set(CUISINE_LABEL.keys())  # every key with a display label is 
 # Collects cache cuisines that have no display label, surfaced at end of run as
 # a loud warning. Empty in steady state; growth means cuisines.py needs an entry.
 _CUISINE_LABEL_GAP = set()
+
+# Brand-level website inheritance: when a multi-location operator (LENA'S ROTI,
+# OSMOW'S, etc.) opens a NEW location, the brand-new licence has no Places match
+# yet and no own-website verification — but an EARLIER licence at a different
+# address may have the brand site cached. Walk web_verify_cache once at startup;
+# for each operating name, find the most-common verified non-aggregator website
+# across all its rows. Inject can then inherit that website onto rows that
+# otherwise have nothing. Stops "links to nowhere on Maps" for brand-new
+# locations of established small-chain indies.
+_BRAND_WEBSITE_INDEX = None
+SOCIAL_DOMAINS_LOCAL = ('instagram.com', 'facebook.com', 'tiktok.com')
+
+def _is_aggregator_or_social(url):
+    if not url: return True
+    u = url.lower()
+    if any(d in u for d in SOCIAL_DOMAINS_LOCAL): return True
+    if any(d in u for d in ('skipthedishes.', 'doordash.', 'ubereats.',
+                            'grubhub.', 'foodora.', 'menulog.', 'seamless.',
+                            'tripadvisor.', 'yelp.com')): return True
+    if 'maps.google.' in u or 'goo.gl/maps' in u: return True
+    return False
+
+def _build_brand_website_index():
+    """For each operating name (uppercased), collect the set of distinct non-
+    aggregator websites observed across all its web_verify entries. When a
+    given operating name has exactly ONE such website, that's the brand site
+    and we can inherit it onto sibling licences. (Single-location indies that
+    only appear once in the data also pass this rule — their one website is
+    used directly, no inheritance needed since they already have it.)"""
+    from collections import defaultdict
+    name_to_sites = defaultdict(set)
+    for k, e in WEB_VERIFY_CACHE.items():
+        if e.get('status') != 'ok': continue
+        ws = e.get('website')
+        if ws and not _is_aggregator_or_social(ws):
+            name = k.split('||')[0].strip().upper()
+            name_to_sites[name].add(ws)
+    return {n: next(iter(sites)) for n, sites in name_to_sites.items() if len(sites) == 1}
+
+def _ensure_brand_website_index():
+    global _BRAND_WEBSITE_INDEX
+    if _BRAND_WEBSITE_INDEX is None:
+        _BRAND_WEBSITE_INDEX = _build_brand_website_index()
+    return _BRAND_WEBSITE_INDEX
 CUISINE_LABEL.setdefault('thai', 'Thai')
 
 def get_cuisine(name, address):
@@ -450,6 +494,17 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
                 f"https://www.google.com/maps/search/?api=1&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
             )
 
+        # Brand-website inheritance: if this entry has no website but the same
+        # operating name has exactly one known brand website cached across other
+        # licences, use it. Catches the brand-new-location case (LENA'S ROTI's
+        # 3999 Keele licence has no Places yet, but the brand's lenasroti.ca is
+        # cached on its other Toronto licences). Site is non-aggregator, so safe.
+        if not entry.get('website'):
+            brand_site = _ensure_brand_website_index().get(op_raw.strip().upper())
+            if brand_site:
+                entry['website'] = brand_site
+                entry['websiteSource'] = 'brand_inherited'
+
         # Weak-match drop: if NONE of Places / a working website / a real cuisine
         # signal exist, we're sending the user to a location we can't verify is
         # the right place. Better to hide the entry than risk landing them at a
@@ -462,6 +517,9 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # recovered_at timestamps gate the 30-day re-attempt window, by which
         # point Google/Yelp/blogs may have indexed the place and a stronger
         # signal will arrive.
+        # Re-evaluate weak_match AFTER brand-website inheritance — a brand site
+        # is a real positive signal even if the verifier didn't catch it for
+        # this specific location.
         weak_match = (
             not entry.get('matchedName')
             and not entry.get('mapsUrl')
