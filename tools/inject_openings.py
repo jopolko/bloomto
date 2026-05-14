@@ -177,19 +177,24 @@ def get_cuisine(name, address):
     key = f"{name_upper}||{(address or '').strip().upper()}"
     # Otherwise consult caches in priority order
 
-    # 1. Web-verified cuisine (search-informed; richest signal)
+    # 1. Web-verified cuisine (search-informed; richest signal).
+    # If web_verify ran successfully but produced no cuisine, that's a STRONGER
+    # "I don't know" than the name-only guesser would give — drop, don't fall
+    # through. Falling back to name-only after a real web search couldn't pin
+    # the cuisine is how we got Tumi Dumpling tagged Tibetan (the name-only
+    # guess from "Tumi" + "Dumpling House" beat the web search's null).
     w = WEB_VERIFY_CACHE.get(key)
-    if w and w.get('status') == 'ok' and w.get('cuisine'):
-        c = w['cuisine']
-        if c == 'unknown': return None, None
+    if w and w.get('status') == 'ok' and w.get('operating') == 'yes':
+        c = w.get('cuisine')
+        if c == 'unknown' or c is None: return None, None  # verifier checked, couldn't classify → drop
         if c in VALID_LLM_KEYS: return c, 'web_search'
-    # 2. Name-only LLM classification
+    # 2. Name-only LLM classification — only when web_verify hasn't run at all
     llm = LLM_CACHE.get(key)
     if llm and llm.get('status') == 'ok':
         c = llm.get('cuisine')
         if c == 'unknown': return None, None
         if c in VALID_LLM_KEYS: return c, 'llm'
-    # 3. Keyword fallback
+    # 3. Keyword fallback (only when both LLM passes are missing)
     kw = keyword_classify((name or '').upper())
     if kw: return kw, 'keyword'
     return None, None

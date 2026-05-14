@@ -70,6 +70,14 @@ Use search evidence (menus, reviews, owner bios, articles) to choose cuisine —
 operating name. Prefer the most SPECIFIC bucket (ethiopian over african_horn; mexican over latin).
 Use the umbrella only when the country isn't clear from evidence.
 
+IMPORTANT: ALWAYS return a non-null cuisine value. If you find a restaurant exists but
+cannot determine its cuisine from the web evidence (generic operating signals like
+delivery-platform listings but no menu/cuisine clues, or a redirected/parked website
+without informative content), explicitly return "unknown". Do NOT leave the cuisine
+field null — "unknown" is the correct response when the cuisine truly isn't clear,
+and lets us avoid falling back to a name-only guess that may be wrong (e.g., "Tumi
+Dumpling House" sounds Tibetan from the name alone but is actually Chinese).
+
 CRITICAL: American/Canadian chains = unknown regardless of theme.
 - Popeyes Louisiana Kitchen → unknown (NOT caribbean, NOT jamaican)
 - KFC, Mary Brown's, Wendy's, A&W → unknown

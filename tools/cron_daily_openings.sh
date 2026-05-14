@@ -114,6 +114,15 @@ if ! "$PYTHON" -u tools/places_enrich_socials.py >> "$LOG_FILE" 2>&1; then
     log "WARN: social-link Places enrichment failed (non-fatal — entries stay on social)"
 fi
 
+# Step 5b: cuisine-recovery pass — for entries the verifier left without a cuisine
+# (web_search couldn't determine), fetch the actual website + any linked menu page
+# and re-classify. ~$0.001 per recovery × ~5/day delta. Prevents the name-only
+# fallback from making wrong guesses (e.g. "Tumi Dumpling" → tibetan from name alone).
+log "→ llm_recover_cuisine.py (fetch site content + reclassify ambiguous entries)"
+if ! "$PYTHON" -u tools/llm_recover_cuisine.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: cuisine recovery failed (non-fatal — entries stay uncategorized)"
+fi
+
 # Step 5b: geocode addresses for entries missing lat/lng (powers the map view).
 # Uses free Nominatim @ 1 req/sec; the daily delta is ~5-15 addresses so this
 # adds ~10-20s per cron. Skips any address already geocoded.
