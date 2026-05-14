@@ -139,6 +139,11 @@ CRITICAL — American fast-food chains and Canadian chains = unknown, NOT their 
 A generic name like "JIM'S BAR", "DOWNTOWN GRILL", or "MAIN STREET CAFE" with no ethnic signal = unknown.
 A surname-only name like "PARK'S RESTAURANT" without other context = unknown (don't guess from a last name).
 
+American Southern (New Orleans, Cajun, Creole, Bayou, Memphis/Texas BBQ, Soul) is NOT
+Caribbean or Latin — no bucket exists for it, return unknown:
+- "New Orleans Seafood & Steakhouse" → unknown (NOT caribbean)
+- "Bayou Bar", "Memphis BBQ", "Big Easy Cafe" → unknown
+
 Packaged-food brands and food manufacturers with a retail counter at their factory
 are NOT consumer restaurants — return unknown:
 - "SHIMLA FOODS TAKE OUT", "PATEL BROTHERS", "ROMA FOODS" → unknown

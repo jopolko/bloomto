@@ -500,10 +500,13 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const trustMatch = !r.matchedName || nameJaccard(r.operatingName, r.matchedName) >= 0.34;
     const link = trustMatch ? (r.website || r.mapsUrl || r.fallbackMapsUrl) : (r.fallbackMapsUrl || null);
     const linkClass = trustMatch && r.website ? 'ext' : ((r.mapsUrl || r.fallbackMapsUrl) ? 'maps' : '');
-    // Same-tab navigation (no target=_blank) so the back button cleanly returns
-    // to this listing — opening Maps in a new tab leaves mobile users stranded.
+    // target=_blank on desktop (preserve NowServingTO tab); same-tab on mobile so
+    // the back button cleanly returns from Maps without stranding the user on a
+    // separate browser tab.
+    const desktopUA = window.matchMedia('(min-width: 700px)').matches && !('ontouchstart' in window);
+    const tgt = desktopUA ? ' target="_blank"' : '';
     const nameHtml = link
-      ? `<a class="${linkClass}" href="${link}" rel="noopener">${r.operatingName}</a>`
+      ? `<a class="${linkClass}" href="${link}"${tgt} rel="noopener">${r.operatingName}</a>`
       : r.operatingName;
     const ratingHtml = (trustMatch && r.rating)
       ? `<span class="rating">${r.rating.toFixed(1)}<span class="rc">· ${r.reviewCount ? r.reviewCount.toLocaleString() : '?'}</span></span>`

@@ -78,6 +78,14 @@ CRITICAL: American/Canadian chains = unknown regardless of theme.
   fusion without a clear country-of-origin cuisine → unknown.
 - A surname-only name without other ethnic signal → unknown.
 
+CRITICAL: American Southern themes (New Orleans, Cajun, Creole, Bayou, Soul, Memphis BBQ,
+Texas BBQ, Tex-Mex non-Mexican) are NOT Caribbean or Latin. We have no taxonomy bucket
+for US Southern cuisine — return unknown.
+- "New Orleans Seafood & Steakhouse" → unknown (NOT caribbean, NOT latin)
+- "Bayou Bar & Grill" → unknown
+- "Memphis BBQ" → unknown
+- A Louisiana/Mississippi reference in the name = American South, not Caribbean.
+
 CRITICAL: Packaged-food brands, manufacturers, distributors, importers, and wholesalers
 that hold a take-out/retail licence at their factory or warehouse are NOT consumer
 restaurants. Return cuisine=unknown.
