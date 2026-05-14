@@ -479,12 +479,11 @@ for c, entries in opens_365_by_cuisine.items():
     })
 cuisines_out.sort(key=lambda r: -r['count365d'])
 
-# Flat feed: all openings, newest first, cap 80
-all_recent = []
-for c, entries in opens_365_by_cuisine.items():
-    all_recent.extend(entries)
-all_recent.sort(key=lambda r: r['issuedDate'], reverse=True)
-all_recent = all_recent[:1500]  # large enough to include all 365-day verified-open
+# Flat feed: all openings, newest first. Iterate seen_entries directly (NOT the
+# per-cuisine buckets) so multi-cuisine entries — which appear in multiple cuisine
+# buckets by design — are NOT duplicated in the flat feed.
+all_recent = sorted(seen_entries.values(),
+                    key=lambda r: r['issuedDate'], reverse=True)[:1500]
 
 # Inject
 from datetime import timezone
