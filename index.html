@@ -233,11 +233,11 @@
   .open-row[data-fresh="hot"] .od .ago { color: var(--fresh); font-size: 10.5px; }
   .open-row[data-fresh="hot"] .od .ago::before { content: '★ '; }
   .open-row .on { font: 700 15.5px/1.25 var(--serif); color: var(--ink); letter-spacing: -0.005em; }
-  .open-row .on a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.12s; }
-  .open-row .on a:hover { border-bottom-color: var(--accent); color: var(--accent); }
-  .open-row .on a.ext::after { content: ' ↗'; font-size: 12px; color: var(--muted); font-weight: 500; vertical-align: 1px; }
-  .open-row .on a:hover.ext::after { color: var(--accent); }
-  .open-row .on a.maps::after { content: ' ◔'; font-size: 11px; color: var(--muted); font-weight: 500; vertical-align: 1px; opacity: 0.7; }
+  /* Quiet dotted underline says "this is a link" without committing to a heavy
+     solid underline. Solid red underline on hover/active for the affordance. */
+  .open-row .on a { color: var(--ink); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.3); text-decoration-thickness: 1px; text-underline-offset: 3px; transition: color 0.12s, text-decoration-color 0.12s, text-decoration-style 0.12s; }
+  .open-row .on a:hover,
+  .open-row .on a:active { color: var(--accent); text-decoration-style: solid; text-decoration-color: var(--accent); }
   .open-row .on .rating { display: inline-block; margin-left: 10px; font: 700 12px/1 var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; vertical-align: 1px; white-space: nowrap; }
   .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
   .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
