@@ -74,7 +74,18 @@ should be at what address. That's:
     take-out, retail food, etc. — this is broad "food of some kind", not cuisine)
   - Conditions (free-text field from the City. Phrases like "Located inside
     Loblaws", "Located inside Sobeys", "operates inside [grocery chain]"
-    indicate in-grocery-store kiosks — treat is_restaurant=no.)
+    indicate in-grocery-store kiosks — treat is_restaurant=no. A semicolon-
+    separated tag soup including "CHAIN;" "SHARED ADDRESS;" "NO SEATING
+    ACCOMMODATION;" "COMMON SEATING;" "SEATING CAPACITY UNDER 40;" — the City
+    explicitly tags chains with "CHAIN;" — treat that as is_restaurant=no.)
+  - Endorsements (food-category tags from the City: "FOODSTUFFS;"
+    "xFRESH MEAT DEALER;" "BAKE SHOP;" "REFRESHMENTS;" "CIGARS, CIGARETTES &
+    TOBACCO;" etc. A row with only "FOODSTUFFS;" or "xFRESH MEAT DEALER;" is
+    likely a grocery counter / butcher / variety store, not a restaurant.)
+  - Cancel Date (when populated, the licence is no longer active — operator
+    surrendered the licence or the City revoked it. Treat is_restaurant=no
+    regardless of other signals; the place is no longer in business under
+    this licence.)
 
 You also see supplemental evidence:
   - Google Places match (matched name + address + categories + editorial summary
@@ -199,11 +210,21 @@ def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row
              f"  Licence Address:   {addr}"]
     if csv_row:
         client_name = (csv_row.get('Client Name') or '').strip()
-        category = (csv_row.get('Category') or '').strip()
-        conditions = (csv_row.get('Conditions') or '').strip()
+        category    = (csv_row.get('Category') or '').strip()
+        conditions  = (csv_row.get('Conditions') or '').strip()
+        endorse     = (csv_row.get('Endorsements') or '').strip()
+        cancel_date = (csv_row.get('Cancel Date') or '').strip()
+        addr2       = (csv_row.get('Licence Address Line 2') or '').strip()
+        addr3       = (csv_row.get('Licence Address Line 3') or '').strip()
         if client_name: lines.append(f"  Client Name:       {client_name}")
         if category:    lines.append(f"  Licence Category:  {category}")
+        if addr2:       lines.append(f"  Address Line 2:    {addr2}")
+        if addr3:       lines.append(f"  Address Line 3:    {addr3}")
         if conditions:  lines.append(f"  Conditions:        {conditions[:300]}")
+        if endorse:     lines.append(f"  Endorsements:      {endorse[:200]}")
+        # Cancel Date — if populated, the licence is no longer active.
+        # is_restaurant should be "no" regardless of other signals.
+        if cancel_date: lines.append(f"  Cancel Date:       {cancel_date}  ← LICENCE IS CANCELLED")
     lines.append("")
 
     if places_entry and places_entry.get('status') == 'ok':
@@ -303,7 +324,10 @@ def main():
     if csv_path.exists():
         with csv_path.open(encoding='utf-8', errors='replace') as f:
             for row in _csv.DictReader(f):
-                if (row.get('Cancel Date') or '').strip(): continue
+                # NOTE: index CANCELLED rows too. Previously dropped at this
+                # stage; now passed through so the validator sees Cancel Date
+                # populated and can mark cached-but-cancelled entries as
+                # is_restaurant=no (licence no longer active).
                 n = (row.get('Operating Name') or '').strip().upper()
                 a = ((row.get('Licence Address Line 1') or '').strip() + ' ' + (row.get('Licence Address Line 3') or '').strip()).strip().upper()
                 if n and a:
