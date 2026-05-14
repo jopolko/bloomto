@@ -243,6 +243,7 @@
   .open-feed { background: rgba(45, 165, 92, 0.045); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0; margin-bottom: 28px; }
   .open-row { display: grid; grid-template-columns: 110px 1fr 165px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #ece6d5; }
   .open-row:last-child { border-bottom: 0; }
+  .open-row.row-focused { background: rgba(212, 160, 23, 0.15); box-shadow: inset 3px 0 0 var(--accent); }
   .open-row .od { font: 700 11.5px/1.2 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
   .open-row .od .ago { display: block; font: 700 9.5px/1.1 var(--sans); color: var(--moss); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 5px; }
   .open-row[data-fresh="hot"] .od .ago { color: var(--fresh); font-size: 10.5px; }
@@ -257,7 +258,7 @@
   .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
   .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
   .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
-  .open-row .on .row-map-jump { display: inline-block; margin-left: 6px; padding: 2px 6px; background: transparent; border: 0; font: 13px var(--sans); cursor: pointer; opacity: 0.5; transition: opacity 0.12s; vertical-align: 1px; }
+  .open-row .on .row-map-jump { display: inline-block; margin-left: 6px; padding: 2px 6px; background: transparent; border: 0; font: 13px var(--sans); cursor: pointer; opacity: 0.45; transition: opacity 0.12s; vertical-align: 1px; }
   .open-row .on .row-map-jump:hover { opacity: 1; }
   .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
   .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
@@ -481,6 +482,7 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const isHot = r.daysOpen <= 30;
     const row = document.createElement('div');
     row.className = 'open-row';
+    if (focusedRow && r.slug && focusedRow.slug === r.slug) row.classList.add('row-focused');
     if (isHot) row.setAttribute('data-fresh', 'hot');
     const trustMatch = !r.matchedName || nameJaccard(r.operatingName, r.matchedName) >= 0.34;
     const link = trustMatch ? (r.website || r.mapsUrl || r.fallbackMapsUrl) : (r.fallbackMapsUrl || null);
@@ -497,10 +499,8 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const addrLine = (r.district && currentRegion === '__all')
       ? `${r.address || '—'}<span class="oad-d"> · ${r.district}</span>`
       : (r.address || '—');
-    // Map-jump affordance only renders when the entry actually has coords —
-    // otherwise the button leads to a missing pin.
     const mapJump = (r.lat && r.lng)
-      ? `<button class="row-map-jump" type="button" aria-label="Show on map" data-slug="${r.slug||''}" data-lat="${r.lat}" data-lng="${r.lng}">📍</button>`
+      ? `<button class="row-map-jump" type="button" aria-label="Solo this on map">📍</button>`
       : '';
     row.innerHTML = `
       <div class="od">${r.issuedDate}<span class="ago">${agoLabel(r.daysOpen)}</span></div>
@@ -510,19 +510,15 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     if (jumpBtn) {
       jumpBtn.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation();
+        focusedRow = r;
         setView('map');
         if (!mapInitialized) initMap();
         setTimeout(() => {
           if (!mapInstance) return;
-          mapInstance.setView([r.lat, r.lng], 16);
-          // Find the marker for this entry and open its popup
-          mapMarkers.eachLayer(m => {
-            const ll = m.getLatLng();
-            if (Math.abs(ll.lat - r.lat) < 1e-6 && Math.abs(ll.lng - r.lng) < 1e-6) {
-              m.openPopup();
-            }
-          });
-        }, 120);
+          renderMapPins();  // re-renders showing only focusedRow
+          mapInstance.setView([r.lat, r.lng], 17);
+          mapMarkers.eachLayer(m => m.openPopup());
+        }, 100);
       });
     }
     return row;
@@ -631,6 +627,11 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     f.hidden = !(currentCuisine === '__all' && currentRegion === '__all');
   }
   function applyFilters(cuisineKey, regionKey, updateHash=true) {
+    // Clear single-listing focus when any filter changes — user is exploring,
+    // not still looking at the original pinned entry.
+    if (focusedRow && (cuisineKey !== currentCuisine || regionKey !== currentRegion)) {
+      focusedRow = null;
+    }
     currentCuisine = cuisineKey;
     currentRegion = regionKey;
     syncFadingVisibility();
@@ -814,6 +815,7 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   var userLatLng = null;
   var mapInitialized = false;
   var routingControl = null;  // OSRM walk/drive route on the map, if any
+  var focusedRow = null;       // when set, renderMapPins shows ONLY this row's pin
   var transitLayers = [];     // HERE transit route polylines on the map
   var transitPanel = null;    // DOM element for the transit instructions panel
 
@@ -1070,7 +1072,11 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   function renderMapPins() {
     if (!mapInitialized) return;
     mapMarkers.clearLayers();
-    const rows = currentRows.filter(r => r.lat && r.lng);
+    // When a single listing is focused (from clicking 📍 in a list row), render
+    // only that pin so the user isn't lost in a sea of others.
+    const rows = focusedRow
+      ? [focusedRow]
+      : currentRows.filter(r => r.lat && r.lng);
     const PIN_COLOR = '#1a7340';  // var(--fresh) — same green as walking route
     // Permanent name labels are useful when there are few pins (e.g. filtered to
     // a small cuisine). Above ~25 they crowd the map and we let clicks reveal names.
