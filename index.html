@@ -248,9 +248,12 @@
   .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
   .open-row .oc { text-align: right; }
   .open-row .oc .pill { font: 700 9.5px/1 var(--sans); padding: 5px 10px; border-radius: 99px; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
-  .open-row .oc .row-fav { background: transparent; border: 0; cursor: pointer; font: 17px/1 var(--sans); padding: 0 8px 0 0; color: var(--muted); transition: color 0.12s, transform 0.12s; vertical-align: -2px; }
+  .open-row .oc .row-fav,
+  .open-row .oc .row-share { background: transparent; border: 0; cursor: pointer; font: 17px/1 var(--sans); padding: 0 6px 0 0; color: var(--muted); transition: color 0.12s, transform 0.12s; vertical-align: -2px; }
   .open-row .oc .row-fav.fav-on { color: var(--accent); }
-  .open-row .oc .row-fav:hover { color: var(--accent); transform: scale(1.1); }
+  .open-row .oc .row-fav:hover,
+  .open-row .oc .row-share:hover { color: var(--accent); transform: scale(1.1); }
+  .open-row .oc .row-share { font-size: 15px; padding-right: 8px; }
   .map-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   /* When the feed is filtered to a single cuisine, hide the redundant per-row cuisine pill
      and let the name column reclaim the space. */
@@ -517,10 +520,13 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const favHtml = r.slug
       ? `<button class="row-fav ${saved ? 'fav-on' : ''}" type="button" aria-label="${saved ? 'Remove from saved' : 'Save for later'}">${saved ? '♥' : '♡'}</button>`
       : '';
+    const shareHtml = r.slug
+      ? `<button class="row-share" type="button" aria-label="Share this listing">↗</button>`
+      : '';
     row.innerHTML = `
       <div class="od">${r.issuedDate}<span class="ago">${agoLabel(r.daysOpen)}</span></div>
       <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}${mapJump}<span class="oad">${addrLine}</span></div>
-      <div class="oc">${favHtml}<span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>`;
+      <div class="oc">${favHtml}${shareHtml}<span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>`;
     const favBtn = row.querySelector('.row-fav');
     if (favBtn) {
       favBtn.addEventListener('click', e => {
@@ -530,7 +536,14 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
         favBtn.textContent = now ? '♥' : '♡';
         favBtn.setAttribute('aria-label', now ? 'Remove from saved' : 'Save for later');
         refreshSavedToggle();
-        if (savedOnly && !now) renderFeed();  // removed → drop from filtered view
+        if (savedOnly && !now) renderFeed();
+      });
+    }
+    const shareBtn = row.querySelector('.row-share');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        window.__nsShare(r.slug, shareBtn);
       });
     }
     const jumpBtn = row.querySelector('.row-map-jump');
@@ -996,10 +1009,16 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const url = `https://nowservingto.com/r/${slug}`;
     const cuisineLbl = CUISINE_LABEL[r.cuisine] || r.cuisine;
     const ago = r.daysOpen <= 1 ? 'today'
-              : r.daysOpen <= 60 ? `${r.daysOpen} days ago`
-              : `${Math.round(r.daysOpen/30)} months ago`;
-    const where = r.district ? ` in ${r.district}` : '';
-    const text = `${r.operatingName} — newly-licensed ${cuisineLbl} kitchen${where}, opened ${ago}.`;
+              : r.daysOpen <= 60 ? `${r.daysOpen}d ago`
+              : `${Math.round(r.daysOpen/30)}mo ago`;
+    // "Downtown" alone reads awkwardly — pin it as "Downtown Toronto". Other
+    // districts (Scarborough, Etobicoke, North York) are well-known on their own.
+    const districtPhrase = r.district === 'Downtown' ? 'Downtown Toronto' : r.district;
+    const where = r.address && districtPhrase
+      ? ` at ${r.address} in ${districtPhrase}`
+      : r.address ? ` at ${r.address}`
+      : districtPhrase ? ` in ${districtPhrase}` : '';
+    const text = `${r.operatingName} — newly-licensed ${cuisineLbl} kitchen${where}. Licensed ${ago}.`;
     if (navigator.share) {
       try { await navigator.share({ title: r.operatingName, text, url }); }
       catch (e) { /* user dismissed */ }
