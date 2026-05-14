@@ -61,10 +61,29 @@ We do NOT want to surface — drop with is_restaurant=no:
     + banh mi) — that's not authentic to any one diaspora.
   - American Southern / Cajun / BBQ themed (we have no taxonomy bucket for US South).
 
-You see the City's licence data (operating name + address), the Google Places match
-we made (matched name + address + categories + editorial summary + top reviews +
-Places-known website), the earlier Haiku web_search verifier's results (website +
-evidence), and the name-only LLM's previous cuisine guess.
+You see the City of Toronto licence data — the SOURCE OF TRUTH for what business
+should be at what address. That's:
+  - Operating Name (the business name on the licence)
+  - Licence Address (the legal address of operation)
+  - Client Name (the corporation holding the licence — institutional / chain
+    operators like ARAMARK CANADA LTD, COMPASS GROUP CANADA, TORONTO METROPOLITAN
+    UNIVERSITY are obvious from this field; treat is_restaurant=no for them.
+    A franchisee LLC holding 5+ Tim Hortons / McDonald's locations is also a
+    chain by Client Name.)
+  - Licence Category (always food-related — eating/drinking establishment,
+    take-out, retail food, etc. — this is broad "food of some kind", not cuisine)
+  - Conditions (free-text field from the City. Phrases like "Located inside
+    Loblaws", "Located inside Sobeys", "operates inside [grocery chain]"
+    indicate in-grocery-store kiosks — treat is_restaurant=no.)
+
+You also see supplemental evidence:
+  - Google Places match (matched name + address + categories + editorial summary
+    + top reviews + Places-known website)
+  - The earlier Haiku web_search verifier's website + evidence
+  - The name-only LLM's previous cuisine guess
+
+Judge holistically from all of it. No rule we hardcode in Python should be doing
+this work — you have richer context than any regex.
 
 Return a single JSON object, no prose, no markdown code fences:
 {
@@ -173,9 +192,19 @@ best_website — the URL we should put on the entry's name link:
 evidence — one short sentence quoting the strongest signal that justified the
 above judgments (a review excerpt, an editorial line, a menu phrase)."""
 
-def build_request(entry_key, verify_entry, places_entry, llm_entry=None):
+def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row=None):
     name, _, addr = entry_key.partition('||')
-    lines = [f"LICENCE (City of Toronto):", f"  Operating Name: {name}", f"  Address: {addr}", ""]
+    lines = [f"LICENCE (City of Toronto — source of truth for name, address, food-category):",
+             f"  Operating Name:    {name}",
+             f"  Licence Address:   {addr}"]
+    if csv_row:
+        client_name = (csv_row.get('Client Name') or '').strip()
+        category = (csv_row.get('Category') or '').strip()
+        conditions = (csv_row.get('Conditions') or '').strip()
+        if client_name: lines.append(f"  Client Name:       {client_name}")
+        if category:    lines.append(f"  Licence Category:  {category}")
+        if conditions:  lines.append(f"  Conditions:        {conditions[:300]}")
+    lines.append("")
 
     if places_entry and places_entry.get('status') == 'ok':
         lines.append("GOOGLE PLACES MATCH:")
@@ -264,6 +293,22 @@ def main():
     llm_cache_path = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
     llm = json.loads(llm_cache_path.read_text()) if llm_cache_path.exists() else {}
 
+    # Index the City CSV by name||address so Haiku gets the full licence row
+    # (Client Name, Category, Conditions) — these encode the institutional /
+    # in-store-kiosk / chain-franchisee signals that we previously hard-coded
+    # into inject_openings as Python rules. Now Haiku judges from the data.
+    import csv as _csv
+    csv_index = {}
+    csv_path = Path('/tmp/business_licences_alt.csv')
+    if csv_path.exists():
+        with csv_path.open(encoding='utf-8', errors='replace') as f:
+            for row in _csv.DictReader(f):
+                if (row.get('Cancel Date') or '').strip(): continue
+                n = (row.get('Operating Name') or '').strip().upper()
+                a = ((row.get('Licence Address Line 1') or '').strip() + ' ' + (row.get('Licence Address Line 3') or '').strip()).strip().upper()
+                if n and a:
+                    csv_index[f"{n}||{a}"] = row
+
     # Targets: every entry that the inject pipeline would consider operating —
     # i.e., either Places returned OPERATIONAL or web_verify said operating=yes.
     # This catches Places-only entries (e.g., JOLLOF KING) that never went
@@ -300,7 +345,7 @@ def main():
     for i, k in enumerate(targets):
         cid = f"v{i:04d}"
         id_to_key[cid] = k
-        rec = build_request(k, wv[k], pc.get(k), llm.get(k))
+        rec = build_request(k, wv[k], pc.get(k), llm.get(k), csv_index.get(k))
         rec['custom_id'] = cid
         full_requests.append(rec)
 

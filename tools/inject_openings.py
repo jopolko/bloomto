@@ -95,92 +95,12 @@ def district_from_postal(addr_with_postal):
 # Chain denylist: substring match against UPPERCASE operating name. If any of these appears,
 # force cuisine to None regardless of what the LLM said. Cheap, deterministic safety net.
 # Add new chains to this list as you spot them.
-CHAIN_DENYLIST = (
-    'POPEYES', 'POPEYE\'S', 'KFC', 'CHURCH\'S CHICKEN', 'CHURCHS CHICKEN', 'MARY BROWN',
-    'WENDY', 'BURGER KING', 'MCDONALD', 'HARVEY', 'A&W', 'TIM HORTON', 'COFFEE TIME',
-    'SECOND CUP', 'STARBUCKS', 'TIMOTHY\'S COFFEE',
-    'SUBWAY', 'MR. SUB', 'MR SUB', 'QUIZNOS', 'EXTREME PITA', 'PITA PIT',
-    'APPLEBEE', 'OUTBACK', 'IHOP', 'DENNY', 'JACK ASTOR', 'SCORES', 'KELSEY',
-    'MONTANA', 'EAST SIDE MARIO', 'BOSTON PIZZA', 'PIZZA NOVA', 'PIZZA PIZZA',
-    'PIZZAVILLE', 'LITTLE CAESAR', 'PAPA JOHN', 'DOMINO', 'PIZZA HUT', '241 PIZZA',
-    'MUCHO BURRITO', 'BAR BURRITO', 'BURRITO BOYZ',
-    'THAI EXPRESS', 'EDO JAPAN', 'BENTO BENTO', 'FRESHII', 'BOOSTER JUICE',
-    'SECOND CUP', 'SMOKE\'S POUTINERIE', 'SMOKES POUTINERIE',
-    'HERO BURGER', 'HERO CERTIFIED', 'FIVE GUYS', 'NEW YORK FRIES',
-    'CHIPOTLE', 'TACO BELL', 'TACO TIME',
-    'DAIRY QUEEN', 'BASKIN-ROBBIN', 'BASKIN ROBBIN',
-    'SWISS CHALET', 'ST-HUBERT', 'WHITE SPOT',
-    'DOLLARAMA', 'SHOPPERS DRUG MART', '7-ELEVEN', 'CIRCLE K', 'COUCHE-TARD',
-    'FRESHCO', 'METRO', 'SOBEYS', 'LOBLAWS', 'NO FRILLS', 'COSTCO', 'WALMART',
-    'BENTO SUSHI',  # chain, even though Japanese — too sprawling to be useful as "newest" signal
-    'FAT BASTARD BURRITO',  # Canadian chain themed as Mexican
-)
+# REMOVED 2026-05-14: hardcoded chain rules. The unified validator (Haiku
+# with full City row + Places + reviews + editorial) decides is_restaurant=no
+# for chain franchisees by reading Client Name, Operating Name, Places types,
+# and reviews together. No regex denylist. No OSM brand cross-reference. See
+# tools/validate_entries_batch.py SYSTEM_PROMPT.
 
-import re as _re
-def is_denylist_chain(name_upper):
-    """Match chain names ONLY at the start of the operating name. Chains typically
-    appear as 'CHAIN' or 'CHAIN LOCATION' or 'CHAIN #123'. This avoids false positives
-    like 'OM MA JOHN'S PIZZA & THAI EXPRESS' being matched as the chain 'THAI EXPRESS'."""
-    n = (name_upper or '').strip()
-    for c in CHAIN_DENYLIST:
-        # Match at start, followed by word boundary, end-of-string, or common location separators
-        if _re.match(r'^' + _re.escape(c) + r'(\b|$|[/#@,])', n):
-            return True
-    return False
-
-# OSM-derived chain detector. OpenStreetMap mappers tag known chains with
-# `brand=<Name>` (and often `brand:wikidata=<Qxxx>`) — an authoritative,
-# human-curated source. We query Overpass for every branded amenity in the
-# Toronto bbox via tools/build_osm_chain_set.py (refresh weekly), cache the
-# result, and match operating names against it here.
-#
-# Why not the earlier count heuristic? Count-based catches campus food service
-# (TMU/UofT), hospitality conglomerates (Aramark, Compass Group), AND legit
-# local indies with 5+ locations. OSM separates "is a chain" from "has many
-# locations" — only chains carry `brand=` tags. (User design note, 2026-05-14.)
-_OSM_CHAIN_PATH = Path(__file__).resolve().parent / 'cache' / 'osm_chain_set.json'
-_OSM_CHAIN_PATTERN = None
-
-def _normalize_for_chain_match(s):
-    """Strip apostrophes / periods / hyphens before matching. OSM and Toronto's
-    licence registry disagree on these all the time: 'OSMOW'S' vs 'OSMOWS',
-    'MR. SUB' vs 'MR SUB', 'A&W' vs 'A & W'. After this normalization, the
-    boundary regex can be a single fast match."""
-    return _re.sub(r"[\'\.\-]", '', (s or '').upper())
-
-def _ensure_osm_chain_pattern():
-    global _OSM_CHAIN_PATTERN
-    if _OSM_CHAIN_PATTERN is not None: return _OSM_CHAIN_PATTERN
-    if not _OSM_CHAIN_PATH.exists():
-        _OSM_CHAIN_PATTERN = _re.compile(r'(?!)')  # never-matches sentinel
-        return _OSM_CHAIN_PATTERN
-    try:
-        data = json.loads(_OSM_CHAIN_PATH.read_text())
-    except Exception:
-        _OSM_CHAIN_PATTERN = _re.compile(r'(?!)')
-        return _OSM_CHAIN_PATTERN
-    brands_upper = {k for k in (data.get('brands') or {}).keys()}
-    cleaned = sorted({_normalize_for_chain_match(b) for b in brands_upper if b},
-                     key=lambda x: -len(x))  # longest-first so "MCDONALDS" beats "MCDONALD"
-    if not cleaned:
-        _OSM_CHAIN_PATTERN = _re.compile(r'(?!)')
-    else:
-        # Match at start with word/end/separator boundary — same shape as is_denylist_chain
-        _OSM_CHAIN_PATTERN = _re.compile(
-            r'^(?:' + '|'.join(_re.escape(b) for b in cleaned) + r')(?:\b|$|[/#@,])'
-        )
-    return _OSM_CHAIN_PATTERN
-
-def is_osm_chain(name_upper):
-    """True iff operating name matches an OSM-tagged chain brand at a word
-    boundary. Authoritative — only restaurants tagged with `brand=` in OSM
-    get hits, so legit indies (Pai Northern Thai etc.) pass through cleanly."""
-    p = _ensure_osm_chain_pattern()
-    return bool(p.match(_normalize_for_chain_match(name_upper)))
-
-def is_chain(name_upper):
-    """Combined chain check: manual denylist OR OSM-derived authoritative list."""
-    return is_denylist_chain(name_upper) or is_osm_chain(name_upper)
 
 # Institutional / chain-parent detection by Client Name licence count.
 # A Client Name holding ≥10 distinct food licence addresses across the City of
@@ -192,46 +112,11 @@ def is_chain(name_upper):
 # directory. This complements is_chain() (which keys off the consumer brand
 # name) by catching B2B operators whose Operating Name isn't a known consumer
 # brand at all — Aramark cafeterias inside hospitals, TMU food courts, etc.
-_INSTITUTIONAL_CLIENT_THRESHOLD = 10
-_INSTITUTIONAL_CLIENTS = None
+# REMOVED 2026-05-14: hardcoded ≥10-licence Client Name threshold. The
+# validator now sees Client Name directly and judges institutional/chain
+# from corporation identity + Places types + reviews. No magic threshold.
 
-def _build_institutional_clients(csv_path):
-    from collections import defaultdict
-    client_addrs = defaultdict(set)
-    try:
-        with open(csv_path, encoding='utf-8', errors='replace') as f:
-            for row in csv.DictReader(f):
-                cat = (row.get('Category') or '').strip()
-                if cat not in FOOD_CATS: continue
-                if (row.get('Cancel Date') or '').strip(): continue
-                cn = (row.get('Client Name') or '').strip().upper()
-                addr1 = (row.get('Licence Address Line 1') or '').strip().upper()
-                if cn and addr1:
-                    client_addrs[cn].add(addr1)
-    except (FileNotFoundError, OSError):
-        return set()
-    return {cn for cn, addrs in client_addrs.items()
-            if len(addrs) >= _INSTITUTIONAL_CLIENT_THRESHOLD}
-
-def _ensure_institutional_clients():
-    global _INSTITUTIONAL_CLIENTS
-    if _INSTITUTIONAL_CLIENTS is None:
-        _INSTITUTIONAL_CLIENTS = _build_institutional_clients(CSV_PATH)
-    return _INSTITUTIONAL_CLIENTS
-
-def is_institutional_client(client_name_upper):
-    """True iff the Client Name corporation holds ≥10 food licences across
-    Toronto. Catches Aramark, Compass Group, TMU, hospital food contractors,
-    plus chain-parent franchisee LLCs that don't surface in consumer-brand
-    lists (OSM, our denylist)."""
-    return (client_name_upper or '').strip() in _ensure_institutional_clients()
-
-def keyword_classify(op_upper):
-    for cuisine, keys in CUISINE_PATTERNS.items():
-        for k in keys:
-            if k in op_upper: return cuisine
-    return None
-
+import re as _re
 VALID_LLM_KEYS = set(CUISINE_LABEL.keys())  # every key with a display label is valid
 # Collects cache cuisines that have no display label, surfaced at end of run as
 # a loud warning. Empty in steady state; growth means cuisines.py needs an entry.
@@ -245,41 +130,9 @@ _CUISINE_LABEL_GAP = set()
 # across all its rows. Inject can then inherit that website onto rows that
 # otherwise have nothing. Stops "links to nowhere on Maps" for brand-new
 # locations of established small-chain indies.
-_BRAND_WEBSITE_INDEX = None
-SOCIAL_DOMAINS_LOCAL = ('instagram.com', 'facebook.com', 'tiktok.com')
+# REMOVED 2026-05-14: brand-website inheritance dict. The validator
+# returns best_website per entry from full evidence; we honor that directly.
 
-def _is_aggregator_or_social(url):
-    if not url: return True
-    u = url.lower()
-    if any(d in u for d in SOCIAL_DOMAINS_LOCAL): return True
-    if any(d in u for d in ('skipthedishes.', 'doordash.', 'ubereats.',
-                            'grubhub.', 'foodora.', 'menulog.', 'seamless.',
-                            'tripadvisor.', 'yelp.com')): return True
-    if 'maps.google.' in u or 'goo.gl/maps' in u: return True
-    return False
-
-def _build_brand_website_index():
-    """For each operating name (uppercased), collect the set of distinct non-
-    aggregator websites observed across all its web_verify entries. When a
-    given operating name has exactly ONE such website, that's the brand site
-    and we can inherit it onto sibling licences. (Single-location indies that
-    only appear once in the data also pass this rule — their one website is
-    used directly, no inheritance needed since they already have it.)"""
-    from collections import defaultdict
-    name_to_sites = defaultdict(set)
-    for k, e in WEB_VERIFY_CACHE.items():
-        if e.get('status') != 'ok': continue
-        ws = e.get('website')
-        if ws and not _is_aggregator_or_social(ws):
-            name = k.split('||')[0].strip().upper()
-            name_to_sites[name].add(ws)
-    return {n: next(iter(sites)) for n, sites in name_to_sites.items() if len(sites) == 1}
-
-def _ensure_brand_website_index():
-    global _BRAND_WEBSITE_INDEX
-    if _BRAND_WEBSITE_INDEX is None:
-        _BRAND_WEBSITE_INDEX = _build_brand_website_index()
-    return _BRAND_WEBSITE_INDEX
 CUISINE_LABEL.setdefault('thai', 'Thai')
 
 def get_cuisine(name, address):
@@ -287,15 +140,14 @@ def get_cuisine(name, address):
     keys (1-3 entries for multi-cuisine restaurants); empty list means drop.
 
     Priority order:
-      1. web_verify cache (search-informed) — uses `cuisines` list if present, else
-         promotes single `cuisine` for backwards compat
-      2. name-only LLM cache (same shape)
-      3. keyword classifier (single bucket from operating name)
-    Chain denylist short-circuits everything.
+      1. web_verify cache (search-informed by Haiku + web_search, then refined
+         by the unified validator that sees the full City row + Places data)
+      2. name-only LLM cache (Haiku on operating name alone)
+    No chain-denylist short-circuit here — the validator marks chains and
+    institutional operators with `validator_drop` directly; inject just honors
+    that flag in the main loop.
     """
     name_upper = (name or '').strip().upper()
-    if is_chain(name_upper):
-        return [], None
     key = f"{name_upper}||{(address or '').strip().upper()}"
 
     # 1. Web-verified cuisines — richest signal (web search + page content + Places extras).
@@ -397,19 +249,6 @@ KIOSK_BRAND_PATTERNS = (
 )
 KIOSK_CLIENTS = ('ADVANCED FRESH CONCEPTS',)
 
-def _is_instore_kiosk(row):
-    op = (row.get('Operating Name') or '').upper()
-    client = (row.get('Client Name') or '').upper()
-    if any(b in op for b in KIOSK_BRAND_PATTERNS): return True
-    if any(c in client for c in KIOSK_CLIENTS): return True
-    cond = ' '.join([
-        (row.get('Conditions') or ''),
-        (row.get('Free Form Conditions Line 1') or ''),
-        (row.get('Free Form Conditions Line 2') or ''),
-    ]).upper()
-    if 'LOCATED' in cond and any(c in cond for c in INSTORE_CHAINS): return True
-    return False
-
 with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
     rdr = csv.DictReader(f)
     for row in rdr:
@@ -420,19 +259,11 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         iss = parse_d(row.get('Issued'))
         if not iss or iss < WINDOW_365: continue
         n_food_active_365 += 1
-        # Drop in-grocery-store kiosks: AFC sushi counters inside Sobeys/Loblaws/etc.
-        # are not consumer-destination restaurants even though they hold a take-out
-        # licence. Caught by the City's own "Located inside X" conditions field.
-        if _is_instore_kiosk(row):
-            n_dropped_instore += 1
-            continue
-        # Institutional / chain-parent operator? Drop. Catches Aramark cafeterias,
-        # Compass Group contract kitchens, TMU food courts, etc. — and chain
-        # franchisee LLCs (10+ Tim Hortons/McDonald's locations under one corp).
-        client_name = (row.get('Client Name') or '').strip().upper()
-        if is_institutional_client(client_name):
-            n_dropped_institutional += 1
-            continue
+        # (REMOVED 2026-05-14: hardcoded in-store-kiosk filter via Conditions regex
+        # and Client Name licence-count threshold. The validator sees Client Name +
+        # Conditions directly and flags `validator_drop: not-restaurant` for
+        # institutional caterers, in-grocery kiosks, packaged-food brands, etc.
+        # The validator_drop honoring below handles all of these uniformly.)
         op_raw = (row.get('Operating Name') or '').strip()
         if not op_raw: continue
         addr1 = (row.get('Licence Address Line 1') or '').strip()
@@ -503,16 +334,8 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         else:
             entry['fallbackMapsUrl'] = ''
 
-        # Brand-website inheritance: if this entry has no website but the same
-        # operating name has exactly one known brand website cached across other
-        # licences, use it. Catches the brand-new-location case (LENA'S ROTI's
-        # 3999 Keele licence has no Places yet, but the brand's lenasroti.ca is
-        # cached on its other Toronto licences). Site is non-aggregator, so safe.
-        if not entry.get('website'):
-            brand_site = _ensure_brand_website_index().get(op_raw.strip().upper())
-            if brand_site:
-                entry['website'] = brand_site
-                entry['websiteSource'] = 'brand_inherited'
+        # (REMOVED 2026-05-14: brand-website inheritance dict — the validator
+        # returns best_website per entry directly, computed from full evidence.)
 
         # Weak-match drop: if NONE of Places / a working website / a real cuisine
         # signal exist, we're sending the user to a location we can't verify is
@@ -526,16 +349,17 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # recovered_at timestamps gate the 30-day re-attempt window, by which
         # point Google/Yelp/blogs may have indexed the place and a stronger
         # signal will arrive.
-        # Re-evaluate weak_match AFTER brand-website inheritance — a brand site
-        # is a real positive signal even if the verifier didn't catch it for
-        # this specific location.
-        weak_match = (
-            not entry.get('matchedName')
+        # Drop: no Places match + no website. We have no way to send the user
+        # to a verified location for this specific licence. Source of cuisine
+        # (Haiku web_search vs name-only) doesn't matter — the issue isn't
+        # cuisine confidence, it's that there's no link target we trust. The
+        # validator may have flagged is_same_business=no for an address-
+        # mismatched Places match and cleared mapsUrl; this rule catches those
+        # cases (LENA'S ROTI 3999 Keele — Places only has the 4207 location,
+        # validator cleared it, no website remains).
+        if (not entry.get('matchedName')
             and not entry.get('mapsUrl')
-            and not entry.get('website')
-            and source in ('llm', 'keyword')
-        )
-        if weak_match:
+            and not entry.get('website')):
             n_dropped_weak_match += 1
             continue
 
