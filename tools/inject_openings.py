@@ -461,9 +461,11 @@ url_blocks = [
     f'  <url>\n    <loc>{SITE_BASE}/</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>'
 ]
 for c in cuisines_out:
-    # Only sitemap cuisines with at least 3 verified openings — anything thinner
-    # won't rank meaningfully and risks looking like a thin-content page to Google.
-    if c.get('count365d', 0) < 3: continue
+    # Sitemap every cuisine with at least 1 verified opening. Smaller cuisines
+    # often have the BEST ranking opportunity ("newest Eritrean Toronto" has
+    # almost no competing content), and excluding under-represented communities
+    # would contradict the project ethos.
+    if c.get('count365d', 0) < 1: continue
     url_blocks.append(
         f'  <url>\n    <loc>{SITE_BASE}/cuisine/{c["key"]}</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>'
     )
