@@ -109,9 +109,17 @@ def _name_tokens(s):
                          'PREMIUM','EXPRESS','TAKE','OUT','TAKEOUT','BISTRO','EATERY'}}
 
 def _name_overlap(a, b):
+    """Score similarity allowing for run-together names. 'SONARBANGLA' matches
+    'SONAR' + 'BANGLA' via substring containment (which exact-set Jaccard misses)."""
     ta, tb = _name_tokens(a), _name_tokens(b)
     if not ta or not tb: return 0.0
-    return len(ta & tb) / len(ta | tb)
+    matches = 0
+    for x in ta:
+        for y in tb:
+            if x == y or (len(x) >= 4 and x in y) or (len(y) >= 4 and y in x):
+                matches += 1
+                break
+    return matches / max(len(ta), len(tb))
 
 def _nearby_fallback(lat, lng, name_hint):
     """Places Nearby Search at the geocoded coords. 250m radius accounts for
