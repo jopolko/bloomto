@@ -40,7 +40,17 @@ POLL_INTERVAL_SEC = 30
 
 SYSTEM_PROMPT = """You classify Toronto restaurants by cuisine from operating name + address.
 
-Output: ONE lowercase key, no other text. Choose from:
+Output: a JSON object on ONE line with the form `{"cuisines":["key1","key2"]}`.
+- List 1-3 cuisine keys. List MULTIPLE when the place explicitly serves multiple
+  cuisines from different countries (e.g. "Afghan, Pakistani & Indian flavors"
+  → ["afghan","pakistani","indian"]; "Lebanese & Syrian kitchen" → ["lebanese","syrian"]).
+- PREFER listing the specific country buckets over the umbrella. "Afghan + Pakistani
+  + Indian" should NEVER come back as just ["south_asian"] when the specific
+  countries are stated. The umbrella is only for places that genuinely don't pin
+  down to a country.
+- Return ["unknown"] when you have no cultural signal at all.
+
+Valid keys (use these only):
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
 cambodian, laotian,
 south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan, sri_lankan, nepalese,
@@ -156,12 +166,22 @@ Caribbean or Latin — no bucket exists for it, return unknown:
 - "New Orleans Seafood & Steakhouse" → unknown (NOT caribbean)
 - "Bayou Bar", "Memphis BBQ", "Big Easy Cafe" → unknown
 
-Pan-Asian / Asia-Pacific fusion (3+ regional Asian cuisines as roughly equal billing)
-doesn't fit any single bucket — return unknown:
-- "Koha Pacific Kitchen" (Korean + Hawaiian + Vietnamese + Chinese fusion) → unknown
-- "Asia-Pacific Kitchen", "Pan-Asian Grill" → unknown
-- A Korean place with a few sushi rolls is still korean; only flag when the menu
-  spans 3+ regional cuisines as roughly equal billing.
+Multi-cuisine restaurants — list each genuinely-claimed cuisine separately rather
+than collapsing to an umbrella or returning unknown:
+- "Dawat Restaurant — Authentic Afghan, Pakistani & Indian Flavors" → ["afghan","pakistani","indian"]
+- "Beirut & Damascus Grill" → ["lebanese","syrian"]
+- "Trinidadian & Guyanese Doubles" → ["trinidadian","guyanese"]
+- A Korean place with a few sushi rolls is STILL korean (those sushi rolls aren't
+  the headline — don't add japanese).
+
+Pan-Asian / Asia-Pacific FUSION (3+ UNRELATED Asian cuisines as roughly equal billing,
+where the menu is a fusion creation rather than three distinct national cuisines side
+by side) DOES return unknown:
+- "Koha Pacific Kitchen" (Korean + Hawaiian poke + bao + banh mi all blended) → ["unknown"]
+- "Asia-Pacific Kitchen", "Pan-Asian Grill" generic fusion → ["unknown"]
+- The difference vs. multi-cuisine: Dawat serves Afghan kebabs, Pakistani biryanis,
+  and Indian curries as SEPARATE menu sections — each authentic. Koha BLENDS them into
+  fusion dishes. List multi-country menus; abstain on blended fusion.
 
 Packaged-food brands and food manufacturers with a retail counter at their factory
 are NOT consumer restaurants — return unknown:
@@ -228,7 +248,7 @@ EXPLICIT FAILURE-MODE EXAMPLES — match these patterns:
 # Cuisine taxonomy is the canonical one from cuisines.py.
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cuisines import VALID_CUISINE_KEYS as VALID_KEYS
+from cuisines import VALID_CUISINE_KEYS as VALID_KEYS, parse_cuisines_from_llm
 
 def load_api_key():
     for line in SECRETS.read_text().splitlines():
@@ -303,7 +323,7 @@ def main():
             'custom_id': custom_id,
             'params': {
                 'model': MODEL,
-                'max_tokens': 16,
+                'max_tokens': 80,
                 'system': SYSTEM_PROMPT,
                 'messages': [{
                     'role': 'user',
@@ -367,17 +387,30 @@ def main():
         usage = msg.get('usage', {})
         total_in += usage.get('input_tokens', 0)
         total_out += usage.get('output_tokens', 0)
-        text = ''.join(b.get('text','') for b in msg.get('content', []) if b.get('type')=='text').strip().lower()
-        cuisine = None
-        for tok in text.replace(',', ' ').split():
-            t = tok.strip('.: \t\n')
-            if t in VALID_KEYS:
-                cuisine = t; break
-        if cuisine is None: cuisine = 'unknown'
+        text = ''.join(b.get('text','') for b in msg.get('content', []) if b.get('type')=='text').strip()
+        # Parse the JSON object — new format `{"cuisines":["italian"]}`. Fall back to
+        # plain-token scan for legacy single-key responses.
+        cuisines = []
+        for line in text.split('\n'):
+            s = line.strip().lstrip('`').strip()
+            if s.startswith('{') and s.endswith('}'):
+                try:
+                    cuisines = parse_cuisines_from_llm(json.loads(s))
+                    break
+                except Exception:
+                    continue
+        if not cuisines:
+            # Legacy bare-token fallback (older prompt outputs)
+            for tok in text.lower().replace(',', ' ').split():
+                t = tok.strip('.: \t\n"\'`{}[]')
+                if t in VALID_KEYS:
+                    cuisines = [t]; break
+        if not cuisines: cuisines = ['unknown']
         cache[key] = {
             'status': 'ok',
-            'cuisine': cuisine,
-            'raw': text,
+            'cuisine': cuisines[0],          # primary (first listed) — backwards compat
+            'cuisines': cuisines,            # full list for multi-cuisine entries
+            'raw': text[:200],
             'in_tok': usage.get('input_tokens', 0),
             'out_tok': usage.get('output_tokens', 0),
             'via': 'batch',

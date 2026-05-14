@@ -7,6 +7,7 @@ inject under key 'newOpenings'. Mirrors logic that will live in build_corridors.
 import csv, json
 from datetime import datetime, date, timedelta
 from collections import defaultdict
+from pathlib import Path
 
 REFERENCE_DATE = date.today()  # use real today; build_corridors.py uses its own TODAY constant
 import os
@@ -76,7 +77,7 @@ CUISINE_PATTERNS = {
 }
 # Canonical cuisine taxonomy — defined in tools/cuisines.py so recovery scripts
 # share the same set. Adding a bucket there is enough; do NOT re-declare here.
-from cuisines import CUISINE_LABEL
+from cuisines import CUISINE_LABEL, normalize_cuisines
 FOOD_CATS = {
     'EATING OR DRINKING ESTABLISHMENT',
     'TAKE-OUT OR RETAIL FOOD ESTABLISHMENT',
@@ -133,7 +134,7 @@ CHAIN_DENYLIST = (
 )
 
 import re as _re
-def is_chain(name_upper):
+def is_denylist_chain(name_upper):
     """Match chain names ONLY at the start of the operating name. Chains typically
     appear as 'CHAIN' or 'CHAIN LOCATION' or 'CHAIN #123'. This avoids false positives
     like 'OM MA JOHN'S PIZZA & THAI EXPRESS' being matched as the chain 'THAI EXPRESS'."""
@@ -143,6 +144,60 @@ def is_chain(name_upper):
         if _re.match(r'^' + _re.escape(c) + r'(\b|$|[/#@,])', n):
             return True
     return False
+
+# OSM-derived chain detector. OpenStreetMap mappers tag known chains with
+# `brand=<Name>` (and often `brand:wikidata=<Qxxx>`) — an authoritative,
+# human-curated source. We query Overpass for every branded amenity in the
+# Toronto bbox via tools/build_osm_chain_set.py (refresh weekly), cache the
+# result, and match operating names against it here.
+#
+# Why not the earlier count heuristic? Count-based catches campus food service
+# (TMU/UofT), hospitality conglomerates (Aramark, Compass Group), AND legit
+# local indies with 5+ locations. OSM separates "is a chain" from "has many
+# locations" — only chains carry `brand=` tags. (User design note, 2026-05-14.)
+_OSM_CHAIN_PATH = Path(__file__).resolve().parent / 'cache' / 'osm_chain_set.json'
+_OSM_CHAIN_PATTERN = None
+
+def _normalize_for_chain_match(s):
+    """Strip apostrophes / periods / hyphens before matching. OSM and Toronto's
+    licence registry disagree on these all the time: 'OSMOW'S' vs 'OSMOWS',
+    'MR. SUB' vs 'MR SUB', 'A&W' vs 'A & W'. After this normalization, the
+    boundary regex can be a single fast match."""
+    return _re.sub(r"[\'\.\-]", '', (s or '').upper())
+
+def _ensure_osm_chain_pattern():
+    global _OSM_CHAIN_PATTERN
+    if _OSM_CHAIN_PATTERN is not None: return _OSM_CHAIN_PATTERN
+    if not _OSM_CHAIN_PATH.exists():
+        _OSM_CHAIN_PATTERN = _re.compile(r'(?!)')  # never-matches sentinel
+        return _OSM_CHAIN_PATTERN
+    try:
+        data = json.loads(_OSM_CHAIN_PATH.read_text())
+    except Exception:
+        _OSM_CHAIN_PATTERN = _re.compile(r'(?!)')
+        return _OSM_CHAIN_PATTERN
+    brands_upper = {k for k in (data.get('brands') or {}).keys()}
+    cleaned = sorted({_normalize_for_chain_match(b) for b in brands_upper if b},
+                     key=lambda x: -len(x))  # longest-first so "MCDONALDS" beats "MCDONALD"
+    if not cleaned:
+        _OSM_CHAIN_PATTERN = _re.compile(r'(?!)')
+    else:
+        # Match at start with word/end/separator boundary — same shape as is_denylist_chain
+        _OSM_CHAIN_PATTERN = _re.compile(
+            r'^(?:' + '|'.join(_re.escape(b) for b in cleaned) + r')(?:\b|$|[/#@,])'
+        )
+    return _OSM_CHAIN_PATTERN
+
+def is_osm_chain(name_upper):
+    """True iff operating name matches an OSM-tagged chain brand at a word
+    boundary. Authoritative — only restaurants tagged with `brand=` in OSM
+    get hits, so legit indies (Pai Northern Thai etc.) pass through cleanly."""
+    p = _ensure_osm_chain_pattern()
+    return bool(p.match(_normalize_for_chain_match(name_upper)))
+
+def is_chain(name_upper):
+    """Combined chain check: manual denylist OR OSM-derived authoritative list."""
+    return is_denylist_chain(name_upper) or is_osm_chain(name_upper)
 
 def keyword_classify(op_upper):
     for cuisine, keys in CUISINE_PATTERNS.items():
@@ -157,47 +212,48 @@ _CUISINE_LABEL_GAP = set()
 CUISINE_LABEL.setdefault('thai', 'Thai')
 
 def get_cuisine(name, address):
-    """Priority: web_verify (search-informed) > LLM name-only > keyword.
-    Web_verify wins because it has actual web evidence (menus, owner bios, reviews),
-    not just the operating name. Name-only LLM is the fallback when search hasn't run.
-    Chain denylist short-circuits everything — chains are never an ethnic-cuisine signal.
+    """Returns (cuisines_list, source). cuisines_list is a list of valid cuisine
+    keys (1-3 entries for multi-cuisine restaurants); empty list means drop.
+
+    Priority order:
+      1. web_verify cache (search-informed) — uses `cuisines` list if present, else
+         promotes single `cuisine` for backwards compat
+      2. name-only LLM cache (same shape)
+      3. keyword classifier (single bucket from operating name)
+    Chain denylist short-circuits everything.
     """
     name_upper = (name or '').strip().upper()
     if is_chain(name_upper):
-        return None, None  # chain → never shown
+        return [], None
     key = f"{name_upper}||{(address or '').strip().upper()}"
-    # Otherwise consult caches in priority order
 
-    # 1. Web-verified cuisine (search-informed; richest signal).
-    # If web_verify ran successfully but produced no cuisine, that's a STRONGER
-    # "I don't know" than the name-only guesser would give — drop, don't fall
-    # through. Falling back to name-only after a real web search couldn't pin
-    # the cuisine is how we got Tumi Dumpling tagged Tibetan (the name-only
-    # guess from "Tumi" + "Dumpling House" beat the web search's null).
+    # 1. Web-verified cuisines — richest signal (web search + page content + Places extras).
     w = WEB_VERIFY_CACHE.get(key)
     if w and w.get('status') == 'ok' and w.get('operating') == 'yes':
-        c = w.get('cuisine')
-        if c in VALID_LLM_KEYS and c != 'unknown':
-            return c, 'web_search'
-        if c and c != 'unknown':  # unrecognised cuisine key — surface in label-gap warning
-            _CUISINE_LABEL_GAP.add(c)
-        # Verifier returned unknown OR null — fall through to name-only cache.
-        # Trade-off (validated 2026-05-14): tightened name-only prompt has ~13%
-        # error rate vs the verifier on 581 GT entries. We accept that to recover
-        # ~280 legit entries whose SPA-shell websites the verifier couldn't read.
-        # Layer 4 batch + the 30-day Places re-fetch cycle will correct over time.
-    # 2. Name-only LLM classification — fallback when web_verify is null/unknown
+        cs = normalize_cuisines(w)
+        valid = [c for c in cs if c in VALID_LLM_KEYS]
+        for c in cs:
+            if c not in VALID_LLM_KEYS: _CUISINE_LABEL_GAP.add(c)
+        if valid:
+            return valid, 'web_search'
+        # Verifier returned unknown OR null cuisine — fall through to name-only.
+
+    # 2. Name-only LLM cache — fallback when web_verify is null/unknown.
     llm = LLM_CACHE.get(key)
     if llm and llm.get('status') == 'ok':
-        c = llm.get('cuisine')
-        if c == 'unknown': return None, None
-        if c in VALID_LLM_KEYS: return c, 'llm'
-        if c:
-            _CUISINE_LABEL_GAP.add(c)
-    # 3. Keyword fallback (only when both LLM passes are missing)
+        # Explicit "unknown" verdict from name-only stays a drop (we have ZERO signal)
+        if llm.get('cuisine') == 'unknown' and not llm.get('cuisines'): return [], None
+        cs = normalize_cuisines(llm)
+        valid = [c for c in cs if c in VALID_LLM_KEYS]
+        for c in cs:
+            if c not in VALID_LLM_KEYS: _CUISINE_LABEL_GAP.add(c)
+        if valid:
+            return valid, 'llm'
+
+    # 3. Keyword fallback — single bucket from regex patterns on the operating name.
     kw = keyword_classify((name or '').upper())
-    if kw: return kw, 'keyword'
-    return None, None
+    if kw: return [kw], 'keyword'
+    return [], None
 
 def verification_for(name, address):
     """Returns dict of fields to merge if verified-open, else None. Drops the
@@ -298,8 +354,8 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         addr1 = (row.get('Licence Address Line 1') or '').strip()
         addr3 = (row.get('Licence Address Line 3') or '').strip()
         address_full = (addr1 + ' ' + addr3).strip()
-        cuisine, source = get_cuisine(op_raw, address_full)
-        if not cuisine: continue
+        cuisines, source = get_cuisine(op_raw, address_full)
+        if not cuisines: continue
 
         # Verification gate: Places=OPERATIONAL OR web_search verified-yes.
         verification = verification_for(op_raw, address_full)
@@ -319,7 +375,8 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         slug = (name_part + (f'-{addr_num}' if addr_num else ''))[:80]
         entry = {
             'operatingName': op_raw,
-            'cuisine': cuisine,
+            'cuisine': cuisines[0],          # primary — backwards-compat for any consumer that reads `cuisine`
+            'cuisines': cuisines,             # full multi-cuisine list — what the front-end filters on
             'cuisineSource': source,
             'issuedDate': iss.isoformat(),
             'daysOpen': days_open,
@@ -341,12 +398,16 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             if iss.isoformat() < existing['issuedDate']:
                 seen_entries[dedup_key] = entry  # this row is earlier — keep it
 
-# Now bucket the deduped entries by cuisine and compute counts
+# Now bucket the deduped entries by cuisine and compute counts.
+# Multi-cuisine entries (e.g., "Afghan + Pakistani + Indian") appear in EACH
+# of their cuisine buckets — totalTagged365d counts entries (not bucket-rows),
+# so a 3-cuisine place still counts as 1 toward the total.
 opens_365_by_cuisine = defaultdict(list)
 for entry in seen_entries.values():
     n_tagged_365 += 1
     if entry['daysOpen'] <= 30: n_tagged_30 += 1
-    opens_365_by_cuisine[entry['cuisine']].append(entry)
+    for c in entry.get('cuisines') or [entry['cuisine']]:
+        opens_365_by_cuisine[c].append(entry)
 
 print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_deduped} duplicate rows collapsed")
 
@@ -434,26 +495,28 @@ def _ago(days):
 top_for_static = all_recent[:30]
 static_rows_html = []
 for r in top_for_static:
-    color = PALETTE_HEX.get(r.get('cuisine'), '#777')
-    label = CUISINE_LABEL.get(r.get('cuisine'), r.get('cuisine') or '')
+    # Multi-cuisine row: emit one colored pill per declared cuisine, falling
+    # back to the single `cuisine` field for legacy entries.
+    cuisine_keys = r.get('cuisines') or ([r['cuisine']] if r.get('cuisine') else [])
+    pills_html = ''.join(
+        f'<span class="pill" style="background:{PALETTE_HEX.get(k, "#777")}">{_esc(CUISINE_LABEL.get(k, k))}</span>'
+        for k in cuisine_keys
+    )
     name = _esc(r['operatingName'])
     addr = _esc(r.get('address') or '')
     district = _esc(r.get('district') or '')
-    # Address links to Google Maps for that location — same affordance pattern
-    # as the name link, opens Maps at the spot.
     addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
     addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
     addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
     ago = _esc(_ago(r['daysOpen']))
     link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
-    # Same-tab navigation — back button cleanly returns to NowServingTO (target="_blank"
-    # on mobile would strand users on the Maps tab when they bounce back from the app).
     name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
+    multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
     static_rows_html.append(
-        f'<div class="open-row">'
+        f'<div class="open-row"{multi_attr}>'
         f'<div class="od"><span class="ago">{ago}</span></div>'
         f'<div class="on">{name_html}<span class="oad">{addr_html}</span></div>'
-        f'<div class="oc"><span class="pill" style="background:{color}">{_esc(label)}</span></div>'
+        f'<div class="oc">{pills_html}</div>'
         f'</div>'
     )
 static_block = '\n    '.join(static_rows_html)
@@ -465,7 +528,9 @@ for i, r in enumerate(top_for_static, 1):
         '@type': 'Restaurant',
         'name': r['operatingName'],
         'address': {'@type': 'PostalAddress', 'streetAddress': r.get('address') or '', 'addressLocality': 'Toronto', 'addressRegion': 'ON', 'addressCountry': 'CA'},
-        'servesCuisine': CUISINE_LABEL.get(r.get('cuisine'), r.get('cuisine') or ''),
+        # schema.org/Restaurant.servesCuisine accepts an array of strings, so we
+        # emit the full multi-cuisine list when available (better SEO signal).
+        'servesCuisine': [CUISINE_LABEL.get(k, k) for k in (r.get('cuisines') or [r.get('cuisine')]) if k],
         'dateOpened': r.get('issuedDate'),
     }
     if r.get('website'): rest['url'] = r['website']

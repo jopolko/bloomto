@@ -108,8 +108,16 @@ def _coords_from_geocode(operating_name, address):
     return None
 
 def _name_tokens(s):
-    import re
-    return {t for t in re.findall(r'[A-Z0-9]{2,}', (s or '').upper())
+    """Tokenize a business name for fuzzy comparison. Strips diacritics so
+    'Ôi BÁNH MÌ' and 'OI BANH MI' produce identical token sets — Haiku can read
+    those as the same, but our regex can't unless we normalize."""
+    import re, unicodedata
+    # NFD splits "ô" → "o" + combining-circumflex; the Mn-category filter then
+    # drops the combining mark, leaving plain ASCII. Handles French/Portuguese/
+    # Vietnamese/Spanish/Polish diacritics generically.
+    norm = unicodedata.normalize('NFD', (s or '').upper())
+    ascii_only = ''.join(c for c in norm if unicodedata.category(c) != 'Mn')
+    return {t for t in re.findall(r'[A-Z0-9]{2,}', ascii_only)
             if t not in {'THE','AND','OF','INC','LTD','CO','LLC',
                          'RESTAURANT','CAFE','BAR','GRILL','KITCHEN','HOUSE','SHOP',
                          'PREMIUM','EXPRESS','TAKE','OUT','TAKEOUT','BISTRO','EATERY'}}
@@ -150,7 +158,12 @@ def enrich_one(operating_name, address):
     # If the text query missed the actual restaurant (very common when the name
     # is run-together like "SONARBANGLA" or has hidden marketing keywords like
     # "Premium"), fall back to Nearby Search around the geocoded coords.
-    if not cand or not _address_matches(addr_first, cand.get('formatted_address')):
+    # Also reject when address matches but the name overlap is too thin — Places
+    # will happily return a CAR WASH at "828 Eastern Ave" when we queried for
+    # "Eastern 828 Cafe & Grill" (real example, 2026-05-14). Address alone isn't
+    # enough; require some substantive name-token agreement too.
+    name_ok = cand and _name_overlap(operating_name, cand.get('name', '')) >= 0.25
+    if not cand or not _address_matches(addr_first, cand.get('formatted_address')) or not name_ok:
         coords = _coords_from_geocode(operating_name, address)
         if coords:
             nearby = _nearby_fallback(coords[0], coords[1], operating_name)

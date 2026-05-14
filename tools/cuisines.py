@@ -54,3 +54,43 @@ CUISINE_LABEL = {
 # llm_recover_cuisine, llm_search_recover_cuisine) to gate Haiku output.
 # Includes 'unknown' as a valid response for "can't determine" cases.
 VALID_CUISINE_KEYS = set(CUISINE_LABEL.keys()) | {'unknown'}
+
+
+def normalize_cuisines(entry):
+    """Return a list of valid cuisine keys for a cache entry, handling both
+    the new `cuisines: [str, ...]` format AND the old `cuisine: str` format.
+
+    Filters out 'unknown' and any keys missing from CUISINE_LABEL — callers
+    should NOT use the returned list as a "no cuisine" sentinel (use the
+    return value's truthiness instead).
+    """
+    if not entry: return []
+    cs = entry.get('cuisines')
+    if isinstance(cs, list):
+        return [c.lower() for c in cs
+                if isinstance(c, str) and c.lower() in CUISINE_LABEL]
+    c = entry.get('cuisine')
+    if isinstance(c, str) and c.lower() in CUISINE_LABEL:
+        return [c.lower()]
+    return []
+
+
+def parse_cuisines_from_llm(parsed):
+    """Read the cuisines field from an LLM response dict. Accepts both:
+       - `{"cuisines": ["italian", "greek"]}` (new format, up to 3 entries)
+       - `{"cuisine": "italian"}` (old single-cuisine format, backwards compat)
+    Returns a deduplicated list of lowercased valid keys (may contain 'unknown'),
+    or [] if nothing parseable. Caller decides how to treat 'unknown'."""
+    if not isinstance(parsed, dict): return []
+    out = []
+    cs = parsed.get('cuisines')
+    if isinstance(cs, list):
+        for c in cs[:3]:  # cap at 3 — anything more is fusion and we abstain
+            if isinstance(c, str) and c.strip().lower() in VALID_CUISINE_KEYS:
+                k = c.strip().lower()
+                if k not in out: out.append(k)
+        return out
+    c = parsed.get('cuisine')
+    if isinstance(c, str) and c.strip().lower() in VALID_CUISINE_KEYS:
+        return [c.strip().lower()]
+    return []

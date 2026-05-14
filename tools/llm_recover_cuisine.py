@@ -39,7 +39,7 @@ from check_link_health import _strip_html
 # Cuisine taxonomy is the canonical one from cuisines.py — keeps this script
 # in lockstep with inject_openings' display labels so we can't silently tag
 # entries with a cuisine that has no label.
-from cuisines import VALID_CUISINE_KEYS
+from cuisines import VALID_CUISINE_KEYS, parse_cuisines_from_llm
 
 SYSTEM_PROMPT = """You classify a Toronto restaurant by cuisine using the evidence provided.
 The evidence may include any subset of:
@@ -54,7 +54,16 @@ where the website is generic or a JS shell. The editorial summary is Google's ow
 classification ("Lebanese restaurant serving...") and is usually accurate.
 
 Return a single JSON object on ONE line, no prose:
-{"cuisine":"<key>","evidence":"<one short sentence quoting the strongest clue>"}
+{"cuisines":["<key1>","<key2>"],"evidence":"<one short sentence quoting the strongest clue>"}
+
+`cuisines` is a LIST of 1-3 specific cuisine keys. List multiple when the place
+explicitly serves cuisines from different countries (not blended fusion):
+- "Authentic Afghan, Pakistani & Indian Flavors" → ["afghan","pakistani","indian"]
+- "Lebanese & Syrian kitchen" → ["lebanese","syrian"]
+- Single cuisine: ["italian"]
+- Can't classify: ["unknown"]
+PREFER specific country buckets. Use the umbrella (["south_asian"], ["middle_east"],
+["caribbean"], ["latin"]) only when no specific country is stated in the evidence.
 
 Valid cuisine keys: italian, chinese, japanese, korean, vietnamese, filipino, thai,
 indonesian, malaysian, burmese, cambodian, laotian, south_asian, indian, pakistani,
@@ -189,10 +198,10 @@ def classify_one(name, address, page_text=None, places_reviews=None, places_edit
         if s.startswith('{') and s.endswith('}'):
             try:
                 d = json.loads(s)
-                cuisine = (d.get('cuisine') or '').strip().lower()
+                cuisines = parse_cuisines_from_llm(d)
                 evidence = (d.get('evidence') or '')[:200]
-                if cuisine in VALID_CUISINE_KEYS:
-                    return cuisine, evidence
+                if cuisines:
+                    return cuisines, evidence
             except Exception:
                 continue
     return None, None
@@ -285,10 +294,10 @@ def main():
 
             name = key.split('||')[0]
             address = key.split('||')[1] if '||' in key else ''
-            cuisine, evidence = classify_one(name, address, text, p_reviews, p_editorial)
+            cuisines, evidence = classify_one(name, address, text, p_reviews, p_editorial)
             # If we ended up classifying from Places-extras only, mark source accordingly
             effective_src = src if text else 'places_extras'
-            return key, cuisine, evidence, None, effective_src
+            return key, cuisines, evidence, None, effective_src
         except Exception as ex:
             return key, None, None, f"{type(ex).__name__}: {str(ex)[:60]}", None
 
@@ -299,22 +308,29 @@ def main():
     with ThreadPoolExecutor(max_workers=WORKERS) as ex:
         futures = [ex.submit(work, k, v) for k, v in targets]
         for i, fut in enumerate(as_completed(futures), 1):
-            key, cuisine, evidence, err, src = fut.result()
+            key, cuisines, evidence, err, src = fut.result()
             # Always stamp recovered_at so we don't retry the same failure every
             # day — gives the natural 30-day re-attempt cycle via needs_recovery.
             cache[key]['recovered_at'] = now_iso
             if err:
                 n_failed += 1
                 cache[key]['recovery_note'] = err[:120]
-            elif cuisine == 'unknown' or cuisine is None:
+            elif not cuisines or cuisines == ['unknown']:
                 n_unknown += 1
-                if cuisine == 'unknown':
+                if cuisines == ['unknown']:
                     cache[key]['cuisine'] = 'unknown'
+                    cache[key]['cuisines'] = ['unknown']
                     cache[key]['evidence'] = (evidence or 'page content recovery — still unknown')[:200]
             else:
+                # Strip 'unknown' if mixed with real cuisines (defensive — shouldn't happen)
+                real = [c for c in cuisines if c != 'unknown']
+                if not real:
+                    n_unknown += 1
+                    continue
                 n_recovered += 1
                 recovered_by_source[src] = recovered_by_source.get(src, 0) + 1
-                cache[key]['cuisine'] = cuisine
+                cache[key]['cuisine'] = real[0]          # primary — backwards compat
+                cache[key]['cuisines'] = real             # full list — new multi-cuisine
                 cache[key]['evidence'] = (evidence or '')[:200]
                 cache[key]['recovery_source'] = src
             if i % 10 == 0 or i == len(targets):

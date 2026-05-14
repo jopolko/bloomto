@@ -34,7 +34,7 @@ REATTEMPT_DAYS = 30  # don't re-query the same entry sooner than this
 
 # Cuisine taxonomy is the canonical one from cuisines.py.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cuisines import VALID_CUISINE_KEYS
+from cuisines import VALID_CUISINE_KEYS, parse_cuisines_from_llm
 
 SYSTEM_PROMPT = """You classify a Toronto restaurant by cuisine using Google web search results.
 The restaurant's own website couldn't be read (JS shell, captcha, PDF menu, etc.) so you must
@@ -63,7 +63,16 @@ Combine quoted phrases (`"<NAME>"`), `site:`, `filetype:pdf`, `intitle:`, `inurl
 and `-` exclusions. Always quote the business name on the second search.
 
 Return a single JSON object on ONE line, no prose:
-{"cuisine":"<key>","evidence":"<one short sentence with the actual snippet/source>"}
+{"cuisines":["<key1>","<key2>"],"evidence":"<one short sentence with the actual snippet/source>"}
+
+`cuisines` is a LIST of 1-3 specific cuisine keys. List multiple when the place
+explicitly serves cuisines from different countries (not blended fusion):
+- "Authentic Afghan, Pakistani & Indian flavors" → ["afghan","pakistani","indian"]
+- "Lebanese & Syrian kitchen" → ["lebanese","syrian"]
+- Single cuisine: ["italian"]
+- Can't classify: ["unknown"]
+PREFER specific country buckets over umbrellas. Use ["south_asian"] / ["middle_east"]
+/ ["caribbean"] / ["latin"] only when no specific country is stated.
 
 Valid cuisine keys: italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian,
 malaysian, burmese, cambodian, laotian, south_asian, indian, pakistani, afghan, bangladeshi,
@@ -144,10 +153,10 @@ def build_request(name, address):
     }
 
 def parse_result_msg(msg):
-    """Pull cuisine + evidence from the final text block of a batch result message.
-    Returns (cuisine, evidence, n_searches, in_tok, out_tok) — cuisine is None if
-    Haiku didn't follow the JSON format, 'unknown' if it explicitly couldn't tell,
-    or a valid taxonomy key."""
+    """Pull cuisines + evidence from the final text block of a batch result.
+    Returns (cuisines_list, evidence, n_searches, in_tok, out_tok). cuisines is
+    [] if Haiku didn't follow the JSON format, ['unknown'] if it explicitly
+    couldn't tell, or a list of 1-3 valid taxonomy keys."""
     usage = msg.get('usage', {})
     server_tool = usage.get('server_tool_use') or {}
     text_blocks = [b.get('text', '') for b in msg.get('content', []) if b.get('type') == 'text']
@@ -161,11 +170,9 @@ def parse_result_msg(msg):
     if parsed is None:
         try: parsed = json.loads(text)
         except: parsed = {}
-    cuisine = parsed.get('cuisine')
-    if isinstance(cuisine, str): cuisine = cuisine.strip().lower()
-    if cuisine not in VALID_CUISINE_KEYS: cuisine = None
+    cuisines = parse_cuisines_from_llm(parsed)
     return (
-        cuisine,
+        cuisines,
         (parsed.get('evidence') or '')[:200],
         server_tool.get('web_search_requests', 0),
         usage.get('input_tokens', 0),
@@ -236,22 +243,31 @@ def main():
     if not has_search_result:
         sys.exit("ABORT: canary returned no web_search_tool_result — web_search likely not supported in Message Batches API for this model. Fall back to sync.")
 
+    def _apply_result(key, cuisines, evidence, into_cache):
+        """Merge a single parse_result_msg outcome into the cache entry.
+        Returns one of: 'recovered', 'unknown', 'parse_fail'."""
+        real = [c for c in (cuisines or []) if c and c != 'unknown']
+        if real:
+            into_cache[key]['cuisine'] = real[0]            # primary — backwards compat
+            into_cache[key]['cuisines'] = real               # full list
+            into_cache[key]['evidence'] = evidence
+            into_cache[key]['recovery_source'] = 'web_search_batch'
+            return 'recovered'
+        if cuisines == ['unknown']:
+            into_cache[key]['cuisine'] = 'unknown'
+            into_cache[key]['cuisines'] = ['unknown']
+            into_cache[key]['search_recovery_note'] = (evidence or 'search recovery — still unknown')[:120]
+            return 'unknown'
+        into_cache[key]['search_recovery_note'] = 'parse_failed'
+        return 'parse_fail'
+
     # Merge canary result for the matching real key
     now_iso = datetime.now(timezone.utc).isoformat()
-    cuisine, evidence, n_searches, in_tok, out_tok = parse_result_msg(canary_msg)
+    cuisines, evidence, n_searches, in_tok, out_tok = parse_result_msg(canary_msg)
     canary_key = candidates[0][0]
     cache[canary_key]['search_recovered_at'] = now_iso
-    if cuisine and cuisine != 'unknown':
-        cache[canary_key]['cuisine'] = cuisine
-        cache[canary_key]['evidence'] = evidence
-        cache[canary_key]['recovery_source'] = 'web_search_batch'
-        print(f"  canary recovered: {candidates[0][0].split('||')[0]} → {cuisine}")
-    elif cuisine == 'unknown':
-        cache[canary_key]['cuisine'] = 'unknown'
-        cache[canary_key]['search_recovery_note'] = evidence[:120] or 'search recovery — still unknown'
-        print(f"  canary verdict: {candidates[0][0].split('||')[0]} → unknown (expected for non-restaurants)")
-    else:
-        cache[canary_key]['search_recovery_note'] = 'canary parse_failed'
+    canary_status = _apply_result(canary_key, cuisines, evidence, cache)
+    print(f"  canary {canary_status}: {candidates[0][0].split('||')[0]} → {cuisines or 'parse_fail'}")
     WEB_CACHE_PATH.write_text(json.dumps(cache, separators=(',', ':')))
 
     # ---- Full batch ----
@@ -266,26 +282,17 @@ def main():
         key = id_to_key.get(cid)
         if not key: continue
         result = obj.get('result', {})
-        # Always stamp search_recovered_at so we don't re-attempt before the 30-day window
         cache[key]['search_recovered_at'] = now_iso
         if result.get('type') != 'succeeded':
             n_err += 1
             cache[key]['search_recovery_note'] = f"batch {result.get('type')}"
             continue
-        cuisine, evidence, ns, in_tok, out_tok = parse_result_msg(result['message'])
+        cuisines, evidence, ns, in_tok, out_tok = parse_result_msg(result['message'])
         tot_in += in_tok; tot_out += out_tok; tot_search += ns
-        if cuisine and cuisine != 'unknown':
-            n_recovered += 1
-            cache[key]['cuisine'] = cuisine
-            cache[key]['evidence'] = evidence
-            cache[key]['recovery_source'] = 'web_search_batch'
-        elif cuisine == 'unknown':
-            n_unknown += 1
-            cache[key]['cuisine'] = 'unknown'
-            cache[key]['search_recovery_note'] = evidence[:120] or 'search recovery — still unknown'
-        else:
-            n_parse_fail += 1
-            cache[key]['search_recovery_note'] = 'parse_failed'
+        status = _apply_result(key, cuisines, evidence, cache)
+        if status == 'recovered': n_recovered += 1
+        elif status == 'unknown': n_unknown += 1
+        else: n_parse_fail += 1
 
     WEB_CACHE_PATH.write_text(json.dumps(cache, separators=(',', ':')))
     # Batch cost: web_search at $5/1K (50% off sync), tokens roughly $0.40/M input + $2/M output for Haiku at batch rates

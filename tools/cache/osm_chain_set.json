@@ -1,0 +1,734 @@
+{
+ "brands": {
+  "% ARABICA": {
+   "display": "% Arabica",
+   "wikidata": "Q107639197",
+   "osmCount": 3
+  },
+  "241 PIZZA": {
+   "display": "241 Pizza",
+   "wikidata": "Q4631768",
+   "osmCount": 18
+  },
+  "3 BRASSEURS": {
+   "display": "3 Brasseurs",
+   "wikidata": "Q3230326",
+   "osmCount": 2
+  },
+  "A&W": {
+   "display": "A&W",
+   "wikidata": "Q2818848",
+   "osmCount": 66
+  },
+  "ALI BABA'S": {
+   "display": "Ali Baba's",
+   "wikidata": "Q105398745",
+   "osmCount": 12
+  },
+  "AROMA ESPRESSO BAR": {
+   "display": "Aroma Espresso Bar",
+   "wikidata": "Q2909872",
+   "osmCount": 26
+  },
+  "BARBURRITO": {
+   "display": "BarBurrito",
+   "wikidata": "Q104844862",
+   "osmCount": 14
+  },
+  "BASIL BOX": {
+   "display": "Basil Box",
+   "wikidata": "Q112966056",
+   "osmCount": 3
+  },
+  "BASKIN-ROBBINS": {
+   "display": "Baskin-Robbins",
+   "wikidata": "Q584601",
+   "osmCount": 36
+  },
+  "BB.Q CHICKEN": {
+   "display": "bb.q Chicken",
+   "wikidata": "Q87716489",
+   "osmCount": 4
+  },
+  "BENTO SUSHI": {
+   "display": "Bento Sushi",
+   "wikidata": "Q134445293",
+   "osmCount": 3
+  },
+  "BLAZE PIZZA": {
+   "display": "Blaze Pizza",
+   "wikidata": "Q23016666",
+   "osmCount": 2
+  },
+  "BOOSTER JUICE": {
+   "display": "Booster Juice",
+   "wikidata": "Q4943796",
+   "osmCount": 49
+  },
+  "BOSTON PIZZA": {
+   "display": "Boston Pizza",
+   "wikidata": "Q894578",
+   "osmCount": 13
+  },
+  "BOURBON ST. GRILL": {
+   "display": "Bourbon St. Grill",
+   "wikidata": "Q123409942",
+   "osmCount": 11
+  },
+  "BURGER KING": {
+   "display": "Burger King",
+   "wikidata": "Q177054",
+   "osmCount": 34
+  },
+  "BURRITO BOYZ": {
+   "display": "Burrito Boyz",
+   "wikidata": "Q123409967",
+   "osmCount": 22
+  },
+  "CACTUS CLUB CAFE": {
+   "display": "Cactus Club Cafe",
+   "wikidata": "Q5016149",
+   "osmCount": 2
+  },
+  "CALIFORNIA SANDWICHES": {
+   "display": "California Sandwiches",
+   "wikidata": "Q113001391",
+   "osmCount": 7
+  },
+  "CHATIME": {
+   "display": "Chatime",
+   "wikidata": "Q16829306",
+   "osmCount": 22
+  },
+  "CHICK-FIL-A": {
+   "display": "Chick-fil-A",
+   "wikidata": "Q491516",
+   "osmCount": 6
+  },
+  "CHIPOTLE": {
+   "display": "Chipotle",
+   "wikidata": "Q465751",
+   "osmCount": 22
+  },
+  "CHUCK E. CHEESE": {
+   "display": "Chuck E. Cheese",
+   "wikidata": "Q2438391",
+   "osmCount": 3
+  },
+  "CHUNGCHUN RICE DOG": {
+   "display": "Chungchun Rice Dog",
+   "wikidata": "Q115803477",
+   "osmCount": 4
+  },
+  "CHURCH'S CHICKEN": {
+   "display": "Church's Chicken",
+   "wikidata": "Q1089932",
+   "osmCount": 16
+  },
+  "CINNABON": {
+   "display": "Cinnabon",
+   "wikidata": "Q1092539",
+   "osmCount": 7
+  },
+  "COCO": {
+   "display": "CoCo",
+   "wikidata": "Q65084369",
+   "osmCount": 22
+  },
+  "COFFEE TIME": {
+   "display": "Coffee Time",
+   "wikidata": "Q5140932",
+   "osmCount": 19
+  },
+  "CORA": {
+   "display": "Cora",
+   "wikidata": "Q2996960",
+   "osmCount": 8
+  },
+  "COSTCO": {
+   "display": "Costco",
+   "wikidata": "Q715583",
+   "osmCount": 10
+  },
+  "COUNTRY STYLE": {
+   "display": "Country Style",
+   "wikidata": "Q5177435",
+   "osmCount": 14
+  },
+  "CULTURES": {
+   "display": "Cultures",
+   "wikidata": "Q64876898",
+   "osmCount": 4
+  },
+  "DAIRY QUEEN": {
+   "display": "Dairy Queen",
+   "wikidata": "Q1141226",
+   "osmCount": 21
+  },
+  "DENNY'S": {
+   "display": "Denny's",
+   "wikidata": "Q1189695",
+   "osmCount": 6
+  },
+  "DOMINO'S": {
+   "display": "Domino's",
+   "wikidata": "Q839466",
+   "osmCount": 52
+  },
+  "DQ GRILL & CHILL": {
+   "display": "DQ Grill & Chill",
+   "wikidata": "Q1141226",
+   "osmCount": 5
+  },
+  "EARLS": {
+   "display": "Earls",
+   "wikidata": "Q5326525",
+   "osmCount": 5
+  },
+  "EAST SIDE MARIO'S": {
+   "display": "East Side Mario's",
+   "wikidata": "Q5329375",
+   "osmCount": 2
+  },
+  "EDO JAPAN": {
+   "display": "Edo Japan",
+   "wikidata": "Q17492665",
+   "osmCount": 5
+  },
+  "EGGSMART": {
+   "display": "Eggsmart",
+   "wikidata": "Q113001388",
+   "osmCount": 18
+  },
+  "EXTREME PITA": {
+   "display": "Extreme Pita",
+   "wikidata": "Q5422367",
+   "osmCount": 2
+  },
+  "FAT BASTARD BURRITO": {
+   "display": "Fat Bastard Burrito",
+   "wikidata": "Q123865546",
+   "osmCount": 21
+  },
+  "FIREHOUSE SUBS": {
+   "display": "Firehouse Subs",
+   "wikidata": "Q5451873",
+   "osmCount": 11
+  },
+  "FIVE GUYS": {
+   "display": "Five Guys",
+   "wikidata": "Q1131810",
+   "osmCount": 9
+  },
+  "FRESHII": {
+   "display": "Freshii",
+   "wikidata": "Q5503051",
+   "osmCount": 36
+  },
+  "FRESHLY SQUEEZED": {
+   "display": "Freshly Squeezed",
+   "wikidata": "Q124035170",
+   "osmCount": 10
+  },
+  "FRESHSLICE PIZZA": {
+   "display": "Freshslice Pizza",
+   "wikidata": "Q5503082",
+   "osmCount": 2
+  },
+  "GALITO'S": {
+   "display": "Galito's",
+   "wikidata": "Q116619555",
+   "osmCount": 3
+  },
+  "GINO'S PIZZA": {
+   "display": "Gino's Pizza",
+   "wikidata": "Q84029134",
+   "osmCount": 15
+  },
+  "GONG CHA": {
+   "display": "Gong Cha",
+   "wikidata": "Q5581670",
+   "osmCount": 17
+  },
+  "GYU-KAKU": {
+   "display": "Gyu-Kaku",
+   "wikidata": "Q11349387",
+   "osmCount": 2
+  },
+  "HALIBUT HOUSE": {
+   "display": "Halibut House",
+   "wikidata": "Q133255010",
+   "osmCount": 7
+  },
+  "HAPPY LEMON": {
+   "display": "Happy Lemon",
+   "wikidata": "Q109968422",
+   "osmCount": 2
+  },
+  "HARVEY'S": {
+   "display": "Harvey's",
+   "wikidata": "Q1466184",
+   "osmCount": 38
+  },
+  "HERO CERTIFIED BURGERS": {
+   "display": "Hero Certified Burgers",
+   "wikidata": "Q5742641",
+   "osmCount": 19
+  },
+  "IKEA": {
+   "display": "IKEA",
+   "wikidata": "Q54078",
+   "osmCount": 2
+  },
+  "JACK ASTOR'S": {
+   "display": "Jack Astor's",
+   "wikidata": "Q6111066",
+   "osmCount": 10
+  },
+  "JIMMY THE GREEK": {
+   "display": "Jimmy the Greek",
+   "wikidata": "Q17077817",
+   "osmCount": 18
+  },
+  "JOEY": {
+   "display": "Joey",
+   "wikidata": "Q24191943",
+   "osmCount": 5
+  },
+  "JOLLIBEE": {
+   "display": "Jollibee",
+   "wikidata": "Q37614",
+   "osmCount": 8
+  },
+  "JUGO JUICE": {
+   "display": "Jugo Juice",
+   "wikidata": "Q119705456",
+   "osmCount": 6
+  },
+  "KELSEY'S": {
+   "display": "Kelsey's",
+   "wikidata": "Q6386459",
+   "osmCount": 7
+  },
+  "KERNELS POPCORN": {
+   "display": "Kernels Popcorn",
+   "wikidata": "Q64876684",
+   "osmCount": 9
+  },
+  "KFC": {
+   "display": "KFC",
+   "wikidata": "Q524757",
+   "osmCount": 53
+  },
+  "KRISPY KREME": {
+   "display": "Krispy Kreme",
+   "wikidata": "Q1192805",
+   "osmCount": 9
+  },
+  "KUNG FU TEA": {
+   "display": "Kung Fu Tea",
+   "wikidata": "Q66023886",
+   "osmCount": 11
+  },
+  "LITTLE CAESARS": {
+   "display": "Little Caesars",
+   "wikidata": "Q1393809",
+   "osmCount": 17
+  },
+  "LONE STAR TEXAS GRILL": {
+   "display": "Lone Star Texas Grill",
+   "wikidata": "Q133255608",
+   "osmCount": 2
+  },
+  "MAC'S SUSHI": {
+   "display": "Mac's Sushi",
+   "wikidata": "Q133254906",
+   "osmCount": 5
+  },
+  "MACHI MACHI": {
+   "display": "machi machi",
+   "wikidata": "Q114828290",
+   "osmCount": 3
+  },
+  "MANCHU WOK": {
+   "display": "Manchu Wok",
+   "wikidata": "Q6747622",
+   "osmCount": 10
+  },
+  "MARBLE SLAB CREAMERY": {
+   "display": "Marble Slab Creamery",
+   "wikidata": "Q17020087",
+   "osmCount": 5
+  },
+  "MARY BROWN'S": {
+   "display": "Mary Brown's",
+   "wikidata": "Q6779125",
+   "osmCount": 15
+  },
+  "MCDONALD'S": {
+   "display": "McDonald's",
+   "wikidata": "Q38076",
+   "osmCount": 110
+  },
+  "MEET FRESH": {
+   "display": "Meet Fresh",
+   "wikidata": "Q11172707",
+   "osmCount": 2
+  },
+  "MENCHIE'S": {
+   "display": "Menchie's",
+   "wikidata": "Q6816528",
+   "osmCount": 4
+  },
+  "MILESTONES": {
+   "display": "Milestones",
+   "wikidata": "Q6851623",
+   "osmCount": 6
+  },
+  "MONTANA'S": {
+   "display": "Montana's",
+   "wikidata": "Q17022490",
+   "osmCount": 4
+  },
+  "MOXIE'S": {
+   "display": "Moxie's",
+   "wikidata": "Q6927497",
+   "osmCount": 9
+  },
+  "MR. GREEK": {
+   "display": "Mr. Greek",
+   "wikidata": "Q6928719",
+   "osmCount": 9
+  },
+  "MR. PRETZELS": {
+   "display": "Mr. Pretzels",
+   "wikidata": "Q115728208",
+   "osmCount": 3
+  },
+  "MR. SUB": {
+   "display": "Mr. Sub",
+   "wikidata": "Q6929225",
+   "osmCount": 39
+  },
+  "MRS. FIELDS": {
+   "display": "Mrs. Fields",
+   "wikidata": "Q3866841",
+   "osmCount": 2
+  },
+  "MUCHO BURRITO": {
+   "display": "Mucho Burrito",
+   "wikidata": "Q65148332",
+   "osmCount": 6
+  },
+  "NANDO'S": {
+   "display": "Nando's",
+   "wikidata": "Q3472954",
+   "osmCount": 4
+  },
+  "NEW YORK FRIES": {
+   "display": "New York Fries",
+   "wikidata": "Q7013558",
+   "osmCount": 12
+  },
+  "OSMOW'S": {
+   "display": "Osmow's",
+   "wikidata": "Q115048716",
+   "osmCount": 36
+  },
+  "PANAGO": {
+   "display": "Panago",
+   "wikidata": "Q17111672",
+   "osmCount": 7
+  },
+  "PANERA BREAD": {
+   "display": "Panera Bread",
+   "wikidata": "Q7130852",
+   "osmCount": 3
+  },
+  "PAPA JOHN'S": {
+   "display": "Papa John's",
+   "wikidata": "Q2759586",
+   "osmCount": 16
+  },
+  "PITA LAND": {
+   "display": "Pita Land",
+   "wikidata": "Q133249489",
+   "osmCount": 15
+  },
+  "PITA PIT": {
+   "display": "Pita Pit",
+   "wikidata": "Q7757289",
+   "osmCount": 7
+  },
+  "PIZZA DEPOT": {
+   "display": "Pizza Depot",
+   "wikidata": "Q133254934",
+   "osmCount": 5
+  },
+  "PIZZA HUT": {
+   "display": "Pizza Hut",
+   "wikidata": "Q191615",
+   "osmCount": 40
+  },
+  "PIZZA NOVA": {
+   "display": "Pizza Nova",
+   "wikidata": "Q7199971",
+   "osmCount": 65
+  },
+  "PIZZA PIZZA": {
+   "display": "Pizza Pizza",
+   "wikidata": "Q1194143",
+   "osmCount": 125
+  },
+  "PIZZAIOLO": {
+   "display": "Pizzaiolo",
+   "wikidata": "Q20006920",
+   "osmCount": 3
+  },
+  "PIZZAVILLE": {
+   "display": "Pizzaville",
+   "wikidata": "Q113001369",
+   "osmCount": 23
+  },
+  "POPEYES": {
+   "display": "Popeyes",
+   "wikidata": "Q1330910",
+   "osmCount": 82
+  },
+  "P\u00dcR & SIMPLE": {
+   "display": "P\u00fcr & Simple",
+   "wikidata": "Q118558630",
+   "osmCount": 3
+  },
+  "QUESADA": {
+   "display": "Quesada",
+   "wikidata": "Q66070360",
+   "osmCount": 10
+  },
+  "QUIZNOS": {
+   "display": "Quiznos",
+   "wikidata": "Q1936229",
+   "osmCount": 7
+  },
+  "REAL FRUIT BUBBLE TEA": {
+   "display": "Real Fruit Bubble Tea",
+   "wikidata": "Q66072331",
+   "osmCount": 25
+  },
+  "RED LOBSTER": {
+   "display": "Red Lobster",
+   "wikidata": "Q846301",
+   "osmCount": 5
+  },
+  "ROYALTEA": {
+   "display": "Royaltea",
+   "wikidata": "Q112778483",
+   "osmCount": 5
+  },
+  "RUTH'S CHRIS STEAK HOUSE": {
+   "display": "Ruth's Chris Steak House",
+   "wikidata": "Q7382829",
+   "osmCount": 4
+  },
+  "SCADDABUSH": {
+   "display": "Scaddabush",
+   "wikidata": "Q137363894",
+   "osmCount": 5
+  },
+  "SECOND CUP": {
+   "display": "Second Cup",
+   "wikidata": "Q862180",
+   "osmCount": 42
+  },
+  "SHAKE SHACK": {
+   "display": "Shake Shack",
+   "wikidata": "Q1058722",
+   "osmCount": 5
+  },
+  "SHANGHAI 360": {
+   "display": "Shanghai 360",
+   "wikidata": "Q112966568",
+   "osmCount": 9
+  },
+  "SHARETEA": {
+   "display": "Sharetea",
+   "wikidata": "Q64827032",
+   "osmCount": 2
+  },
+  "SHOELESS JOE'S": {
+   "display": "Shoeless Joe's",
+   "wikidata": "Q106195639",
+   "osmCount": 8
+  },
+  "SHUYI TEALICIOUS": {
+   "display": "Shuyi Tealicious",
+   "wikidata": "Q107729359",
+   "osmCount": 2
+  },
+  "SMOKE'S POUTINERIE": {
+   "display": "Smoke's Poutinerie",
+   "wikidata": "Q7545801",
+   "osmCount": 6
+  },
+  "SOUTH STREET BURGER": {
+   "display": "South Street Burger",
+   "wikidata": "Q123410175",
+   "osmCount": 9
+  },
+  "ST. LOUIS BAR & GRILL": {
+   "display": "St. Louis Bar & Grill",
+   "wikidata": "Q65567668",
+   "osmCount": 15
+  },
+  "STARBUCKS": {
+   "display": "Starbucks",
+   "wikidata": "Q37158",
+   "osmCount": 192
+  },
+  "STATE & MAIN": {
+   "display": "State & Main",
+   "wikidata": "Q118744509",
+   "osmCount": 2
+  },
+  "SUBWAY": {
+   "display": "Subway",
+   "wikidata": "Q244457",
+   "osmCount": 259
+  },
+  "SUNSET GRILL": {
+   "display": "Sunset Grill",
+   "wikidata": "Q62112489",
+   "osmCount": 21
+  },
+  "SUSHI SHOP": {
+   "display": "Sushi Shop",
+   "wikidata": "Q64840990",
+   "osmCount": 7
+  },
+  "SWEET JESUS": {
+   "display": "Sweet Jesus",
+   "wikidata": "Q135969904",
+   "osmCount": 2
+  },
+  "SWISS CHALET": {
+   "display": "Swiss Chalet",
+   "wikidata": "Q2372909",
+   "osmCount": 36
+  },
+  "TACO BELL": {
+   "display": "Taco Bell",
+   "wikidata": "Q752941",
+   "osmCount": 26
+  },
+  "TAHINI'S": {
+   "display": "Tahini's",
+   "wikidata": "Q135991974",
+   "osmCount": 3
+  },
+  "TERIYAKI EXPERIENCE": {
+   "display": "Teriyaki Experience",
+   "wikidata": "Q7702453",
+   "osmCount": 19
+  },
+  "THA\u00cf EXPRESS": {
+   "display": "Tha\u00ef Express",
+   "wikidata": "Q7711610",
+   "osmCount": 30
+  },
+  "THE ALLEY": {
+   "display": "The Alley",
+   "wikidata": "Q126456355",
+   "osmCount": 3
+  },
+  "THE BURGER'S PRIEST": {
+   "display": "The Burger's Priest",
+   "wikidata": "Q100255453",
+   "osmCount": 10
+  },
+  "THE COFFEE": {
+   "display": "The Coffee",
+   "wikidata": "Q112042753",
+   "osmCount": 3
+  },
+  "THE KEG": {
+   "display": "The Keg",
+   "wikidata": "Q7744066",
+   "osmCount": 13
+  },
+  "TIGER SUGAR": {
+   "display": "Tiger Sugar",
+   "wikidata": "Q76099070",
+   "osmCount": 2
+  },
+  "TIM HORTONS": {
+   "display": "Tim Hortons",
+   "wikidata": "Q175106",
+   "osmCount": 445
+  },
+  "TIMOTHY'S": {
+   "display": "Timothy's",
+   "wikidata": "Q7807011",
+   "osmCount": 10
+  },
+  "VILLA MADINA": {
+   "display": "Villa Madina",
+   "wikidata": "Q64876884",
+   "osmCount": 13
+  },
+  "WENDY'S": {
+   "display": "Wendy's",
+   "wikidata": "Q550258",
+   "osmCount": 34
+  },
+  "WETZEL'S PRETZELS": {
+   "display": "Wetzel's Pretzels",
+   "wikidata": "Q7990205",
+   "osmCount": 2
+  },
+  "WILD WING": {
+   "display": "Wild Wing",
+   "wikidata": "Q8000869",
+   "osmCount": 14
+  },
+  "WIMPY'S DINER": {
+   "display": "Wimpy's Diner",
+   "wikidata": "Q16909504",
+   "osmCount": 6
+  },
+  "WING MACHINE": {
+   "display": "Wing Machine",
+   "wikidata": "Q137363876",
+   "osmCount": 11
+  },
+  "WINGSTOP": {
+   "display": "Wingstop",
+   "wikidata": "Q8025339",
+   "osmCount": 5
+  },
+  "YI FANG TEA": {
+   "display": "Yi Fang Tea",
+   "wikidata": "Q66196395",
+   "osmCount": 2
+  },
+  "YOGEN FR\u00dcZ": {
+   "display": "Yogen Fr\u00fcz",
+   "wikidata": "Q8054358",
+   "osmCount": 12
+  },
+  "YUNSHANG RICE NOODLE": {
+   "display": "Yunshang Rice Noodle",
+   "wikidata": "Q109381268",
+   "osmCount": 5
+  }
+ },
+ "generatedAt": "2026-05-14T18:22:20Z",
+ "source": "OpenStreetMap (Overpass API)",
+ "bbox": [
+  43.58,
+  -79.64,
+  43.86,
+  -79.12
+ ],
+ "minOsmCount": 2,
+ "note": "Operating names matched UPPERCASE against keys; comparison done in inject_openings.is_auto_chain."
+}

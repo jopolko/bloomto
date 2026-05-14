@@ -57,6 +57,18 @@ else
 fi
 log "python=$PYTHON"
 
+# Step 0: refresh the OSM chain set if older than 7 days (or missing). This is
+# the authoritative source for auto-chain detection in inject_openings.py.
+# Free (no API key), ~6s for the Overpass query. We refresh weekly because chain
+# brand lists move slowly, and a stale set just means we miss a newly-tagged
+# brand for a week (the manual CHAIN_DENYLIST is the backstop).
+OSM_CACHE="$ROOTED_DIR/tools/cache/osm_chain_set.json"
+if [[ ! -s "$OSM_CACHE" ]] || [[ $(find "$OSM_CACHE" -mtime +7 2>/dev/null | wc -l) -gt 0 ]]; then
+    log "→ build_osm_chain_set.py (refresh authoritative chain list from OSM)"
+    "$PYTHON" -u tools/build_osm_chain_set.py >> "$LOG_FILE" 2>&1 \
+        || log "WARN: OSM chain refresh failed (non-fatal — using cached set)"
+fi
+
 # Step 1: fresh CSV pull from CKAN
 log "→ pulling fresh business-licences CSV"
 START=$SECONDS

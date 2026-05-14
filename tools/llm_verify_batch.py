@@ -31,7 +31,7 @@ CSV_PATH = '/tmp/business_licences_alt.csv'
 # Cuisine taxonomy is the canonical one from cuisines.py.
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cuisines import VALID_CUISINE_KEYS
+from cuisines import VALID_CUISINE_KEYS, parse_cuisines_from_llm
 
 SYSTEM_PROMPT = """You verify a Toronto restaurant's existence AND identify its cuisine
 from web search results. Many places are brand new with only sparse online presence — that's fine.
@@ -43,7 +43,17 @@ Google Maps / Google Business listing URL for this restaurant, do one targeted s
 is strongly preferred over Instagram/Facebook for the `website` field — see rules below.
 
 Return a single JSON object on ONE line, no markdown, no prose:
-{"operating":"yes|no|unclear","cuisine":"<key>","website":"<url or null>","evidence":"<one short sentence>"}
+{"operating":"yes|no|unclear","cuisines":["<key1>","<key2>"],"website":"<url or null>","evidence":"<one short sentence>"}
+
+The `cuisines` field is a LIST of 1-3 specific cuisine keys. List multiple when the
+restaurant explicitly serves cuisines from different countries side-by-side (not
+fusion). Examples:
+- "Authentic Afghan, Pakistani & Indian Flavors" → ["afghan","pakistani","indian"]
+- "Lebanese & Syrian kitchen" → ["lebanese","syrian"]
+- A single-cuisine place → ["italian"]
+- Place that couldn't be classified → ["unknown"]
+PREFER specific country buckets over the umbrella. Only use ["south_asian"] /
+["middle_east"] / ["caribbean"] / ["latin"] when no specific countries are stated.
 
 Valid cuisine keys:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
@@ -230,15 +240,13 @@ def parse_result_msg(msg):
     if parsed is None:
         try: parsed = json.loads(text)
         except: parsed = {'operating': 'unclear', 'website': None, 'evidence': 'parse_failed'}
-    cuisine = parsed.get('cuisine')
-    if isinstance(cuisine, str) and cuisine.lower() in VALID_CUISINE_KEYS:
-        cuisine = cuisine.lower()
-    else:
-        cuisine = None
+    cuisines = parse_cuisines_from_llm(parsed)  # list, may contain 'unknown'
+    primary = cuisines[0] if cuisines else None
     return {
         'status': 'ok',
         'operating': parsed.get('operating') if parsed.get('operating') in ('yes','no','unclear') else 'unclear',
-        'cuisine': cuisine,
+        'cuisine': primary,               # primary (first listed) — backwards compat
+        'cuisines': cuisines,             # full list for multi-cuisine entries
         'website': parsed.get('website') if isinstance(parsed.get('website'), str) and parsed.get('website').startswith(('http://','https://')) else None,
         'evidence': (parsed.get('evidence') or '')[:200],
         'verified_at': datetime.now(timezone.utc).isoformat(),
