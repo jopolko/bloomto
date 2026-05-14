@@ -86,14 +86,26 @@ DECISIVE — DO NOT HEDGE. Pick yes or no based on the evidence.
 
 RULES
 
-is_same_business — is the Places match referring to the SAME business as the
-licence? Compare semantically (not just string overlap):
-  - "EASTERN 828 CAFE & GRILL" vs "Eastern-Leslie Car Wash & Express Detail" with
-    types=[car_wash,…] → "no" (different businesses sharing only the street name)
-  - "KALIMERA FOOD KITCHEN" vs "The Laurel School" with types=[school,…] → "no"
-  - "OI BANH MI" vs "Ôi BÁNH MÌ" → "yes" (Unicode variants of same name)
-  - "MARY BROWN'S CHICKEN" vs "Mary Brown's Fried Chicken" → "yes"
-  - If Places returned NO match at all (place_id null / not_found) → "unclear"
+is_same_business — apply this test: if a Google Maps user typed the City's
+licence NAME + ADDRESS (the LICENCE block at the top, no edits) into Maps as a
+search, would the Places match shown below appear as the top hit — clearly
+the SAME business operating at the SAME address? Set "yes" only if you'd bet
+on that being the result. The permit's name + address are the source of truth;
+the Places match has to align with both.
+  - "EASTERN 828 CAFE & GRILL" + "828 Eastern Ave" vs Places: "Eastern-Leslie
+    Car Wash & Express Detail" at same address with types=[car_wash,…] → "no"
+    (same address, completely different business — a Maps search for the cafe
+    would NOT surface this car wash as the correct answer)
+  - "KALIMERA FOOD KITCHEN" + address vs Places: "The Laurel School" with
+    types=[school,…] → "no" (different business entirely)
+  - "OI BANH MI" + address vs Places: "Ôi BÁNH MÌ" at same address → "yes"
+    (Unicode variants of the same business name)
+  - "MARY BROWN'S CHICKEN" + address vs Places: "Mary Brown's Fried Chicken"
+    at same address → "yes" (chain franchise rendering of the same brand)
+  - Names match but addresses are on different streets / ≥1km apart → "no"
+    (LENA'S ROTI licence 3999 Keele vs Places match LENA'S ROTI 4207 Keele
+    are different locations of the same brand — not the same business operation)
+  - Places returned no match at all → "no_match"
 
 is_restaurant — is this a consumer walk-in restaurant?
   - "yes" — standalone restaurant, cafe, bar, bakery, food truck, hot-counter
