@@ -13,7 +13,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/italian</loc>
+    <loc>https://nowservingto.com/cuisine/chinese</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -25,7 +25,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/chinese</loc>
+    <loc>https://nowservingto.com/cuisine/italian</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -49,19 +49,25 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/jamaican</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://nowservingto.com/cuisine/french</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://nowservingto.com/cuisine/jamaican</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://nowservingto.com/cuisine/korean</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nowservingto.com/cuisine/turkish</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -74,18 +80,6 @@
   </url>
   <url>
     <loc>https://nowservingto.com/cuisine/greek</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/turkish</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/filipino</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -109,7 +103,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/south_asian</loc>
+    <loc>https://nowservingto.com/cuisine/filipino</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nowservingto.com/cuisine/tamil</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -121,7 +121,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/tamil</loc>
+    <loc>https://nowservingto.com/cuisine/south_asian</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -139,12 +139,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/caribbean</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://nowservingto.com/cuisine/tibetan</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
@@ -157,6 +151,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://nowservingto.com/cuisine/caribbean</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://nowservingto.com/cuisine/ethiopian</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
@@ -164,18 +164,6 @@
   </url>
   <url>
     <loc>https://nowservingto.com/cuisine/sri_lankan</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/irish_uk</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/latin</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -205,6 +193,30 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://nowservingto.com/cuisine/argentinian</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nowservingto.com/cuisine/eritrean</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nowservingto.com/cuisine/trinidadian</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://nowservingto.com/cuisine/african_west</loc>
+    <lastmod>2026-05-14</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://nowservingto.com/cuisine/venezuelan</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
@@ -217,19 +229,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/trinidadian</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://nowservingto.com/cuisine/guyanese</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/african_west</loc>
+    <loc>https://nowservingto.com/cuisine/latin</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -241,25 +247,19 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/argentinian</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://nowservingto.com/cuisine/armenian</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/african_horn</loc>
+    <loc>https://nowservingto.com/cuisine/senegalese</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nowservingto.com/cuisine/senegalese</loc>
+    <loc>https://nowservingto.com/cuisine/irish_uk</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
@@ -284,24 +284,6 @@
   </url>
   <url>
     <loc>https://nowservingto.com/cuisine/brazilian</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/eritrean</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/german</loc>
-    <lastmod>2026-05-14</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://nowservingto.com/cuisine/eastern_eu</loc>
     <lastmod>2026-05-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

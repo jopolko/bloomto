@@ -38,212 +38,29 @@ SECRETS = Path('/var/secrets/nowservingto.env')
 MODEL = 'claude-haiku-4-5-20251001'
 POLL_INTERVAL_SEC = 30
 
-SYSTEM_PROMPT = """You classify Toronto restaurants by cuisine from operating name + address.
+SYSTEM_PROMPT = """You classify a Toronto restaurant by cuisine from the operating
+name + licence address ALONE — no Places match, no website, no reviews available
+at this stage of the pipeline. A later validator pass sees the richer evidence.
 
-Output: a JSON object on ONE line with the form `{"cuisines":["key1","key2"]}`.
-- List 1-3 cuisine keys. List MULTIPLE when the place explicitly serves multiple
-  cuisines from different countries (e.g. "Afghan, Pakistani & Indian flavors"
-  → ["afghan","pakistani","indian"]; "Lebanese & Syrian kitchen" → ["lebanese","syrian"]).
-- PREFER listing the specific country buckets over the umbrella. "Afghan + Pakistani
-  + Indian" should NEVER come back as just ["south_asian"] when the specific
-  countries are stated. The umbrella is only for places that genuinely don't pin
-  down to a country.
-- Return ["unknown"] when you have no cultural signal at all.
+Return JSON on one line: {"cuisines":["k1","k2",...],"evidence":"<short>"}
 
-Valid keys (use these only):
-italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-cambodian, laotian,
-south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan, sri_lankan, nepalese,
-caribbean, jamaican, trinidadian, guyanese, haitian, cuban, dominican,
-greek, portuguese, polish, french, irish_uk, german, jewish_deli, spanish,
-eastern_eu, ukrainian, russian, hungarian,
-middle_east, lebanese, turkish, syrian, persian, israeli, egyptian, yemeni, armenian, georgian,
-latin, mexican, salvadoran, peruvian, colombian, brazilian, argentinian, venezuelan,
-african_horn, ethiopian, eritrean, somali,
-african_west, nigerian, ghanaian, moroccan, senegalese, unknown
+Valid cuisine keys (use only these):
+italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian,
+burmese, cambodian, laotian, south_asian, indian, pakistani, afghan, bangladeshi, tamil,
+tibetan, sri_lankan, nepalese, caribbean, jamaican, trinidadian, guyanese, haitian,
+cuban, dominican, greek, portuguese, polish, french, irish_uk, german, jewish_deli,
+spanish, eastern_eu, ukrainian, russian, hungarian, middle_east, lebanese, turkish,
+syrian, persian, israeli, egyptian, yemeni, armenian, georgian, latin, mexican,
+salvadoran, peruvian, colombian, brazilian, argentinian, venezuelan, african_horn,
+ethiopian, eritrean, somali, african_west, nigerian, ghanaian, moroccan, senegalese,
+unknown.
 
-ALWAYS prefer the most SPECIFIC bucket. Only use the broader umbrella when the name fits a
-region but no specific country signal is present.
-
-South Asian — PREFER specific country over umbrella:
-- indian: pan-Indian, Mughlai, Punjabi-NOT-Pakistani, North/South Indian, "India", "Indian",
-  tandoori-house, masala-house, biryani-house (when not specifically Pakistani), naan house,
-  dosa, idli, thali, samosa house. THIS is the right bucket for most "South Asian" places.
-- pakistani: explicitly Pakistani — Karachi, Lahore, "halal pak", "Pak Punjab"
-- afghan: Kabul, Kandahar, mantu, kabuli pulao
-- bangladeshi: Dhaka, Bengali, "bangla", Bengali sweets
-- tamil: Sri Lankan Tamil or South Indian Tamil (Jaffna, Eelam, Madras, Chennai, kothu)
-- tibetan: Tibetan / Himalayan (momo, Lhasa, Shangri-La)
-- south_asian: ONLY for genuinely multi-country South Asian buffets/mixes. Default to indian.
-
-Southeast Asian:
-- vietnamese: Pho, banh mi, Saigon, Hanoi
-- thai: pad thai, tom yum, Bangkok
-- filipino: adobo, lechon, Pinoy, Manila, kainan
-- indonesian: nasi goreng, rendang, satay, Jakarta, Bali
-- malaysian: nasi lemak, laksa, Kuala Lumpur, Penang
-- burmese: Myanmar, Yangon, Rangoon, mohinga
-
-East African:
-- ethiopian: Injera, Habesha, Addis, Awasa, Mercato, doro wat
-- eritrean: Asmara, Massawa
-- somali: Banadir, Mogadishu, Hargeisa, suqaar
-- african_horn: generic Horn of Africa umbrella (use only if no specific country signal)
-
-West African:
-- nigerian: Lagos, Naija, Yoruba/Igbo names, jollof + suya combos, egusi
-- ghanaian: Accra, Ghanaian, waakye, banku
-- moroccan: tagine, Marrakech, Fez, Casablanca, couscous (split from west, technically North Africa)
-- african_west: generic West African umbrella (Senegal, Mali, etc., or no specific country)
-
-Caribbean (cultural grouping — Guyana is geographically South America but culinarily fits here):
-- jamaican: Jamaica, jerk, ackee, patty (most common in Toronto)
-- trinidadian: Trini, doubles, bake-and-shark
-- guyanese: Guyana, Guyanese (note: technically South America, but Toronto's Guyanese restaurants
-  share dishes with Trinidad — roti, curry, doubles)
-- haitian: Haiti, Port-au-Prince, griot, diri
-- caribbean: generic Caribbean umbrella (Bahamian, Bajan, multi-island, "Caribbean Foods")
-
-Middle East / Mediterranean (CRITICAL: a generic dish like "shawarma" or "kebab" alone
-does NOT pin a specific country — the name must carry a city/region/cultural marker
-to commit to a country bucket. Otherwise tag the middle_east umbrella):
-- lebanese: explicit signal — Beirut, Lebanon, Cedars, Maroush, Tarbouche, Habibi
-  Habibti, Falafel + Manakish combo, "Lebanese" in name, Levantine + Lebanese-specific dishes
-- turkish: explicit signal — Istanbul, Anatolia, Anatolian, Antep, Adana, Bursa, Pasha,
-  Sultan, Ottoman, Marmara, "Turkish" in name, doner-house (NOT just "donair")
-- syrian: explicit signal — Damascus, Aleppo, Homs, Sham, Levant + Syrian-specific, "Syrian"
-- persian: explicit signal — Iran, Tehran, Isfahan, Shiraz, Saadi, Rumi, Caspian, Pomegranate,
-  Pomelo, kabab koobideh, joojeh, ghormeh-sabzi, fesenjan, tahdig, "Persian"
-- egyptian: explicit signal — Cairo, Nile, Pharaoh, Koshary, Foul Medames, "Egyptian"
-- israeli: explicit signal — Tel Aviv, Jaffa, Eretz, Shakshuka-headliner, Sabich, "Israeli"
-- yemeni: explicit signal — Sanaa, Bilady, Yemen, Mocha (when food not coffee)
-- armenian: explicit signal — Yerevan, Ararat, Armenia, lahmajun + Armenian context
-- georgian: explicit signal — Tbilisi, Khachapuri, Khinkali, "Georgian" (the country, not US South)
-- middle_east: DEFAULT for any "shawarma", "kebab", "halal donair", "Mediterranean grill",
-  "shisha lounge" name that doesn't carry one of the country markers above. ALSO use for
-  "Mediterranean" + Levant ambiguity.
-
-Eastern European:
-- ukrainian: Kyiv, Ukrainian, varenyky, borscht-specific
-- russian: Moscow, Russian, blini
-- hungarian: Budapest, Hungarian, goulash, paprikash
-- eastern_eu: generic E.Euro umbrella (Romanian, Bulgarian, Czech, Polish-not-already-tagged)
-
-Latin American:
-- mexican: taqueria, taco, tortilleria, Oaxaca, mole, al pastor, mariachi
-- salvadoran: Salvador, pupusas, El Salvador
-- peruvian: Peru, Lima, ceviche, lomo saltado
-- colombian: Colombia, Bogota, arepa, empanada-Colombian
-- brazilian: Brazil, Sao Paulo, churrasco, açaí
-- latin: generic Latin/Hispanic umbrella (Cuban, Venezuelan, etc.)
-
-Other:
-- jewish_deli: kosher, bagel shops, Ashkenazi/Israeli
-- irish_uk: explicitly Irish or British pub/eatery (NOT every place named "Pub")
-- italian: pizza/pasta/gelato/ristorante (chain pizza counts as italian)
-- chinese: mainland/HK/Cantonese/Szechuan (not Korean BBQ, not Vietnamese)
-- japanese: sushi, ramen, izakaya, Japanese
-- korean: BBQ, kimchi, Seoul
-- french: bistro, brasserie, patisserie, croissant
-- greek: souvlaki, gyro, Greek
-- portuguese: padaria, pastel, Portuguese
-- polish: pierogi, Polish
-
-CRITICAL — American fast-food chains and Canadian chains = unknown, NOT their themed cuisine:
-- Popeyes Louisiana Kitchen → unknown (Cajun chain; NOT caribbean, NOT jamaican)
-- KFC, KFC/Taco Bell combos → unknown (American chain; not mexican even with Taco Bell)
-- Mary Brown's, Church's Chicken, Wendy's, A&W → unknown
-- Applebee's, IHOP, Denny's, Outback, Boston Pizza → unknown
-- Tim Hortons, Second Cup, Starbucks → unknown
-- Subway, Mr. Sub, Quiznos → unknown
-- A "themed" American chain inherits no ethnic bucket. Genuine ethnic chains (Pizza Hut for italian, Bento Sushi for japanese) are fine to tag by theme.
-
-A generic name like "JIM'S BAR", "DOWNTOWN GRILL", or "MAIN STREET CAFE" with no ethnic signal = unknown.
-A surname-only name like "PARK'S RESTAURANT" without other context = unknown (don't guess from a last name).
-
-American Southern (New Orleans, Cajun, Creole, Bayou, Memphis/Texas BBQ, Soul) is NOT
-Caribbean or Latin — no bucket exists for it, return unknown:
-- "New Orleans Seafood & Steakhouse" → unknown (NOT caribbean)
-- "Bayou Bar", "Memphis BBQ", "Big Easy Cafe" → unknown
-
-Multi-cuisine restaurants — list each genuinely-claimed cuisine separately rather
-than collapsing to an umbrella or returning unknown:
-- "Dawat Restaurant — Authentic Afghan, Pakistani & Indian Flavors" → ["afghan","pakistani","indian"]
-- "Beirut & Damascus Grill" → ["lebanese","syrian"]
-- "Trinidadian & Guyanese Doubles" → ["trinidadian","guyanese"]
-- A Korean place with a few sushi rolls is STILL korean (those sushi rolls aren't
-  the headline — don't add japanese).
-
-Pan-Asian / Asia-Pacific FUSION (3+ UNRELATED Asian cuisines as roughly equal billing,
-where the menu is a fusion creation rather than three distinct national cuisines side
-by side) DOES return unknown:
-- "Koha Pacific Kitchen" (Korean + Hawaiian poke + bao + banh mi all blended) → ["unknown"]
-- "Asia-Pacific Kitchen", "Pan-Asian Grill" generic fusion → ["unknown"]
-- The difference vs. multi-cuisine: Dawat serves Afghan kebabs, Pakistani biryanis,
-  and Indian curries as SEPARATE menu sections — each authentic. Koha BLENDS them into
-  fusion dishes. List multi-country menus; abstain on blended fusion.
-
-Packaged-food brands and food manufacturers with a retail counter at their factory
-are NOT consumer restaurants — return unknown:
-- "SHIMLA FOODS TAKE OUT", "PATEL BROTHERS", "ROMA FOODS" → unknown
-- Names ending in "FOODS", "IMPORTS", "BRANDS", "DISTRIBUTORS" at industrial-zone
-  addresses (Steeles, Caledonia, Dixie, etc.) → unknown
-- A roti shop or butcher with hot samosas to order is fine — only flag pure
-  manufacturer/distributor operations.
-
-When uncertain between two specific buckets, pick the umbrella.
-When uncertain whether there's any cultural signal at all, pick unknown.
-
-PAN-CUISINE DISHES (dish words shared across 3+ unrelated cuisines — never commit
-to a specific bucket from these alone; require an additional country marker):
-- dumpling / dumplings / wonton → unknown (Chinese, Tibetan, Korean mandu, Japanese
-  gyoza, Polish pierogi all use this word). Tag chinese ONLY if name carries a
-  Chinese marker (Sichuan, Cantonese, Hong Kong, Chengdu, Shanghai, Beijing, etc.).
-- noodles / noodle-house → unknown unless country marker (Pho = vietnamese; ramen =
-  japanese; udon = japanese; lo mein = chinese; lamian = chinese; pad thai = thai).
-- curry / curries → unknown unless country marker (Thai curry, Japanese curry-house,
-  Indian-marker curry, Caribbean curry are all distinct).
-- bbq / grill / smokehouse / steakhouse → unknown unless country marker (Korean BBQ
-  with kimchi = korean; Texan BBQ = unknown; Brazilian churrasco = brazilian).
-- samosa / pakora / chaat → south_asian umbrella unless country marker (Indian samosa,
-  Pakistani samosa, East African sambusa, Middle Eastern sambusek all distinct).
-- biryani → south_asian umbrella unless country marker (Hyderabadi/Bangalore-style = indian;
-  Karachi/Sindhi = pakistani; Dhaka/Sylheti = bangladeshi; Colombo/Jaffna = sri_lankan/tamil).
-- roti → caribbean OR south_asian — needs context. Trinidadian/Guyanese roti wrap =
-  caribbean; Punjabi/Indian roti bread = indian. Default caribbean in Toronto context
-  ONLY if name has Caribbean signal; otherwise unknown.
-- kebab / kabob / kabab → middle_east umbrella unless country marker (Adana = turkish;
-  koobideh = persian; shish + Lebanese signal = lebanese; etc.).
-- shawarma → middle_east umbrella unless country marker (NEVER lebanese by default —
-  shawarma is equally claimed by Lebanese, Syrian, Turkish, Iraqi, Egyptian cooks).
-- pizza → italian (smoking gun) UNLESS chain-branded (Papa John's, Domino's, Pizza
-  Pizza, etc.) which → unknown per chain rule above.
-- sushi / ramen / izakaya / okonomiyaki → japanese (smoking gun).
-- pho / banh mi → vietnamese (smoking gun).
-- pad thai / tom yum → thai (smoking gun).
-- pupusa → salvadoran (smoking gun).
-- injera → african_horn (smoking gun).
-- jerk (in restaurant context, not "Jerk's Diner") → jamaican (smoking gun).
-- dim sum → chinese (smoking gun).
-- jollof → west african (smoking gun).
-- bagel / knish → jewish_deli (smoking gun).
-
-EXPLICIT FAILURE-MODE EXAMPLES — match these patterns:
-- "Tumi Dumpling House" → unknown (dumpling is pan-East-Asian; no country marker)
-- "Bombay Roti Hut" → indian (Bombay marker resolves roti ambiguity to indian)
-- "Caribbean Curry Express" → caribbean (Caribbean marker beats curry ambiguity)
-- "Shawarma Palace" / "Shawarma King" → middle_east (no country marker; umbrella)
-- "Maroush Lebanese Eatery" → lebanese (explicit Lebanese + Maroush marker)
-- "Adana Kebab House" → turkish (Adana is a Turkish city)
-- "Tehran Kabob" → persian (Tehran is the Iranian capital)
-- "Damascus Halal" → syrian (Damascus is the Syrian capital)
-- "Bangalore Donne Biryani" → indian (Bangalore = Indian city)
-- "Dhaka Sweet & Restaurant" → bangladeshi (Dhaka = Bangladeshi capital)
-- "Pizzeria Badiali" / "Trattoria X" / "Osteria Y" → italian (Italian-language tokens)
-- "Pho2gether" / "Pho 21" → vietnamese (pho = smoking gun)
-- "Bento Sushi" → japanese (sushi smoking gun overrides chain ambiguity)
-- "Soul Food Kitchen" / "Bayou Grill" / "Memphis BBQ Co" → unknown (American Southern)
-- "Asia-Pacific Kitchen" / "Pan-Asian Grill" → unknown (3+ region fusion)"""
+Multi-cuisine OK when the name explicitly states 2-3 countries side-by-side
+("Afghan, Pakistani & Indian Flavors"). Default to ["unknown"] when the name
+gives no cuisine signal (no country marker, no signature dish word). When the
+signal is a regional dish shared across multiple countries (jollof, kebab,
+shawarma, biryani, dumpling, roti), tag the umbrella (african_west, middle_east,
+south_asian) instead of guessing a specific country."""
 
 # Cuisine taxonomy is the canonical one from cuisines.py.
 import sys as _sys

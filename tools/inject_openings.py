@@ -51,30 +51,13 @@ def url_is_alive(url):
 WINDOW_365 = REFERENCE_DATE - timedelta(days=365)
 WINDOW_30  = REFERENCE_DATE - timedelta(days=30)
 
-CUISINE_PATTERNS = {
-    'caribbean':     ['ROTI','JERK','CARIBBEAN','JAMAICAN','JAMAICA','ACKEE','PATTY','OXTAIL','PLANTAIN','RASTAFAR','RIDDIM','IRIE','RUDIE','REGGAE','ISLAND'],
-    'south_asian':   ['TANDOORI','MASALA','BIRYANI','TIKKA','NAAN','BHATURA','PANEER','DOSA','IDLI','PUNJABI','KARAHI','SAMOSA','KABAB','KEBAB','INDIA','INDIAN','BHOJAN','THALI'],
-    'chinese':       ['WOK','CHINESE','CHINA','DIM SUM','SZECHUAN','SICHUAN','HUNAN','CANTONESE','HONG KONG','CHOPSTICK','BAO','BUBBLE TEA','MANDARIN','HOUSE OF NOODLE','MISTER WOK','BAMBOO','MAJESTIC'],
-    'vietnamese':    ['PHO','BANH MI','BUN ','VIETNAMESE','SAIGON','HANOI','VIETNAM'],
-    'korean':        ['KIMCHI','KOREAN','BIBIMBAP','GANGNAM','SEOUL','HANSAM'],
-    'italian':       ['PIZZA','PIZZERIA','PASTA','RISTORANTE','TRATTORIA','GELATERIA','GELATO','ITALIANO','ITALIA','NAPOLI','MILANO','VERONA','TOSCANA'],
-    'portuguese':    ['PADARIA','PORTUGUESA','PORTUGUESE','PASTEL','BACALAU','PORTUGAL','LISBOA','PORTO'],
-    'greek':         ['SOUVLAKI','GYRO','GREEK','HELLENIC','ATHENS','OLYMPIA','MYKONOS','SANTORINI','ZORBA','KEFI'],
-    'japanese':      ['SUSHI','RAMEN','IZAKAYA','JAPANESE','TOKYO','OSAKA','SAKURA','TERIYAKI','SAKE','TONKATSU','UDON','SOBA'],
-    'filipino':      ['ADOBO','LECHON','KAINAN','FILIPINO','PINOY','MANILA','PINAS','TAGALOG','SARISAR','TANGKE'],
-    'tibetan':       ['MOMO','TIBETAN','TIBET','LHASA','HIMALAY','SHANGRI'],
-    'african_horn':  ['ETHIOPIAN','INJERA','ERITREAN','SOMALI','HABESHA','ADDIS','ASMARA','MOGADISHU','HARGEISA'],
-    'african_west':  ['NIGERIAN','GHANAIAN','SENEGAL','MALI','AFRICAN','SUYA','JOLLOF','EGUSI','FUFU'],
-    'latin':         ['TACO','TAQUERIA','EMPANADA','SALVADOR','LATINO','LATINA','MEXICAN','MEXICO','PERUVIAN','COLOMBIAN','VENEZUELAN','PUPUSAS','CHURRO','ASADO'],
-    'polish':        ['POLSKI','POLSKA','PIEROGI','POLISH','KRAKOW','WARSZAW','KIELBASA'],
-    'middle_east':   ['SHAWARMA','FALAFEL','LEBANESE','SYRIAN','ARABIAN','PERSIAN','IRANIAN','TURKISH','ANATOLIA','BEIRUT','MEDITERRAN'],
-    'tamil':         ['TAMIL','EELAM','JAFFNA','CHENNAI','SRI ','MADRAS','KOTHU'],
-    'irish_uk':      ['IRISH','DUBLIN','CELTIC','KILKENNY','SCOTTISH','HIGHLAND','LONDON','BRITISH','CHIPS & FISH','FISH & CHIPS','PUB'],
-    'french':        ['FRENCH','BISTRO','BRASSERIE','BOULANGERIE','PATISSERIE','CHEZ ','LE PARIS','LYON','MARSEILLE','CROISSANT'],
-    'german':        ['GERMAN','BIERGARTEN','WURST','BAVARIA','SCHWARZWALD','OKTOBER','BRATWURST','SCHNITZEL'],
-    'jewish_deli':   ['KOSHER','BAGEL','KNISH','SHTETL','SHWARTZ','UNITED BAKERS','MATZO','YIDDISH','SCHWARTZS'],
-    'eastern_eu':    ['UKRAINIAN','RUSSIAN','BULGARIAN','HUNGARIAN','ROMANIAN','BORSCHT','PEROGY','PYROGY','VARENY','KYIV','KIEV','ODESA','PRAGUE','GOULASH','CZECH'],
-}
+# (CUISINE_PATTERNS regex-keyword dictionary removed 2026-05-14 — it was a
+# pre-LLM fallback that pattern-matched operating names to cuisines. Now that
+# every entry passes through name-only Haiku in llm_classify_batch.py, the
+# regex layer is duplicative AND coarser — Haiku reads "Jollof King" + Places
+# context and decides; the regex would have committed to african_west on
+# substring "JOLLOF" alone with no nuance. Let Haiku do the work.)
+
 # Canonical cuisine taxonomy — defined in tools/cuisines.py so recovery scripts
 # share the same set. Adding a bucket there is enough; do NOT re-declare here.
 from cuisines import CUISINE_LABEL, normalize_cuisines
@@ -283,6 +266,10 @@ def get_cuisine(name, address):
         # Verifier returned unknown OR null cuisine — fall through to name-only.
 
     # 2. Name-only LLM cache — fallback when web_verify is null/unknown.
+    # This IS Haiku (just operating on name alone). The unified validator gives
+    # Haiku the full Places + verify context when it runs, so high-quality entries
+    # should rarely fall through to this layer alone — but the layer remains for
+    # entries Places couldn't match and web_verify never visited.
     llm = LLM_CACHE.get(key)
     if llm and llm.get('status') == 'ok':
         # Explicit "unknown" verdict from name-only stays a drop (we have ZERO signal)
@@ -294,9 +281,11 @@ def get_cuisine(name, address):
         if valid:
             return valid, 'llm'
 
-    # 3. Keyword fallback — single bucket from regex patterns on the operating name.
-    kw = keyword_classify((name or '').upper())
-    if kw: return [kw], 'keyword'
+    # NOTE: removed the regex keyword_classify fallback (it pattern-matched
+    # operating names against CUISINE_PATTERNS — duplicative of what the
+    # name-only LLM already sees, and a "dumb" signal user explicitly asked to
+    # drop on 2026-05-14). Without web_verify or llm cache classification, the
+    # entry has no Haiku-evaluated cuisine → drop.
     return [], None
 
 def verification_for(name, address):
@@ -347,7 +336,7 @@ from urllib.parse import quote_plus
 # Issued date — that's when the kitchen actually opened, not just when a category was added.
 seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0
 
 # Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
 # destination restaurants. Three orthogonal signals catch them:
@@ -425,7 +414,6 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
 
         # Build candidate entry
         days_open = max(0, (REFERENCE_DATE - iss).days)
-        fallback_maps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
         # Stable, URL-safe slug — kebab-case the name + leading address number for
         # disambiguation across multi-location chains/branches.
         name_part = _re.sub(r'[^\w\s-]', '', op_raw or '').strip().lower()
@@ -442,11 +430,47 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             'daysOpen': days_open,
             'address': addr1,
             'slug': slug,
-            'fallbackMapsUrl': fallback_maps,
         }
         district = district_from_postal(address_full)
         if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
+
+        # Build fallbackMapsUrl LAST, after we know whether geocoding gave us
+        # lat/lng. Coordinate-pin URL (?q=lat,lng) shows the exact spot on the
+        # map with no auto-business-selection. The name+address SEARCH URL is
+        # only safe when Google has the business indexed; for brand-new spots
+        # Google's top hit may be a different business at the same address
+        # (real example 2026-05-14: "EASTERN 828 CAFE & GRILL" search returned
+        # the car wash at 828 Eastern Ave, since the cafe wasn't in Google's
+        # index yet). Coords avoid that handoff entirely.
+        if entry.get('lat') is not None and entry.get('lng') is not None:
+            entry['fallbackMapsUrl'] = f"https://www.google.com/maps/?q={entry['lat']},{entry['lng']}"
+        else:
+            entry['fallbackMapsUrl'] = (
+                f"https://www.google.com/maps/search/?api=1&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
+            )
+
+        # Weak-match drop: if NONE of Places / a working website / a real cuisine
+        # signal exist, we're sending the user to a location we can't verify is
+        # the right place. Better to hide the entry than risk landing them at a
+        # neighbouring business (e.g., EASTERN 828 CAFE → adjacent car wash).
+        # Conditions for "weak":
+        #   - no Places match (no matchedName / no mapsUrl), AND
+        #   - no working website (already dropped by url_is_alive if broken), AND
+        #   - cuisine came from name-only LLM or keyword guess (no real evidence).
+        # These entries will be re-queued for the next cron — their caches'
+        # recovered_at timestamps gate the 30-day re-attempt window, by which
+        # point Google/Yelp/blogs may have indexed the place and a stronger
+        # signal will arrive.
+        weak_match = (
+            not entry.get('matchedName')
+            and not entry.get('mapsUrl')
+            and not entry.get('website')
+            and source in ('llm', 'keyword')
+        )
+        if weak_match:
+            n_dropped_weak_match += 1
+            continue
 
         # Dedupe by (name_upper, addr_upper). Keep EARLIEST issuedDate.
         dedup_key = (op_raw.upper(), addr1.upper())
@@ -469,7 +493,7 @@ for entry in seen_entries.values():
     for c in entry.get('cuisines') or [entry['cuisine']]:
         opens_365_by_cuisine[c].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_deduped} duplicate rows collapsed")
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:

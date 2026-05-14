@@ -25,7 +25,7 @@ Auto-fix loop after results:
   - best_website=new    → update web_verify_cache.website
 """
 import json, sys, time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,11 +38,33 @@ WEB_VERIFY_PATH = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
 PLACES_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
 URL_HEALTH_PATH = ROOT / 'tools' / 'cache' / 'url_health_cache.json'
 
-SYSTEM_PROMPT = """You validate a Toronto restaurant directory entry. You see the
-City's licence data (operating name + address) and the Google Places match we made
-for it (matched name + address + categories + editorial summary + top reviews +
-website Places knows about). You also see whatever website our earlier web_search
-verifier found.
+SYSTEM_PROMPT = """You validate a directory entry for NowServingTO — a curated list
+of Toronto's NEWLY LICENCED small-scale, independent, immigrant-owned ethnic-cuisine
+restaurants (past 12 months).
+
+THE AUDIENCE: Toronto residents seeking specific-country authentic spots opened by
+first-generation diaspora operators — a Lebanese family café, a Sri Lankan hopper
+kitchen, an Argentine empanada window, an Eritrean injera spot, a Sichuan dumpling
+counter. These are the entries we WANT to surface.
+
+We do NOT want to surface — drop with is_restaurant=no:
+  - Chain franchises (Popeyes, KFC, Tim Hortons, Pizza Pizza, Subway, Mary Brown's,
+    McDonald's, Starbucks, etc. — any business with brand-level multi-location presence).
+  - Institutional / B2B food service (Aramark, Compass Group, Sodexo, university or
+    college campus food courts, hospital cafeterias, corporate-office contract kitchens).
+  - Packaged-food brands / factory outlets / wholesalers (Soma Bone Broth, Shimla
+    Foods, Patel Brothers warehouse, Roma Foods factory outlet — places licensed for
+    take-out at a warehouse that sell packaged goods, not prepared dishes).
+  - Grocery stores / supermarkets with a counter selling packaged products (not a
+    hot table or made-to-order kitchen).
+  - Pan-Asian fusion blending 3+ unrelated Asian cuisines (Korean + Hawaiian + bao
+    + banh mi) — that's not authentic to any one diaspora.
+  - American Southern / Cajun / BBQ themed (we have no taxonomy bucket for US South).
+
+You see the City's licence data (operating name + address), the Google Places match
+we made (matched name + address + categories + editorial summary + top reviews +
+Places-known website), the earlier Haiku web_search verifier's results (website +
+evidence), and the name-only LLM's previous cuisine guess.
 
 Return a single JSON object, no prose, no markdown code fences:
 {
@@ -115,7 +137,7 @@ best_website — the URL we should put on the entry's name link:
 evidence — one short sentence quoting the strongest signal that justified the
 above judgments (a review excerpt, an editorial line, a menu phrase)."""
 
-def build_request(entry_key, verify_entry, places_entry):
+def build_request(entry_key, verify_entry, places_entry, llm_entry=None):
     name, _, addr = entry_key.partition('||')
     lines = [f"LICENCE (City of Toronto):", f"  Operating Name: {name}", f"  Address: {addr}", ""]
 
@@ -140,12 +162,22 @@ def build_request(entry_key, verify_entry, places_entry):
     lines.append("")
 
     lines.append("WEB VERIFY (earlier Haiku web_search):")
-    vw = verify_entry.get('website')
-    if vw: lines.append(f"  Website found: {vw}")
-    ev = verify_entry.get('evidence')
-    if ev: lines.append(f"  Evidence: {ev[:300]}")
-    cur_cuisine = verify_entry.get('cuisines') or [verify_entry.get('cuisine')]
-    lines.append(f"  Current cuisine tag(s): {cur_cuisine}")
+    if verify_entry.get('synthesized_for_validator'):
+        lines.append("  (no web_verify entry — this entry surfaced via Places match alone)")
+    else:
+        vw = verify_entry.get('website')
+        if vw: lines.append(f"  Website found: {vw}")
+        ev = verify_entry.get('evidence')
+        if ev: lines.append(f"  Evidence: {ev[:300]}")
+        cur_cuisine = verify_entry.get('cuisines') or [verify_entry.get('cuisine')]
+        lines.append(f"  Current cuisine tag(s): {cur_cuisine}")
+
+    # Name-only LLM guess from llm_cuisine_cache — useful for Haiku to see what
+    # the name-only-Haiku previously concluded, and to either confirm or override
+    # when richer evidence (Places types/editorial/reviews) is also visible above.
+    if llm_entry and llm_entry.get('status') == 'ok':
+        lc = llm_entry.get('cuisines') or [llm_entry.get('cuisine')]
+        lines.append(f"  Name-only LLM previously guessed: {lc}")
 
     return {
         'params': {
@@ -193,13 +225,36 @@ def main():
     wv = json.loads(WEB_VERIFY_PATH.read_text())
     pc = json.loads(PLACES_PATH.read_text()) if PLACES_PATH.exists() else {}
     health = json.loads(URL_HEALTH_PATH.read_text()) if URL_HEALTH_PATH.exists() else {}
+    llm_cache_path = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
+    llm = json.loads(llm_cache_path.read_text()) if llm_cache_path.exists() else {}
 
-    # Targets: every operating-yes entry — whether currently tagged or unknown.
-    # We're validating the whole feed, not just umbrella entries.
-    targets = []
+    # Targets: every entry that the inject pipeline would consider operating —
+    # i.e., either Places returned OPERATIONAL or web_verify said operating=yes.
+    # This catches Places-only entries (e.g., JOLLOF KING) that never went
+    # through web_verify and so were never validated before — they relied on
+    # name-only LLM for cuisine without seeing any Places signal in context.
+    target_keys = set()
     for k, e in wv.items():
-        if e.get('status') != 'ok' or e.get('operating') != 'yes': continue
-        targets.append(k)
+        if e.get('status') == 'ok' and e.get('operating') == 'yes':
+            target_keys.add(k)
+    for k, p in pc.items():
+        if p.get('status') == 'ok' and p.get('businessStatus') == 'OPERATIONAL':
+            target_keys.add(k)
+    # Ensure every target has SOMETHING in web_verify so the apply loop can
+    # write back to it. Synthesize a stub for Places-only entries — same
+    # invariant verification_for() relies on.
+    for k in target_keys:
+        if k not in wv:
+            wv[k] = {'status': 'ok', 'operating': 'yes', 'cuisine': None, 'cuisines': None,
+                     'synthesized_for_validator': True}
+    # Skip entries validated in the last 24h — avoids re-spending on already-
+    # judged entries. Pass --force on the command line to re-validate everything.
+    force = '--force' in sys.argv
+    cutoff_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    if not force:
+        target_keys = {k for k in target_keys
+                       if not wv[k].get('validated_at') or wv[k]['validated_at'] < cutoff_iso}
+    targets = sorted(target_keys)
     print(f"Entries to validate: {len(targets)}")
     print(f"  estimated cost (~$0.001 each): ${len(targets)*0.001:.2f}")
     if not targets: return
@@ -209,7 +264,7 @@ def main():
     for i, k in enumerate(targets):
         cid = f"v{i:04d}"
         id_to_key[cid] = k
-        rec = build_request(k, wv[k], pc.get(k))
+        rec = build_request(k, wv[k], pc.get(k), llm.get(k))
         rec['custom_id'] = cid
         full_requests.append(rec)
 

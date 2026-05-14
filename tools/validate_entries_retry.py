@@ -18,6 +18,8 @@ def main():
     wv = json.loads(WEB_VERIFY_PATH.read_text())
     pc = json.loads(PLACES_PATH.read_text()) if PLACES_PATH.exists() else {}
     health = json.loads(URL_HEALTH_PATH.read_text()) if URL_HEALTH_PATH.exists() else {}
+    llm_cache_path = ROOT / 'tools' / 'cache' / 'llm_cuisine_cache.json'
+    llm = json.loads(llm_cache_path.read_text()) if llm_cache_path.exists() else {}
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
     targets = []
@@ -33,7 +35,7 @@ def main():
     for i, k in enumerate(targets):
         cid = f"r{i:04d}"
         id_to_key[cid] = k
-        rec = build_request(k, wv[k], pc.get(k))
+        rec = build_request(k, wv[k], pc.get(k), llm.get(k))
         rec['params']['max_tokens'] = 800  # was 300; some responses got truncated
         rec['custom_id'] = cid
         requests.append(rec)
