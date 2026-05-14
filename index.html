@@ -148,6 +148,10 @@
     .fading { gap: 6px; margin: 16px 0 12px; }
     .fading .fl { width: 100%; font-size: 9.5px; }
     .fading .fc { padding: 4px 10px; font-size: 11.5px; }
+    /* Drop the % on mobile to fit all 3 chips on one line. The ↓ + Support label
+       still convey trending-down without the data-y exact number. */
+    .fading .fc .fc-rate { display: none; }
+    .fading .fc .fc-down { margin-left: 4px; }
   }
 
   /* List ↔ Map view toggle + map container */
