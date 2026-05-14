@@ -434,7 +434,11 @@ for r in top_for_static:
     name = _esc(r['operatingName'])
     addr = _esc(r.get('address') or '')
     district = _esc(r.get('district') or '')
-    addr_html = f'{addr}<span class="oad-d"> · {district}</span>' if district else addr
+    # Address links to Google Maps for that location — same affordance pattern
+    # as the name link, opens Maps at the spot.
+    addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+    addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
+    addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
     ago = _esc(_ago(r['daysOpen']))
     link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
     # Same-tab navigation — back button cleanly returns to NowServingTO (target="_blank"

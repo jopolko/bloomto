@@ -215,7 +215,6 @@
   .open-feed { background: rgba(45, 165, 92, 0.045); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0; margin-bottom: 28px; }
   .open-row { display: grid; grid-template-columns: 110px 1fr 165px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #ece6d5; }
   .open-row:last-child { border-bottom: 0; }
-  .open-row.row-focused { background: rgba(212, 160, 23, 0.15); box-shadow: inset 3px 0 0 var(--accent); }
   .open-row .od { font: 700 9.5px/1.1 var(--sans); color: var(--moss); text-transform: uppercase; letter-spacing: 0.08em; }
   .open-row .od .ago { display: block; }
   .open-row[data-fresh="hot"] .od .ago { color: var(--fresh); font-size: 10.5px; }
@@ -230,10 +229,10 @@
   .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
   .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
   .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
-  .open-row .on .row-map-jump { display: inline-block; margin-left: 6px; padding: 2px 6px; background: transparent; border: 0; font: 13px var(--sans); cursor: pointer; opacity: 0.45; transition: opacity 0.12s; vertical-align: 1px; }
-  .open-row .on .row-map-jump:hover { opacity: 1; }
   .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
   .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
+  .open-row .on .oad a { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.25); text-decoration-thickness: 1px; text-underline-offset: 2px; transition: color 0.12s, text-decoration-color 0.12s; }
+  .open-row .on .oad a:hover { color: var(--accent); text-decoration-color: var(--accent); text-decoration-style: solid; }
   .open-row .oc { text-align: right; }
   .open-row .oc .pill { font: 700 9.5px/1 var(--sans); padding: 5px 10px; border-radius: 99px; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
   .open-row .oc .row-fav,
@@ -294,36 +293,36 @@
   </div>
   <div class="open-feed" id="open-feed">
     <!-- STATIC-FEED-START — pre-rendered daily by tools/inject_openings.py for crawlers + no-JS visitors. Replaced by interactive JS render on page load. -->
-    <div class="open-row"><div class="od"><span class="ago">licensed today</span></div><div class="on"><a href="https://maps.google.com/?cid=181706776905452721" rel="noopener">MASALA STORY</a><span class="oad">21 DAVENPORT RD<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed today</span></div><div class="on"><a href="https://www.kohakitchen.com/" rel="noopener">KOHA PACIFIC KITCHEN</a><span class="oad">88 QUEENS QUAY W, FC 9<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#7a8a3a">Thai</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 4d ago</span></div><div class="on"><a href="https://www.tanghulutanghulu.com/" rel="noopener">TANGHULU TANGHULU</a><span class="oad">220 YONGE ST, D204<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#b13e6a">Chinese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="http://www.megumimazesoba.com/?utm_source=google&amp;utm_medium=wix_google_business_profile&amp;utm_campaign=5418652516949503628" rel="noopener">MEGUMI MAZESOBA KING WEST</a><span class="oad">367 KING ST W, #01<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.barburrito.ca/location/toronto-lawrence-square/" rel="noopener">BARBURRITO</a><span class="oad">700 LAWRENCE AVE W, #230<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.tumidumpling.com/" rel="noopener">TUMI DUMPLING HOUSE</a><span class="oad">2904 DUNDAS ST W<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#b15a25">Tibetan</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=18380729220290545492" rel="noopener">MAPO KOREAN BBQ CHURCH</a><span class="oad">499 CHURCH ST<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#6b2456">Korean</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://instagram.com/gelatoonthedanny?igshid=YmMyMTA2M2Y=" rel="noopener">GELATO ON THE DANNY</a><span class="oad">1980 DANFORTH AVE<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=6342447307924837949" rel="noopener">JUGAADI STREET</a><span class="oad">872 MARKHAM RD<span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#d4a017">South Asian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://www.uber.com/en-US/delivery/?utm_source=google&amp;utm_campaign=CM_SEM_google_google_brand_core_desktop_new_user&amp;utm_medium=cpc&amp;utm_term=uber%20eats&amp;gclid=CA&amp;utm_content=CA&amp;utm_device=c&amp;utm_network=g&amp;utm_creative=&amp;utm_placement=" rel="noopener">AHMETZADE</a><span class="oad">501 BLOOR ST W, GRND FL<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#a8662a">Turkish</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://www.instagram.com/han_tai_wan" rel="noopener">HAN TAI WAN HONG KONG FUSION CAFE</a><span class="oad">5533 YONGE ST<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#b13e6a">Chinese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://www.paparikoo.com/" rel="noopener">PAPARIKOO MEDITERRANEAN CUISINE</a><span class="oad">1176 THE QUEENSWAY<span class="oad-d"> · Etobicoke</span></span></div><div class="oc"><span class="pill" style="background:#b87a25">Middle Eastern</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=7077802560435530346" rel="noopener">TAQUERIA EL TAPATIO</a><span class="oad">915 DANFORTH AVE<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 8d ago</span></div><div class="on"><a href="http://www.amicochef.com/" rel="noopener">CAFEMIA ITALIAN BAKERY</a><span class="oad">84 OAKDALE RD<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://www.migentecocina.ca/" rel="noopener">MIGENTE COCINA</a><span class="oad">823 DUNDAS ST W<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=4148765465910949539" rel="noopener">LA RUMBA RESTAURANT &amp; LOUNCE SERVICES</a><span class="oad">1363 WILSON AVE, FL2<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#1a8a5a">Caribbean</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 9d ago</span></div><div class="on"><a href="https://mardinrestaurant.ca/" rel="noopener">MARDIN RESTAURANT</a><span class="oad">1300 FINCH AVE W, #6<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#8a4a25">Persian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 9d ago</span></div><div class="on"><a href="https://adibikrampur.ca/" rel="noopener">ADI BIKRAMPUR BOX &amp; BITE</a><span class="oad">3026 DANFORTH AVE, #104<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a06030">Pakistani</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 10d ago</span></div><div class="on"><a href="https://banhmijourney.com/location/bloor_st/" rel="noopener">BANH MI JOURNEY BLOOR</a><span class="oad">706 BLOOR ST W, MAIN<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#4a8b8b">Vietnamese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 10d ago</span></div><div class="on"><a href="https://www.facebook.com/profile.php?id=61555991153547&amp;mibextid=LQQJ4d" rel="noopener">CLAIRE&#39;S PINOY KAKANIN</a><span class="oad">878 WILSON AVE<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#e08226">Filipino</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 10d ago</span></div><div class="on"><a href="https://www.828cafe.com/" rel="noopener">EASTERN 828 CAFE &amp; GRILL</a><span class="oad">828 EASTERN AVE, A<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#7a4a4a">Eastern European</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=16272804573396656143" rel="noopener">TASTE OF VIETNAM RESTAURANT &amp; BAR</a><span class="oad">1 WHITEHORSE RD, #19<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#4a8b8b">Vietnamese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://www.marrymemochi.ca/" rel="noopener">MARRY ME MOCHI</a><span class="oad">2901 BAYVIEW AVE, #107A<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://www.kintonramen.com/location/kinton-ramen-north-york/?utm_source=google&amp;utm_medium=organic&amp;utm_campaign=gbp-listing&amp;utm_content=kinton-ramen-north-york" rel="noopener">KINTON RAMEN</a><span class="oad">5165 YONGE ST<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="http://danforth.cosmicpizza.ca/" rel="noopener">COSMIC PIZZA &amp; DONAIR</a><span class="oad">1307 DANFORTH AVE<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://dilliwalarestaurant.com/" rel="noopener">DILLI WALA</a><span class="oad">2537-2539 PHARMACY AVE<span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=5703064263494572757" rel="noopener">COCO BANH MI</a><span class="oad">222 SPADINA AVE, #128<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#4a8b8b">Vietnamese</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://westonroad.cosmicpizza.ca/" rel="noopener">COSMIC PIZZA &amp; DONAIR</a><span class="oad">70 WESTON RD, #103<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://ishqveg.com/" rel="noopener">ISHQ INDIAN CUISINE</a><span class="oad">2007 EGLINTON AVE E<span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://medalounge.ca" rel="noopener">YEGNA MEDA</a><span class="oad">1397 DANFORTH AVE, MAIN &amp; BST<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed today</span></div><div class="on"><a href="https://maps.google.com/?cid=181706776905452721" rel="noopener">MASALA STORY</a><span class="oad"><a href="https://maps.google.com/?cid=181706776905452721" rel="noopener">21 DAVENPORT RD</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed today</span></div><div class="on"><a href="https://www.kohakitchen.com/" rel="noopener">KOHA PACIFIC KITCHEN</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=KOHA+PACIFIC+KITCHEN+88+QUEENS+QUAY+W%2C+FC+9+Toronto" rel="noopener">88 QUEENS QUAY W, FC 9</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#7a8a3a">Thai</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 4d ago</span></div><div class="on"><a href="https://www.tanghulutanghulu.com/" rel="noopener">TANGHULU TANGHULU</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=TANGHULU+TANGHULU+220+YONGE+ST%2C+D204+Toronto" rel="noopener">220 YONGE ST, D204</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#b13e6a">Chinese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="http://www.megumimazesoba.com/?utm_source=google&amp;utm_medium=wix_google_business_profile&amp;utm_campaign=5418652516949503628" rel="noopener">MEGUMI MAZESOBA KING WEST</a><span class="oad"><a href="https://maps.google.com/?cid=15325289159472385371" rel="noopener">367 KING ST W, #01</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.barburrito.ca/location/toronto-lawrence-square/" rel="noopener">BARBURRITO</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=BARBURRITO+700+LAWRENCE+AVE+W%2C+%23230+Toronto" rel="noopener">700 LAWRENCE AVE W, #230</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.tumidumpling.com/" rel="noopener">TUMI DUMPLING HOUSE</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=TUMI+DUMPLING+HOUSE+2904+DUNDAS+ST+W+Toronto" rel="noopener">2904 DUNDAS ST W</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#b15a25">Tibetan</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=18380729220290545492" rel="noopener">MAPO KOREAN BBQ CHURCH</a><span class="oad"><a href="https://maps.google.com/?cid=18380729220290545492" rel="noopener">499 CHURCH ST</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#6b2456">Korean</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://instagram.com/gelatoonthedanny?igshid=YmMyMTA2M2Y=" rel="noopener">GELATO ON THE DANNY</a><span class="oad"><a href="https://maps.google.com/?cid=13967229013025087832" rel="noopener">1980 DANFORTH AVE</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=6342447307924837949" rel="noopener">JUGAADI STREET</a><span class="oad"><a href="https://maps.google.com/?cid=6342447307924837949" rel="noopener">872 MARKHAM RD</a><span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#d4a017">South Asian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://www.uber.com/en-US/delivery/?utm_source=google&amp;utm_campaign=CM_SEM_google_google_brand_core_desktop_new_user&amp;utm_medium=cpc&amp;utm_term=uber%20eats&amp;gclid=CA&amp;utm_content=CA&amp;utm_device=c&amp;utm_network=g&amp;utm_creative=&amp;utm_placement=" rel="noopener">AHMETZADE</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=AHMETZADE+501+BLOOR+ST+W%2C+GRND+FL+Toronto" rel="noopener">501 BLOOR ST W, GRND FL</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#a8662a">Turkish</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://www.instagram.com/han_tai_wan" rel="noopener">HAN TAI WAN HONG KONG FUSION CAFE</a><span class="oad"><a href="https://maps.google.com/?cid=747921193478882656" rel="noopener">5533 YONGE ST</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#b13e6a">Chinese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://www.paparikoo.com/" rel="noopener">PAPARIKOO MEDITERRANEAN CUISINE</a><span class="oad"><a href="https://maps.google.com/?cid=8695227028051426927" rel="noopener">1176 THE QUEENSWAY</a><span class="oad-d"> · Etobicoke</span></span></div><div class="oc"><span class="pill" style="background:#b87a25">Middle Eastern</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=7077802560435530346" rel="noopener">TAQUERIA EL TAPATIO</a><span class="oad"><a href="https://maps.google.com/?cid=7077802560435530346" rel="noopener">915 DANFORTH AVE</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 8d ago</span></div><div class="on"><a href="http://www.amicochef.com/" rel="noopener">CAFEMIA ITALIAN BAKERY</a><span class="oad"><a href="https://maps.google.com/?cid=11780575892471543014" rel="noopener">84 OAKDALE RD</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://www.migentecocina.ca/" rel="noopener">MIGENTE COCINA</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=MIGENTE+COCINA+823+DUNDAS+ST+W+Toronto" rel="noopener">823 DUNDAS ST W</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=4148765465910949539" rel="noopener">LA RUMBA RESTAURANT &amp; LOUNCE SERVICES</a><span class="oad"><a href="https://maps.google.com/?cid=4148765465910949539" rel="noopener">1363 WILSON AVE, FL2</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#1a8a5a">Caribbean</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 9d ago</span></div><div class="on"><a href="https://mardinrestaurant.ca/" rel="noopener">MARDIN RESTAURANT</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=MARDIN+RESTAURANT+1300+FINCH+AVE+W%2C+%236+Toronto" rel="noopener">1300 FINCH AVE W, #6</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#8a4a25">Persian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 9d ago</span></div><div class="on"><a href="https://adibikrampur.ca/" rel="noopener">ADI BIKRAMPUR BOX &amp; BITE</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=ADI+BIKRAMPUR+BOX+%26+BITE+3026+DANFORTH+AVE%2C+%23104+Toronto" rel="noopener">3026 DANFORTH AVE, #104</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a06030">Pakistani</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 10d ago</span></div><div class="on"><a href="https://banhmijourney.com/location/bloor_st/" rel="noopener">BANH MI JOURNEY BLOOR</a><span class="oad"><a href="https://maps.google.com/?cid=6804157838214615348" rel="noopener">706 BLOOR ST W, MAIN</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#4a8b8b">Vietnamese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 10d ago</span></div><div class="on"><a href="https://www.facebook.com/profile.php?id=61555991153547&amp;mibextid=LQQJ4d" rel="noopener">CLAIRE&#39;S PINOY KAKANIN</a><span class="oad"><a href="https://maps.google.com/?cid=4527776001712029569" rel="noopener">878 WILSON AVE</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#e08226">Filipino</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 10d ago</span></div><div class="on"><a href="https://www.828cafe.com/" rel="noopener">EASTERN 828 CAFE &amp; GRILL</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=EASTERN+828+CAFE+%26+GRILL+828+EASTERN+AVE%2C+A+Toronto" rel="noopener">828 EASTERN AVE, A</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#7a4a4a">Eastern European</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=16272804573396656143" rel="noopener">TASTE OF VIETNAM RESTAURANT &amp; BAR</a><span class="oad"><a href="https://maps.google.com/?cid=16272804573396656143" rel="noopener">1 WHITEHORSE RD, #19</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#4a8b8b">Vietnamese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://www.marrymemochi.ca/" rel="noopener">MARRY ME MOCHI</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=MARRY+ME+MOCHI+2901+BAYVIEW+AVE%2C+%23107A+Toronto" rel="noopener">2901 BAYVIEW AVE, #107A</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://www.kintonramen.com/location/kinton-ramen-north-york/?utm_source=google&amp;utm_medium=organic&amp;utm_campaign=gbp-listing&amp;utm_content=kinton-ramen-north-york" rel="noopener">KINTON RAMEN</a><span class="oad"><a href="https://maps.google.com/?cid=7706564225613743361" rel="noopener">5165 YONGE ST</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="http://danforth.cosmicpizza.ca/" rel="noopener">COSMIC PIZZA &amp; DONAIR</a><span class="oad"><a href="https://maps.google.com/?cid=13655089191309642598" rel="noopener">1307 DANFORTH AVE</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 12d ago</span></div><div class="on"><a href="https://dilliwalarestaurant.com/" rel="noopener">DILLI WALA</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=DILLI+WALA+2537-2539+PHARMACY+AVE+Toronto" rel="noopener">2537-2539 PHARMACY AVE</a><span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=5703064263494572757" rel="noopener">COCO BANH MI</a><span class="oad"><a href="https://maps.google.com/?cid=5703064263494572757" rel="noopener">222 SPADINA AVE, #128</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#4a8b8b">Vietnamese</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://westonroad.cosmicpizza.ca/" rel="noopener">COSMIC PIZZA &amp; DONAIR</a><span class="oad"><a href="https://maps.google.com/?cid=1561706402589521030" rel="noopener">70 WESTON RD, #103</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://ishqveg.com/" rel="noopener">ISHQ INDIAN CUISINE</a><span class="oad"><a href="https://maps.google.com/?cid=13408386530175199737" rel="noopener">2007 EGLINTON AVE E</a><span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
+    <div class="open-row"><div class="od"><span class="ago">licensed 13d ago</span></div><div class="on"><a href="https://medalounge.ca" rel="noopener">YEGNA MEDA</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=YEGNA+MEDA+1397+DANFORTH+AVE%2C+MAIN+%26+BST+Toronto" rel="noopener">1397 DANFORTH AVE, MAIN &amp; BST</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
     <!-- STATIC-FEED-END -->
   </div>
 
@@ -477,7 +476,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const isHot = r.daysOpen <= 30;
     const row = document.createElement('div');
     row.className = 'open-row';
-    if (focusedRow && r.slug && focusedRow.slug === r.slug) row.classList.add('row-focused');
     if (isHot) row.setAttribute('data-fresh', 'hot');
     const trustMatch = !r.matchedName || nameJaccard(r.operatingName, r.matchedName) >= 0.34;
     const link = trustMatch ? (r.website || r.mapsUrl || r.fallbackMapsUrl) : (r.fallbackMapsUrl || null);
@@ -496,12 +494,14 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const unverifiedHtml = (!trustMatch && r.matchedName)
       ? `<span class="unverified" title="Google's matched name (${r.matchedName}) differs too much from the licence name to trust — link suppressed">unverified</span>`
       : '';
+    // Address links to Google Maps for that location — same dotted-underline
+    // affordance pattern as the name link, but for "show me where it is" intent.
+    const addrUrl = r.mapsUrl || r.fallbackMapsUrl;
+    const addrText = r.address || '—';
+    const addrLink = addrUrl ? `<a href="${addrUrl}"${tgt} rel="noopener">${addrText}</a>` : addrText;
     const addrLine = (r.district && currentRegion === '__all')
-      ? `${r.address || '—'}<span class="oad-d"> · ${r.district}</span>`
-      : (r.address || '—');
-    const mapJump = (r.lat && r.lng)
-      ? `<button class="row-map-jump" type="button" aria-label="Solo this on map">📍</button>`
-      : '';
+      ? `${addrLink}<span class="oad-d"> · ${r.district}</span>`
+      : addrLink;
     const saved = r.slug && isSaved(r.slug);
     const favHtml = r.slug
       ? `<button class="row-fav ${saved ? 'fav-on' : ''}" type="button" aria-label="${saved ? 'Remove from saved' : 'Save for later'}">${saved ? '♥' : '♡'}</button>`
@@ -514,7 +514,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       : '';
     row.innerHTML = `
       <div class="od"><span class="ago">${agoLabel(r.daysOpen)}</span></div>
-      <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}${mapJump}<span class="oad">${addrLine}</span></div>
+      <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}<span class="oad">${addrLine}</span></div>
       <div class="oc">${favHtml}${shareHtml}<span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>`;
     const favBtn = row.querySelector('.row-fav');
     if (favBtn) {
@@ -533,23 +533,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       shareBtn.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation();
         window.__nsShare(r.slug, shareBtn);
-      });
-    }
-    const jumpBtn = row.querySelector('.row-map-jump');
-    if (jumpBtn) {
-      jumpBtn.addEventListener('click', e => {
-        e.preventDefault(); e.stopPropagation();
-        focusedRow = r;
-        paintFeed();  // re-render list with .row-focused on the clicked row
-        history.pushState({nstoView: 'map-solo', slug: r.slug}, '', location.pathname + location.search + location.hash);
-        setView('map');
-        if (!mapInitialized) initMap();
-        setTimeout(() => {
-          if (!mapInstance) return;
-          renderMapPins();
-          mapInstance.setView([r.lat, r.lng], 17);
-          mapMarkers.eachLayer(m => m.openPopup());
-        }, 100);
       });
     }
     return row;
@@ -661,11 +644,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     });
   }
   function applyFilters(cuisineKey, regionKey, updateHash=true) {
-    // Clear single-listing focus when any filter changes — user is exploring,
-    // not still looking at the original pinned entry.
-    if (focusedRow && (cuisineKey !== currentCuisine || regionKey !== currentRegion)) {
-      focusedRow = null;
-    }
     currentCuisine = cuisineKey;
     currentRegion = regionKey;
     // Recompute counts for both dropdowns under the new filter state
@@ -725,17 +703,23 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     }
   }
 
-  // Per-listing share link `/r/{slug}` — focus the entry: highlights its row
-  // and scrolls to it. focusedRow makes paintFeed apply the .row-focused class.
+  // Per-listing share link `/r/{slug}` — scroll to the matching row and flash-
+  // highlight it briefly so the user can see where it lives in the list.
   if (pathListingMatch) {
     const slug = pathListingMatch[1];
     const target = no.recent.find(r => r.slug === slug);
     if (target) {
-      focusedRow = target;
-      applyFilters('__all', '__all', false);  // also calls paintFeed → row-focused class applied
+      applyFilters('__all', '__all', false);
       setTimeout(() => {
-        const focusedEl = document.querySelector('.open-row.row-focused');
-        if (focusedEl) focusedEl.scrollIntoView({behavior: 'smooth', block: 'center'});
+        for (const row of document.querySelectorAll('.open-row')) {
+          if (row.textContent.includes(target.operatingName)) {
+            row.scrollIntoView({behavior: 'smooth', block: 'center'});
+            row.style.transition = 'background 0.4s';
+            row.style.background = 'rgba(212, 160, 23, 0.18)';
+            setTimeout(() => row.style.background = '', 2200);
+            break;
+          }
+        }
       }, 200);
       document.title = `${target.operatingName} — NowServingTO`;
       const link = document.querySelector('link[rel="canonical"]');
@@ -808,7 +792,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   var userMarker = null;
   var userLatLng = null;
   var mapInitialized = false;
-  var focusedRow = null;       // when set, renderMapPins shows ONLY this row's pin
 
 
   // 📱 Send to phone — show a QR code linking to Google Maps with the
@@ -886,11 +869,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   function renderMapPins() {
     if (!mapInitialized) return;
     mapMarkers.clearLayers();
-    // When a single listing is focused (from clicking 📍 in a list row), render
-    // only that pin so the user isn't lost in a sea of others.
-    const rows = focusedRow
-      ? [focusedRow]
-      : currentRows.filter(r => r.lat && r.lng);
+    const rows = currentRows.filter(r => r.lat && r.lng);
     const PIN_COLOR = '#1a7340';  // var(--fresh) — same green as walking route
     // Permanent name labels are useful when there are few pins (e.g. filtered to
     // a small cuisine). Above ~25 they crowd the map and we let clicks reveal names.
@@ -1069,16 +1048,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     refreshSavedToggle();
     renderFeed();
     renderMapPins();
-  });
-
-  // Browser back from the "📍 solo on map" state returns to list view + keeps
-  // the row highlighted so the user can see where they were.
-  window.addEventListener('popstate', () => {
-    if (!document.getElementById('map-view').hidden) {
-      setView('list');
-      // The highlight on focusedRow persists in paintFeed until any filter
-      // changes — gives the user visual anchor on where they were.
-    }
   });
 
 }).catch(err => {
