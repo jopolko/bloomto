@@ -103,15 +103,30 @@ variations are SAME business, return "yes":
   - "SHAKE 'N CHICK" vs "Shake & Chick" — punctuation rendering → yes
   - Same brand transliterated / translated, same address → yes
 
-BE STRICT on address agreement and business type — these are "no":
-  - Same address, completely different business: "EASTERN 828 CAFE & GRILL"
-    at 828 Eastern Ave vs Places "Eastern-Leslie Car Wash" with
-    types=[car_wash,…] → no
-  - Same address, school/medical/retail vs restaurant: "KALIMERA FOOD KITCHEN"
-    vs Places "The Laurel School" → no
-  - Same brand name but DIFFERENT physical address (≥500m apart, different
-    street number): LENA'S ROTI licence 3999 Keele vs Places match LENA'S
-    ROTI 4207 Keele → no (different physical operation we'd be linking to)
+BE STRICT on address: same brand at a different physical address ≥500m apart
+is "no", not "yes". LENA'S ROTI licence 3999 Keele vs Places match LENA'S
+ROTI 4207 Keele → no (different physical operation; user would land on the
+wrong location).
+
+On business TYPE — use judgment, not a checklist. Restaurant licences cover
+cafes, bars, bakeries, food trucks, ghost kitchens, meal-takeaway counters,
+ice cream shops — Places' `types` field can flag any of these and they're
+all fine. Use the type signal AS PART OF the larger same-business question:
+"is the Places match plausibly the consumer-restaurant business named on
+the permit?" Cases where the answer is clearly NO (illustrative, not
+exhaustive):
+  - Permit clearly a cafe/grill, Places match is car_wash with car-wash
+    reviews — completely different business at same address
+  - Permit a food kitchen, Places match is a school/medical-spa/dentist —
+    completely different
+  - Permit a restaurant, Places match is a grocery store ONLY (types =
+    [grocery_or_supermarket] alone, no food/restaurant) — different
+    operation type
+The point isn't to require exact type alignment; it's to catch
+"completely-different-business-at-same-address" failures. When types are
+restaurant-adjacent (bakery, cafe, bar, meal_takeaway, food, point_of_interest,
+etc.), trust Haiku judgment from the FULL evidence (name overlap, address
+agreement, editorial, reviews, business status).
 
 If Places returned no match at all → "no_match" (distinct from "no"; means
 we have no data to compare, not that we have data and it's wrong).
