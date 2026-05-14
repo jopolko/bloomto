@@ -432,7 +432,7 @@ function agoLabel(days) {
   return (days/365).toFixed(1) + 'y ago';
 }
 
-fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
+fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   const no = data.newOpenings;
   const gen = new Date(data.generatedAt);
   const upd = document.getElementById('last-update');
@@ -511,6 +511,9 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       jumpBtn.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation();
         focusedRow = r;
+        // Push a history state so the browser back button returns to list view
+        // (with the row still highlighted) instead of leaving the site.
+        history.pushState({nstoView: 'map-solo', slug: r.slug}, '', location.pathname + location.search + location.hash);
         setView('map');
         if (!mapInitialized) initMap();
         setTimeout(() => {
@@ -1289,9 +1292,19 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   // works in both list and map view; no auto-switch.
   document.getElementById('locate-btn').addEventListener('click', locateUser);
 
+  // Browser back from the "📍 solo on map" state returns to list view + keeps
+  // the row highlighted so the user can see where they were.
+  window.addEventListener('popstate', () => {
+    if (!document.getElementById('map-view').hidden) {
+      setView('list');
+      // The highlight on focusedRow persists in paintFeed until any filter
+      // changes — gives the user visual anchor on where they were.
+    }
+  });
+
 }).catch(err => {
-  document.getElementById('open-feed').innerHTML = '<div class="empty">error loading data — see console</div>';
-  console.error(err);
+  document.getElementById('open-feed').innerHTML = '<div class="empty">error loading data — ' + (err && err.message ? err.message : String(err)) + '</div>';
+  console.error('NSTO load error:', err && err.stack ? err.stack : err);
 });
 </script>
 
