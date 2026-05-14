@@ -181,7 +181,13 @@
 
   .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 24px 0 14px; }
   @media (max-width: 600px) {
-    /* On narrow screens drop the labels off Near me + Saved so the row fits one line */
+    /* Two-row layout: cuisine + region split 50/50 on row 1; near-me + saved +
+       view-toggle pack together on row 2. Avoids the 3-row wrap that happens
+       when each dropdown wants its full desktop min-width. */
+    .filters { gap: 6px; }
+    .filters .cuisine-picker { flex: 1 1 calc(50% - 3px); min-width: 0; }
+    .filters .cuisine-picker .cp-trigger { min-width: 0; width: 100%; }
+    /* Compact icon-only buttons for Near me + Saved on row 2 */
     .filters #locate-btn { font-size: 0; padding: 7px 10px; }
     .filters #locate-btn::before { content: '📍'; font-size: 14px; }
     .filters #saved-toggle { font-size: 0; padding: 7px 10px; }
