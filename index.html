@@ -11,6 +11,16 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="apple-touch-icon" href="/favicon.svg">
 
+<!-- Google Analytics 4. Distinct page_view events fire automatically for /, /cuisine/X,
+     and /r/X since gtag reads location.pathname on each route. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1GZN9MX2P4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-1GZN9MX2P4');
+</script>
+
 <!-- Leaflet for the optional map view. Loaded eagerly because the toggle is cheap;
      map only inits on first toggle to Map view. ~80 KB total. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -20,6 +30,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 
 <!-- Open Graph for sharing previews -->
 <meta property="og:type" content="website">
@@ -60,7 +71,7 @@
 </script>
 <script type="application/ld+json" id="ld-itemlist">
 <!-- LD-ITEMLIST-START -->
-{"@context":"https://schema.org","@type":"ItemList","name":"Toronto's newest restaurants by cuisine","description":"Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Restaurant","name":"MASALA STORY","address":{"@type":"PostalAddress","streetAddress":"21 DAVENPORT RD","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Indian","dateOpened":"2026-05-13"}},{"@type":"ListItem","position":2,"item":{"@type":"Restaurant","name":"KOHA PACIFIC KITCHEN","address":{"@type":"PostalAddress","streetAddress":"88 QUEENS QUAY W, FC 9","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Thai","dateOpened":"2026-05-13","url":"https://www.kohakitchen.com/"}},{"@type":"ListItem","position":3,"item":{"@type":"Restaurant","name":"TANGHULU TANGHULU","address":{"@type":"PostalAddress","streetAddress":"220 YONGE ST, D204","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Chinese","dateOpened":"2026-05-10","url":"https://www.tanghulutanghulu.com/"}},{"@type":"ListItem","position":4,"item":{"@type":"Restaurant","name":"AFC/ZENSHI SUSHI","address":{"@type":"PostalAddress","streetAddress":"3300 BLOOR ST W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-09","url":"http://www.sushionbloor.com/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.4,"reviewCount":2644}}},{"@type":"ListItem","position":5,"item":{"@type":"Restaurant","name":"MEGUMI MAZESOBA KING WEST","address":{"@type":"PostalAddress","streetAddress":"367 KING ST W, #01","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-09","url":"http://www.megumimazesoba.com/?utm_source=google&utm_medium=wix_google_business_profile&utm_campaign=5418652516949503628","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":659}}},{"@type":"ListItem","position":6,"item":{"@type":"Restaurant","name":"BARBURRITO","address":{"@type":"PostalAddress","streetAddress":"700 LAWRENCE AVE W, #230","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Mexican","dateOpened":"2026-05-09","url":"https://www.barburrito.ca/location/toronto-lawrence-square/"}},{"@type":"ListItem","position":7,"item":{"@type":"Restaurant","name":"TUMI DUMPLING HOUSE","address":{"@type":"PostalAddress","streetAddress":"2904 DUNDAS ST W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Tibetan","dateOpened":"2026-05-09","url":"https://www.tumidumpling.com/"}},{"@type":"ListItem","position":8,"item":{"@type":"Restaurant","name":"MAPO KOREAN BBQ CHURCH","address":{"@type":"PostalAddress","streetAddress":"499 CHURCH ST","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Korean","dateOpened":"2026-05-09","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":3659}}},{"@type":"ListItem","position":9,"item":{"@type":"Restaurant","name":"GELATO ON THE DANNY","address":{"@type":"PostalAddress","streetAddress":"1980 DANFORTH AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Italian","dateOpened":"2026-05-08","url":"https://instagram.com/gelatoonthedanny?igshid=YmMyMTA2M2Y=","aggregateRating":{"@type":"AggregateRating","ratingValue":4.9,"reviewCount":385}}},{"@type":"ListItem","position":10,"item":{"@type":"Restaurant","name":"JUGAADI STREET","address":{"@type":"PostalAddress","streetAddress":"872 MARKHAM RD","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"South Asian","dateOpened":"2026-05-08","url":"https://www.instagram.com/jugaadistreet/"}},{"@type":"ListItem","position":11,"item":{"@type":"Restaurant","name":"AHMETZADE","address":{"@type":"PostalAddress","streetAddress":"501 BLOOR ST W, GRND FL","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Turkish","dateOpened":"2026-05-08","url":"https://www.uber.com/en-US/delivery/?utm_source=google&utm_campaign=CM_SEM_google_google_brand_core_desktop_new_user&utm_medium=cpc&utm_term=uber%20eats&gclid=CA&utm_content=CA&utm_device=c&utm_network=g&utm_creative=&utm_placement="}},{"@type":"ListItem","position":12,"item":{"@type":"Restaurant","name":"HAN TAI WAN HONG KONG FUSION CAFE","address":{"@type":"PostalAddress","streetAddress":"5533 YONGE ST","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Chinese","dateOpened":"2026-05-08","url":"https://www.instagram.com/han_tai_wan","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":239}}},{"@type":"ListItem","position":13,"item":{"@type":"Restaurant","name":"PAPARIKOO MEDITERRANEAN CUISINE","address":{"@type":"PostalAddress","streetAddress":"1176 THE QUEENSWAY","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Middle Eastern","dateOpened":"2026-05-07","url":"https://www.paparikoo.com/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.6,"reviewCount":458}}},{"@type":"ListItem","position":14,"item":{"@type":"Restaurant","name":"TAQUERIA EL TAPATIO","address":{"@type":"PostalAddress","streetAddress":"915 DANFORTH AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Mexican","dateOpened":"2026-05-07","aggregateRating":{"@type":"AggregateRating","ratingValue":5,"reviewCount":104}}},{"@type":"ListItem","position":15,"item":{"@type":"Restaurant","name":"CAFEMIA ITALIAN BAKERY","address":{"@type":"PostalAddress","streetAddress":"84 OAKDALE RD","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Italian","dateOpened":"2026-05-06","url":"http://www.amicochef.com/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.6,"reviewCount":1093}}},{"@type":"ListItem","position":16,"item":{"@type":"Restaurant","name":"MIGENTE COCINA","address":{"@type":"PostalAddress","streetAddress":"823 DUNDAS ST W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Mexican","dateOpened":"2026-05-06","url":"https://www.migentecocina.ca/"}},{"@type":"ListItem","position":17,"item":{"@type":"Restaurant","name":"LA RUMBA RESTAURANT & LOUNCE SERVICES","address":{"@type":"PostalAddress","streetAddress":"1363 WILSON AVE, FL2","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Caribbean","dateOpened":"2026-05-06","url":"https://www.instagram.com/la_rumbarestaurant/"}},{"@type":"ListItem","position":18,"item":{"@type":"Restaurant","name":"ZENSHI FORT YORK","address":{"@type":"PostalAddress","streetAddress":"500 LAKE SHORE BLVD W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-05","url":"https://www.zenshisushi.com"}},{"@type":"ListItem","position":19,"item":{"@type":"Restaurant","name":"MARDIN RESTAURANT","address":{"@type":"PostalAddress","streetAddress":"1300 FINCH AVE W, #6","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Persian","dateOpened":"2026-05-05","url":"https://mardinrestaurant.ca/"}},{"@type":"ListItem","position":20,"item":{"@type":"Restaurant","name":"ADI BIKRAMPUR BOX & BITE","address":{"@type":"PostalAddress","streetAddress":"3026 DANFORTH AVE, #104","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Pakistani","dateOpened":"2026-05-05","url":"https://adibikrampur.ca/"}},{"@type":"ListItem","position":21,"item":{"@type":"Restaurant","name":"BANH MI JOURNEY BLOOR","address":{"@type":"PostalAddress","streetAddress":"706 BLOOR ST W, MAIN","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Vietnamese","dateOpened":"2026-05-04","url":"https://banhmijourney.com/location/bloor_st/","aggregateRating":{"@type":"AggregateRating","ratingValue":5,"reviewCount":19}}},{"@type":"ListItem","position":22,"item":{"@type":"Restaurant","name":"CLAIRE'S PINOY KAKANIN","address":{"@type":"PostalAddress","streetAddress":"878 WILSON AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Filipino","dateOpened":"2026-05-04","url":"https://www.facebook.com/profile.php?id=61555991153547&mibextid=LQQJ4d","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":16}}},{"@type":"ListItem","position":23,"item":{"@type":"Restaurant","name":"EASTERN 828 CAFE & GRILL","address":{"@type":"PostalAddress","streetAddress":"828 EASTERN AVE, A","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Eastern European","dateOpened":"2026-05-04","url":"https://www.828cafe.com/"}},{"@type":"ListItem","position":24,"item":{"@type":"Restaurant","name":"TASTE OF VIETNAM RESTAURANT & BAR","address":{"@type":"PostalAddress","streetAddress":"1 WHITEHORSE RD, #19","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Vietnamese","dateOpened":"2026-05-02","aggregateRating":{"@type":"AggregateRating","ratingValue":4.7,"reviewCount":366}}},{"@type":"ListItem","position":25,"item":{"@type":"Restaurant","name":"MARRY ME MOCHI","address":{"@type":"PostalAddress","streetAddress":"2901 BAYVIEW AVE, #107A","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-02","url":"https://www.marrymemochi.ca/"}},{"@type":"ListItem","position":26,"item":{"@type":"Restaurant","name":"KINTON RAMEN","address":{"@type":"PostalAddress","streetAddress":"5165 YONGE ST","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-02","url":"https://www.kintonramen.com/location/kinton-ramen-north-york/?utm_source=google&utm_medium=organic&utm_campaign=gbp-listing&utm_content=kinton-ramen-north-york","aggregateRating":{"@type":"AggregateRating","ratingValue":4.4,"reviewCount":3424}}},{"@type":"ListItem","position":27,"item":{"@type":"Restaurant","name":"COSMIC PIZZA & DONAIR","address":{"@type":"PostalAddress","streetAddress":"1307 DANFORTH AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Italian","dateOpened":"2026-05-02","url":"http://danforth.cosmicpizza.ca/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.6,"reviewCount":212}}},{"@type":"ListItem","position":28,"item":{"@type":"Restaurant","name":"DILLI WALA","address":{"@type":"PostalAddress","streetAddress":"2537-2539 PHARMACY AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Indian","dateOpened":"2026-05-02","url":"https://dilliwalarestaurant.com/"}},{"@type":"ListItem","position":29,"item":{"@type":"Restaurant","name":"COCO BANH MI","address":{"@type":"PostalAddress","streetAddress":"222 SPADINA AVE, #128","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Vietnamese","dateOpened":"2026-05-01","aggregateRating":{"@type":"AggregateRating","ratingValue":5,"reviewCount":8}}},{"@type":"ListItem","position":30,"item":{"@type":"Restaurant","name":"AFC/ZENSHI SUSHI","address":{"@type":"PostalAddress","streetAddress":"125 THE QUEENSWAY","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-01","url":"https://www.zenkyoto.ca/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.5,"reviewCount":25}}}]}
+{"@context":"https://schema.org","@type":"ItemList","name":"Toronto's newest restaurants by cuisine","description":"Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.","itemListElement":[{"@type":"ListItem","position":1,"item":{"@type":"Restaurant","name":"MASALA STORY","address":{"@type":"PostalAddress","streetAddress":"21 DAVENPORT RD","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Indian","dateOpened":"2026-05-13"}},{"@type":"ListItem","position":2,"item":{"@type":"Restaurant","name":"KOHA PACIFIC KITCHEN","address":{"@type":"PostalAddress","streetAddress":"88 QUEENS QUAY W, FC 9","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Thai","dateOpened":"2026-05-13","url":"https://www.kohakitchen.com/"}},{"@type":"ListItem","position":3,"item":{"@type":"Restaurant","name":"TANGHULU TANGHULU","address":{"@type":"PostalAddress","streetAddress":"220 YONGE ST, D204","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Chinese","dateOpened":"2026-05-10","url":"https://www.tanghulutanghulu.com/"}},{"@type":"ListItem","position":4,"item":{"@type":"Restaurant","name":"AFC/ZENSHI SUSHI","address":{"@type":"PostalAddress","streetAddress":"3300 BLOOR ST W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-09","url":"http://www.sushionbloor.com/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.4,"reviewCount":2644}}},{"@type":"ListItem","position":5,"item":{"@type":"Restaurant","name":"MEGUMI MAZESOBA KING WEST","address":{"@type":"PostalAddress","streetAddress":"367 KING ST W, #01","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-09","url":"http://www.megumimazesoba.com/?utm_source=google&utm_medium=wix_google_business_profile&utm_campaign=5418652516949503628","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":659}}},{"@type":"ListItem","position":6,"item":{"@type":"Restaurant","name":"BARBURRITO","address":{"@type":"PostalAddress","streetAddress":"700 LAWRENCE AVE W, #230","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Mexican","dateOpened":"2026-05-09","url":"https://www.barburrito.ca/location/toronto-lawrence-square/"}},{"@type":"ListItem","position":7,"item":{"@type":"Restaurant","name":"TUMI DUMPLING HOUSE","address":{"@type":"PostalAddress","streetAddress":"2904 DUNDAS ST W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Tibetan","dateOpened":"2026-05-09","url":"https://www.tumidumpling.com/"}},{"@type":"ListItem","position":8,"item":{"@type":"Restaurant","name":"MAPO KOREAN BBQ CHURCH","address":{"@type":"PostalAddress","streetAddress":"499 CHURCH ST","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Korean","dateOpened":"2026-05-09","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":3659}}},{"@type":"ListItem","position":9,"item":{"@type":"Restaurant","name":"GELATO ON THE DANNY","address":{"@type":"PostalAddress","streetAddress":"1980 DANFORTH AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Italian","dateOpened":"2026-05-08","url":"https://instagram.com/gelatoonthedanny?igshid=YmMyMTA2M2Y=","aggregateRating":{"@type":"AggregateRating","ratingValue":4.9,"reviewCount":385}}},{"@type":"ListItem","position":10,"item":{"@type":"Restaurant","name":"JUGAADI STREET","address":{"@type":"PostalAddress","streetAddress":"872 MARKHAM RD","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"South Asian","dateOpened":"2026-05-08","aggregateRating":{"@type":"AggregateRating","ratingValue":4.5,"reviewCount":278}}},{"@type":"ListItem","position":11,"item":{"@type":"Restaurant","name":"AHMETZADE","address":{"@type":"PostalAddress","streetAddress":"501 BLOOR ST W, GRND FL","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Turkish","dateOpened":"2026-05-08","url":"https://www.uber.com/en-US/delivery/?utm_source=google&utm_campaign=CM_SEM_google_google_brand_core_desktop_new_user&utm_medium=cpc&utm_term=uber%20eats&gclid=CA&utm_content=CA&utm_device=c&utm_network=g&utm_creative=&utm_placement="}},{"@type":"ListItem","position":12,"item":{"@type":"Restaurant","name":"HAN TAI WAN HONG KONG FUSION CAFE","address":{"@type":"PostalAddress","streetAddress":"5533 YONGE ST","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Chinese","dateOpened":"2026-05-08","url":"https://www.instagram.com/han_tai_wan","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":239}}},{"@type":"ListItem","position":13,"item":{"@type":"Restaurant","name":"PAPARIKOO MEDITERRANEAN CUISINE","address":{"@type":"PostalAddress","streetAddress":"1176 THE QUEENSWAY","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Middle Eastern","dateOpened":"2026-05-07","url":"https://www.paparikoo.com/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.6,"reviewCount":458}}},{"@type":"ListItem","position":14,"item":{"@type":"Restaurant","name":"TAQUERIA EL TAPATIO","address":{"@type":"PostalAddress","streetAddress":"915 DANFORTH AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Mexican","dateOpened":"2026-05-07","aggregateRating":{"@type":"AggregateRating","ratingValue":5,"reviewCount":104}}},{"@type":"ListItem","position":15,"item":{"@type":"Restaurant","name":"CAFEMIA ITALIAN BAKERY","address":{"@type":"PostalAddress","streetAddress":"84 OAKDALE RD","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Italian","dateOpened":"2026-05-06","url":"http://www.amicochef.com/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.6,"reviewCount":1093}}},{"@type":"ListItem","position":16,"item":{"@type":"Restaurant","name":"MIGENTE COCINA","address":{"@type":"PostalAddress","streetAddress":"823 DUNDAS ST W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Mexican","dateOpened":"2026-05-06","url":"https://www.migentecocina.ca/"}},{"@type":"ListItem","position":17,"item":{"@type":"Restaurant","name":"LA RUMBA RESTAURANT & LOUNCE SERVICES","address":{"@type":"PostalAddress","streetAddress":"1363 WILSON AVE, FL2","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Caribbean","dateOpened":"2026-05-06","aggregateRating":{"@type":"AggregateRating","ratingValue":4.2,"reviewCount":250}}},{"@type":"ListItem","position":18,"item":{"@type":"Restaurant","name":"ZENSHI FORT YORK","address":{"@type":"PostalAddress","streetAddress":"500 LAKE SHORE BLVD W","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-05","url":"https://www.zenshisushi.com"}},{"@type":"ListItem","position":19,"item":{"@type":"Restaurant","name":"MARDIN RESTAURANT","address":{"@type":"PostalAddress","streetAddress":"1300 FINCH AVE W, #6","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Persian","dateOpened":"2026-05-05","url":"https://mardinrestaurant.ca/"}},{"@type":"ListItem","position":20,"item":{"@type":"Restaurant","name":"ADI BIKRAMPUR BOX & BITE","address":{"@type":"PostalAddress","streetAddress":"3026 DANFORTH AVE, #104","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Pakistani","dateOpened":"2026-05-05","url":"https://adibikrampur.ca/"}},{"@type":"ListItem","position":21,"item":{"@type":"Restaurant","name":"BANH MI JOURNEY BLOOR","address":{"@type":"PostalAddress","streetAddress":"706 BLOOR ST W, MAIN","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Vietnamese","dateOpened":"2026-05-04","url":"https://banhmijourney.com/location/bloor_st/","aggregateRating":{"@type":"AggregateRating","ratingValue":5,"reviewCount":19}}},{"@type":"ListItem","position":22,"item":{"@type":"Restaurant","name":"CLAIRE'S PINOY KAKANIN","address":{"@type":"PostalAddress","streetAddress":"878 WILSON AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Filipino","dateOpened":"2026-05-04","url":"https://www.facebook.com/profile.php?id=61555991153547&mibextid=LQQJ4d","aggregateRating":{"@type":"AggregateRating","ratingValue":4.8,"reviewCount":16}}},{"@type":"ListItem","position":23,"item":{"@type":"Restaurant","name":"EASTERN 828 CAFE & GRILL","address":{"@type":"PostalAddress","streetAddress":"828 EASTERN AVE, A","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Eastern European","dateOpened":"2026-05-04","url":"https://www.828cafe.com/"}},{"@type":"ListItem","position":24,"item":{"@type":"Restaurant","name":"TASTE OF VIETNAM RESTAURANT & BAR","address":{"@type":"PostalAddress","streetAddress":"1 WHITEHORSE RD, #19","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Vietnamese","dateOpened":"2026-05-02","aggregateRating":{"@type":"AggregateRating","ratingValue":4.7,"reviewCount":366}}},{"@type":"ListItem","position":25,"item":{"@type":"Restaurant","name":"MARRY ME MOCHI","address":{"@type":"PostalAddress","streetAddress":"2901 BAYVIEW AVE, #107A","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-02","url":"https://www.marrymemochi.ca/"}},{"@type":"ListItem","position":26,"item":{"@type":"Restaurant","name":"KINTON RAMEN","address":{"@type":"PostalAddress","streetAddress":"5165 YONGE ST","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-02","url":"https://www.kintonramen.com/location/kinton-ramen-north-york/?utm_source=google&utm_medium=organic&utm_campaign=gbp-listing&utm_content=kinton-ramen-north-york","aggregateRating":{"@type":"AggregateRating","ratingValue":4.4,"reviewCount":3424}}},{"@type":"ListItem","position":27,"item":{"@type":"Restaurant","name":"COSMIC PIZZA & DONAIR","address":{"@type":"PostalAddress","streetAddress":"1307 DANFORTH AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Italian","dateOpened":"2026-05-02","url":"http://danforth.cosmicpizza.ca/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.6,"reviewCount":212}}},{"@type":"ListItem","position":28,"item":{"@type":"Restaurant","name":"DILLI WALA","address":{"@type":"PostalAddress","streetAddress":"2537-2539 PHARMACY AVE","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Indian","dateOpened":"2026-05-02","url":"https://dilliwalarestaurant.com/"}},{"@type":"ListItem","position":29,"item":{"@type":"Restaurant","name":"COCO BANH MI","address":{"@type":"PostalAddress","streetAddress":"222 SPADINA AVE, #128","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Vietnamese","dateOpened":"2026-05-01","aggregateRating":{"@type":"AggregateRating","ratingValue":5,"reviewCount":8}}},{"@type":"ListItem","position":30,"item":{"@type":"Restaurant","name":"AFC/ZENSHI SUSHI","address":{"@type":"PostalAddress","streetAddress":"125 THE QUEENSWAY","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":"Japanese","dateOpened":"2026-05-01","url":"https://www.zenkyoto.ca/","aggregateRating":{"@type":"AggregateRating","ratingValue":4.5,"reviewCount":25}}}]}
 <!-- LD-ITEMLIST-END -->
 </script>
 <style>
@@ -125,6 +136,7 @@
   .fading .fc { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 11px; border: 1px solid var(--line); border-radius: 99px; background: var(--paper); font: 600 12px/1 var(--serif); color: var(--ink2); cursor: pointer; transition: border-color 0.12s, color 0.12s, background 0.12s; flex-shrink: 0; }
   .fading .fc:hover { border-color: var(--ink2); color: var(--ink); background: #fff; }
   .fading .fc .fc-rate { font: 500 10.5px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+  .fading .fc .fc-down { font: 700 14px/1 var(--sans); color: var(--accent); margin-left: 1px; vertical-align: -1px; }
   @media (max-width: 600px) {
     .fading { gap: 6px; margin: 16px 0 12px; }
     .fading .fl { width: 100%; font-size: 9.5px; }
@@ -147,8 +159,9 @@
   @media (max-width: 600px) {
     #map { height: 60vh; min-height: 360px; }
   }
-  /* Pin styles for cuisine-colored markers + 'you are here' marker */
-  .cuisine-pin span { display: block; width: 20px; height: 20px; border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
+  /* Restaurant pins: uniform green so a zoomed-in map reads as one cohesive layer
+     instead of a rainbow of cuisine codes (cuisine is still shown in the popup). */
+  .cuisine-pin span { display: block; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
   .user-pin span { display: block; width: 18px; height: 18px; border-radius: 50%; background: #2a72ff; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(42,114,255,0.3); }
   .leaflet-popup-content { font: 14px/1.4 var(--serif); margin: 12px 14px; }
   .leaflet-popup-content .pop-name { font: 700 14px var(--serif); color: var(--ink); }
@@ -181,9 +194,29 @@
   .transit-panel .ts-tr .ts-line { font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 6px; }
   .transit-panel .ts-tr .ts-stops { font: 11.5px var(--mono); color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
   .transit-panel .ts-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .transit-panel .tp-foot { border-top: 1px solid var(--line); padding: 10px 12px; background: rgba(45, 165, 92, 0.045); }
+  .transit-panel .tp-phone { width: 100%; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
+  .transit-panel .tp-phone:hover { background: var(--accent); }
+  /* Phone button injected into LRM's walk/drive sidebar */
+  .leaflet-routing-container .lrm-phone-btn { display: block; width: calc(100% - 20px); margin: 8px 10px 10px; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
+  .leaflet-routing-container .lrm-phone-btn:hover { background: var(--accent); }
   @media (max-width: 600px) {
     .transit-panel { width: calc(100% - 20px); right: 10px; max-height: 45vh; }
   }
+  /* 📱 Send-to-phone modal: full-page overlay with a centered QR card */
+  .phone-modal { position: fixed; inset: 0; background: rgba(21,17,13,0.55); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .phone-modal .pm-card { background: var(--paper); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.3); max-width: 380px; width: 100%; padding: 18px 20px 16px; font: 14px var(--sans); }
+  .phone-modal .pm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .phone-modal .pm-title { font: 700 14px var(--sans); color: var(--ink); }
+  .phone-modal .pm-close { background: transparent; border: 0; color: var(--muted); font: 700 22px/1 var(--sans); cursor: pointer; padding: 0 4px; }
+  .phone-modal .pm-close:hover { color: var(--ink); }
+  .phone-modal .pm-name { font: 700 16px/1.2 var(--serif); color: var(--ink); margin: 4px 0 10px; }
+  .phone-modal .pm-qr { display: flex; justify-content: center; margin: 6px 0 10px; }
+  .phone-modal .pm-qr img { display: block; image-rendering: pixelated; }
+  .phone-modal .pm-hint { font: italic 12.5px/1.4 var(--serif); color: var(--ink2); text-align: center; margin: 4px 4px 10px; }
+  .phone-modal .pm-url { font: 11px/1.4 var(--mono); color: var(--muted); word-break: break-all; text-align: center; padding-top: 6px; border-top: 1px solid var(--line); }
+  .phone-modal .pm-url a { color: var(--muted); text-decoration: none; }
+  .phone-modal .pm-url a:hover { color: var(--ink); }
 
   .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 24px 0 14px; }
   .filters .filter-clear { font: 600 11px/1 var(--sans); color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: 0; padding: 4px 6px; }
@@ -220,6 +253,8 @@
   .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
   .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
   .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
+  .open-row .on .row-map-jump { display: inline-block; margin-left: 6px; padding: 2px 6px; background: transparent; border: 0; font: 13px var(--sans); cursor: pointer; opacity: 0.5; transition: opacity 0.12s; vertical-align: 1px; }
+  .open-row .on .row-map-jump:hover { opacity: 1; }
   .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
   .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
   .open-row .oc { text-align: right; }
@@ -258,7 +293,7 @@
 <main class="wrap">
 
   <div class="fading" id="fading" hidden>
-    <span class="fl">Support fading cuisines</span>
+    <span class="fl">Support</span>
     <div class="fc-row" id="fading-chips"></div>
   </div>
   <div class="filters">
@@ -273,7 +308,7 @@
     <button id="locate-btn" class="map-btn" type="button" aria-label="Find restaurants near me">📍 Near me</button>
     <div class="view-toggle" role="tablist" aria-label="View mode">
       <button class="vt-btn vt-active" data-view="list" role="tab" aria-selected="true">List</button>
-      <button class="vt-btn" data-view="map" role="tab" aria-selected="false">📍 Map</button>
+      <button class="vt-btn" data-view="map" role="tab" aria-selected="false">Map</button>
     </div>
   </div>
   <div class="open-feed" id="open-feed">
@@ -287,14 +322,14 @@
     <div class="open-row"><div class="od">2026-05-09<span class="ago">licensed 4d ago</span></div><div class="on"><a href="https://www.tumidumpling.com/" target="_blank" rel="noopener">TUMI DUMPLING HOUSE</a><span class="oad">2904 DUNDAS ST W<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#b15a25">Tibetan</span></div></div>
     <div class="open-row"><div class="od">2026-05-09<span class="ago">licensed 4d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=18380729220290545492" target="_blank" rel="noopener">MAPO KOREAN BBQ CHURCH</a><span class="oad">499 CHURCH ST<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#6b2456">Korean</span></div></div>
     <div class="open-row"><div class="od">2026-05-08<span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://instagram.com/gelatoonthedanny?igshid=YmMyMTA2M2Y=" target="_blank" rel="noopener">GELATO ON THE DANNY</a><span class="oad">1980 DANFORTH AVE<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
-    <div class="open-row"><div class="od">2026-05-08<span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.instagram.com/jugaadistreet/" target="_blank" rel="noopener">JUGAADI STREET</a><span class="oad">872 MARKHAM RD<span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#d4a017">South Asian</span></div></div>
+    <div class="open-row"><div class="od">2026-05-08<span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=6342447307924837949" target="_blank" rel="noopener">JUGAADI STREET</a><span class="oad">872 MARKHAM RD<span class="oad-d"> · Scarborough</span></span></div><div class="oc"><span class="pill" style="background:#d4a017">South Asian</span></div></div>
     <div class="open-row"><div class="od">2026-05-08<span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.uber.com/en-US/delivery/?utm_source=google&amp;utm_campaign=CM_SEM_google_google_brand_core_desktop_new_user&amp;utm_medium=cpc&amp;utm_term=uber%20eats&amp;gclid=CA&amp;utm_content=CA&amp;utm_device=c&amp;utm_network=g&amp;utm_creative=&amp;utm_placement=" target="_blank" rel="noopener">AHMETZADE</a><span class="oad">501 BLOOR ST W, GRND FL<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#a8662a">Turkish</span></div></div>
     <div class="open-row"><div class="od">2026-05-08<span class="ago">licensed 5d ago</span></div><div class="on"><a href="https://www.instagram.com/han_tai_wan" target="_blank" rel="noopener">HAN TAI WAN HONG KONG FUSION CAFE</a><span class="oad">5533 YONGE ST<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#b13e6a">Chinese</span></div></div>
     <div class="open-row"><div class="od">2026-05-07<span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://www.paparikoo.com/" target="_blank" rel="noopener">PAPARIKOO MEDITERRANEAN CUISINE</a><span class="oad">1176 THE QUEENSWAY<span class="oad-d"> · Etobicoke</span></span></div><div class="oc"><span class="pill" style="background:#b87a25">Middle Eastern</span></div></div>
     <div class="open-row"><div class="od">2026-05-07<span class="ago">licensed 6d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=7077802560435530346" target="_blank" rel="noopener">TAQUERIA EL TAPATIO</a><span class="oad">915 DANFORTH AVE<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
     <div class="open-row"><div class="od">2026-05-06<span class="ago">licensed 7d ago</span></div><div class="on"><a href="http://www.amicochef.com/" target="_blank" rel="noopener">CAFEMIA ITALIAN BAKERY</a><span class="oad">84 OAKDALE RD<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#c83624">Italian</span></div></div>
     <div class="open-row"><div class="od">2026-05-06<span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://www.migentecocina.ca/" target="_blank" rel="noopener">MIGENTE COCINA</a><span class="oad">823 DUNDAS ST W<span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#d63d2a">Mexican</span></div></div>
-    <div class="open-row"><div class="od">2026-05-06<span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://www.instagram.com/la_rumbarestaurant/" target="_blank" rel="noopener">LA RUMBA RESTAURANT &amp; LOUNCE SERVICES</a><span class="oad">1363 WILSON AVE, FL2<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#1a8a5a">Caribbean</span></div></div>
+    <div class="open-row"><div class="od">2026-05-06<span class="ago">licensed 7d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=4148765465910949539" target="_blank" rel="noopener">LA RUMBA RESTAURANT &amp; LOUNCE SERVICES</a><span class="oad">1363 WILSON AVE, FL2<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#1a8a5a">Caribbean</span></div></div>
     <div class="open-row"><div class="od">2026-05-05<span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://www.zenshisushi.com" target="_blank" rel="noopener">ZENSHI FORT YORK</a><span class="oad">500 LAKE SHORE BLVD W<span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#2f3aa3">Japanese</span></div></div>
     <div class="open-row"><div class="od">2026-05-05<span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://mardinrestaurant.ca/" target="_blank" rel="noopener">MARDIN RESTAURANT</a><span class="oad">1300 FINCH AVE W, #6<span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#8a4a25">Persian</span></div></div>
     <div class="open-row"><div class="od">2026-05-05<span class="ago">licensed 8d ago</span></div><div class="on"><a href="https://adibikrampur.ca/" target="_blank" rel="noopener">ADI BIKRAMPUR BOX &amp; BITE</a><span class="oad">3026 DANFORTH AVE, #104<span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a06030">Pakistani</span></div></div>
@@ -340,21 +375,33 @@ const CUISINE_PALETTE = {
   ethiopian:'#a0522d', eritrean:'#8a4528', somali:'#b06530',
   nigerian:'#4a7a30', ghanaian:'#6a8a40', moroccan:'#b87a2a',
   indonesian:'#7a6a40', malaysian:'#5a7a55', burmese:'#8a7050',
+  cambodian:'#7a5a3a', laotian:'#8a6a4a',
+  sri_lankan:'#b8702a', nepalese:'#a05a25',
+  cuban:'#2a8a6a', dominican:'#256a8a',
+  spanish:'#c8553a',
+  israeli:'#3a6a8a', egyptian:'#b88a4a', yemeni:'#a05a30', armenian:'#9b3a3a', georgian:'#7a4a8a',
+  argentinian:'#5a8aa0', venezuelan:'#c8a838',
+  senegalese:'#7a8a30',
 };
 const CUISINE_LABEL = {
   italian:'Italian', chinese:'Chinese', japanese:'Japanese', korean:'Korean',
   vietnamese:'Vietnamese', filipino:'Filipino', thai:'Thai',
   indonesian:'Indonesian', malaysian:'Malaysian', burmese:'Burmese',
+  cambodian:'Cambodian', laotian:'Laotian',
   south_asian:'South Asian', indian:'Indian', pakistani:'Pakistani', afghan:'Afghan',
   bangladeshi:'Bangladeshi', tamil:'Tamil', tibetan:'Tibetan',
+  sri_lankan:'Sri Lankan', nepalese:'Nepalese',
   caribbean:'Caribbean', jamaican:'Jamaican', trinidadian:'Trinidadian', guyanese:'Guyanese', haitian:'Haitian',
+  cuban:'Cuban', dominican:'Dominican',
   greek:'Greek', portuguese:'Portuguese', polish:'Polish', french:'French',
-  irish_uk:'Irish/UK', german:'German', jewish_deli:'Jewish deli',
+  irish_uk:'Irish/UK', german:'German', jewish_deli:'Jewish deli', spanish:'Spanish',
   eastern_eu:'Eastern European', ukrainian:'Ukrainian', russian:'Russian', hungarian:'Hungarian',
   middle_east:'Middle Eastern', lebanese:'Lebanese', turkish:'Turkish', syrian:'Syrian', persian:'Persian',
-  latin:'Latin American', mexican:'Mexican', salvadoran:'Salvadoran', peruvian:'Peruvian', colombian:'Colombian', brazilian:'Brazilian',
+  israeli:'Israeli', egyptian:'Egyptian', yemeni:'Yemeni', armenian:'Armenian', georgian:'Georgian',
+  latin:'Latin American', mexican:'Mexican', salvadoran:'Salvadoran', peruvian:'Peruvian',
+  colombian:'Colombian', brazilian:'Brazilian', argentinian:'Argentinian', venezuelan:'Venezuelan',
   african_horn:'East African', ethiopian:'Ethiopian', eritrean:'Eritrean', somali:'Somali',
-  african_west:'West African', nigerian:'Nigerian', ghanaian:'Ghanaian', moroccan:'Moroccan',
+  african_west:'West African', nigerian:'Nigerian', ghanaian:'Ghanaian', moroccan:'Moroccan', senegalese:'Senegalese',
 };
 
 const NAME_STOP = new Set(['THE','AND','OF','RESTAURANT','CAFE','BAR','GRILL','KITCHEN','TORONTO','INC','LTD','CO','CORP','CUISINE','HOUSE','SHOP','MARKET','STORE','FOOD','FOODS','SUPER','PLACE','SPOT','EATERY','BISTRO','PUB','BAKERY','DELI','DINER','LOUNGE']);
@@ -446,10 +493,34 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const addrLine = (r.district && currentRegion === '__all')
       ? `${r.address || '—'}<span class="oad-d"> · ${r.district}</span>`
       : (r.address || '—');
+    // Map-jump affordance only renders when the entry actually has coords —
+    // otherwise the button leads to a missing pin.
+    const mapJump = (r.lat && r.lng)
+      ? `<button class="row-map-jump" type="button" aria-label="Show on map" data-slug="${r.slug||''}" data-lat="${r.lat}" data-lng="${r.lng}">📍</button>`
+      : '';
     row.innerHTML = `
       <div class="od">${r.issuedDate}<span class="ago">${agoLabel(r.daysOpen)}</span></div>
-      <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}<span class="oad">${addrLine}</span></div>
+      <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}${mapJump}<span class="oad">${addrLine}</span></div>
       <div class="oc"><span class="pill" style="background:${color}">${CUISINE_LABEL[r.cuisine] || r.cuisine}</span></div>`;
+    const jumpBtn = row.querySelector('.row-map-jump');
+    if (jumpBtn) {
+      jumpBtn.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        setView('map');
+        if (!mapInitialized) initMap();
+        setTimeout(() => {
+          if (!mapInstance) return;
+          mapInstance.setView([r.lat, r.lng], 16);
+          // Find the marker for this entry and open its popup
+          mapMarkers.eachLayer(m => {
+            const ll = m.getLatLng();
+            if (Math.abs(ll.lat - r.lat) < 1e-6 && Math.abs(ll.lng - r.lng) < 1e-6) {
+              m.openPopup();
+            }
+          });
+        }, 120);
+      });
+    }
     return row;
   }
   function paintFeed() {
@@ -581,13 +652,68 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       if (location.hash !== newHash) history.replaceState(null, '', location.pathname + location.search + newHash);
     }
   }
-  // Restore filters from URL hash on load — sticky across refreshes + share-links
+  // Initial filter state. Priority:
+  //   1. URL hash (`#cuisine=X&region=Y`) — sticky across refreshes + share-links
+  //   2. URL path (`/cuisine/X`) — SEO landing pages
+  //   3. defaults
+  const pathCuisineMatch = location.pathname.match(/^\/cuisine\/([a-z_]+)\/?$/);
+  const pathListingMatch = location.pathname.match(/^\/r\/([\w-]+)\/?$/);
   const hashCuisine = (location.hash.match(/cuisine=([a-z_]+)/) || [])[1];
   const hashRegion = (location.hash.match(/region=([^&]+)/) || [])[1];
-  const initialCuisine = (hashCuisine && no.cuisines.some(c => c.key === hashCuisine)) ? hashCuisine : '__all';
+  const cuisineFromUrl = hashCuisine || (pathCuisineMatch && pathCuisineMatch[1]);
+  const initialCuisine = (cuisineFromUrl && no.cuisines.some(c => c.key === cuisineFromUrl)) ? cuisineFromUrl : '__all';
   const decodedRegion = hashRegion ? decodeURIComponent(hashRegion) : '';
   const initialRegion = DISTRICTS.includes(decodedRegion) ? decodedRegion : '__all';
   applyFilters(initialCuisine, initialRegion, false);
+
+  // Cuisine landing pages get a per-cuisine title + description for SEO. Done
+  // post-render since the JS app boots from a single index.html in all cases.
+  if (initialCuisine !== '__all' && pathCuisineMatch) {
+    const c = no.cuisines.find(x => x.key === initialCuisine);
+    if (c) {
+      const t = `Toronto's newest ${c.label} restaurants — NowServingTO`;
+      document.title = t;
+      const desc = `A daily-fresh list of every new ${c.label} restaurant licensed in Toronto in the past 365 days. ${c.count365d} entries currently tracked.`;
+      const setMeta = (sel, attr, val) => {
+        const el = document.querySelector(sel);
+        if (el) el.setAttribute(attr, val);
+      };
+      setMeta('meta[name="description"]', 'content', desc);
+      setMeta('meta[property="og:title"]', 'content', t);
+      setMeta('meta[property="og:description"]', 'content', desc);
+      setMeta('meta[name="twitter:title"]', 'content', t);
+      setMeta('meta[name="twitter:description"]', 'content', desc);
+      setMeta('link[rel="canonical"]', 'href', `https://nowservingto.com/cuisine/${c.key}`);
+    }
+  }
+
+  // Per-listing share link `/r/{slug}` — find the entry, scroll to its row in
+  // the list and (if user goes to map) open its popup.
+  if (pathListingMatch) {
+    const slug = pathListingMatch[1];
+    const target = no.recent.find(r => r.slug === slug);
+    if (target) {
+      // Clear any filters that might be hiding this entry
+      applyFilters('__all', '__all', false);
+      // Scroll to it and flash-highlight (no map auto-open — keep predictable)
+      setTimeout(() => {
+        const rows = document.querySelectorAll('.open-row');
+        for (const row of rows) {
+          if (row.textContent.includes(target.operatingName)) {
+            row.scrollIntoView({behavior: 'smooth', block: 'center'});
+            row.style.transition = 'background 0.4s';
+            row.style.background = 'rgba(212, 160, 23, 0.18)';
+            setTimeout(() => row.style.background = '', 1800);
+            break;
+          }
+        }
+      }, 150);
+      // Update title/canonical for the listing
+      document.title = `${target.operatingName} — NowServingTO`;
+      const link = document.querySelector('link[rel="canonical"]');
+      if (link) link.setAttribute('href', `https://nowservingto.com/r/${slug}`);
+    }
+  }
 
   // Reusable dropdown toggle/close for both pickers. allPickers lets each picker
   // close the others on open — fixes the "both open at once" overlap bug since
@@ -626,13 +752,17 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     applyFilters(currentCuisine, key);
   });
 
-  // Brand-as-home: clicking NowServingTO resets to All cuisines + scrolls to top, no full reload
+  // Brand-as-reload: clicking NowServingTO clears any filter hash and reloads
+  // the page so fresh corridors.json + index.html are revalidated.
   const brandLink = document.getElementById('brand-link');
   if (brandLink) {
     brandLink.addEventListener('click', e => {
       e.preventDefault();
-      applyFilters('__all', '__all');
-      window.scrollTo({top: 0, behavior: 'smooth'});
+      if (location.hash || location.search) {
+        // strip filter hash, then reload — replacing rather than pushing avoids polluting history
+        history.replaceState(null, '', '/');
+      }
+      location.reload();
     });
   }
 
@@ -653,7 +783,7 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
         const btn = document.createElement('button');
         btn.className = 'fc';
         btn.dataset.key = c.key;
-        btn.innerHTML = `${CUISINE_LABEL[c.key] || c.label} <span class="fc-rate">${c.rate1y.toFixed(0)}%↓</span>`;
+        btn.innerHTML = `${CUISINE_LABEL[c.key] || c.label} <span class="fc-rate">${c.rate1y.toFixed(0)}%</span><span class="fc-down">↓</span>`;
         btn.title = `${c.rate1y.toFixed(0)}% of ${c.label} licences closed in the last 12 months — click to find a newcomer`;
         btn.addEventListener('click', () => {
           applyFilters(c.key, '__all');
@@ -729,7 +859,25 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   }
   window.__nsClearTransit = clearTransit;
 
-  async function showTransit(destLat, destLng) {
+  function injectPhoneIntoRoutingPanel(destLat, destLng, encodedName) {
+    const container = document.querySelector('.leaflet-routing-container');
+    if (!container || container.querySelector('.lrm-phone-btn')) return;
+    const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
+    const btn = document.createElement('button');
+    btn.className = 'lrm-phone-btn';
+    btn.type = 'button';
+    btn.textContent = onMobile ? '🗺️ Directions' : '📱 To phone';
+    btn.addEventListener('click', () => {
+      if (onMobile) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank', 'noopener');
+      } else {
+        sendToPhone(destLat, destLng, encodedName || '');
+      }
+    });
+    container.appendChild(btn);
+  }
+
+  async function showTransit(destLat, destLng, encodedName) {
     // Same userLatLng / geolocation flow as showRoute
     if (typeof L === 'undefined') { alert('Map library still loading.'); return; }
     if (!userLatLng) {
@@ -741,7 +889,7 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       }, err => {
         const msg = err.code === 1 ? 'Permission denied.' : 'Location unavailable.';
         alert(msg);
-      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+      }, { enableHighAccuracy: false, timeout: 25000, maximumAge: 300000 });
       return;
     }
     if (!mapInitialized) initMap();
@@ -793,11 +941,46 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     if (allCoords.length) mapInstance.fitBounds(allCoords, { padding: [40, 40] });
 
     // Build summary panel
-    renderTransitPanel(route);
+    renderTransitPanel(route, destLat, destLng, encodedName);
   }
   window.__nsTransit = showTransit;
 
-  function renderTransitPanel(route) {
+  // 📱 Send to phone — show a QR code linking to Google Maps with the
+  // destination pre-filled. Phone's camera scans → opens in its native Maps app
+  // (Google on Android, Apple Maps via Safari handoff on iOS) with directions
+  // ready. We let the phone provide its own current location as the origin —
+  // more reliable than passing our (possibly browser-cached) lat/lng across.
+  function sendToPhone(lat, lng, encodedName) {
+    const name = decodeURIComponent(encodedName || '');
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` +
+                    (name ? `&destination_place_id=&travelmode=walking` : '');
+    if (typeof qrcode !== 'function') { alert('QR library still loading — try again in a moment.'); return; }
+    const qr = qrcode(0, 'M');
+    qr.addData(mapsUrl);
+    qr.make();
+    const imgTag = qr.createImgTag(6, 12);
+
+    const modal = document.createElement('div');
+    modal.className = 'phone-modal';
+    modal.innerHTML = `
+      <div class="pm-card" role="dialog" aria-label="Send to phone">
+        <div class="pm-head">
+          <span class="pm-title">📱 Open on your phone</span>
+          <button class="pm-close" aria-label="Close">×</button>
+        </div>
+        <div class="pm-name">${name || 'Restaurant'}</div>
+        <div class="pm-qr">${imgTag}</div>
+        <div class="pm-hint">Scan with your phone's camera to open directions in Google Maps.</div>
+        <div class="pm-url"><a href="${mapsUrl}" target="_blank" rel="noopener">${mapsUrl}</a></div>
+      </div>`;
+    const close = () => modal.remove();
+    modal.querySelector('.pm-close').addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.body.appendChild(modal);
+  }
+  window.__nsSendToPhone = sendToPhone;
+
+  function renderTransitPanel(route, destLat, destLng, encodedName) {
     clearTransit.__keepLayers = true;  // (not used, just a marker)
     transitPanel = document.createElement('div');
     transitPanel.className = 'transit-panel';
@@ -821,13 +1004,25 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
         <div class="ts-stops"><span>${dep}</span> → <span>${arr}</span> · ${dur} min</div>
       </div>`;
     }).join('');
+    const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
+    const phoneCta = onMobile
+      ? `<button class="tp-phone" type="button">🗺️ Directions</button>`
+      : `<button class="tp-phone" type="button">📱 To phone</button>`;
     transitPanel.innerHTML = `
       <div class="tp-head">
         <span class="tp-total">🚇 ${totalMin} min total</span>
         <button class="tp-close" type="button" aria-label="Clear transit route">×</button>
       </div>
-      <div class="tp-steps">${steps}</div>`;
+      <div class="tp-steps">${steps}</div>
+      <div class="tp-foot">${phoneCta}</div>`;
     transitPanel.querySelector('.tp-close').addEventListener('click', clearTransit);
+    transitPanel.querySelector('.tp-phone').addEventListener('click', () => {
+      if (onMobile) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`, '_blank', 'noopener');
+      } else {
+        sendToPhone(destLat, destLng, encodedName || '');
+      }
+    });
     document.getElementById('map-view').appendChild(transitPanel);
   }
   // Near-me is a proximity-based spatial filter that REPLACES the region pick.
@@ -850,28 +1045,36 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       return;
     }
     mapInstance = L.map('map', { preferCanvas: true }).setView([43.6532, -79.3832], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://openstreetmap.org/copyright">OpenStreetMap</a>',
+    // CartoDB Voyager: full-color basemap (parks/water/streets look alive) but
+    // strips most POI icons so our green pins are the only "where to eat" signal.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
       maxZoom: 19,
     }).addTo(mapInstance);
     mapMarkers = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50 });
     mapInstance.addLayer(mapMarkers);
     mapInitialized = true;
     renderMapPins();
+    // Frame to actually fit the current pins (downtown-centered default cuts off
+    // West-Toronto/Parkdale and Scarborough). Cap zoom so a sparse set doesn't
+    // over-zoom into a single block.
+    const coords = currentRows.filter(r => r.lat && r.lng).map(r => [r.lat, r.lng]);
+    if (coords.length >= 2) mapInstance.fitBounds(coords, { padding: [30, 30], maxZoom: 13 });
   }
 
   function renderMapPins() {
     if (!mapInitialized) return;
     mapMarkers.clearLayers();
     const rows = currentRows.filter(r => r.lat && r.lng);
+    const PIN_COLOR = '#1a7340';  // var(--fresh) — same green as walking route
     rows.forEach(r => {
-      const color = CUISINE_PALETTE[r.cuisine] || '#999';
       const m = L.marker([r.lat, r.lng], {
         icon: L.divIcon({
           className: 'cuisine-pin',
-          html: `<span style="background:${color}"></span>`,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          html: `<span style="background:${PIN_COLOR}"></span>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
         }),
       });
       m.bindPopup(() => buildPopupHtml(r), { maxWidth: 280 });
@@ -891,25 +1094,53 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const dist = userLatLng
       ? `<div class="pop-dist">${haversineKm(userLatLng, [r.lat, r.lng]).toFixed(1)} km away</div>`
       : '';
+    const shareUrl = r.slug ? `https://nowservingto.com/r/${r.slug}` : null;
+    const shareLink = shareUrl
+      ? `<button class="pop-share" onclick="window.__nsCopyShare('${shareUrl}', this)" title="Copy share link">🔗 Copy link</button>`
+      : '';
     // Always show route buttons. If location isn't granted yet, showRoute() will
     // prompt for it and auto-route once acquired.
+    // On mobile, the user IS the phone — open Google Maps directly. On desktop,
+    // show a QR for handoff to a separate phone.
+    const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
+    const encName = encodeURIComponent(r.operatingName||'');
+    const phoneBtn = onMobile
+      ? `<button class="pop-btn" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}','_blank','noopener')">🗺️ Directions</button>`
+      : `<button class="pop-btn" onclick="window.__nsSendToPhone(${r.lat},${r.lng},'${encName}')">📱 To phone</button>`;
     const routeBtns = `
       <div class="pop-routes">
-        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'walking')">🚶 Walk</button>
-        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'driving')">🚗 Drive</button>
-        <button class="pop-btn" onclick="window.__nsTransit(${r.lat},${r.lng})">🚇 TTC</button>
+        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'walking','${encName}')">🚶 Walk</button>
+        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'driving','${encName}')">🚗 Drive</button>
+        <button class="pop-btn" onclick="window.__nsTransit(${r.lat},${r.lng},'${encName}')">🚇 TTC</button>
+        ${phoneBtn}
       </div>`;
     return `
       <div class="pop-name">${r.operatingName}</div>
       <div class="pop-addr">${r.address || ''}${r.district ? ' · ' + r.district : ''}</div>
       <div class="pop-cuisine">${cuisineLbl}</div>
       ${dist}
-      ${routeBtns}`;
+      ${routeBtns}
+      ${shareLink}`;
   }
+  // Copy-to-clipboard for the share link inside a popup. Falls back to a manual
+  // prompt if clipboard API isn't available (older browsers).
+  window.__nsCopyShare = (url, btn) => {
+    const done = () => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(() => { prompt('Copy this link:', url); });
+    } else {
+      prompt('Copy this link:', url);
+    }
+  };
 
   // Draw a real route (walking or driving) from userLatLng to [destLat, destLng] using
   // OSRM. Replaces any existing route. Exposed on window so popup HTML can call it.
-  function showRoute(destLat, destLng, profile) {
+  function showRoute(destLat, destLng, profile, encodedName) {
     if (typeof L === 'undefined' || !L.Routing) { alert('Routing library still loading — try again in a moment.'); return; }
     // If we don't have the user's location yet, kick off the geolocation flow and
     // chain into the route once it's granted. One-time consent gets both done.
@@ -918,13 +1149,13 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       navigator.geolocation.getCurrentPosition(pos => {
         userLatLng = [pos.coords.latitude, pos.coords.longitude];
         setNearMeActive(true);  // also turn on the proximity filter
-        showRoute(destLat, destLng, profile);  // re-enter now that we have coords
+        showRoute(destLat, destLng, profile, encodedName);  // re-enter now that we have coords
       }, err => {
         const msg = err.code === 1 ? 'Permission denied — enable location in your browser.'
                   : err.code === 2 ? 'Location unavailable right now.'
                   : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
         alert(msg);
-      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+      }, { enableHighAccuracy: false, timeout: 25000, maximumAge: 300000 });
       return;
     }
     // Ensure the map is initialized and visible
@@ -954,6 +1185,10 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       routingControl.on('routingerror', () => {
         alert('Could not compute a route — the routing service may be busy. Try again in a few seconds.');
         if (routingControl) { mapInstance.removeControl(routingControl); routingControl = null; }
+      });
+      // Inject a "to phone" button into the LRM sidebar once it renders.
+      routingControl.on('routesfound', () => {
+        setTimeout(() => injectPhoneIntoRoutingPanel(destLat, destLng, encodedName), 50);
       });
     } catch (e) {
       console.error('routing error', e);
@@ -1001,7 +1236,7 @@ fetch('data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
                 : err.code === 2 ? 'Location unavailable right now.'
                 : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
       alert(msg);
-    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+    }, { enableHighAccuracy: false, timeout: 25000, maximumAge: 300000 });
   }
 
   function setView(v) {

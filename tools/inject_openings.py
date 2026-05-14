@@ -271,6 +271,13 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # Build candidate entry
         days_open = max(0, (REFERENCE_DATE - iss).days)
         fallback_maps = f"https://www.google.com/maps/search/?api=1&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
+        # Stable, URL-safe slug — kebab-case the name + leading address number for
+        # disambiguation across multi-location chains/branches.
+        name_part = _re.sub(r'[^\w\s-]', '', op_raw or '').strip().lower()
+        name_part = _re.sub(r'[\s_]+', '-', name_part).strip('-')
+        addr_num_m = _re.match(r'^(\d+)', (addr1 or '').strip())
+        addr_num = addr_num_m.group(1) if addr_num_m else ''
+        slug = (name_part + (f'-{addr_num}' if addr_num else ''))[:80]
         entry = {
             'operatingName': op_raw,
             'cuisine': cuisine,
@@ -278,6 +285,7 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             'issuedDate': iss.isoformat(),
             'daysOpen': days_open,
             'address': addr1,
+            'slug': slug,
             'fallbackMapsUrl': fallback_maps,
         }
         district = district_from_postal(address_full)
@@ -443,20 +451,26 @@ try:
 except Exception as e:
     print(f"  WARN: index.html injection failed: {e}")
 
-# Write sitemap.xml with today's lastmod
+# Write sitemap.xml with today's lastmod + one URL per cuisine landing page so
+# Google indexes "newest ethiopian toronto" etc. separately from the home page.
+url_blocks = [
+    f'  <url>\n    <loc>{SITE_BASE}/</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n  </url>'
+]
+for c in cuisines_out:
+    # Only sitemap cuisines with at least 3 verified openings — anything thinner
+    # won't rank meaningfully and risks looking like a thin-content page to Google.
+    if c.get('count365d', 0) < 3: continue
+    url_blocks.append(
+        f'  <url>\n    <loc>{SITE_BASE}/cuisine/{c["key"]}</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>'
+    )
 sitemap = (
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-    f'  <url>\n'
-    f'    <loc>{SITE_BASE}/</loc>\n'
-    f'    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n'
-    f'    <changefreq>daily</changefreq>\n'
-    f'    <priority>1.0</priority>\n'
-    f'  </url>\n'
+    + '\n'.join(url_blocks) + '\n'
     '</urlset>\n'
 )
 with open(SITEMAP_PATH, 'w') as f: f.write(sitemap)
-print(f"  wrote sitemap.xml")
+print(f"  wrote sitemap.xml ({len(url_blocks)} URLs)")
 
 print(f"Injected newOpenings into {DATA_PATH}")
 print(f"  {n_food_active_365:,} active food licences issued in last 365d")

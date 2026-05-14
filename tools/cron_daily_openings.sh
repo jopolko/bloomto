@@ -107,6 +107,13 @@ if ! "$PYTHON" -u tools/check_link_health.py >> "$LOG_FILE" 2>&1; then
     log "WARN: link health check failed (non-fatal)"
 fi
 
+# Step 5a: for entries the verifier left on social (Instagram/FB), ask Google Places
+# for the proper Maps profile or own-website. ~$0.017 × daily-delta-social = pennies.
+log "→ places_enrich_socials.py (upgrade social-link entries to Google Maps)"
+if ! "$PYTHON" -u tools/places_enrich_socials.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: social-link Places enrichment failed (non-fatal — entries stay on social)"
+fi
+
 # Step 5b: geocode addresses for entries missing lat/lng (powers the map view).
 # Uses free Nominatim @ 1 req/sec; the daily delta is ~5-15 addresses so this
 # adds ~10-20s per cron. Skips any address already geocoded.

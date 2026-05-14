@@ -46,14 +46,15 @@ LIMITER = RateLimiter(RATE_PER_MINUTE)
 
 VALID_KEYS = {
     'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan',
-    'caribbean','jamaican','trinidadian','guyanese','haitian',
-    'greek','portuguese','polish','french','irish_uk','german','jewish_deli',
+    'cambodian','laotian',
+    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan','sri_lankan','nepalese',
+    'caribbean','jamaican','trinidadian','guyanese','haitian','cuban','dominican',
+    'greek','portuguese','polish','french','irish_uk','german','jewish_deli','spanish',
     'eastern_eu','ukrainian','russian','hungarian',
-    'middle_east','lebanese','turkish','syrian','persian',
-    'latin','mexican','salvadoran','peruvian','colombian','brazilian',
+    'middle_east','lebanese','turkish','syrian','persian','israeli','egyptian','yemeni','armenian','georgian',
+    'latin','mexican','salvadoran','peruvian','colombian','brazilian','argentinian','venezuelan',
     'african_horn','ethiopian','eritrean','somali',
-    'african_west','nigerian','ghanaian','moroccan',
+    'african_west','nigerian','ghanaian','moroccan','senegalese',
     'unknown'
 }
 FOOD_CATS = {
@@ -67,14 +68,15 @@ SYSTEM_PROMPT = """You classify Toronto restaurants by cuisine from operating na
 
 Output: ONE lowercase key, no other text. Choose from:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan,
-caribbean, jamaican, trinidadian, guyanese, haitian,
-greek, portuguese, polish, french, irish_uk, german, jewish_deli,
+cambodian, laotian,
+south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan, sri_lankan, nepalese,
+caribbean, jamaican, trinidadian, guyanese, haitian, cuban, dominican,
+greek, portuguese, polish, french, irish_uk, german, jewish_deli, spanish,
 eastern_eu, ukrainian, russian, hungarian,
-middle_east, lebanese, turkish, syrian, persian,
-latin, mexican, salvadoran, peruvian, colombian, brazilian,
+middle_east, lebanese, turkish, syrian, persian, israeli, egyptian, yemeni, armenian, georgian,
+latin, mexican, salvadoran, peruvian, colombian, brazilian, argentinian, venezuelan,
 african_horn, ethiopian, eritrean, somali,
-african_west, nigerian, ghanaian, moroccan, unknown
+african_west, nigerian, ghanaian, moroccan, senegalese, unknown
 
 ALWAYS prefer the most SPECIFIC bucket. Only use the broader umbrella when the name fits a
 region but no specific country signal is present.

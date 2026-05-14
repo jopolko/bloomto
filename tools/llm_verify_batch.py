@@ -30,14 +30,16 @@ CSV_PATH = '/tmp/business_licences_alt.csv'
 
 VALID_CUISINE_KEYS = {
     'italian','chinese','japanese','korean','vietnamese','filipino','thai','indonesian','malaysian','burmese',
-    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan',
-    'caribbean','jamaican','trinidadian','guyanese','haitian',
-    'greek','portuguese','polish','french','irish_uk','german','jewish_deli',
+    'cambodian','laotian',
+    'south_asian','indian','pakistani','afghan','bangladeshi','tamil','tibetan','sri_lankan','nepalese',
+    'caribbean','jamaican','trinidadian','guyanese','haitian','cuban','dominican',
+    'greek','portuguese','polish','french','irish_uk','german','jewish_deli','spanish',
     'eastern_eu','ukrainian','russian','hungarian',
-    'middle_east','lebanese','turkish','syrian','persian',
-    'latin','mexican','salvadoran','peruvian','colombian','brazilian',
+    'middle_east','lebanese','turkish','syrian','persian','israeli','egyptian','yemeni','armenian','georgian',
+    'latin','mexican','salvadoran','peruvian','colombian','brazilian','argentinian','venezuelan',
     'african_horn','ethiopian','eritrean','somali',
-    'african_west','nigerian','ghanaian','moroccan','unknown'
+    'african_west','nigerian','ghanaian','moroccan','senegalese',
+    'unknown'
 }
 
 SYSTEM_PROMPT = """You verify a Toronto restaurant's existence AND identify its cuisine
@@ -54,14 +56,15 @@ Return a single JSON object on ONE line, no markdown, no prose:
 
 Valid cuisine keys:
 italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian, malaysian, burmese,
-south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan,
-caribbean, jamaican, trinidadian, guyanese, haitian,
-greek, portuguese, polish, french, irish_uk, german, jewish_deli,
+cambodian, laotian,
+south_asian, indian, pakistani, afghan, bangladeshi, tamil, tibetan, sri_lankan, nepalese,
+caribbean, jamaican, trinidadian, guyanese, haitian, cuban, dominican,
+greek, portuguese, polish, french, irish_uk, german, jewish_deli, spanish,
 eastern_eu, ukrainian, russian, hungarian,
-middle_east, lebanese, turkish, syrian, persian,
-latin, mexican, salvadoran, peruvian, colombian, brazilian,
+middle_east, lebanese, turkish, syrian, persian, israeli, egyptian, yemeni, armenian, georgian,
+latin, mexican, salvadoran, peruvian, colombian, brazilian, argentinian, venezuelan,
 african_horn, ethiopian, eritrean, somali,
-african_west, nigerian, ghanaian, moroccan, unknown
+african_west, nigerian, ghanaian, moroccan, senegalese, unknown
 
 Use search evidence (menus, reviews, owner bios, articles) to choose cuisine — NOT just the
 operating name. Prefer the most SPECIFIC bucket (ethiopian over african_horn; mexican over latin).
