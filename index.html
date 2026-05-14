@@ -21,15 +21,14 @@
   gtag('config', 'G-CBQJHD3G7P');
 </script>
 
-<!-- Leaflet for the optional map view. Loaded eagerly because the toggle is cheap;
-     map only inits on first toggle to Map view. ~80 KB total. -->
+<!-- Leaflet for the optional map view. ~50 KB total. Routing-machine + flexpolyline
+     dropped: Google Maps' Directions UI handles mode selection (walk/drive/transit)
+     natively; running in-page routing was duplicative. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
-<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
 
 <!-- Open Graph for sharing previews -->
@@ -184,50 +183,6 @@
   .leaflet-popup-content .pop-btn:hover { background: var(--bg); border-color: var(--ink2); }
   .leaflet-popup-content .pop-link { display: inline-block; margin-top: 8px; padding: 6px 10px; color: var(--ink2) !important; border-radius: 4px; text-decoration: none; font: 600 11px/1 var(--sans); }
   .leaflet-popup-content .pop-link:hover { color: var(--accent) !important; }
-  /* Constrain leaflet-routing-machine's directions panel — it defaults to a wide
-     box that crowds the map. Make it collapsible (default closed) and narrower. */
-  .leaflet-routing-container { max-width: 320px; max-height: 60vh; overflow-y: auto; font: 13px/1.4 var(--sans); }
-  .leaflet-routing-alt { font-size: 12px; }
-  @media (max-width: 600px) {
-    .leaflet-routing-container { max-width: calc(100vw - 60px); font-size: 12px; }
-  }
-  /* Transit-route summary panel — positioned over the map, mirrors LRM styling. */
-  .map-view { position: relative; }
-  .transit-panel { position: absolute; top: 60px; right: 10px; z-index: 1000; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15); width: 300px; max-height: 55vh; overflow-y: auto; font: 13px/1.4 var(--sans); }
-  .transit-panel .tp-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid var(--line); background: rgba(45, 165, 92, 0.045); }
-  .transit-panel .tp-total { font: 700 13px/1 var(--sans); color: var(--ink); }
-  .transit-panel .tp-close { background: transparent; border: 0; color: var(--muted); font: 700 18px/1 var(--sans); cursor: pointer; padding: 0 4px; }
-  .transit-panel .tp-close:hover { color: var(--ink); }
-  .transit-panel .tp-steps { padding: 8px 0; }
-  .transit-panel .ts { padding: 8px 12px; border-top: 1px solid #f0ebde; }
-  .transit-panel .ts:first-child { border-top: 0; }
-  .transit-panel .ts-walk { color: var(--ink2); }
-  .transit-panel .ts-tr .ts-line { font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 6px; }
-  .transit-panel .ts-tr .ts-stops { font: 11.5px var(--mono); color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; }
-  .transit-panel .ts-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .transit-panel .tp-foot { border-top: 1px solid var(--line); padding: 10px 12px; background: rgba(45, 165, 92, 0.045); }
-  .transit-panel .tp-phone { width: 100%; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
-  .transit-panel .tp-phone:hover { background: var(--accent); }
-  /* Phone button injected into LRM's walk/drive sidebar */
-  .leaflet-routing-container .lrm-actions { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; }
-  .leaflet-routing-container .lrm-phone-btn { display: block; width: 100%; padding: 9px 10px; background: var(--ink); color: #fff; border: 0; border-radius: 5px; font: 700 12px/1 var(--sans); cursor: pointer; transition: background 0.12s; }
-  .leaflet-routing-container .lrm-phone-btn:hover { background: var(--accent); }
-  .leaflet-routing-container .lrm-act-row { display: flex; gap: 6px; }
-  .leaflet-routing-container .lrm-fav,
-  .leaflet-routing-container .lrm-share,
-  .transit-panel .tp-fav,
-  .transit-panel .tp-share { flex: 1; padding: 8px 8px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; font: 600 11.5px/1 var(--sans); cursor: pointer; transition: border-color 0.12s, background 0.12s; }
-  .leaflet-routing-container .lrm-fav.fav-on,
-  .transit-panel .tp-fav.fav-on { color: var(--accent); border-color: var(--accent); }
-  .leaflet-routing-container .lrm-fav:hover,
-  .leaflet-routing-container .lrm-share:hover,
-  .transit-panel .tp-fav:hover,
-  .transit-panel .tp-share:hover { border-color: var(--ink); }
-  .transit-panel .tp-act-row { display: flex; gap: 6px; margin-top: 6px; }
-  @media (max-width: 600px) {
-    .transit-panel { width: calc(100% - 20px); right: 10px; max-height: 45vh; }
-  }
-  /* 📱 Send-to-phone modal: full-page overlay with a centered QR card */
   .phone-modal { position: fixed; inset: 0; background: rgba(21,17,13,0.55); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
   .phone-modal .pm-card { background: var(--paper); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.3); max-width: 380px; width: 100%; padding: 18px 20px 16px; font: 14px var(--sans); }
   .phone-modal .pm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
@@ -886,158 +841,8 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   var userMarker = null;
   var userLatLng = null;
   var mapInitialized = false;
-  var routingControl = null;  // OSRM walk/drive route on the map, if any
   var focusedRow = null;       // when set, renderMapPins shows ONLY this row's pin
-  var currentDestSlug = null;  // slug of the route's destination (for save/share UX)
-  var transitLayers = [];     // HERE transit route polylines on the map
-  var transitPanel = null;    // DOM element for the transit instructions panel
 
-  // Decode HERE flexible polyline → array of [lat, lng]. ~40 lines, no CDN dep.
-  function decodeHereFlex(encoded) {
-    const enc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-    const lut = new Int8Array(256).fill(-1);
-    for (let i = 0; i < enc.length; i++) lut[enc.charCodeAt(i)] = i;
-    let pos = 0;
-    const readVar = () => {
-      let res = 0n, shift = 0n, b;
-      do {
-        if (pos >= encoded.length) throw new Error('flexpoly: truncated');
-        b = lut[encoded.charCodeAt(pos++)];
-        if (b < 0) throw new Error('flexpoly: invalid char');
-        res |= BigInt(b & 0x1f) << shift;
-        shift += 5n;
-      } while (b & 0x20);
-      return res;
-    };
-    const readSignedVar = () => {
-      const v = readVar();
-      return Number((v & 1n) ? ~(v >> 1n) : (v >> 1n));
-    };
-    readVar();  // header (version | (precision << 4))
-    const content = readVar();
-    const precision = Number(content & 0x0fn);
-    const thirdDim = Number((content >> 4n) & 0x07n);
-    Number((content >> 7n) & 0x0fn);  // third-dim precision (discarded)
-    const factor = Math.pow(10, precision);
-    let lat = 0, lng = 0;
-    const out = [];
-    while (pos < encoded.length) {
-      lat += readSignedVar();
-      lng += readSignedVar();
-      if (thirdDim) readSignedVar();  // skip elevation/altitude if present
-      out.push([lat / factor, lng / factor]);
-    }
-    return out;
-  }
-
-  function clearTransit() {
-    transitLayers.forEach(l => mapInstance && mapInstance.removeLayer(l));
-    transitLayers = [];
-    if (transitPanel && transitPanel.parentNode) transitPanel.parentNode.removeChild(transitPanel);
-    transitPanel = null;
-  }
-  window.__nsClearTransit = clearTransit;
-
-  function injectPhoneIntoRoutingPanel(destLat, destLng, encodedName) {
-    const container = document.querySelector('.leaflet-routing-container');
-    if (!container || container.querySelector('.lrm-actions')) return;
-    const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
-    const wrap = document.createElement('div');
-    wrap.className = 'lrm-actions';
-    const phoneLbl = onMobile ? '🗺️ Directions' : '📱 To phone';
-    const slug = currentDestSlug || '';
-    const saved = slug && isSaved(slug);
-    wrap.innerHTML = `
-      <button class="lrm-phone-btn" type="button">${phoneLbl}</button>
-      ${slug ? `<div class="lrm-act-row">
-        <button class="lrm-fav ${saved ? 'fav-on' : ''}" type="button">${saved ? '♥ Saved' : '♡ Save'}</button>
-        <button class="lrm-share" type="button">↗ Share</button>
-      </div>` : ''}`;
-    wrap.querySelector('.lrm-phone-btn').addEventListener('click', () => {
-      if (onMobile) location.href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`;
-      else sendToPhone(destLat, destLng, encodedName || '');
-    });
-    const favEl = wrap.querySelector('.lrm-fav');
-    if (favEl) favEl.addEventListener('click', () => {
-      const now = toggleSaved(slug);
-      favEl.classList.toggle('fav-on', now);
-      favEl.textContent = now ? '♥ Saved' : '♡ Save';
-      refreshSavedToggle();
-      paintFeed();  // refresh ♡ state on list rows too
-    });
-    const shareEl = wrap.querySelector('.lrm-share');
-    if (shareEl) shareEl.addEventListener('click', () => window.__nsShare(slug, shareEl));
-    container.appendChild(wrap);
-  }
-
-  async function showTransit(destLat, destLng, encodedName, slug) {
-    currentDestSlug = slug || null;
-    // Same userLatLng / geolocation flow as showRoute
-    if (typeof L === 'undefined') { alert('Map library still loading.'); return; }
-    if (!userLatLng) {
-      if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
-      navigator.geolocation.getCurrentPosition(pos => {
-        userLatLng = [pos.coords.latitude, pos.coords.longitude];
-        setNearMeActive(true);
-        showTransit(destLat, destLng, encodedName, slug);
-      }, err => {
-        const msg = err.code === 1 ? 'Permission denied.' : 'Location unavailable.';
-        alert(msg);
-      }, { enableHighAccuracy: false, timeout: 25000, maximumAge: 300000 });
-      return;
-    }
-    if (!mapInitialized) initMap();
-    if (document.getElementById('map-view').hidden) setView('map');
-    if (mapInstance) mapInstance.closePopup();
-    if (routingControl) { mapInstance.removeControl(routingControl); routingControl = null; }
-    clearTransit();
-
-    // Local Python http.server can't run PHP, so when developing on localhost
-    // we cross-origin to prod (CORS allows it). On real prod the relative path
-    // hits the local Apache instance.
-    const proxyOrigin = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? 'https://nowservingto.com' : '';
-    const url = `${proxyOrigin}/here-transit-proxy.php?origin=${userLatLng[0]},${userLatLng[1]}&destination=${destLat},${destLng}`;
-    let data;
-    try {
-      const r = await fetch(url);
-      data = await r.json();
-      if (r.status === 429) {
-        alert(`Transit lookups paused — monthly free-tier cap hit. Resets ${data.resets_on}. Use 🚶 Walk or 🚗 Drive in the meantime.`);
-        return;
-      }
-      if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
-    } catch (e) {
-      alert('Transit routing failed: ' + e.message);
-      return;
-    }
-    const route = data.routes && data.routes[0];
-    if (!route) { alert('No transit route found right now — try walking or driving.'); return; }
-
-    // Draw each section
-    const allCoords = [];
-    route.sections.forEach(sec => {
-      let coords = [];
-      try { coords = decodeHereFlex(sec.polyline); } catch (e) { return; }
-      if (!coords.length) return;
-      const mode = sec.transport && sec.transport.mode;
-      const color = mode === 'pedestrian' ? '#666' :
-                    (sec.transport && sec.transport.color) ||
-                    (mode === 'subway' ? '#cc0000' : mode === 'bus' ? '#0066cc' : '#aa00aa');
-      const layer = L.polyline(coords, {
-        color,
-        weight: mode === 'pedestrian' ? 4 : 5,
-        opacity: 0.85,
-        dashArray: mode === 'pedestrian' ? '6, 6' : null,
-      }).addTo(mapInstance);
-      transitLayers.push(layer);
-      coords.forEach(c => allCoords.push(c));
-    });
-    if (allCoords.length) mapInstance.fitBounds(allCoords, { padding: [40, 40] });
-
-    // Build summary panel
-    renderTransitPanel(route, destLat, destLng, encodedName);
-  }
-  window.__nsTransit = showTransit;
 
   // 📱 Send to phone — show a QR code linking to Google Maps with the
   // destination pre-filled. Phone's camera scans → opens in its native Maps app
@@ -1073,65 +878,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     document.body.appendChild(modal);
   }
   window.__nsSendToPhone = sendToPhone;
-
-  function renderTransitPanel(route, destLat, destLng, encodedName) {
-    clearTransit.__keepLayers = true;  // (not used, just a marker)
-    transitPanel = document.createElement('div');
-    transitPanel.className = 'transit-panel';
-    const totalSec = route.sections.reduce((s, sec) => s + ((sec.travelSummary && sec.travelSummary.duration) || 0), 0);
-    const totalMin = Math.round(totalSec / 60);
-    const steps = route.sections.map(sec => {
-      const t = sec.transport || {};
-      const dur = Math.round(((sec.travelSummary && sec.travelSummary.duration) || 0) / 60);
-      if (t.mode === 'pedestrian') {
-        const fromTo = (sec.arrival && sec.arrival.place && sec.arrival.place.name) ? ` to <strong>${sec.arrival.place.name}</strong>` : '';
-        return `<div class="ts ts-walk">🚶 Walk ${dur} min${fromTo}</div>`;
-      }
-      const lineName = t.shortName || t.name || t.mode || 'transit';
-      const modeLbl = t.mode === 'subway' ? 'Subway' : t.mode === 'bus' ? 'Bus' : t.mode === 'lightRail' ? 'Streetcar' : (t.mode || 'Transit').toString();
-      const dep = (sec.departure && sec.departure.place && sec.departure.place.name) || '';
-      const arr = (sec.arrival   && sec.arrival.place   && sec.arrival.place.name)   || '';
-      const headsign = t.headsign ? ` toward <em>${t.headsign}</em>` : '';
-      const dot = t.color ? `<span class="ts-dot" style="background:${t.color}"></span>` : '';
-      return `<div class="ts ts-tr">
-        <div class="ts-line">${dot}${modeLbl} <strong>${lineName}</strong>${headsign}</div>
-        <div class="ts-stops"><span>${dep}</span> → <span>${arr}</span> · ${dur} min</div>
-      </div>`;
-    }).join('');
-    const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
-    const phoneLbl = onMobile ? '🗺️ Directions' : '📱 To phone';
-    const slug = currentDestSlug || '';
-    const saved = slug && isSaved(slug);
-    transitPanel.innerHTML = `
-      <div class="tp-head">
-        <span class="tp-total">🚇 ${totalMin} min total</span>
-        <button class="tp-close" type="button" aria-label="Clear transit route">×</button>
-      </div>
-      <div class="tp-steps">${steps}</div>
-      <div class="tp-foot">
-        <button class="tp-phone" type="button">${phoneLbl}</button>
-        ${slug ? `<div class="tp-act-row">
-          <button class="tp-fav ${saved ? 'fav-on' : ''}" type="button">${saved ? '♥ Saved' : '♡ Save'}</button>
-          <button class="tp-share" type="button">↗ Share</button>
-        </div>` : ''}
-      </div>`;
-    transitPanel.querySelector('.tp-close').addEventListener('click', clearTransit);
-    transitPanel.querySelector('.tp-phone').addEventListener('click', () => {
-      if (onMobile) location.href = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLng}`;
-      else sendToPhone(destLat, destLng, encodedName || '');
-    });
-    const favEl = transitPanel.querySelector('.tp-fav');
-    if (favEl) favEl.addEventListener('click', () => {
-      const now = toggleSaved(slug);
-      favEl.classList.toggle('fav-on', now);
-      favEl.textContent = now ? '♥ Saved' : '♡ Save';
-      refreshSavedToggle();
-      paintFeed();
-    });
-    const shareEl = transitPanel.querySelector('.tp-share');
-    if (shareEl) shareEl.addEventListener('click', () => window.__nsShare(slug, shareEl));
-    document.getElementById('map-view').appendChild(transitPanel);
-  }
   // Near-me is a proximity-based spatial filter that REPLACES the region pick.
   // Once active, all counts/feed/pins constrain to entries within nearMeRadius km
   // of userLatLng. Selecting any region from the dropdown turns this off.
@@ -1225,16 +971,14 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     // show a QR for handoff to a separate phone.
     const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
     const encName = encodeURIComponent(r.operatingName||'');
-    const phoneBtn = onMobile
+    // Single Directions button — opens Google Maps' Directions UI where the user
+    // picks walk/drive/transit themselves. Cleaner than duplicating mode selection
+    // here. On desktop, also offer 📱 To phone (QR for handoff).
+    const dirBtn = onMobile
       ? `<button class="pop-btn" onclick="location.href='https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}'">🗺️ Directions</button>`
-      : `<button class="pop-btn" onclick="window.__nsSendToPhone(${r.lat},${r.lng},'${encName}')">📱 To phone</button>`;
-    const routeBtns = `
-      <div class="pop-routes">
-        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'walking','${encName}','${r.slug||''}')">🚶 Walk</button>
-        <button class="pop-btn" onclick="window.__nsRoute(${r.lat},${r.lng},'driving','${encName}','${r.slug||''}')">🚗 Drive</button>
-        <button class="pop-btn" onclick="window.__nsTransit(${r.lat},${r.lng},'${encName}','${r.slug||''}')">🚇 TTC</button>
-        ${phoneBtn}
-      </div>`;
+      : `<button class="pop-btn" onclick="location.href='https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}'">🗺️ Directions</button>
+         <button class="pop-btn" onclick="window.__nsSendToPhone(${r.lat},${r.lng},'${encName}')">📱 To phone</button>`;
+    const routeBtns = `<div class="pop-routes">${dirBtn}</div>`;
     return `
       <div class="pop-name">${r.operatingName}</div>
       <div class="pop-addr">${r.address || ''}${r.district ? ' · ' + r.district : ''}</div>
@@ -1273,66 +1017,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       prompt('Copy this link:', fallback);
     }
   };
-
-  // Draw a real route (walking or driving) from userLatLng to [destLat, destLng] using
-  // OSRM. Replaces any existing route. Exposed on window so popup HTML can call it.
-  function showRoute(destLat, destLng, profile, encodedName, slug) {
-    currentDestSlug = slug || null;
-    if (typeof L === 'undefined' || !L.Routing) { alert('Routing library still loading — try again in a moment.'); return; }
-    // If we don't have the user's location yet, kick off the geolocation flow and
-    // chain into the route once it's granted. One-time consent gets both done.
-    if (!userLatLng) {
-      if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
-      navigator.geolocation.getCurrentPosition(pos => {
-        userLatLng = [pos.coords.latitude, pos.coords.longitude];
-        setNearMeActive(true);  // also turn on the proximity filter
-        showRoute(destLat, destLng, profile, encodedName, slug);
-      }, err => {
-        const msg = err.code === 1 ? 'Permission denied — enable location in your browser.'
-                  : err.code === 2 ? 'Location unavailable right now.'
-                  : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
-        alert(msg);
-      }, { enableHighAccuracy: false, timeout: 25000, maximumAge: 300000 });
-      return;
-    }
-    // Ensure the map is initialized and visible
-    if (!mapInitialized) initMap();
-    if (document.getElementById('map-view').hidden) setView('map');
-    if (mapInstance) mapInstance.closePopup();
-    // Clear previous route if any
-    if (routingControl) { mapInstance.removeControl(routingControl); routingControl = null; }
-    const color = profile === 'walking' ? '#1a7340' : '#2a72ff';
-    try {
-      routingControl = L.Routing.control({
-        waypoints: [L.latLng(userLatLng[0], userLatLng[1]), L.latLng(destLat, destLng)],
-        router: L.Routing.osrmv1({
-          serviceUrl: 'https://router.project-osrm.org/route/v1',
-          profile: profile,
-        }),
-        addWaypoints: false,
-        draggableWaypoints: false,
-        fitSelectedRoutes: true,
-        routeWhileDragging: false,
-        showAlternatives: false,
-        show: true,  // sidebar with turn-by-turn instructions
-        collapsible: true,
-        lineOptions: { styles: [{ color, weight: 5, opacity: 0.75 }] },
-        createMarker: () => null,  // we already render user + destination markers
-      }).addTo(mapInstance);
-      routingControl.on('routingerror', () => {
-        alert('Could not compute a route — the routing service may be busy. Try again in a few seconds.');
-        if (routingControl) { mapInstance.removeControl(routingControl); routingControl = null; }
-      });
-      // Inject a "to phone" button into the LRM sidebar once it renders.
-      routingControl.on('routesfound', () => {
-        setTimeout(() => injectPhoneIntoRoutingPanel(destLat, destLng, encodedName), 50);
-      });
-    } catch (e) {
-      console.error('routing error', e);
-      alert('Routing failed: ' + e.message);
-    }
-  }
-  window.__nsRoute = showRoute;
 
   function setNearMeActive(on) {
     nearMeActive = on;
