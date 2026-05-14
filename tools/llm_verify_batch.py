@@ -78,6 +78,19 @@ CRITICAL: American/Canadian chains = unknown regardless of theme.
   fusion without a clear country-of-origin cuisine → unknown.
 - A surname-only name without other ethnic signal → unknown.
 
+CRITICAL: Packaged-food brands, manufacturers, distributors, importers, and wholesalers
+that hold a take-out/retail licence at their factory or warehouse are NOT consumer
+restaurants. Return cuisine=unknown.
+- If the website's primary purpose is selling packaged goods (a Products catalog,
+  Where-to-buy locator, distributor inquiries) rather than menu/hours/reservations → unknown
+- If the address is in an industrial park (e.g. Steeles, Caledonia, Dixie warehouses)
+  AND the business name contains "Foods", "Imports", "Brands", "Distributors", "Inc.",
+  or "Co.", it is overwhelmingly a manufacturer with no walk-in dining → unknown
+- Examples: "Shimla Foods Take Out" at 6801 Steeles W (brand sold at grocery stores),
+  "Patel Brothers" warehouse counter, "Roma Foods" factory outlet → all unknown
+- Genuine retail with hot prepared food (a roti shop, a butcher counter that fries
+  samosas to order, a grocery store with a full hot table) → tag with the appropriate cuisine
+
 Rules for "operating":
 - "yes" — ANY plausible online evidence the place exists. The bar is LOW.
   Acceptable: own website, Instagram or Facebook page matching the name, a Google Maps

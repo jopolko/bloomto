@@ -138,6 +138,15 @@ CRITICAL — American fast-food chains and Canadian chains = unknown, NOT their 
 
 A generic name like "JIM'S BAR", "DOWNTOWN GRILL", or "MAIN STREET CAFE" with no ethnic signal = unknown.
 A surname-only name like "PARK'S RESTAURANT" without other context = unknown (don't guess from a last name).
+
+Packaged-food brands and food manufacturers with a retail counter at their factory
+are NOT consumer restaurants — return unknown:
+- "SHIMLA FOODS TAKE OUT", "PATEL BROTHERS", "ROMA FOODS" → unknown
+- Names ending in "FOODS", "IMPORTS", "BRANDS", "DISTRIBUTORS" at industrial-zone
+  addresses (Steeles, Caledonia, Dixie, etc.) → unknown
+- A roti shop or butcher with hot samosas to order is fine — only flag pure
+  manufacturer/distributor operations.
+
 When uncertain between two specific buckets, pick the umbrella.
 When uncertain whether there's any cultural signal at all, pick unknown."""
 
