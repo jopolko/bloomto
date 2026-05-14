@@ -87,25 +87,34 @@ DECISIVE — DO NOT HEDGE. Pick yes or no based on the evidence.
 RULES
 
 is_same_business — apply this test: if a Google Maps user typed the City's
-licence NAME + ADDRESS (the LICENCE block at the top, no edits) into Maps as a
-search, would the Places match shown below appear as the top hit — clearly
-the SAME business operating at the SAME address? Set "yes" only if you'd bet
-on that being the result. The permit's name + address are the source of truth;
-the Places match has to align with both.
-  - "EASTERN 828 CAFE & GRILL" + "828 Eastern Ave" vs Places: "Eastern-Leslie
-    Car Wash & Express Detail" at same address with types=[car_wash,…] → "no"
-    (same address, completely different business — a Maps search for the cafe
-    would NOT surface this car wash as the correct answer)
-  - "KALIMERA FOOD KITCHEN" + address vs Places: "The Laurel School" with
-    types=[school,…] → "no" (different business entirely)
-  - "OI BANH MI" + address vs Places: "Ôi BÁNH MÌ" at same address → "yes"
-    (Unicode variants of the same business name)
-  - "MARY BROWN'S CHICKEN" + address vs Places: "Mary Brown's Fried Chicken"
-    at same address → "yes" (chain franchise rendering of the same brand)
-  - Names match but addresses are on different streets / ≥1km apart → "no"
-    (LENA'S ROTI licence 3999 Keele vs Places match LENA'S ROTI 4207 Keele
-    are different locations of the same brand — not the same business operation)
-  - Places returned no match at all → "no_match"
+licence NAME + ADDRESS into Maps, would the Places match shown below be a
+reasonable top hit — same business operation at the same address? Be
+forgiving on name variations (Google's search is forgiving too); be strict
+on address agreement and business type.
+
+BE LENIENT on minor name differences — small spelling/punctuation/word-order
+variations are SAME business, return "yes":
+  - "OI BANH MI" vs "Ôi BÁNH MÌ" — Unicode/accent variants → yes
+  - "MARY BROWN'S CHICKEN" vs "Mary Brown's Fried Chicken" → yes
+  - "LENA'S ROTI & DOUBLES" vs "Lena's Roti and Doubles" — & vs and → yes
+  - "EL SABOR DEL PACIFICO RESTAURANT" vs "Sabor del Pacifico" — extra
+    descriptor words trimmed → yes
+  - "PIZZA HOUSE INC" vs "Pizza House" — corporate-suffix dropped → yes
+  - "SHAKE 'N CHICK" vs "Shake & Chick" — punctuation rendering → yes
+  - Same brand transliterated / translated, same address → yes
+
+BE STRICT on address agreement and business type — these are "no":
+  - Same address, completely different business: "EASTERN 828 CAFE & GRILL"
+    at 828 Eastern Ave vs Places "Eastern-Leslie Car Wash" with
+    types=[car_wash,…] → no
+  - Same address, school/medical/retail vs restaurant: "KALIMERA FOOD KITCHEN"
+    vs Places "The Laurel School" → no
+  - Same brand name but DIFFERENT physical address (≥500m apart, different
+    street number): LENA'S ROTI licence 3999 Keele vs Places match LENA'S
+    ROTI 4207 Keele → no (different physical operation we'd be linking to)
+
+If Places returned no match at all → "no_match" (distinct from "no"; means
+we have no data to compare, not that we have data and it's wrong).
 
 is_restaurant — is this a consumer walk-in restaurant?
   - "yes" — standalone restaurant, cafe, bar, bakery, food truck, hot-counter
