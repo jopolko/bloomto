@@ -1025,10 +1025,12 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
     const btn = document.getElementById('locate-btn');
     const originalLabel = btn.textContent;
-    btn.textContent = 'locating…';
     btn.disabled = true;
-    navigator.geolocation.getCurrentPosition(pos => {
-      userLatLng = [pos.coords.latitude, pos.coords.longitude];
+
+    // Apply a known fix (in-memory or localStorage) and turn Near Me on.
+    // Used for both cache-hits and the geolocation success callback.
+    const applyFix = (latlng) => {
+      userLatLng = latlng;
       if (mapInstance) {
         if (userMarker) mapInstance.removeLayer(userMarker);
         userMarker = L.marker(userLatLng, {
@@ -1039,15 +1041,46 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       }
       btn.textContent = originalLabel;
       btn.disabled = false;
-      setNearMeActive(true);  // turns on filter + refreshes everything
+      setNearMeActive(true);
+    };
+
+    // Stage 1: localStorage cache. Geolocation results from the same browser
+    // session OR earlier sessions within 30 min count as fresh — that's the
+    // same staleness most "where am I" apps tolerate. Skips the full
+    // permission/lookup path entirely so re-clicks are instant.
+    try {
+      const cached = JSON.parse(localStorage.getItem('nsto.userLatLng') || 'null');
+      if (cached && cached.t && Date.now() - cached.t < 30 * 60 * 1000
+          && typeof cached.lat === 'number' && typeof cached.lng === 'number') {
+        applyFix([cached.lat, cached.lng]);
+        return;
+      }
+    } catch (_) {}
+
+    btn.textContent = 'locating…';
+    // Stage 2 hint — after 2.5s, if we're still waiting, soften the wait.
+    // Mobile GPS usually returns in <1s; desktop IP-geolocation can take
+    // 3-10s. After 5s give an option to bail.
+    const slowTimer = setTimeout(() => { if (btn.disabled) btn.textContent = 'still locating…'; }, 2500);
+
+    navigator.geolocation.getCurrentPosition(pos => {
+      clearTimeout(slowTimer);
+      const latlng = [pos.coords.latitude, pos.coords.longitude];
+      try {
+        localStorage.setItem('nsto.userLatLng', JSON.stringify({
+          lat: latlng[0], lng: latlng[1], t: Date.now()
+        }));
+      } catch (_) {}
+      applyFix(latlng);
     }, err => {
+      clearTimeout(slowTimer);
       btn.textContent = originalLabel;
       btn.disabled = false;
       const msg = err.code === 1 ? 'Permission denied — enable location in your browser to use this.'
                 : err.code === 2 ? 'Location unavailable right now.'
                 : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
       alert(msg);
-    }, { enableHighAccuracy: false, timeout: 25000, maximumAge: 300000 });
+    }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 });
   }
 
   function setView(v) {
