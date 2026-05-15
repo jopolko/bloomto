@@ -335,24 +335,26 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             ma = _re.sub(r',\s*Canada\s*$', '', ma)
             entry['address'] = ma
 
-        # fallbackMapsUrl precedence (refined 2026-05-15):
-        # 1) Coord pin from lat/lng (Places match OR Nominatim geocode) —
-        #    most accurate, lands the user exactly at the licence's physical
-        #    address. Crucially, NO name in the URL, so Google can't surface
-        #    a same-name business at a different address (e.g., "MAPO KOREAN
-        #    BBQ CHURCH" at 499 Church being sent to the older Mapo at 708
-        #    Bloor W just because Google indexed that one first).
-        # 2) Address-only search — drop the name from the query so Google
-        #    shows what's at the address rather than guessing at the brand.
+        # fallbackMapsUrl precedence (refined 2026-05-15 v2):
+        # 1) Address-only Google search — human-readable URL, shows the
+        #    street with whatever businesses Google knows there. Drops the
+        #    NAME from the query so an established same-name brand at a
+        #    different address can't hijack the link (the Mapo Korean BBQ
+        #    problem). For entries that pass the new brand-new-unverified
+        #    gate, the address is enough — they have either a Places match
+        #    (Google knows the spot), or a working website (validator
+        #    verified it), or 30d+ of existence (likely indexed by now).
+        # 2) Coord pin from lat/lng — last-resort precise pin when we have
+        #    coords but no address.
         # 3) Empty.
         lat = entry.get('lat'); lng = entry.get('lng')
-        if isinstance(lat, (int, float)) and isinstance(lng, (int, float)):
-            entry['fallbackMapsUrl'] = f"https://www.google.com/maps?q={lat},{lng}"
-        elif addr1:
+        if addr1:
             entry['fallbackMapsUrl'] = (
                 f"https://www.google.com/maps/search/?api=1"
                 f"&query={quote_plus(addr1 + ' Toronto, ON')}"
             )
+        elif isinstance(lat, (int, float)) and isinstance(lng, (int, float)):
+            entry['fallbackMapsUrl'] = f"https://www.google.com/maps?q={lat},{lng}"
         else:
             entry['fallbackMapsUrl'] = ''
 
