@@ -238,7 +238,7 @@ from urllib.parse import quote_plus
 # Issued date — that's when the kitchen actually opened, not just when a category was added.
 seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0; n_dropped_brand_new_unverified = 0
 
 # Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
 # destination restaurants. Three orthogonal signals catch them:
@@ -385,6 +385,23 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             n_dropped_weak_match += 1
             continue
 
+        # Brand-new + Places-unverified gate (added 2026-05-15 per user
+        # directive). Drop entries with NO Places match AND NO validator-
+        # approved website AND licence < 30 days old. Rationale: a 6-day-
+        # old licence at an address Google doesn't know about is almost
+        # always pre-opening build-out (operator gets the licence weeks
+        # before doors open) or a permit that never materialized. Sending
+        # a user to a plywood storefront is worse UX than not surfacing
+        # it. The 30-day cutoff matches the validator's aged-out rule:
+        # past 30 days, the validator marks it is_restaurant=no anyway.
+        # Re-queues automatically — next cron picks the entry up once
+        # Places or a website appears.
+        if (not entry.get('matchedName')
+            and not entry.get('website')
+            and days_open < 30):
+            n_dropped_brand_new_unverified += 1
+            continue
+
         # Dedupe by (name_upper, addr_upper). Keep EARLIEST issuedDate.
         dedup_key = (op_raw.upper(), addr1.upper())
         existing = seen_entries.get(dedup_key)
@@ -406,7 +423,7 @@ for entry in seen_entries.values():
     for c in entry.get('cuisines') or [entry['cuisine']]:
         opens_365_by_cuisine[c].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_deduped} duplicate rows collapsed")
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_dropped_brand_new_unverified} brand-new-unverified (<30d, no Places/website) + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:
