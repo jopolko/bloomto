@@ -158,7 +158,19 @@ if ! "$PYTHON" -u tools/llm_search_recover_batch.py >> "$LOG_FILE" 2>&1; then
     log "WARN: batched search-based cuisine recovery failed (non-fatal)"
 fi
 
-# Step 5b: geocode addresses for entries missing lat/lng (powers the map view).
+# Step 5d: unified validator — jina-renders each entry's candidate URL,
+# feeds rendered page text + licence row + Places match + reviews into Haiku,
+# and gets a single verdict (is_same_business / is_restaurant / cuisines /
+# best_website / evidence). Catches multi-location chains, dead websites,
+# aggregator wrappers, wrong-business Places matches. Skips entries
+# validated in the last 24h, so per-day cost stays small (~$0.10-$0.30
+# typical daily delta; ~$2 for a full --force re-validate).
+log "→ validate_entries_batch.py (jina + Haiku unified judgment)"
+if ! "$PYTHON" -u tools/validate_entries_batch.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: validator failed (non-fatal — entries keep prior verdict)"
+fi
+
+# Step 5e: geocode addresses for entries missing lat/lng (powers the map view).
 # Uses free Nominatim @ 1 req/sec; the daily delta is ~5-15 addresses so this
 # adds ~10-20s per cron. Skips any address already geocoded.
 log "→ geocode_addresses.py (Nominatim — free, 1 req/sec)"
