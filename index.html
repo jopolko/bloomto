@@ -273,7 +273,7 @@
 <header class="mast">
   <div class="wrap">
     <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
-    <div class="sub">Toronto's <span class="hl">newest</span> restaurants — last 12 months, updated <span id="last-update">…</span>.</div>
+    <div class="sub">Toronto's <span class="hl">newest</span> restaurants — last 12 months, updated daily.</div>
   </div>
 </header>
 
@@ -412,9 +412,7 @@ function agoLabel(days) {
 
 fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   const no = data.newOpenings;
-  const gen = new Date(data.generatedAt);
-  const upd = document.getElementById('last-update');
-  if (upd) upd.textContent = gen.toLocaleDateString('en-CA', { month: 'long', day: 'numeric', year: 'numeric' });
+  // (Subtitle reads "updated daily" — no dynamic date to inject.)
 
   // Favorites: localStorage-backed set of saved slugs. No accounts, no backend.
   function getSaved() { try { return new Set(JSON.parse(localStorage.getItem('nsto_saved') || '[]')); } catch { return new Set(); } }
