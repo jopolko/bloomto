@@ -1020,14 +1020,14 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   function locateUser() {
     // Already active? Treat the click as a toggle-off.
     if (nearMeActive) { setNearMeActive(false); return; }
-    if (!navigator.geolocation) { alert('Geolocation not supported by your browser.'); return; }
     const btn = document.getElementById('locate-btn');
     const originalLabel = btn.textContent;
     btn.disabled = true;
 
-    // Apply a known fix (in-memory or localStorage) and turn Near Me on.
-    // Used for both cache-hits and the geolocation success callback.
-    const applyFix = (latlng) => {
+    // Apply a fix and turn Near Me on. Used for cache hits, ipapi hits,
+    // and (silent background) browser-geolocation upgrades.
+    const applyFix = (latlng, persist) => {
+      const wasActive = nearMeActive;
       userLatLng = latlng;
       if (mapInstance) {
         if (userMarker) mapInstance.removeLayer(userMarker);
@@ -1035,50 +1035,78 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
           icon: L.divIcon({ className: 'user-pin', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] }),
           zIndexOffset: 1000,
         }).addTo(mapInstance);
-        mapInstance.setView(userLatLng, 14);
+        if (!wasActive) mapInstance.setView(userLatLng, 14);
+      }
+      if (persist) {
+        try {
+          localStorage.setItem('nsto.userLatLng', JSON.stringify({
+            lat: latlng[0], lng: latlng[1], t: Date.now()
+          }));
+        } catch (_) {}
       }
       btn.textContent = originalLabel;
       btn.disabled = false;
-      setNearMeActive(true);
+      if (!wasActive) setNearMeActive(true);
+      else applyFilters(currentCuisine, '__all', true);  // silent upgrade — refresh distances
     };
 
-    // Stage 1: localStorage cache. Geolocation results from the same browser
-    // session OR earlier sessions within 30 min count as fresh — that's the
-    // same staleness most "where am I" apps tolerate. Skips the full
-    // permission/lookup path entirely so re-clicks are instant.
+    // Stage 1: localStorage cache (30-min TTL). Re-clicks are instant.
     try {
       const cached = JSON.parse(localStorage.getItem('nsto.userLatLng') || 'null');
       if (cached && cached.t && Date.now() - cached.t < 30 * 60 * 1000
           && typeof cached.lat === 'number' && typeof cached.lng === 'number') {
-        applyFix([cached.lat, cached.lng]);
+        applyFix([cached.lat, cached.lng], false);
         return;
       }
     } catch (_) {}
 
     btn.textContent = 'locating…';
-    // Stage 2 hint — after 2.5s, if we're still waiting, soften the wait.
-    // Mobile GPS usually returns in <1s; desktop IP-geolocation can take
-    // 3-10s. After 5s give an option to bail.
-    const slowTimer = setTimeout(() => { if (btn.disabled) btn.textContent = 'still locating…'; }, 2500);
 
-    navigator.geolocation.getCurrentPosition(pos => {
-      clearTimeout(slowTimer);
-      const latlng = [pos.coords.latitude, pos.coords.longitude];
-      try {
-        localStorage.setItem('nsto.userLatLng', JSON.stringify({
-          lat: latlng[0], lng: latlng[1], t: Date.now()
-        }));
-      } catch (_) {}
-      applyFix(latlng);
-    }, err => {
-      clearTimeout(slowTimer);
-      btn.textContent = originalLabel;
-      btn.disabled = false;
-      const msg = err.code === 1 ? 'Permission denied — enable location in your browser to use this.'
-                : err.code === 2 ? 'Location unavailable right now.'
-                : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
-      alert(msg);
-    }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 });
+    // Stage 2: ipapi.co — free, ~200ms, city-level accuracy (~5-10km).
+    // No permission prompt, no waiting. Plenty precise for the 5km Near
+    // Me radius. Free tier: 1K req/day per IP, no key, HTTPS. Falls
+    // through to browser geolocation only if ipapi fails.
+    fetch('https://ipapi.co/json/', { credentials: 'omit' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('ipapi http ' + r.status)))
+      .then(data => {
+        if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
+          throw new Error('ipapi returned no lat/lng');
+        }
+        applyFix([data.latitude, data.longitude], true);
+
+        // Stage 3 (silent background): browser geolocation. If it returns
+        // a more precise fix (GPS on mobile) replace the pin and refresh
+        // distances. Skipped if the browser doesn't support it or denies.
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            pos => applyFix([pos.coords.latitude, pos.coords.longitude], true),
+            () => {},
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 }
+          );
+        }
+      })
+      .catch(() => {
+        // ipapi unreachable — fall back to native geolocation.
+        if (!navigator.geolocation) {
+          btn.textContent = originalLabel;
+          btn.disabled = false;
+          alert('Could not get your location.');
+          return;
+        }
+        const slowTimer = setTimeout(() => { if (btn.disabled) btn.textContent = 'still locating…'; }, 2500);
+        navigator.geolocation.getCurrentPosition(pos => {
+          clearTimeout(slowTimer);
+          applyFix([pos.coords.latitude, pos.coords.longitude], true);
+        }, err => {
+          clearTimeout(slowTimer);
+          btn.textContent = originalLabel;
+          btn.disabled = false;
+          const msg = err.code === 1 ? 'Permission denied — enable location in your browser to use this.'
+                    : err.code === 2 ? 'Location unavailable right now.'
+                    : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
+          alert(msg);
+        }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 });
+      });
   }
 
   function setView(v) {
