@@ -175,54 +175,113 @@ agreement, editorial, reviews, business status).
 If Places returned no match at all → "no_match" (distinct from "no"; means
 we have no data to compare, not that we have data and it's wrong).
 
-is_restaurant — is this a consumer walk-in restaurant?
+is_restaurant — does this entry belong on a directory of Toronto's NEWLY
+LICENCED small-scale, independent, immigrant-owned ETHNIC-CUISINE restaurants?
   - "yes" — standalone restaurant, cafe, bar, bakery, food truck, hot-counter
-    that ordinary people walk into to eat. Even a small ghost kitchen counts
-    as long as humans can order food.
-  - "no" — institutional caterers (Aramark/Compass Group cafeterias inside
-    hospitals/offices/universities), packaged-food brand / factory outlet
-    (Shimla Foods, Soma Bone Broth, Bergamos), grocery store / supermarket
-    counter that just sells packaged goods, chain (Popeyes/KFC/Mary Brown's/
-    Tim Hortons/Pizza Pizza/etc.) — these all return "no".
-  - "unclear" — genuinely ambiguous (e.g. coffee + branded retail like Lindt
-    Chocolate, deli + grocery combo, retail bakery with mostly-packaged goods).
+    that ordinary people walk into to eat AND is recognizably anchored in a
+    specific ethnic / national / regional cuisine (Vietnamese pho counter,
+    Salvadoran pupuseria, Eritrean injera kitchen, Sichuan dumpling shop,
+    Lebanese shawarma, Trinidadian roti, Korean BBQ, Argentine empanada
+    window, etc.). Even a tiny ghost kitchen counts if humans can order
+    food AND there's a clear single-country / single-diaspora identity.
+  - "no" — any of:
+      * Institutional caterers (Aramark/Compass cafeterias in hospitals,
+        offices, universities)
+      * Packaged-food brand / factory outlet (Soma Bone Broth, Shimla Foods,
+        Bergamos)
+      * Grocery / supermarket counter selling packaged goods, not made-to-
+        order food
+      * MAJOR chain franchise — household-name brands with national /
+        international footprint or recognizable corporate-franchise model.
+        Concrete drops: Popeyes, KFC, Mary Brown's, Tim Hortons, Pizza
+        Pizza, Papa Johns, Pizzaville, McDonald's, Starbucks, Subway,
+        Sushi Shop, BarBurrito, Z-Teca, FreshSlice, A&W, Wendy's, Bento
+        Sushi, Sushi Q (Q's), Sushi Stop, Sushi Express franchise models.
 
-  AGED-OUT-UNVERIFIABLE RULE (added 2026-05-15):
-  When ALL of these hold, return is_restaurant="no":
-    1) Google Places returned no match (the "GOOGLE PLACES MATCH" line above
-       says "(none — Places returned no result for this name+address)"),
-    2) No WEBSITE CONTENT block was shown above (no candidate URL or the
-       fetch came up empty),
-    3) The licence is at least 30 days old (LICENCE line "Days since
-       issued" >= 30).
-  Rationale: a new licence under ~30d can legitimately lack Places presence
-  and a website while the operator gets set up; we keep those. But after a
-  month with zero online evidence the entry is most likely a ghost (the
-  licence holder never opened the doors, or the business folded before
-  Google indexed it) and we should drop it. Use the evidence sentence to
-  note "aged-out unverifiable" so the apply loop can schedule a monthly
-  recheck instead of redoing this verdict every day.
+        Do NOT drop small TORONTO-ANCHORED family multi-location operators
+        (~2-8 GTA-only locations, all under one ownership, all the same
+        cuisine, no formal franchising). These are the "family expanded
+        and opened a second/third location" pattern — they're still the
+        immigrant-owned story this directory surfaces. Concrete keeps:
+        - Bamiyan Kabob (Afghan, ~5 GTA locations, one family)
+        - Tanghulu Tanghulu (Chinese, 8 Toronto-area mall counters, same
+          ownership)
+        - Lena's Roti (Trinidadian, multiple Keele-area locations)
+        - Han Tai Wan Cafe (Chinese, 2-3 north-Toronto locations)
+
+        The distinguishing test: is the brand a national/international
+        franchise where any operator can buy in? → drop. Or is it one
+        family running a few branches of one cuisine, all in the GTA?
+        → keep.
+      * PAN-CUISINE / NON-ETHNIC-ANCHORED joints. Concretely: places whose
+        menu spans multiple unrelated cuisines without a single-country
+        identity — wings + poutine + Nashville chicken (North American
+        comfort), burgers + pizza + shawarma (multi-region grab-bag),
+        "150+ wing flavors + burgers + wraps + South Asian items" (no
+        anchor), generic "fusion" with no diaspora tie-in. Also: American
+        Southern / Cajun / BBQ themed (no taxonomy bucket and not a
+        Toronto-immigrant story). If you can't name ONE country or one
+        diaspora the menu clearly belongs to, return "no".
+  - "unclear" — genuinely ambiguous (coffee + branded retail like Lindt
+    Chocolate, deli + grocery combo, retail bakery with mostly-packaged
+    goods).
+
+Treat `cuisines=["unknown"]` as a warning sign for is_restaurant: if you
+can't identify a cuisine after looking at the evidence, the entry likely
+fails the ethnic-anchor test and is_restaurant should be "no" — NOT "yes
+with unknown cuisine." A real ethnic restaurant has a recognizable
+country/diaspora identity visible somewhere in the evidence.
+
+  AGED-OUT-UNVERIFIABLE RULE (added 2026-05-15, scoped 2026-05-15 v2):
+  When ALL of these hold STRICTLY, return is_restaurant="no":
+    1) GOOGLE PLACES MATCH line above is literally "(none — Places returned
+       no result for this name+address)" — i.e., we have zero Places data
+       to compare against.
+    2) NO "WEBSITE CONTENT" block appears anywhere in the user message
+       above — literally absent. (If a WEBSITE CONTENT block IS shown,
+       even with marketing-flavored copy or short menu fragments, this
+       rule does NOT fire. Quality of the content is irrelevant to this
+       rule — only its presence.)
+    3) LICENCE "Days since issued" is at least 30.
+  Rationale: zero Places data + zero crawled content + 30d aged means we
+  have NO evidence the business exists. A fresh licence (<30d) can
+  legitimately lack online presence while the operator opens; we keep
+  those.
+
+  DO NOT FIRE THIS RULE when:
+    - WEBSITE CONTENT was provided, even if you judge it as thin or
+      marketing-heavy. Content presence proves the URL is alive and the
+      business has SOMETHING online — that's enough to clear AGED-OUT.
+    - Places returned a match, even a weak one.
+    - The licence is <30 days old.
 
   When this rule fires, set evidence to start with "AGED-OUT UNVERIFIABLE:"
-  so the pipeline can pattern-match it. Continue with one short clause
-  about what's missing (e.g., "no Places match and no website found after
-  Nd; deferred for monthly recheck.").
+  so the pipeline can schedule a monthly recheck.
 
-cuisines — list of 1-3 specific cuisine keys (or ["unknown"]):
-  italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian,
-  malaysian, burmese, cambodian, laotian, south_asian, indian, pakistani, afghan,
-  bangladeshi, tamil, tibetan, sri_lankan, nepalese, caribbean, jamaican,
-  trinidadian, guyanese, haitian, cuban, dominican, greek, portuguese, polish,
-  french, irish_uk, german, jewish_deli, spanish, eastern_eu, ukrainian, russian,
-  hungarian, middle_east, lebanese, turkish, syrian, persian, israeli, egyptian,
-  yemeni, armenian, georgian, latin, mexican, salvadoran, peruvian, colombian,
-  brazilian, argentinian, venezuelan, african_horn, ethiopian, eritrean, somali,
-  african_west, nigerian, ghanaian, moroccan, senegalese, unknown.
+cuisines — list of 1 to 3 SPECIFIC country / diaspora cuisine labels.
 
-  PREFER specific countries over umbrella ("dominican" not "caribbean";
-  "afghan,pakistani,indian" multi-list not "south_asian"). Use umbrella only
-  when evidence is genuinely multi-region with no specific country named.
-  Pan-Asian / 3+ unrelated regional fusion → ["unknown"].
+  Return labels in any natural casing — e.g., "Sri Lankan", "Cape Verdean",
+  "Uyghur", "Hakka", "Persian", "Trinidadian-Chinese". The system slugifies
+  and auto-registers any cuisine it hasn't seen before; no ethnicity goes
+  unrecognized.
+
+  GUIDANCE:
+  - Always prefer the SMALLEST accurate scope. If the menu is clearly
+    Sri Lankan (hoppers, kottu), label it "Sri Lankan" — not "South Asian".
+    If pupusas are featured, "Salvadoran" — not "Latin American".
+  - For genuine dual-cuisine spots (Korean+Japanese izakaya, Trinidadian
+    roti with Chinese stir-fry), multi-list: ["Korean","Japanese"] /
+    ["Trinidadian","Chinese"].
+  - Use umbrella labels ("South Asian", "Caribbean", "Middle Eastern",
+    "Latin American", "West African", "East African") only when evidence
+    is genuinely multi-region with no specific country resolvable.
+  - Use ["unknown"] when the menu is pan-cuisine without a single anchor
+    (3+ unrelated regions, "fusion" with no diaspora tie-in, generic
+    North-American comfort food). is_restaurant should usually be "no"
+    in those cases (see the audience criteria above).
+  - Do NOT invent vague descriptors like "Asian Fusion" or "International"
+    — those aren't a diaspora identity. Either name a country, multi-list
+    two specific ones, or return "unknown".
 
 best_website — the URL we should put on the entry's name link.
 
@@ -253,9 +312,22 @@ Concretely:
     without a name link (clean UX).
 
 When content evaluation says approve:
-  - If WEBSITE CONTENT was shown above, JUDGE that content. Set best_website
-    to the URL ONLY when the content shows real restaurant material — menu
-    items, hours, "about us" copy describing the food, ordering info, etc.
+  - If WEBSITE CONTENT was shown above, JUDGE that content. Approve the
+    URL (set best_website to it) whenever the content contains ANY of:
+    a dish/menu word (gimbap, biryani, pho, injera, tacos, pupusas, etc.),
+    a cuisine descriptor ("Korean", "Afghan", "Lebanese"), a hours/contact
+    line, a delivery/ordering button, an "about us" sentence, or a
+    location listing. Marketing-heavy copy or thin pages still count as
+    long as something concrete identifies a real restaurant.
+  - REQUIRE WEBSITE CONTENT for the URL to be approved. If literally no
+    WEBSITE CONTENT block was shown to you for this entry's candidate URL
+    (the static fetch came up dry AND jina headless render came up dry),
+    return best_website=null even when Places provides a URL — Places
+    doesn't probe liveness; we do, and without our own content we can't
+    confirm the URL works. (Note: this rule is about CONTENT PRESENCE,
+    not content quality. If a WEBSITE CONTENT block IS present, evaluate
+    it as above — do NOT return null on the basis that the content seems
+    sparse.)
   - Return null when the website content is bad:
       * Parked-domain placeholder (Hostinger / Namecheap "this domain is for
         sale" / GoDaddy default landing page)
@@ -669,24 +741,15 @@ def main():
             wv[key]['cuisines'] = real_cuisines
             wv[key]['evidence'] = parsed['evidence']
             wv[key]['recovery_source'] = 'unified_validator'
-        elif (parsed['cuisines'] == ['unknown']
-              and parsed.get('is_restaurant') != 'no'
-              and website_texts.get(key)):
-            # Validator looked at real website content and confidently said
-            # 'I cannot place this in a single cuisine bucket' — typical for
-            # pan-cuisine joints (Wing Station: 150+ wing flavors + burgers +
-            # wraps + South Asian items). Without this override, the entry
-            # keeps whatever the name-only Haiku layer guessed (e.g.,
-            # "WING STATION" → chinese on the letters alone). Drop them as
-            # not fitting NowServingTO's ethnic-cuisine audience.
-            wv[key]['validator_drop'] = 'not-ethnic-cuisine-fit'
-            wv[key]['validator_evidence'] = parsed['evidence']
 
-        # 4. Website handling — if validator says null, mark known URLs broken
+        # 4. Website handling. The validator is the authoritative source for
+        # URL trust — when it approves a URL we MUST clear any stale broken
+        # flag in url_health (e.g., from a prior run with a stricter prompt
+        # that rejected this URL). When it rejects, mark all candidates
+        # broken so the inject pipeline skips them.
         cur_website = wv[key].get('website') or ''
         places_website = (pc.get(key) or {}).get('website') if pc.get(key) and pc[key].get('status') == 'ok' else None
         if parsed['best_website'] is None:
-            # Mark all known candidate URLs broken so verification_for skips them
             for u in (cur_website, places_website):
                 if u and u.startswith(('http://', 'https://')):
                     health[u] = {'status': None, 'checked_at': now_iso,
@@ -695,11 +758,17 @@ def main():
                 n_website_dropped += 1
                 if len(examples['website_dropped']) < 6:
                     examples['website_dropped'].append(f"{name[:35]:<35}  {cur_website[:50]}")
-        elif parsed['best_website'] and parsed['best_website'] != cur_website:
-            n_website_changed += 1
-            if len(examples['website_changed']) < 6:
-                examples['website_changed'].append(f"{name[:35]:<35}  → {parsed['best_website'][:60]}")
-            wv[key]['website'] = parsed['best_website']
+        elif parsed['best_website']:
+            # Approved — clear any stale broken flag from a prior run.
+            health[parsed['best_website']] = {
+                'status': 200, 'checked_at': now_iso, 'ok': True,
+                'reason': 'validator: approved'
+            }
+            if parsed['best_website'] != cur_website:
+                n_website_changed += 1
+                if len(examples['website_changed']) < 6:
+                    examples['website_changed'].append(f"{name[:35]:<35}  → {parsed['best_website'][:60]}")
+                wv[key]['website'] = parsed['best_website']
 
         # 5. ALWAYS persist Haiku's full judgment + one-sentence evidence so
         # any entry can be audited later (not just changed/dropped ones).

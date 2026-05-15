@@ -60,7 +60,7 @@ WINDOW_30  = REFERENCE_DATE - timedelta(days=30)
 
 # Canonical cuisine taxonomy — defined in tools/cuisines.py so recovery scripts
 # share the same set. Adding a bucket there is enough; do NOT re-declare here.
-from cuisines import CUISINE_LABEL, normalize_cuisines
+from cuisines import CUISINE_LABEL, normalize_cuisines, cuisine_color
 FOOD_CATS = {
     'EATING OR DRINKING ESTABLISHMENT',
     'TAKE-OUT OR RETAIL FOOD ESTABLISHMENT',
@@ -134,6 +134,22 @@ _CUISINE_LABEL_GAP = set()
 # returns best_website per entry from full evidence; we honor that directly.
 
 CUISINE_LABEL.setdefault('thai', 'Thai')
+
+PALETTE_HEX = {
+    'italian':'#c83624','caribbean':'#1a8a5a','south_asian':'#d4a017','indian':'#e88e2c',
+    'pakistani':'#a06030','afghan':'#7a5d3a','bangladeshi':'#b88820','chinese':'#b13e6a',
+    'vietnamese':'#4a8b8b','japanese':'#2f3aa3','korean':'#6b2456','filipino':'#e08226',
+    'tamil':'#8a5d20','tibetan':'#b15a25','greek':'#1f7a6a','portuguese':'#9b2538',
+    'polish':'#4a5a6a','french':'#5a3a7a','irish_uk':'#2a6a40','german':'#6a5a30',
+    'jewish_deli':'#4a4a8a','eastern_eu':'#7a4a4a','ukrainian':'#6a5a8a','russian':'#7a4a4a',
+    'hungarian':'#8a5050','middle_east':'#b87a25','lebanese':'#c89538','turkish':'#a8662a',
+    'syrian':'#9b5520','persian':'#8a4a25','latin':'#cc4a4a','mexican':'#d63d2a',
+    'salvadoran':'#c8553a','peruvian':'#b35b50','colombian':'#cc6248','brazilian':'#3d8a47',
+    'african_horn':'#a0522d','ethiopian':'#a0522d','eritrean':'#8a4528','somali':'#b06530',
+    'african_west':'#5a8a3a','nigerian':'#4a7a30','ghanaian':'#6a8a40','moroccan':'#b87a2a',
+    'jamaican':'#1f7a4a','trinidadian':'#2a9560','guyanese':'#3a8060','haitian':'#1a6855',
+    'thai':'#7a8a3a','indonesian':'#7a6a40','malaysian':'#5a7a55','burmese':'#8a7050',
+}
 
 def get_cuisine(name, address):
     """Returns (cuisines_list, source). cuisines_list is a list of valid cuisine
@@ -438,9 +454,14 @@ for c in opens_365_by_cuisine:
 # Summary per cuisine
 cuisines_out = []
 for c, entries in opens_365_by_cuisine.items():
+    # Color: prefer the curated palette below; fall back to a deterministic
+    # hash-derived color for novel/dynamic cuisines (Hakka, Uyghur, Cape
+    # Verdean, etc. — anything Haiku surfaced that wasn't in the seed list).
+    color = PALETTE_HEX.get(c) or cuisine_color(c)
     cuisines_out.append({
         'key': c,
         'label': CUISINE_LABEL.get(c, c),
+        'color': color,
         'count365d': len(entries),
         'count30d': sum(1 for e in entries if e['daysOpen'] <= 30),
         'newest': entries[0],          # the absolute newest one
@@ -482,21 +503,7 @@ INDEX_PATH = f'{ROOT}/index.html'
 
 # Python-side cuisine palette mirrors the one in index.html. Used to color the pre-rendered
 # static cuisine pills so crawlers see proper structured visual styling too.
-PALETTE_HEX = {
-    'italian':'#c83624','caribbean':'#1a8a5a','south_asian':'#d4a017','indian':'#e88e2c',
-    'pakistani':'#a06030','afghan':'#7a5d3a','bangladeshi':'#b88820','chinese':'#b13e6a',
-    'vietnamese':'#4a8b8b','japanese':'#2f3aa3','korean':'#6b2456','filipino':'#e08226',
-    'tamil':'#8a5d20','tibetan':'#b15a25','greek':'#1f7a6a','portuguese':'#9b2538',
-    'polish':'#4a5a6a','french':'#5a3a7a','irish_uk':'#2a6a40','german':'#6a5a30',
-    'jewish_deli':'#4a4a8a','eastern_eu':'#7a4a4a','ukrainian':'#6a5a8a','russian':'#7a4a4a',
-    'hungarian':'#8a5050','middle_east':'#b87a25','lebanese':'#c89538','turkish':'#a8662a',
-    'syrian':'#9b5520','persian':'#8a4a25','latin':'#cc4a4a','mexican':'#d63d2a',
-    'salvadoran':'#c8553a','peruvian':'#b35b50','colombian':'#cc6248','brazilian':'#3d8a47',
-    'african_horn':'#a0522d','ethiopian':'#a0522d','eritrean':'#8a4528','somali':'#b06530',
-    'african_west':'#5a8a3a','nigerian':'#4a7a30','ghanaian':'#6a8a40','moroccan':'#b87a2a',
-    'jamaican':'#1f7a4a','trinidadian':'#2a9560','guyanese':'#3a8060','haitian':'#1a6855',
-    'thai':'#7a8a3a','indonesian':'#7a6a40','malaysian':'#5a7a55','burmese':'#8a7050',
-}
+# (PALETTE_HEX moved up; see definition near the top of this file.)
 
 def _esc(s):
     """HTML-escape a string."""
@@ -518,7 +525,7 @@ for r in top_for_static:
     # back to the single `cuisine` field for legacy entries.
     cuisine_keys = r.get('cuisines') or ([r['cuisine']] if r.get('cuisine') else [])
     pills_html = ''.join(
-        f'<span class="pill" style="background:{PALETTE_HEX.get(k, "#777")}">{_esc(CUISINE_LABEL.get(k, k))}</span>'
+        f'<span class="pill" style="background:{PALETTE_HEX.get(k) or cuisine_color(k)}">{_esc(CUISINE_LABEL.get(k, k))}</span>'
         for k in cuisine_keys
     )
     name = _esc(r['operatingName'])
