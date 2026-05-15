@@ -197,7 +197,35 @@ cuisines — list of 1-3 specific cuisine keys (or ["unknown"]):
   when evidence is genuinely multi-region with no specific country named.
   Pan-Asian / 3+ unrelated regional fusion → ["unknown"].
 
-best_website — the URL we should put on the entry's name link:
+best_website — the URL we should put on the entry's name link.
+
+USER DIRECTIVE (verbatim, 2026-05-15): "Haiku will identify website from
+Google Places and ingest review and, if no website link exists in places,
+haiku will do a google search using business name, address and category
+and retrieve the top match for review. Will review based on same criteria
+plus prompt including Toronto's NEWLY LICENCED small-scale, independent,
+immigrant-owned ethnic-cuisine. If match then link this to the Business
+Name listing. If no relevant site found and no site in places, no link
+will be applied to the business name."
+
+Concretely:
+  - PLACES PATH — when GOOGLE PLACES MATCH shows a Website per Places URL
+    and WEBSITE CONTENT was fetched from it, judge the content directly.
+    Return the URL when the page shows real restaurant material.
+  - SEARCH-FALLBACK PATH — when Places has NO website but WEB VERIFY shows
+    a Website found URL (this came from an earlier Haiku web_search using
+    name + address + category — the top search match), judge that URL the
+    same way. If WEBSITE CONTENT was fetched for it, evaluate that content.
+    Return the URL only when the page clearly belongs to a small-scale,
+    independent, ethnic-cuisine restaurant matching the licence — i.e.,
+    the audience we surface. Reject if the search-found page looks like a
+    chain corporate site, an unrelated business, an aggregator, or a
+    different-city operator with the same name.
+  - NO SITE PATH — if neither Places nor the search-fallback yields a
+    judgeable real restaurant site, return null. The entry will render
+    without a name link (clean UX).
+
+When content evaluation says approve:
   - If WEBSITE CONTENT was shown above, JUDGE that content. Set best_website
     to the URL ONLY when the content shows real restaurant material — menu
     items, hours, "about us" copy describing the food, ordering info, etc.
@@ -408,11 +436,23 @@ def main():
     wt_cache = json.loads(WEBSITE_TEXT_PATH.read_text()) if WEBSITE_TEXT_PATH.exists() else {}
     wt_cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
 
+    # Candidate URL precedence per 2026-05-15 directive:
+    #   1) Google Places website  (preferred — most authoritative match)
+    #   2) WEB VERIFY website     (top Google-search match found earlier
+    #      via Haiku web_search using name+address+category)
+    # Either way Haiku gets to JUDGE the actual page content before we keep
+    # the URL. Aggregator-host short-circuit applies to both paths.
     fetch_jobs = []  # (key, url)
     for k in targets:
         p = pc.get(k) or {}
-        if p.get('status') != 'ok': continue
-        u = (p.get('website') or '').strip()
+        u = ''
+        if p.get('status') == 'ok' and p.get('website'):
+            u = p['website'].strip()
+        else:
+            # Search-fallback: use the WV-surfaced URL when Places has none
+            wvw = (wv.get(k) or {}).get('website') or ''
+            if wvw and wvw.startswith(('http://', 'https://')):
+                u = wvw.strip()
         if not u: continue
         host = u.lower().split('//', 1)[-1].split('/', 1)[0]
         if any(a in host for a in AGG_HOSTS):
@@ -451,12 +491,18 @@ def main():
         WEBSITE_TEXT_PATH.write_text(json.dumps(wt_cache, indent=2, ensure_ascii=False))
         print(f"  done: {n_done} fetched, {n_ok} returned usable text")
 
-    # Build a per-target website_text lookup from the cache (covers both
-    # freshly-fetched and previously-cached URLs).
+    # Build a per-target website_text lookup from the cache. Same precedence
+    # as the fetch loop: Places website first, WV website as fallback.
     website_texts = {}
     for k in targets:
         p = pc.get(k) or {}
-        u = (p.get('website') or '').strip()
+        u = ''
+        if p.get('status') == 'ok' and p.get('website'):
+            u = p['website'].strip()
+        else:
+            wvw = (wv.get(k) or {}).get('website') or ''
+            if wvw and wvw.startswith(('http://', 'https://')):
+                u = wvw.strip()
         if not u: continue
         entry = wt_cache.get(u)
         if entry and entry.get('text'):
@@ -475,6 +521,22 @@ def main():
     full_id = submit_batch(full_requests, 'VALIDATE')
     info = poll(full_id, 'VALIDATE')
     results = download_results(info)
+
+    # Persist the raw batch results to disk so Haiku's reasoning is auditable
+    # after the apply loop processes them. One file per batch, JSONL: each
+    # line is the {custom_id, result:{type, message:{...}}} record from the
+    # Batch API. Reconstruct an entry's verdict any time via:
+    #   grep '"v0042"' tools/cache/validator_runs/<batch_id>.jsonl
+    runs_dir = ROOT / 'tools' / 'cache' / 'validator_runs'
+    runs_dir.mkdir(parents=True, exist_ok=True)
+    runs_path = runs_dir / f"{full_id}.jsonl"
+    with runs_path.open('w', encoding='utf-8') as rf:
+        for r in results:
+            rf.write(json.dumps(r, ensure_ascii=False) + '\n')
+    # Sidecar: id_to_key index so we can resolve custom_id → entry key later.
+    (runs_dir / f"{full_id}.index.json").write_text(
+        json.dumps(id_to_key, indent=2, ensure_ascii=False))
+    print(f"  raw results saved to {runs_path}")
 
     n_total = n_parse_fail = 0
     n_same_no = n_isr_no = n_isr_unclear = 0
@@ -549,6 +611,18 @@ def main():
                 examples['website_changed'].append(f"{name[:35]:<35}  → {parsed['best_website'][:60]}")
             wv[key]['website'] = parsed['best_website']
 
+        # 5. ALWAYS persist Haiku's full judgment + one-sentence evidence so
+        # any entry can be audited later (not just changed/dropped ones).
+        # The raw batch result is also saved to validator_runs/<batch_id>.jsonl
+        # for full request+response auditability.
+        wv[key]['validator_judgment'] = {
+            'is_same_business': parsed['is_same_business'],
+            'is_restaurant':    parsed['is_restaurant'],
+            'cuisines':         parsed['cuisines'],
+            'best_website':     parsed['best_website'],
+            'evidence':         parsed['evidence'],
+        }
+        wv[key]['validator_evidence'] = parsed['evidence']
         wv[key]['validated_at'] = now_iso
 
     WEB_VERIFY_PATH.write_text(json.dumps(wv, separators=(',', ':')))

@@ -212,13 +212,17 @@ def verification_for(name, address):
         if bs in ('CLOSED_TEMPORARILY', 'CLOSED_PERMANENTLY'):
             return None
     # Source 2: Web-search verification (no Places match for this address).
-    # Per user directive 2026-05-14: name-link website must come from Google
-    # Places, period. If Places has no website here, web_verify's website
-    # does NOT substitute — the row simply renders without a name link.
+    # Per user directive 2026-05-15: when Places has no website, fall back to
+    # the WV-surfaced URL (top Google-search match from earlier Haiku
+    # web_search) IF the validator approved it. url_is_alive returns False
+    # when the validator marked the URL broken in url_health_cache, so a
+    # WV-URL that survives that gate has passed Haiku's content review.
     w = WEB_VERIFY_CACHE.get(key)
     if w and w.get('status') == 'ok' and w.get('operating') == 'yes':
         out = {'businessStatus': 'OPERATIONAL', 'verifiedBy': 'web_search'}
-        # Intentionally omit `website` from this path — only Places can authorize it.
+        wv_site = w.get('website')
+        if wv_site and url_is_alive(wv_site):
+            out['website'] = wv_site
         if p and p.get('status') == 'ok':
             for k in ('mapsUrl', 'rating', 'reviewCount', 'matchedName', 'lat', 'lng'):
                 if p.get(k) is not None: out.setdefault(k, p[k])
