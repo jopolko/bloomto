@@ -531,7 +531,7 @@ for r in top_for_static:
     name = _esc(r['operatingName'])
     addr = _esc(r.get('address') or '')
     district = _esc(r.get('district') or '')
-    addr_url = r.get('fallbackMapsUrl') or r.get('mapsUrl') or ''
+    addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
     addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
     addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
     ago = _esc(_ago(r['daysOpen']))
