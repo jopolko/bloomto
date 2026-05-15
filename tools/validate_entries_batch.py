@@ -669,6 +669,18 @@ def main():
             wv[key]['cuisines'] = real_cuisines
             wv[key]['evidence'] = parsed['evidence']
             wv[key]['recovery_source'] = 'unified_validator'
+        elif (parsed['cuisines'] == ['unknown']
+              and parsed.get('is_restaurant') != 'no'
+              and website_texts.get(key)):
+            # Validator looked at real website content and confidently said
+            # 'I cannot place this in a single cuisine bucket' — typical for
+            # pan-cuisine joints (Wing Station: 150+ wing flavors + burgers +
+            # wraps + South Asian items). Without this override, the entry
+            # keeps whatever the name-only Haiku layer guessed (e.g.,
+            # "WING STATION" → chinese on the letters alone). Drop them as
+            # not fitting NowServingTO's ethnic-cuisine audience.
+            wv[key]['validator_drop'] = 'not-ethnic-cuisine-fit'
+            wv[key]['validator_evidence'] = parsed['evidence']
 
         # 4. Website handling — if validator says null, mark known URLs broken
         cur_website = wv[key].get('website') or ''
