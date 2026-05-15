@@ -130,12 +130,71 @@ def _find_menu_link(html_text, base_url):
     candidates.sort()
     return candidates[0][1]
 
+import threading as _threading
+# Jina free tier caps at 2 concurrent connections per IP. With the keyed
+# trial allowance (10M tokens) we still respect this — both for politeness
+# and because exceeding it just yields 429s.
+_JINA_SEM = _threading.Semaphore(2)
+
+def _load_jina_key():
+    """Pull JINA_API_KEY from /var/secrets/nowservingto.env if present.
+    Without a key we fall back to the keyless public endpoint (rate-limited
+    per IP)."""
+    try:
+        for line in Path('/var/secrets/nowservingto.env').read_text().splitlines():
+            if line.startswith('JINA_API_KEY='):
+                return line.split('=', 1)[1].strip()
+    except Exception:
+        pass
+    return None
+
+_JINA_KEY = _load_jina_key()
+
+
+def _fetch_jina(url):
+    """Fetch a page through r.jina.ai — Jina's Reader service runs the URL in a
+    headless browser, lets JS hydrate, and returns the rendered DOM as plain
+    text. Used as a fallback for SPAs whose static HTML has no body text.
+
+    Keyed mode (JINA_API_KEY set) draws from the account's token budget;
+    keyless mode is subject to the public per-IP daily limit. Either way we
+    cap concurrency at 2 to stay inside Jina's connection-count policy.
+    """
+    with _JINA_SEM:
+        try:
+            headers = {
+                'User-Agent': UA,
+                'Accept': 'text/plain',
+                'X-Return-Format': 'text',
+                'X-Timeout': '20',
+            }
+            if _JINA_KEY:
+                headers['Authorization'] = f'Bearer {_JINA_KEY}'
+            req = Request(f"https://r.jina.ai/{url}", headers=headers)
+            with urlopen(req, timeout=30) as r:
+                txt = r.read(16000).decode('utf-8', errors='replace')
+        except Exception:
+            return None
+    txt = (txt or '').strip()
+    return txt if len(txt) >= 80 else None
+
+
 def fetch_page_text(url):
     """Fetch homepage text. If the homepage is thin or generic, also try to follow
-    a menu/about link and combine its text. Returns up to ~2400 chars of stripped
-    text and the final URL (after redirects)."""
+    a menu/about link and combine its text. Returns up to ~3200 chars of stripped
+    text and the final URL (after redirects).
+
+    Two-stage fetch:
+      1. Static GET → strip HTML. Works for ~70% of restaurant sites that render
+         body content server-side.
+      2. r.jina.ai fallback → only when the URL is alive (raw HTML downloaded)
+         but the stripped text is < 80 chars (typical JS-only SPA shell). Jina
+         renders headless, gives us the post-hydration text. Used to catch
+         multi-location chain signals on React/Vue/Webflow sites whose
+         "Locations" page or footer only exists after hydration.
+    """
     raw, final_url = _fetch_raw(url)
-    if not raw: return None, url
+    if not raw: return None, url   # dead URL — don't waste jina budget
     home_text = _strip_html(raw)
     home_body = home_text.split('TEXT:', 1)[1].strip() if home_text and 'TEXT:' in home_text else ''
 
@@ -148,13 +207,19 @@ def fetch_page_text(url):
             mt = _strip_html(menu_raw)
             menu_text = (mt.split('TEXT:', 1)[1].strip() if mt and 'TEXT:' in mt else '')[:1500]
 
-    # Need at least some real text to send to Haiku
-    if len(home_body) + len(menu_text) < 80: return None, final_url
+    static_total = len(home_body) + len(menu_text)
+    if static_total >= 80:
+        combined = f"HOMEPAGE: {home_body[:1500]}"
+        if menu_text:
+            combined += f"\n\nMENU/ABOUT PAGE ({menu_url}): {menu_text}"
+        return combined[:3200], final_url
 
-    combined = f"HOMEPAGE: {home_body[:1500]}"
-    if menu_text:
-        combined += f"\n\nMENU/ABOUT PAGE ({menu_url}): {menu_text}"
-    return combined[:3200], final_url
+    # Static fetch came up empty but the URL is alive — likely a JS-only SPA.
+    # Fall through to jina's headless-rendered text.
+    rendered = _fetch_jina(url)
+    if rendered:
+        return f"HOMEPAGE (jina-rendered): {rendered[:3200]}", final_url
+    return None, final_url
 
 def _build_evidence_payload(page_text, places_reviews, places_editorial):
     """Combine whatever evidence we have into a single user-message body.

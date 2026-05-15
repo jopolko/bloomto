@@ -92,6 +92,12 @@ You also see supplemental evidence:
   - Google Places match (matched name + address + categories + editorial summary
     + top reviews + Places-known website)
   - The earlier Haiku web_search verifier's website + evidence
+  - WEBSITE CONTENT, when available — the page is fetched either statically
+    (server-rendered HTML) or, for JS-only SPAs, via a headless render
+    (labelled "HOMEPAGE (jina-rendered): ..."). Treat both forms as equally
+    authoritative content evidence. A multi-location list like
+    "Queen St W / Eaton Centre / Square One / Vaughan Mills" is a strong
+    CHAIN signal even when it surfaces only in the rendered text.
   - The name-only LLM's previous cuisine guess
   - WEBSITE CONTENT — when the Places-known website was fetchable, the homepage
     plus the most-promising linked menu / about page have been crawled, HTML
@@ -458,7 +464,10 @@ def main():
         if any(a in host for a in AGG_HOSTS):
             continue
         cached = wt_cache.get(u)
-        if cached and cached.get('fetched_at', '') > wt_cutoff:
+        # Skip only when we have USABLE cached text. Entries cached with
+        # text=None (static fetch came up dry, no jina path existed yet)
+        # should be retried so the new headless-render fallback gets a shot.
+        if cached and cached.get('fetched_at', '') > wt_cutoff and cached.get('text'):
             continue
         fetch_jobs.append((k, u))
 
