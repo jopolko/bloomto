@@ -335,26 +335,23 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             ma = _re.sub(r',\s*Canada\s*$', '', ma)
             entry['address'] = ma
 
-        # fallbackMapsUrl precedence (refined 2026-05-15 v2):
-        # 1) Address-only Google search — human-readable URL, shows the
-        #    street with whatever businesses Google knows there. Drops the
-        #    NAME from the query so an established same-name brand at a
-        #    different address can't hijack the link (the Mapo Korean BBQ
-        #    problem). For entries that pass the new brand-new-unverified
-        #    gate, the address is enough — they have either a Places match
-        #    (Google knows the spot), or a working website (validator
-        #    verified it), or 30d+ of existence (likely indexed by now).
-        # 2) Coord pin from lat/lng — last-resort precise pin when we have
-        #    coords but no address.
-        # 3) Empty.
-        lat = entry.get('lat'); lng = entry.get('lng')
-        if addr1:
+        # fallbackMapsUrl — address-only Google search using the address
+        # being DISPLAYED to the user (entry['address'], which is either
+        # Places' formatted matchedAddress or the permit's Line 1). One
+        # consistent format across every listing per user directive
+        # 2026-05-15: "we have an address, it matches places or website
+        # compared to permits file source of truth, no coords." No name
+        # in the query, no coordinates, no Places CID — just the human-
+        # readable address. Same URL pattern whether the entry came from
+        # Places or web-search verification.
+        disp_addr = (entry.get('address') or addr1 or '').strip()
+        if disp_addr:
+            # Append ", Toronto, ON" only when not already in the address
+            # (Places-formatted addresses include it; permit Line 1 typically doesn't).
+            q = disp_addr if 'toronto' in disp_addr.lower() else f"{disp_addr}, Toronto, ON"
             entry['fallbackMapsUrl'] = (
-                f"https://www.google.com/maps/search/?api=1"
-                f"&query={quote_plus(addr1 + ' Toronto, ON')}"
+                f"https://www.google.com/maps/search/?api=1&query={quote_plus(q)}"
             )
-        elif isinstance(lat, (int, float)) and isinstance(lng, (int, float)):
-            entry['fallbackMapsUrl'] = f"https://www.google.com/maps?q={lat},{lng}"
         else:
             entry['fallbackMapsUrl'] = ''
 
@@ -520,7 +517,7 @@ for r in top_for_static:
     name = _esc(r['operatingName'])
     addr = _esc(r.get('address') or '')
     district = _esc(r.get('district') or '')
-    addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+    addr_url = r.get('fallbackMapsUrl') or r.get('mapsUrl') or ''
     addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
     addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
     ago = _esc(_ago(r['daysOpen']))
