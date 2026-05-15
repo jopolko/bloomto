@@ -131,30 +131,6 @@
   .mast .sub { color: var(--muted); font: 400 14px/1.4 var(--serif); margin-top: 6px; font-style: italic; }
   .mast .sub .hl { font-weight: 800; font-style: normal; color: var(--accent); letter-spacing: -0.005em; }
   .mast .sub #last-update { font-style: normal; font-weight: 600; color: var(--ink2); font-variant-numeric: lining-nums tabular-nums; }
-  .mast .pulse { margin-top: 10px; display: inline-flex; align-items: center; gap: 8px;
-                 padding: 7px 14px 7px 12px; border-radius: 999px;
-                 background: var(--accent); color: #fff;
-                 box-shadow: 0 1px 0 rgba(0,0,0,0.04), 0 2px 14px color-mix(in srgb, var(--accent) 28%, transparent);
-                 font-variant-numeric: lining-nums tabular-nums; }
-  .mast .pulse::before { content: ''; display: inline-block; width: 8px; height: 8px;
-                         border-radius: 50%; background: #fff;
-                         box-shadow: 0 0 0 0 rgba(255,255,255,0.85);
-                         animation: ns-pulse-dot 1.8s ease-out infinite; }
-  @keyframes ns-pulse-dot {
-    0%   { box-shadow: 0 0 0 0   rgba(255,255,255,0.85); }
-    70%  { box-shadow: 0 0 0 10px rgba(255,255,255,0); }
-    100% { box-shadow: 0 0 0 0   rgba(255,255,255,0); }
-  }
-  .mast .pulse-num { font: 800 22px/1 var(--sans); color: #fff; letter-spacing: -0.01em; }
-  .mast .pulse-lbl { font: 600 12.5px/1.1 var(--sans); color: rgba(255,255,255,0.92); text-transform: uppercase; letter-spacing: 0.04em; }
-  @media (max-width: 540px) {
-    .mast .pulse { padding: 6px 12px 6px 10px; }
-    .mast .pulse-num { font-size: 19px; }
-    .mast .pulse-lbl { font-size: 11px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .mast .pulse::before { animation: none; }
-  }
 
   /* Belt-and-suspenders: never let the page scroll horizontally. */
   body { overflow-x: hidden; }
@@ -301,10 +277,6 @@
   <div class="wrap">
     <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
     <div class="sub">Toronto's <span class="hl">newest</span> restaurants — last 12 months, updated daily.</div>
-    <div class="pulse" id="fresh-pulse" aria-live="polite">
-      <span class="pulse-num" id="pulse-num">—</span>
-      <span class="pulse-lbl" id="pulse-lbl">newly licensed</span>
-    </div>
   </div>
 </header>
 
@@ -731,19 +703,6 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const cuisineN = rowsFor(cuisineKey, regionKey, nearMeActive).length;
     const c = cuisineKey === '__all' ? null : no.cuisines.find(x => x.key === cuisineKey);
     trigger.textContent = c ? `${c.label} (${cuisineN})` : `All cuisines (${cuisineN})`;
-    // Live "newly licensed" pulse — count of current-filter entries within
-    // the last 30 days. Updates whenever cuisine / region / near-me changes
-    // so the number always reflects what the user is currently seeing.
-    const filteredRows = rowsFor(cuisineKey, regionKey, nearMeActive);
-    const fresh30 = filteredRows.filter(r => r.daysOpen <= 30).length;
-    const pulseNum = document.getElementById('pulse-num');
-    const pulseLbl = document.getElementById('pulse-lbl');
-    if (pulseNum && pulseLbl) {
-      pulseNum.textContent = fresh30;
-      const label = c ? c.label : (nearMeActive ? 'near you' : regionKey !== '__all' ? regionKey : '');
-      const suffix = label ? ` (${label})` : '';
-      pulseLbl.textContent = `new in 30 days${suffix}`;
-    }
     panel.querySelectorAll('.cp-opt').forEach(o => o.setAttribute('aria-selected', o.dataset.key === cuisineKey ? 'true' : 'false'));
     // Update region trigger — Near me overrides the region pick.
     // Near me overrides the region pick. Trigger shows just "Near me" — no
