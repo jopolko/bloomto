@@ -187,6 +187,27 @@ is_restaurant — is this a consumer walk-in restaurant?
   - "unclear" — genuinely ambiguous (e.g. coffee + branded retail like Lindt
     Chocolate, deli + grocery combo, retail bakery with mostly-packaged goods).
 
+  AGED-OUT-UNVERIFIABLE RULE (added 2026-05-15):
+  When ALL of these hold, return is_restaurant="no":
+    1) Google Places returned no match (the "GOOGLE PLACES MATCH" line above
+       says "(none — Places returned no result for this name+address)"),
+    2) No WEBSITE CONTENT block was shown above (no candidate URL or the
+       fetch came up empty),
+    3) The licence is at least 30 days old (LICENCE line "Days since
+       issued" >= 30).
+  Rationale: a new licence under ~30d can legitimately lack Places presence
+  and a website while the operator gets set up; we keep those. But after a
+  month with zero online evidence the entry is most likely a ghost (the
+  licence holder never opened the doors, or the business folded before
+  Google indexed it) and we should drop it. Use the evidence sentence to
+  note "aged-out unverifiable" so the apply loop can schedule a monthly
+  recheck instead of redoing this verdict every day.
+
+  When this rule fires, set evidence to start with "AGED-OUT UNVERIFIABLE:"
+  so the pipeline can pattern-match it. Continue with one short clause
+  about what's missing (e.g., "no Places match and no website found after
+  Nd; deferred for monthly recheck.").
+
 cuisines — list of 1-3 specific cuisine keys (or ["unknown"]):
   italian, chinese, japanese, korean, vietnamese, filipino, thai, indonesian,
   malaysian, burmese, cambodian, laotian, south_asian, indian, pakistani, afghan,
@@ -252,6 +273,21 @@ When content evaluation says approve:
 evidence — one short sentence quoting the strongest signal that justified the
 above judgments (a review excerpt, an editorial line, a menu phrase)."""
 
+def _days_since_issued(s):
+    """Parse the Issued date out of the CSV row and return integer days
+    between today and that date. None on parse failure."""
+    s = (s or '').strip().split(' ')[0]
+    if not s: return None
+    from datetime import date as _date
+    for fmt in ('%Y-%m-%d', '%Y/%m/%d', '%m/%d/%Y'):
+        try:
+            d = datetime.strptime(s, fmt).date()
+            return (_date.today() - d).days
+        except ValueError:
+            continue
+    return None
+
+
 def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row=None, website_text=None):
     name, _, addr = entry_key.partition('||')
     lines = [f"LICENCE (City of Toronto — source of truth for name, address, food-category):",
@@ -263,6 +299,7 @@ def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row
         conditions  = (csv_row.get('Conditions') or '').strip()
         endorse     = (csv_row.get('Endorsements') or '').strip()
         cancel_date = (csv_row.get('Cancel Date') or '').strip()
+        issued_raw  = (csv_row.get('Issued') or '').strip()
         addr2       = (csv_row.get('Licence Address Line 2') or '').strip()
         addr3       = (csv_row.get('Licence Address Line 3') or '').strip()
         if client_name: lines.append(f"  Client Name:       {client_name}")
@@ -271,6 +308,15 @@ def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row
         if addr3:       lines.append(f"  Address Line 3:    {addr3}")
         if conditions:  lines.append(f"  Conditions:        {conditions[:300]}")
         if endorse:     lines.append(f"  Endorsements:      {endorse[:200]}")
+        # Issued date + days-since-issued — feeds the aged-out-unverifiable
+        # rule in is_restaurant: licences older than 30d with no online
+        # presence get dropped (likely ghosts); younger ones stay (operator
+        # may still be opening doors).
+        if issued_raw:
+            lines.append(f"  Issued:            {issued_raw}")
+            days_since = _days_since_issued(issued_raw)
+            if days_since is not None:
+                lines.append(f"  Days since issued: {days_since}")
         # Cancel Date — if populated, the licence is no longer active.
         # is_restaurant should be "no" regardless of other signals.
         if cancel_date: lines.append(f"  Cancel Date:       {cancel_date}  ← LICENCE IS CANCELLED")
@@ -413,11 +459,21 @@ def main():
                      'synthesized_for_validator': True}
     # Skip entries validated in the last 24h — avoids re-spending on already-
     # judged entries. Pass --force on the command line to re-validate everything.
+    # AGED-OUT-UNVERIFIABLE drops carry a validator_recheck_after timestamp
+    # 30 days out; honor it so we don't re-judge a ghost entry every day.
     force = '--force' in sys.argv
     cutoff_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    now_iso = datetime.now(timezone.utc).isoformat()
     if not force:
-        target_keys = {k for k in target_keys
-                       if not wv[k].get('validated_at') or wv[k]['validated_at'] < cutoff_iso}
+        filtered = set()
+        for k in target_keys:
+            e = wv[k]
+            ra = e.get('validator_recheck_after')
+            if ra and ra > now_iso:
+                continue  # under monthly-recheck embargo
+            if not e.get('validated_at') or e['validated_at'] < cutoff_iso:
+                filtered.add(k)
+        target_keys = filtered
     targets = sorted(target_keys)
     print(f"Entries to validate: {len(targets)}")
     print(f"  estimated cost (~$0.001 each): ${len(targets)*0.001:.2f}")
@@ -583,10 +639,23 @@ def main():
                 examples['isr_no'].append(f"{name[:35]:<35}  | {parsed['evidence'][:60]}")
             wv[key]['validator_drop'] = 'not-restaurant'
             wv[key]['validator_evidence'] = parsed['evidence']
+            # Aged-out unverifiable: schedule a monthly recheck instead of
+            # the default daily re-validation, since this verdict won't
+            # change until the licence holder gains a Places presence or
+            # publishes a website. The validator prompt asks Haiku to lead
+            # the evidence sentence with "AGED-OUT UNVERIFIABLE:" when the
+            # 30d-old + no-Places + no-content rule fires.
+            if parsed['evidence'].lstrip().upper().startswith('AGED-OUT UNVERIFIABLE'):
+                wv[key]['validator_recheck_after'] = (
+                    datetime.now(timezone.utc) + timedelta(days=30)
+                ).isoformat()
+            else:
+                wv[key].pop('validator_recheck_after', None)
         elif parsed['is_restaurant'] == 'unclear':
             n_isr_unclear += 1
         else:
             wv[key].pop('validator_drop', None)
+            wv[key].pop('validator_recheck_after', None)
 
         # 3. Cuisine update — only if it's a real change AND we got real cuisines
         real_cuisines = [c for c in parsed['cuisines'] if c and c != 'unknown']

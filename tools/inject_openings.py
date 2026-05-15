@@ -335,26 +335,23 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             ma = _re.sub(r',\s*Canada\s*$', '', ma)
             entry['address'] = ma
 
-        # fallbackMapsUrl: the City permit's NAME + ADDRESS, full stop.
-        # This is the user's explicit rule (2026-05-14): permit data is the
-        # source of truth; use it consistently for every URL, validator
-        # judgment, and weak-match check. Stop trying to outsmart Google with
-        # different formats per failure mode.
-        #
-        # Worst-case behaviours we accept:
-        # - Brand at multiple locations → Google returns nearest indexed one
-        #   (Lena's 3999 Keele licence sends user to existing 4207 Keele
-        #   Lena's). Still the right brand operator, at minimum.
-        # - Address shared with prior tenant → Google returns the brand we
-        #   asked for if indexed; if not, falls back to address geocode.
-        if op_raw and addr1:
-            entry['fallbackMapsUrl'] = (
-                f"https://www.google.com/maps/search/?api=1"
-                f"&query={quote_plus(op_raw + ' ' + addr1 + ' Toronto')}"
-            )
+        # fallbackMapsUrl precedence (refined 2026-05-15):
+        # 1) Coord pin from lat/lng (Places match OR Nominatim geocode) —
+        #    most accurate, lands the user exactly at the licence's physical
+        #    address. Crucially, NO name in the URL, so Google can't surface
+        #    a same-name business at a different address (e.g., "MAPO KOREAN
+        #    BBQ CHURCH" at 499 Church being sent to the older Mapo at 708
+        #    Bloor W just because Google indexed that one first).
+        # 2) Address-only search — drop the name from the query so Google
+        #    shows what's at the address rather than guessing at the brand.
+        # 3) Empty.
+        lat = entry.get('lat'); lng = entry.get('lng')
+        if isinstance(lat, (int, float)) and isinstance(lng, (int, float)):
+            entry['fallbackMapsUrl'] = f"https://www.google.com/maps?q={lat},{lng}"
         elif addr1:
             entry['fallbackMapsUrl'] = (
-                f"https://www.google.com/maps/?q={quote_plus(addr1 + ' Toronto, ON')}"
+                f"https://www.google.com/maps/search/?api=1"
+                f"&query={quote_plus(addr1 + ' Toronto, ON')}"
             )
         else:
             entry['fallbackMapsUrl'] = ''
