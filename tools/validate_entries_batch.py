@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cuisines import VALID_CUISINE_KEYS, parse_cuisines_from_llm
 from llm_verify_batch import submit_batch, poll, download_results
 from llm_search_recover_batch import MODEL, API_KEY, HEADERS, http
+from llm_recover_cuisine import fetch_page_text  # reuse: fetches homepage + menu/about, returns stripped text
 
 WEB_VERIFY_PATH = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
 PLACES_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
@@ -92,6 +93,13 @@ You also see supplemental evidence:
     + top reviews + Places-known website)
   - The earlier Haiku web_search verifier's website + evidence
   - The name-only LLM's previous cuisine guess
+  - WEBSITE CONTENT — when the Places-known website was fetchable, the homepage
+    plus the most-promising linked menu / about page have been crawled, HTML
+    stripped, and included as raw text. Use this content to (a) confirm the URL
+    points to a real, operating restaurant (not parked domain, aggregator-wrapper
+    landing page, "we moved" notice, or generic CMS shell with no menu);
+    (b) extract menu-word cuisine evidence (specific dish names = strong signal;
+    quoted cultural-marker phrases > generic "best food in town" copy).
 
 Judge holistically from all of it. No rule we hardcode in Python should be doing
 this work — you have richer context than any regex.
@@ -190,20 +198,27 @@ cuisines — list of 1-3 specific cuisine keys (or ["unknown"]):
   Pan-Asian / 3+ unrelated regional fusion → ["unknown"].
 
 best_website — the URL we should put on the entry's name link:
-  - PREFER the restaurant's own domain (sabordelpacificoon.com)
-  - REJECT aggregator wrappers — any URL whose final destination is
-    skipthedishes.com / doordash.com / ubereats.com / grubhub.com /
-    foodora.ca / menulog.com / seamless.com / chownow.com order portal.
-    If a cached URL appears to BE such a wrapper (judged from URL host or
-    from review text mentioning "order via SkipTheDishes"), return null.
-  - REJECT obvious dead pages, parked domains, generic CMS landing screens.
-  - Return null if no good website exists — the entry will fall back to its
-    Google Maps URL.
+  - If WEBSITE CONTENT was shown above, JUDGE that content. Set best_website
+    to the URL ONLY when the content shows real restaurant material — menu
+    items, hours, "about us" copy describing the food, ordering info, etc.
+  - Return null when the website content is bad:
+      * Parked-domain placeholder (Hostinger / Namecheap "this domain is for
+        sale" / GoDaddy default landing page)
+      * Aggregator-wrapper (page is essentially "Order on SkipTheDishes/
+        DoorDash/UberEats" with no own content)
+      * "We've moved" / "Permanently closed" notice
+      * Generic CMS shell ("Welcome to my new website" Squarespace default)
+      * Page is just a single image or social-redirect with no text content
+      * Returns the wrong business entirely (different restaurant name)
+  - REJECT URLs whose host is itself an aggregator: skipthedishes.com,
+    doordash.com, ubereats.com, grubhub.com, foodora.ca, menulog.com,
+    seamless.com, tripadvisor.com, yelp.com, chownow.com, toasttab.com.
+  - Return null if no good website exists — entry falls back to Places mapsUrl.
 
 evidence — one short sentence quoting the strongest signal that justified the
 above judgments (a review excerpt, an editorial line, a menu phrase)."""
 
-def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row=None):
+def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row=None, website_text=None):
     name, _, addr = entry_key.partition('||')
     lines = [f"LICENCE (City of Toronto — source of truth for name, address, food-category):",
              f"  Operating Name:    {name}",
@@ -264,6 +279,16 @@ def build_request(entry_key, verify_entry, places_entry, llm_entry=None, csv_row
     if llm_entry and llm_entry.get('status') == 'ok':
         lc = llm_entry.get('cuisines') or [llm_entry.get('cuisine')]
         lines.append(f"  Name-only LLM previously guessed: {lc}")
+
+    # Website content (folded crawl): homepage + menu/about page stripped text.
+    # When present, Haiku can verify the URL points to a real restaurant site
+    # (not parked domain, not aggregator-wrapper, not "we moved" notice) AND
+    # extract menu-word cuisine evidence directly. When the content is bad/empty,
+    # Haiku should set best_website=null.
+    if website_text:
+        lines.append("")
+        lines.append("WEBSITE CONTENT (homepage + menu/about page text, stripped):")
+        lines.append(website_text[:3500])
 
     return {
         'params': {
@@ -364,12 +389,86 @@ def main():
     print(f"  estimated cost (~$0.001 each): ${len(targets)*0.001:.2f}")
     if not targets: return
 
+    # --- Folded website crawl ----------------------------------------------
+    # For every target with a Places-provided website that isn't an obvious
+    # aggregator host, fetch homepage + menu/about page text in parallel and
+    # cache it in website_text_cache.json. Haiku then sees the actual page
+    # content and can decide:
+    #   - is the URL a real live restaurant site?
+    #   - does the content match cuisine claims?
+    #   - parked domain / "we moved" / wrong-business / aggregator-wrapper?
+    # The aggregator host short-circuit avoids spending bandwidth on URLs
+    # Haiku will reject from the hostname alone.
+    AGG_HOSTS = (
+        'skipthedishes.', 'doordash.', 'ubereats.', 'grubhub.', 'foodora.',
+        'menulog.', 'seamless.', 'tripadvisor.', 'yelp.', 'chownow.',
+        'toasttab.', 'opentable.', 'order.online', 'facebook.', 'instagram.',
+    )
+    WEBSITE_TEXT_PATH = ROOT / 'tools' / 'cache' / 'website_text_cache.json'
+    wt_cache = json.loads(WEBSITE_TEXT_PATH.read_text()) if WEBSITE_TEXT_PATH.exists() else {}
+    wt_cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+
+    fetch_jobs = []  # (key, url)
+    for k in targets:
+        p = pc.get(k) or {}
+        if p.get('status') != 'ok': continue
+        u = (p.get('website') or '').strip()
+        if not u: continue
+        host = u.lower().split('//', 1)[-1].split('/', 1)[0]
+        if any(a in host for a in AGG_HOSTS):
+            continue
+        cached = wt_cache.get(u)
+        if cached and cached.get('fetched_at', '') > wt_cutoff:
+            continue
+        fetch_jobs.append((k, u))
+
+    if fetch_jobs:
+        print(f"Pre-fetching website content for {len(fetch_jobs)} URLs (parallel)...")
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        now_fetch = datetime.now(timezone.utc).isoformat()
+        def _fetch(job):
+            k, u = job
+            try:
+                text, final_url = fetch_page_text(u)
+            except Exception as e:
+                return k, u, None, None, str(e)[:120]
+            return k, u, text, final_url, None
+        n_done = n_ok = 0
+        with ThreadPoolExecutor(max_workers=12) as ex:
+            futs = [ex.submit(_fetch, j) for j in fetch_jobs]
+            for fut in as_completed(futs):
+                k, u, text, final_url, err = fut.result()
+                wt_cache[u] = {
+                    'fetched_at': now_fetch,
+                    'text': text,
+                    'final_url': final_url,
+                    'error': err,
+                }
+                n_done += 1
+                if text: n_ok += 1
+                if n_done % 25 == 0:
+                    print(f"  fetched {n_done}/{len(fetch_jobs)}  (ok: {n_ok})")
+        WEBSITE_TEXT_PATH.write_text(json.dumps(wt_cache, indent=2, ensure_ascii=False))
+        print(f"  done: {n_done} fetched, {n_ok} returned usable text")
+
+    # Build a per-target website_text lookup from the cache (covers both
+    # freshly-fetched and previously-cached URLs).
+    website_texts = {}
+    for k in targets:
+        p = pc.get(k) or {}
+        u = (p.get('website') or '').strip()
+        if not u: continue
+        entry = wt_cache.get(u)
+        if entry and entry.get('text'):
+            website_texts[k] = entry['text']
+
     id_to_key = {}
     full_requests = []
     for i, k in enumerate(targets):
         cid = f"v{i:04d}"
         id_to_key[cid] = k
-        rec = build_request(k, wv[k], pc.get(k), llm.get(k), csv_index.get(k))
+        rec = build_request(k, wv[k], pc.get(k), llm.get(k), csv_index.get(k),
+                            website_text=website_texts.get(k))
         rec['custom_id'] = cid
         full_requests.append(rec)
 
