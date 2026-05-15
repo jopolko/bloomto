@@ -238,7 +238,7 @@ from urllib.parse import quote_plus
 # Issued date — that's when the kitchen actually opened, not just when a category was added.
 seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0; n_dropped_brand_new_unverified = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0; n_dropped_brand_new_unverified = 0; n_dropped_validator = 0
 
 # Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
 # destination restaurants. Three orthogonal signals catch them:
@@ -292,13 +292,13 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # Authoritative — trumps the cuisine signal.
         wv_e = WEB_VERIFY_CACHE.get(f"{op_raw.strip().upper()}||{address_full.strip().upper()}")
         if wv_e and wv_e.get('validator_drop'):
-            n_dropped_unverified += 1   # bucket with other drops; could split out later
+            n_dropped_validator += 1   # Haiku-judged: chain, institutional, ghost, etc.
             continue
 
         # Verification gate: Places=OPERATIONAL OR web_search verified-yes.
         verification = verification_for(op_raw, address_full)
         if verification is None:
-            n_dropped_unverified += 1
+            n_dropped_unverified += 1   # no Places + no web_verify yet — pending pipeline data
             continue
 
         # Build candidate entry
@@ -423,7 +423,7 @@ for entry in seen_entries.values():
     for c in entry.get('cuisines') or [entry['cuisine']]:
         opens_365_by_cuisine[c].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_unverified} unverified + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_dropped_brand_new_unverified} brand-new-unverified (<30d, no Places/website) + {n_deduped} duplicate rows collapsed")
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_validator} validator (Haiku: chain/institutional/ghost) + {n_dropped_unverified} unverified (no Places, no web_verify yet) + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_dropped_brand_new_unverified} brand-new-unverified (<30d, no Places/website) + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:
