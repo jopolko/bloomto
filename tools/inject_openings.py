@@ -211,12 +211,14 @@ def verification_for(name, address):
             return out
         if bs in ('CLOSED_TEMPORARILY', 'CLOSED_PERMANENTLY'):
             return None
-    # Source 2: Web-search verification
+    # Source 2: Web-search verification (no Places match for this address).
+    # Per user directive 2026-05-14: name-link website must come from Google
+    # Places, period. If Places has no website here, web_verify's website
+    # does NOT substitute — the row simply renders without a name link.
     w = WEB_VERIFY_CACHE.get(key)
     if w and w.get('status') == 'ok' and w.get('operating') == 'yes':
         out = {'businessStatus': 'OPERATIONAL', 'verifiedBy': 'web_search'}
-        if w.get('website') and url_is_alive(w['website']):
-            out['website'] = w['website']
+        # Intentionally omit `website` from this path — only Places can authorize it.
         if p and p.get('status') == 'ok':
             for k in ('mapsUrl', 'rating', 'reviewCount', 'matchedName', 'lat', 'lng'):
                 if p.get(k) is not None: out.setdefault(k, p[k])
@@ -254,7 +256,15 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
     for row in rdr:
         cat = (row.get('Category') or '').strip()
         if cat not in FOOD_CATS: continue
-        if (row.get('Cancel Date') or '').strip(): continue  # active only
+        # Cancel Date rule: drop only if cancelled more than 10 days ago.
+        # Future-dated cancellations (place still operating, scheduled closure)
+        # AND recent cancellations within 10 days (transition / wind-down period)
+        # are KEPT. Per user directive 2026-05-14.
+        cancel_raw = (row.get('Cancel Date') or '').strip()
+        if cancel_raw:
+            cancel_d = parse_d(cancel_raw)
+            if cancel_d and (REFERENCE_DATE - cancel_d).days > 10:
+                continue
         n_food_active += 1
         iss = parse_d(row.get('Issued'))
         if not iss or iss < WINDOW_365: continue
@@ -303,12 +313,23 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             'cuisineSource': source,
             'issuedDate': iss.isoformat(),
             'daysOpen': days_open,
-            'address': addr1,
+            'address': addr1,                 # default: permit address. Overridden by Places.matchedAddress below when available.
             'slug': slug,
         }
         district = district_from_postal(address_full)
         if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
+
+        # Per user directive 2026-05-14: Google Places data overrides permit
+        # data where Places has authoritative info. Use the matchedAddress as
+        # the displayed address (cleaner formatting, validated location).
+        # Fallback: permit address (when no Places match).
+        places_match = PLACES_CACHE.get(f"{op_raw.strip().upper()}||{address_full.strip().upper()}")
+        if places_match and places_match.get('status') == 'ok' and places_match.get('matchedAddress'):
+            # Strip the ", Canada" suffix; keep "123 Main St, Toronto, ON M5V 1A1"
+            ma = places_match['matchedAddress']
+            ma = _re.sub(r',\s*Canada\s*$', '', ma)
+            entry['address'] = ma
 
         # fallbackMapsUrl: the City permit's NAME + ADDRESS, full stop.
         # This is the user's explicit rule (2026-05-14): permit data is the
