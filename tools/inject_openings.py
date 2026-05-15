@@ -335,20 +335,27 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             ma = _re.sub(r',\s*Canada\s*$', '', ma)
             entry['address'] = ma
 
-        # fallbackMapsUrl — address-only Google search using the address
-        # being DISPLAYED to the user (entry['address'], which is either
-        # Places' formatted matchedAddress or the permit's Line 1). One
-        # consistent format across every listing per user directive
-        # 2026-05-15: "we have an address, it matches places or website
-        # compared to permits file source of truth, no coords." No name
-        # in the query, no coordinates, no Places CID — just the human-
-        # readable address. Same URL pattern whether the entry came from
-        # Places or web-search verification.
+        # fallbackMapsUrl — Google Maps search using NAME + ADDRESS being
+        # DISPLAYED to the user. One consistent format across every listing
+        # per user directive 2026-05-15.
+        #
+        # Why name+address (not address-only): Google's Maps geocoder lands
+        # bare addresses in multi-unit buildings on the building centroid
+        # (e.g. "364 Huron St C104" → generic spot in a hospital block, not
+        # the actual gimbap shop). The Place card is reachable only via
+        # name-in-query search. The earlier "no name" rule existed to dodge
+        # established-same-name-brand routing (the Mapo Korean BBQ case),
+        # but the brand-new-unverified gate above now drops every entry
+        # without Places match AND without a validator-approved website,
+        # so every entry that reaches this code path has been independently
+        # verified to exist at this address — name-in-search routes
+        # correctly to the actual Place card.
         disp_addr = (entry.get('address') or addr1 or '').strip()
         if disp_addr:
-            # Append ", Toronto, ON" only when not already in the address
-            # (Places-formatted addresses include it; permit Line 1 typically doesn't).
-            q = disp_addr if 'toronto' in disp_addr.lower() else f"{disp_addr}, Toronto, ON"
+            parts = [op_raw, disp_addr] if op_raw else [disp_addr]
+            q = ' '.join(p for p in parts if p)
+            if 'toronto' not in q.lower():
+                q = f"{q} Toronto, ON"
             entry['fallbackMapsUrl'] = (
                 f"https://www.google.com/maps/search/?api=1&query={quote_plus(q)}"
             )
