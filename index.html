@@ -231,6 +231,7 @@
   .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
   .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
   .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
+  .open-row .on .oad .oad-dist { font-variant-numeric: tabular-nums; }
   .open-row .on .oad a { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.25); text-decoration-thickness: 1px; text-underline-offset: 2px; transition: color 0.12s, text-decoration-color 0.12s; }
   .open-row .on .oad a:hover { color: var(--accent); text-decoration-color: var(--accent); text-decoration-style: solid; }
   .open-row .oc { text-align: right; }
@@ -516,9 +517,19 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const addrUrl = r.fallbackMapsUrl || r.mapsUrl;
     const addrText = r.address || '—';
     const addrLink = addrUrl ? `<a href="${addrUrl}"${tgt} rel="noopener">${addrText}</a>` : addrText;
-    const addrLine = (r.district && currentRegion === '__all')
-      ? `${addrLink}<span class="oad-d"> · ${r.district}</span>`
-      : addrLink;
+    // Suffix the address with either distance (when Near me is active and we
+    // have coords) or the district (when not, and we're showing all-Toronto).
+    // Distance replaces district under near-me — the district is less useful
+    // once the user's already filtered to their own neighbourhood radius.
+    let addrSuffix = '';
+    if (nearMeActive && userLatLng && r.lat && r.lng) {
+      const km = haversineKm(userLatLng, [r.lat, r.lng]);
+      const kmText = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+      addrSuffix = `<span class="oad-d oad-dist"> · ${kmText}</span>`;
+    } else if (r.district && currentRegion === '__all') {
+      addrSuffix = `<span class="oad-d"> · ${r.district}</span>`;
+    }
+    const addrLine = `${addrLink}${addrSuffix}`;
     const saved = r.slug && isSaved(r.slug);
     const favHtml = r.slug
       ? `<button class="row-fav ${saved ? 'fav-on' : ''}" type="button" aria-label="${saved ? 'Remove from saved' : 'Save for later'}">${saved ? '♥' : '♡'}</button>`
@@ -674,8 +685,11 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     trigger.textContent = c ? `${c.label} (${cuisineN})` : `All cuisines (${cuisineN})`;
     panel.querySelectorAll('.cp-opt').forEach(o => o.setAttribute('aria-selected', o.dataset.key === cuisineKey ? 'true' : 'false'));
     // Update region trigger — Near me overrides the region pick.
+    // Near me overrides the region pick. Trigger shows just "Near me" — no
+    // km value, because the dropdown only offers regions and a number in the
+    // trigger misleads users into expecting a km picker inside.
     rTrigger.textContent = nearMeActive
-      ? `Near me · ${nearMeRadius} km`
+      ? 'Near me'
       : (regionKey === '__all' ? 'All Toronto' : regionKey);
     rPanel.querySelectorAll('.cp-opt').forEach(o => o.setAttribute('aria-selected', !nearMeActive && o.dataset.key === regionKey ? 'true' : 'false'));
     renderFeed();
@@ -852,7 +866,9 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   // Once active, all counts/feed/pins constrain to entries within nearMeRadius km
   // of userLatLng. Selecting any region from the dropdown turns this off.
   var nearMeActive = false;
-  var nearMeRadius = 3; // km
+  var nearMeRadius = 5; // km — generous enough that one transit hop (TTC bus or
+                         // streetcar from a typical neighbourhood) lands inside
+                         // the radius, not just walking distance.
 
   function haversineKm(a, b) {
     const R = 6371, toRad = x => x * Math.PI / 180;
