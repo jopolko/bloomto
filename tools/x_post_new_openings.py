@@ -149,7 +149,13 @@ def build_tweet(entry):
     listing_url = f"{SITE_BASE}/r/{entry['slug']}"
     licensed_lead = _licensed_line(entry.get('daysOpen'))
 
-    name_line = f"{name} · {primary_lbl} Cuisine" if primary_lbl else name
+    # Append " Cuisine" after the label unless the restaurant name already
+    # contains "cuisine"/"kitchen"/"restaurant" (avoids double-cuisine).
+    if primary_lbl:
+        suffix = '' if re.search(r'\b(cuisine|kitchen|restaurant)\b', name, re.I) else ' Cuisine'
+        name_line = f"{name} · {primary_lbl}{suffix}"
+    else:
+        name_line = name
     lines = [licensed_lead, name_line]
     addr_line = addr
     if district:
