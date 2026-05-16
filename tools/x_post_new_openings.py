@@ -157,11 +157,9 @@ def build_tweet(entry):
     else:
         name_line = name
     lines = [licensed_lead, name_line]
-    addr_line = addr
-    if district:
-        addr_line = f"{addr_line} · {district}" if addr_line else district
-    if addr_line:
-        lines.append(addr_line)
+    # Region only — no street address. Creates a curiosity gap that
+    # pushes readers to click through for the full details.
+    lines.append(district or 'Toronto')
     if handle_at:
         lines.append(f"@{handle_at}")
     elif handle_ig:
