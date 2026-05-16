@@ -149,10 +149,16 @@ def build_tweet(entry):
     listing_url = f"{SITE_BASE}/r/{entry['slug']}"
     licensed_lead = _licensed_line(entry.get('daysOpen'))
 
-    # Always append " Cuisine" after the label — "Indian Cuisine" reads
-    # warmer than bare "Indian", and the slight redundancy when the name
-    # already contains the word is preferable to the coarse tone.
-    name_line = f"{name} · {primary_lbl} Cuisine" if primary_lbl else name
+    # Suffix the cuisine label with a contextual word from the restaurant's
+    # own name when available — "LA RUMBA RESTAURANT ... · Dominican
+    # Restaurant" reads more naturally than "Dominican Cuisine" when the
+    # name already says Restaurant. Fall back to "Cuisine" otherwise.
+    if primary_lbl:
+        m = re.search(r'\b(cuisine|kitchen|restaurant)\b', name, re.I)
+        suffix = m.group(1).title() if m else 'Cuisine'
+        name_line = f"{name} · {primary_lbl} {suffix}"
+    else:
+        name_line = name
     lines = [licensed_lead, name_line]
     # Region only — no street address. Creates a curiosity gap that
     # pushes readers to click through for the full details.
