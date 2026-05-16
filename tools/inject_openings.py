@@ -340,6 +340,13 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         if district: entry['district'] = district
         entry.update({k: v for k, v in verification.items() if v is not None})
 
+        # Social handles extracted by the validator from the fetched website
+        # (Instagram / X / Facebook). Used by the X posting bot to @-mention
+        # the restaurant when announcing it; absent when the validator
+        # couldn't find any social links in the page content.
+        if wv_e and wv_e.get('socials'):
+            entry['socials'] = wv_e['socials']
+
         # Per user directive 2026-05-14: Google Places data overrides permit
         # data where Places has authoritative info. Use the matchedAddress as
         # the displayed address (cleaner formatting, validated location).

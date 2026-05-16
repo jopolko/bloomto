@@ -130,6 +130,39 @@ def _find_menu_link(html_text, base_url):
     candidates.sort()
     return candidates[0][1]
 
+_SOCIAL_NON_HANDLES = {
+    'instagram': {'p','explore','reel','reels','tags','stories','tv','about','directory','developer','accounts','sharer','share'},
+    'twitter':   {'home','share','intent','i','settings','login','signup','search','hashtag','share-ui','status'},
+    'facebook':  {'sharer','plugins','tr','help','login','business','reg','people','pages','dialog','share','recommend'},
+}
+
+def extract_socials(text):
+    """Pull Instagram / X (Twitter) / Facebook handles out of fetched
+    page text. Returns dict like {'instagram': 'hopperslk_to', 'x': 'hopperslk'}.
+    Keys only present when a real-looking handle is found. Filters out the
+    common non-handle paths like instagram.com/p/..., twitter.com/intent/...,
+    facebook.com/sharer.php that show up in share-button links."""
+    if not text: return {}
+    import re as _re
+    out = {}
+    for m in _re.finditer(r'instagram\.com/([A-Za-z0-9_.]{2,30})(?:[/?#]|$)', text):
+        h = m.group(1).strip('.')
+        if h.lower() not in _SOCIAL_NON_HANDLES['instagram']:
+            out['instagram'] = h
+            break
+    for m in _re.finditer(r'(?:x|twitter)\.com/([A-Za-z0-9_]{2,15})(?:[/?#]|$)', text):
+        h = m.group(1)
+        if h.lower() not in _SOCIAL_NON_HANDLES['twitter']:
+            out['x'] = h
+            break
+    for m in _re.finditer(r'facebook\.com/([A-Za-z0-9.\-_]{2,50})(?:[/?#]|$)', text):
+        h = m.group(1).strip('.')
+        if h.lower() not in _SOCIAL_NON_HANDLES['facebook']:
+            out['facebook'] = h
+            break
+    return out
+
+
 import threading as _threading
 # Jina free tier caps at 2 concurrent connections per IP. With the keyed
 # trial allowance (10M tokens) we still respect this — both for politeness

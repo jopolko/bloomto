@@ -33,7 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cuisines import VALID_CUISINE_KEYS, parse_cuisines_from_llm
 from llm_verify_batch import submit_batch, poll, download_results
 from llm_search_recover_batch import MODEL, API_KEY, HEADERS, http
-from llm_recover_cuisine import fetch_page_text  # reuse: fetches homepage + menu/about, returns stripped text
+from llm_recover_cuisine import fetch_page_text, extract_socials  # fetched text + IG/X/FB handle sweep
 
 WEB_VERIFY_PATH = ROOT / 'tools' / 'cache' / 'web_verify_cache.json'
 PLACES_PATH = ROOT / 'tools' / 'cache' / 'places_cache.json'
@@ -615,11 +615,13 @@ def main():
             futs = [ex.submit(_fetch, j) for j in fetch_jobs]
             for fut in as_completed(futs):
                 k, u, text, final_url, err = fut.result()
+                socials = extract_socials(text) if text else {}
                 wt_cache[u] = {
                     'fetched_at': now_fetch,
                     'text': text,
                     'final_url': final_url,
                     'error': err,
+                    'socials': socials,
                 }
                 n_done += 1
                 if text: n_ok += 1
