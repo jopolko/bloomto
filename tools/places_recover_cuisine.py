@@ -32,13 +32,13 @@ SOCIAL_DOMAINS = ('instagram.com', 'facebook.com', 'tiktok.com')
 def _is_social(u): return bool(u) and any(d in u.lower() for d in SOCIAL_DOMAINS)
 
 def needs_lookup(verify_entry, places_entry):
-    """Target: operating entries with cuisine still null/unknown that we haven't
-    yet asked Places about. We don't re-query entries already in places_cache
-    (regardless of whether the cached result was useful) — that's churn."""
+    """Target: any operating entry not yet in places_cache. Previously gated
+    on `cuisine is null/unknown`, but that skipped entries with weak name-
+    only LLM guesses (e.g. OGUZ UYGHUR POLOV → tibetan), which then never
+    got Places data + dropped at the validator. Dropping the cuisine check
+    means any fresh operating=yes entry gets a Places shot — Places data
+    is the most authoritative signal we have."""
     if verify_entry.get('status') != 'ok' or verify_entry.get('operating') != 'yes':
-        return False
-    c = verify_entry.get('cuisine')
-    if c and c != 'unknown':
         return False
     if places_entry:  # already queried (status doesn't matter — don't pay twice)
         return False
