@@ -655,15 +655,26 @@ for c in cuisines_out:
     page = re.sub(r'(<link rel="canonical" href=")[^"]*(")',
                   lambda m: m.group(1) + canonical + m.group(2), page, count=1)
 
-    # Insert <h1> right after the brand link so the first heading is the
-    # cuisine-defining one. The .sub div below already has subtitle text;
-    # this h1 makes the page's primary topic unambiguous to crawlers.
+    # Swap the homepage's generic <h1> for a cuisine-specific one. The
+    # homepage h1 reads "New restaurants in Toronto, by cuisine"; we
+    # replace it with "New <Cuisine> restaurants in Toronto" so crawlers
+    # see a single, cuisine-defining heading on each landing page.
     h1 = (f'<h1 class="cuisine-h1">New <span class="hl">{_esc(label)}</span> '
           f'restaurants in Toronto</h1>')
-    page = page.replace(
-        '<div class="sub">',
-        f'{h1}\n    <div class="sub">',
-        1,
+    page = re.sub(
+        r'<h1 class="cuisine-h1">[\s\S]*?</h1>',
+        lambda m: h1,
+        page, count=1,
+    )
+
+    # Also tailor the subtitle to this cuisine.
+    page = re.sub(
+        r'<div class="sub">[\s\S]*?</div>',
+        lambda m: (f'<div class="sub">Every newly licensed {_esc(label)} '
+                   f'restaurant in Toronto from the past 12 months, sourced '
+                   f'from City of Toronto open data, updated daily — '
+                   f'{n365} entries tracked.</div>'),
+        page, count=1,
     )
 
     # Replace STATIC-FEED + LD-ITEMLIST with cuisine-scoped versions.
