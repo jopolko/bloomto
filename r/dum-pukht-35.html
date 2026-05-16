@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DUM PUKHT — Indian restaurant in Toronto · NowServingTO</title>
+<meta name="description" content="DUM PUKHT — newly licensed Indian restaurant at 35 SHEPPARD AVE E, North York. Part of NowServingTO&#39;s daily-updated directory of Toronto&#39;s newest restaurants, by cuisine.">
+<meta name="keywords" content="Toronto restaurants, new restaurants Toronto, newest restaurants, Ethiopian Toronto, Tamil Toronto, Filipino Toronto, Persian Toronto, Mexican Toronto, Jamaican Toronto, Korean Toronto, Bangladeshi Toronto, Caribbean Toronto, immigrant restaurants Toronto, restaurant openings Toronto, daily updated">
+<meta name="author" content="NowServingTO">
+<link rel="canonical" href="https://nowservingto.com/r/dum-pukht-35">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<!-- Warm DNS + TLS to ipapi.co at page load — when a visitor clicks Near
+     Me, the HTTP request that follows skips ~150-300ms of handshake. -->
+<link rel="preconnect" href="https://ipapi.co" crossorigin>
+
+<!-- Google Analytics 4. Distinct page_view events fire automatically for /, /cuisine/X,
+     and /r/X since gtag reads location.pathname on each route. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-CBQJHD3G7P"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-CBQJHD3G7P');
+</script>
+
+<!-- Leaflet for the optional map view. ~50 KB total. Routing-machine + flexpolyline
+     dropped: Google Maps' Directions UI handles mode selection (walk/drive/transit)
+     natively; running in-page routing was duplicative. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="" defer></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" defer></script>
+
+<!-- Open Graph for sharing previews -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://nowservingto.com/">
+<meta property="og:title" content="DUM PUKHT — Indian restaurant in Toronto · NowServingTO">
+<meta property="og:description" content="DUM PUKHT — newly licensed Indian restaurant at 35 SHEPPARD AVE E, North York. Part of NowServingTO&#39;s daily-updated directory of Toronto&#39;s newest restaurants, by cuisine.">
+<meta property="og:image" content="https://nowservingto.com/og/dum-pukht-35.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="675">
+<meta property="og:locale" content="en_CA">
+<meta property="og:site_name" content="NowServingTO">
+
+<!-- Twitter / X cards -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DUM PUKHT — Indian restaurant in Toronto · NowServingTO">
+<meta name="twitter:description" content="DUM PUKHT — newly licensed Indian restaurant at 35 SHEPPARD AVE E, North York. Part of NowServingTO&#39;s daily-updated directory of Toronto&#39;s newest restaurants, by cuisine.">
+<meta name="twitter:image" content="https://nowservingto.com/og/dum-pukht-35.png">
+
+<!-- Structured data: WebSite for the directory itself. Restaurant ItemList is
+     injected by tools/inject_openings.py between the LIST markers below. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "NowServingTO",
+  "url": "https://nowservingto.com/",
+  "description": "A daily-fresh directory of every new restaurant licensed in Toronto, classified by cuisine.",
+  "inLanguage": "en-CA",
+  "publisher": {"@type": "Organization", "name": "NowServingTO"},
+  "isBasedOn": {
+    "@type": "Dataset",
+    "name": "Municipal Licensing and Standards — Business Licences and Permits",
+    "description": "Active business licences issued by the City of Toronto's Municipal Licensing and Standards division, including restaurants, retailers, and personal services. Published as open data and refreshed daily.",
+    "url": "https://open.toronto.ca/dataset/municipal-licensing-and-standards-business-licences-and-permits/",
+    "creator": {"@type": "Organization", "name": "City of Toronto", "url": "https://www.toronto.ca/"},
+    "publisher": {"@type": "Organization", "name": "City of Toronto", "url": "https://www.toronto.ca/"},
+    "license": "https://open.toronto.ca/open-data-license/",
+    "isAccessibleForFree": true
+  }
+}
+</script>
+<!-- LD-ITEMLIST-START -->
+<script type="application/ld+json" id="ld-itemlist">{"@context":"https://schema.org","@type":"Restaurant","name":"DUM PUKHT","address":{"@type":"PostalAddress","streetAddress":"35 SHEPPARD AVE E","addressLocality":"Toronto","addressRegion":"ON","addressCountry":"CA"},"servesCuisine":["Indian"],"url":"https://dumpukht.com","image":"https://nowservingto.com/og/dum-pukht-35.png","dateOpened":"2025-12-03"}</script>
+<!-- LD-ITEMLIST-END -->
+<style>
+  :root {
+    --bg: #faf7ee;
+    --paper: #ffffff;
+    --ink: #15110d;
+    --ink2: #45403a;
+    --muted: #7a746a;
+    --line: #d9d2bf;
+    --rule: #15110d;
+    --accent: #c83624;
+    --moss: #4a6b2b;
+    --fresh: #1a7340;
+    /* cuisine palette */
+    --c-italian:    #c83624;
+    --c-caribbean:  #1a8a5a;
+    --c-sasian:     #d4a017;
+    --c-chinese:    #b13e6a;
+    --c-vietnam:    #4a8b8b;
+    --c-japan:      #2f3aa3;
+    --c-korean:     #6b2456;
+    --c-filipino:   #e08226;
+    --c-tamil:      #8a5d20;
+    --c-tibet:      #b15a25;
+    --c-greek:      #1f7a6a;
+    --c-portuguese: #9b2538;
+    --c-polish:     #4a5a6a;
+    --c-french:     #5a3a7a;
+    --c-irish_uk:   #2a6a40;
+    --c-german:     #6a5a30;
+    --c-jewish_deli:#4a4a8a;
+    --c-eastern_eu: #7a4a4a;
+    --c-mideast:    #b87a25;
+    --c-latin:      #cc4a4a;
+    --c-african_horn:#a0522d;
+    --c-african_west:#5a8a3a;
+    --serif: 'Iowan Old Style', 'Charter', Georgia, ui-serif, serif;
+    --sans: -apple-system, 'Helvetica Neue', ui-sans-serif, sans-serif;
+    --mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  .mast { padding: 22px 0 0; }
+  .mast .wrap { border-bottom: 3px solid var(--rule); padding-bottom: 16px; }
+  .mast .brand { font: 800 28px/1 var(--serif); letter-spacing: -0.02em; color: var(--ink); display: inline-block; text-decoration: none; }
+  .mast .brand:hover { color: var(--accent); }
+  .mast .brand sup { font: 600 10px/1 var(--sans); letter-spacing: 0.08em; color: var(--muted); margin-left: 6px; vertical-align: super; text-transform: uppercase; }
+  .mast .cuisine-h1 { font: 700 22px/1.15 var(--serif); color: var(--ink); margin: 8px 0 0; letter-spacing: -0.01em; }
+  .mast .cuisine-h1 .hl { color: var(--accent); }
+  .mast .sub { color: var(--muted); font: 400 14px/1.4 var(--serif); margin-top: 6px; font-style: italic; }
+  .mast .sub .hl { font-weight: 800; font-style: normal; color: var(--accent); letter-spacing: -0.005em; }
+  .mast .sub #last-update { font-style: normal; font-weight: 600; color: var(--ink2); font-variant-numeric: lining-nums tabular-nums; }
+
+  /* Belt-and-suspenders: never let the page scroll horizontally. */
+  body { overflow-x: hidden; }
+
+  /* List ↔ Map view toggle + map container */
+  .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .view-toggle .vt-btn { font: 600 12px/1 var(--sans); padding: 9px 14px; background: var(--paper); color: var(--ink2); border: 0; cursor: pointer; transition: background 0.12s, color 0.12s; }
+  .view-toggle .vt-btn:hover { color: var(--ink); }
+  .view-toggle .vt-btn.vt-active { background: var(--ink); color: #fff; }
+  .map-view { margin-bottom: 28px; }
+  .map-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(45, 165, 92, 0.045); border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; flex-wrap: wrap; }
+  .map-btn { font: 600 11.5px/1 var(--sans); padding: 7px 12px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; transition: border-color 0.12s, background 0.12s; }
+  .map-btn:hover { border-color: var(--ink2); }
+  .map-btn:disabled { opacity: 0.5; cursor: wait; }
+  .map-btn.active { background: var(--fresh); color: #fff; border-color: var(--fresh); }
+  .map-info { font: 400 11.5px/1.3 var(--sans); color: var(--muted); flex: 1; min-width: 0; }
+  #map { height: 65vh; min-height: 420px; border: 1px solid var(--line); border-radius: 0 0 10px 10px; background: var(--paper); }
+  @media (max-width: 600px) {
+    #map { height: 60vh; min-height: 360px; }
+  }
+  /* Restaurant pins: uniform green so a zoomed-in map reads as one cohesive layer
+     instead of a rainbow of cuisine codes (cuisine is still shown in the popup). */
+  .cuisine-pin span { display: block; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.4); }
+  .user-pin span { display: block; width: 18px; height: 18px; border-radius: 50%; background: #2a72ff; border: 3px solid #fff; box-shadow: 0 0 0 4px rgba(42,114,255,0.3); }
+  /* Permanent name label next to a pin — only shown when filter narrows to ~25 or fewer entries */
+  .leaflet-tooltip.pin-label { background: rgba(255,255,255,0.95); border: 1px solid var(--line); border-radius: 4px; padding: 3px 7px; font: 700 11.5px/1.1 var(--sans); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.18); white-space: nowrap; }
+  .leaflet-tooltip.pin-label::before { display: none; }  /* hide default tooltip pointer arrow */
+  .leaflet-popup-content { font: 14px/1.4 var(--serif); margin: 12px 14px; }
+  .leaflet-popup-content .pop-name { font: 700 14px var(--serif); color: var(--ink); }
+  .leaflet-popup-content .pop-addr { font: 12px var(--sans); color: var(--muted); margin-top: 2px; }
+  .leaflet-popup-content .pop-cuisine { font: 700 10px var(--sans); color: #888; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+  .leaflet-popup-content .pop-dist { font: 600 11.5px var(--mono); color: var(--fresh); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .leaflet-popup-content .pop-routes { display: flex; gap: 6px; margin-top: 8px; }
+  .leaflet-popup-content .pop-btn { flex: 1; padding: 7px 10px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; font: 600 12px/1 var(--sans); transition: background 0.12s, border-color 0.12s; }
+  .leaflet-popup-content .pop-btn:hover { background: var(--bg); border-color: var(--ink2); }
+  .leaflet-popup-content .pop-link { display: inline-block; margin-top: 8px; padding: 6px 10px; color: var(--ink2) !important; border-radius: 4px; text-decoration: none; font: 600 11px/1 var(--sans); }
+  .leaflet-popup-content .pop-link:hover { color: var(--accent) !important; }
+  .phone-modal { position: fixed; inset: 0; background: rgba(21,17,13,0.55); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .phone-modal .pm-card { background: var(--paper); border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.3); max-width: 380px; width: 100%; padding: 18px 20px 16px; font: 14px var(--sans); }
+  .phone-modal .pm-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .phone-modal .pm-title { font: 700 14px var(--sans); color: var(--ink); }
+  .phone-modal .pm-close { background: transparent; border: 0; color: var(--muted); font: 700 22px/1 var(--sans); cursor: pointer; padding: 0 4px; }
+  .phone-modal .pm-close:hover { color: var(--ink); }
+  .phone-modal .pm-name { font: 700 16px/1.2 var(--serif); color: var(--ink); margin: 4px 0 10px; }
+  .phone-modal .pm-qr { display: flex; justify-content: center; margin: 6px 0 10px; }
+  .phone-modal .pm-qr img { display: block; image-rendering: pixelated; }
+  .phone-modal .pm-hint { font: italic 12.5px/1.4 var(--serif); color: var(--ink2); text-align: center; margin: 4px 4px 10px; }
+  .phone-modal .pm-url { font: 11px/1.4 var(--mono); color: var(--muted); word-break: break-all; text-align: center; padding-top: 6px; border-top: 1px solid var(--line); }
+  .phone-modal .pm-url a { color: var(--muted); text-decoration: none; }
+  .phone-modal .pm-url a:hover { color: var(--ink); }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 24px 0 14px; }
+  @media (max-width: 600px) {
+    /* Two-row layout: cuisine + region split 50/50 on row 1; near-me + saved +
+       view-toggle pack together on row 2. Avoids the 3-row wrap that happens
+       when each dropdown wants its full desktop min-width. */
+    .filters { gap: 6px; }
+    .filters .cuisine-picker { flex: 1 1 calc(50% - 3px); min-width: 0; }
+    .filters .cuisine-picker .cp-trigger { min-width: 0; width: 100%; }
+    /* Compact icon-only buttons for Near me + Saved on row 2 */
+    .filters #locate-btn { font-size: 0; padding: 7px 10px; }
+    .filters #locate-btn::before { content: '📍'; font-size: 14px; }
+    .filters #saved-toggle { font-size: 0; padding: 7px 10px; }
+    .filters #saved-toggle::before { content: '♡'; font-size: 16px; }
+    .filters #saved-toggle.has-saves::before { content: '♥'; color: var(--accent); }
+    .filters #saved-toggle.active::before { color: #fff; }
+  }
+  .filters .filter-clear { font: 600 11px/1 var(--sans); color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: 0; padding: 4px 6px; }
+  .filters .filter-clear:hover { color: var(--accent); }
+  .cuisine-picker { position: relative; }
+  .cuisine-picker.region button.cp-trigger { min-width: 160px; }
+  .cuisine-picker button.cp-trigger { font: 600 13px/1.3 var(--serif); font-variant-numeric: lining-nums tabular-nums; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 30px 8px 12px; cursor: pointer; min-width: 200px; max-width: 100%; text-align: left; position: relative; transition: border-color 0.12s, box-shadow 0.12s; }
+  .cuisine-picker button.cp-trigger::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--ink); transition: transform 0.12s; }
+  .cuisine-picker button.cp-trigger[aria-expanded="true"]::after { transform: translateY(-50%) rotate(180deg); }
+  .cuisine-picker button.cp-trigger:hover { border-color: var(--rule); }
+  .cuisine-picker button.cp-trigger:focus-visible { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,17,13,0.08); }
+  .cuisine-picker .cp-panel { position: absolute; top: calc(100% + 4px); left: 0; min-width: 240px; max-width: min(360px, calc(100vw - 28px)); max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 28px rgba(21,17,13,0.18); z-index: 1001; padding: 4px 0; -webkit-overflow-scrolling: touch; }
+  .cuisine-picker .cp-panel[hidden] { display: none; }
+  .cuisine-picker .cp-opt { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px; cursor: pointer; font: 500 13.5px/1.3 var(--serif); color: var(--ink); border: 0; background: transparent; width: 100%; text-align: left; min-height: 38px; }
+  .cuisine-picker .cp-opt:hover, .cuisine-picker .cp-opt:focus-visible { background: var(--bg); outline: none; }
+  .cuisine-picker .cp-opt[aria-selected="true"] { background: rgba(200, 54, 36, 0.06); font-weight: 700; }
+  .cuisine-picker .cp-opt .ct { color: var(--muted); font: 500 11.5px/1 var(--mono); font-variant-numeric: lining-nums tabular-nums; margin-left: auto; }
+  .cuisine-picker .cp-opt.cp-all { border-bottom: 1px solid var(--line); }
+
+  .open-feed { background: rgba(45, 165, 92, 0.045); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0; margin-bottom: 28px; }
+  .open-row { display: grid; grid-template-columns: 110px 1fr 165px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #ece6d5; }
+  .open-row:last-child { border-bottom: 0; }
+  .open-row .od { font: 700 9.5px/1.1 var(--sans); color: var(--moss); text-transform: uppercase; letter-spacing: 0.08em; }
+  .open-row .od .ago { display: block; }
+  .open-row[data-fresh="hot"] .od .ago { color: var(--fresh); font-size: 10.5px; }
+  .open-row[data-fresh="hot"] .od .ago::before { content: '★ '; }
+  .open-row .on { font: 700 15.5px/1.25 var(--serif); color: var(--ink); letter-spacing: -0.005em; }
+  /* Quiet dotted underline says "this is a link" without committing to a heavy
+     solid underline. Solid red underline on hover/active for the affordance. */
+  .open-row .on a { color: var(--ink); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.3); text-decoration-thickness: 1px; text-underline-offset: 3px; transition: color 0.12s, text-decoration-color 0.12s, text-decoration-style 0.12s; }
+  .open-row .on a:hover,
+  .open-row .on a:active { color: var(--accent); text-decoration-style: solid; text-decoration-color: var(--accent); }
+  .open-row .on .rating { display: inline-block; margin-left: 10px; font: 700 12px/1 var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; vertical-align: 1px; white-space: nowrap; }
+  .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
+  .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
+  .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
+  .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
+  .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
+  .open-row .on .oad .oad-dist { font-variant-numeric: tabular-nums; }
+  .open-row .on .oad a { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.25); text-decoration-thickness: 1px; text-underline-offset: 2px; transition: color 0.12s, text-decoration-color 0.12s; }
+  .open-row .on .oad a:hover { color: var(--accent); text-decoration-color: var(--accent); text-decoration-style: solid; }
+  .open-row .oc { text-align: right; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 6px; }
+  .open-row .oc .pill { font: 700 9.5px/1 var(--sans); padding: 5px 10px; border-radius: 99px; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .open-row .oc .row-fav,
+  .open-row .oc .row-share { background: transparent; border: 0; cursor: pointer; font: 17px/1 var(--sans); padding: 0 6px 0 0; color: var(--muted); transition: color 0.12s, transform 0.12s; vertical-align: -2px; }
+  .open-row .oc .row-fav.fav-on { color: var(--accent); }
+  .open-row .oc .row-fav:hover,
+  .open-row .oc .row-share:hover { color: var(--accent); transform: scale(1.1); }
+  .open-row .oc .row-share { padding-right: 8px; line-height: 0; }
+  .open-row .oc .row-share svg { display: inline-block; vertical-align: middle; }
+  .map-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  /* When filtered to a single cuisine, hide the redundant cuisine pill on rows
+     whose ONLY cuisine matches the filter. Multi-cuisine rows keep their pills
+     visible so the user sees "Afghan · Pakistani · Indian" even on the Indian
+     filter — useful signal that the place serves multiple traditions. */
+  .open-feed.single-cuisine .open-row:not([data-multi]) { grid-template-columns: 110px 1fr; }
+  .open-feed.single-cuisine .open-row:not([data-multi]) .oc { display: none; }
+  .open-feed .empty { padding: 28px 20px; color: var(--muted); font: italic 13px/1.4 var(--serif); text-align: center; }
+  .open-feed .show-more { display: block; width: calc(100% - 36px); margin: 8px 18px 12px; padding: 11px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font: 700 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink2); transition: all 0.12s; }
+  .open-feed .show-more:hover { background: var(--bg); border-color: var(--rule); color: var(--ink); }
+
+  main.wrap { padding-bottom: 60px; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 0 14px; }
+    .open-row { grid-template-columns: 1fr 130px; gap: 8px; padding: 12px 14px; }
+    .open-feed.single-cuisine .open-row { grid-template-columns: 1fr; }
+    .open-feed.single-cuisine .open-row .on { grid-column: 1 / -1; }
+    .open-row .od { grid-column: 1 / 3; order: -1; display: flex; gap: 10px; align-items: baseline; }
+    .open-row .od .ago { display: inline; margin-top: 0; }
+    .open-row .on { grid-column: 1; }
+    .open-row .oc { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="wrap">
+    <a href="/" class="brand" id="brand-link">NowServingTO<sup>beta</sup></a>
+    <h1 class="cuisine-h1">DUM PUKHT</h1>
+    <div class="sub">Newly licensed Indian restaurant — 35 SHEPPARD AVE E, North York. From NowServingTO's daily directory of Toronto's newest restaurants.</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="filters">
+    <div class="cuisine-picker">
+      <button id="cp-trigger" class="cp-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Filter by cuisine">All cuisines</button>
+      <div id="cp-panel" class="cp-panel" role="listbox" aria-labelledby="cp-trigger" hidden></div>
+    </div>
+    <div class="cuisine-picker region">
+      <button id="rp-trigger" class="cp-trigger" aria-haspopup="listbox" aria-expanded="false" aria-label="Filter by district">All Toronto</button>
+      <div id="rp-panel" class="cp-panel" role="listbox" aria-labelledby="rp-trigger" hidden></div>
+    </div>
+    <button id="locate-btn" class="map-btn" type="button" aria-label="Find restaurants near me">📍 Near me</button>
+    <button id="saved-toggle" class="map-btn" type="button" aria-label="Show saved restaurants only">♡ Saved</button>
+    <div class="view-toggle" role="tablist" aria-label="View mode">
+      <button class="vt-btn vt-active" data-view="list" role="tab" aria-selected="true">List</button>
+      <button class="vt-btn" data-view="map" role="tab" aria-selected="false">Map</button>
+    </div>
+  </div>
+  <div class="open-feed" id="open-feed">
+    <!-- STATIC-FEED-START — pre-rendered daily by tools/inject_openings.py for crawlers + no-JS visitors. Replaced by interactive JS render on page load. -->
+    <div class="open-row"><div class="od"><span class="ago">licensed 5mo ago</span></div><div class="on"><a href="https://dumpukht.com" rel="noopener">DUM PUKHT</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=DUM+PUKHT+35+SHEPPARD+AVE+E+Toronto%2C+ON" rel="noopener">35 SHEPPARD AVE E</a><span class="oad-d"> · North York</span></span></div><div class="oc"><span class="pill" style="background:#e88e2c">Indian</span></div></div>
+    <!-- STATIC-FEED-END -->
+  </div>
+
+  <div class="map-view" id="map-view" hidden>
+    <div class="map-toolbar">
+      <span class="map-info" id="map-info"></span>
+    </div>
+    <div id="map" role="region" aria-label="Map of new restaurant openings"></div>
+  </div>
+
+</main>
+
+
+<script>
+const CUISINE_PALETTE = {
+  italian:'var(--c-italian)', caribbean:'var(--c-caribbean)', south_asian:'var(--c-sasian)',
+  chinese:'var(--c-chinese)', vietnamese:'var(--c-vietnam)', japanese:'var(--c-japan)',
+  korean:'var(--c-korean)', filipino:'var(--c-filipino)', tamil:'var(--c-tamil)',
+  tibetan:'var(--c-tibet)', greek:'var(--c-greek)', portuguese:'var(--c-portuguese)',
+  polish:'var(--c-polish)', french:'var(--c-french)', irish_uk:'var(--c-irish_uk)',
+  german:'var(--c-german)', jewish_deli:'var(--c-jewish_deli)', eastern_eu:'var(--c-eastern_eu)',
+  middle_east:'var(--c-mideast)', latin:'var(--c-latin)',
+  african_horn:'var(--c-african_horn)', african_west:'var(--c-african_west)',
+  thai:'#7a8a3a',
+  indian:'#e88e2c', pakistani:'#a06030', afghan:'#7a5d3a', bangladeshi:'#b88820', persian:'#8a4a25',
+  mexican:'#d63d2a', salvadoran:'#c8553a', peruvian:'#b35b50', colombian:'#cc6248', brazilian:'#3d8a47',
+  jamaican:'#1f7a4a', trinidadian:'#2a9560', guyanese:'#3a8060', haitian:'#1a6855',
+  lebanese:'#c89538', turkish:'#a8662a', syrian:'#9b5520',
+  ukrainian:'#6a5a8a', russian:'#7a4a4a', hungarian:'#8a5050',
+  ethiopian:'#a0522d', eritrean:'#8a4528', somali:'#b06530',
+  nigerian:'#4a7a30', ghanaian:'#6a8a40', moroccan:'#b87a2a',
+  indonesian:'#7a6a40', malaysian:'#5a7a55', burmese:'#8a7050',
+  cambodian:'#7a5a3a', laotian:'#8a6a4a',
+  sri_lankan:'#b8702a', nepalese:'#a05a25',
+  cuban:'#2a8a6a', dominican:'#256a8a',
+  spanish:'#c8553a',
+  israeli:'#3a6a8a', egyptian:'#b88a4a', yemeni:'#a05a30', armenian:'#9b3a3a', georgian:'#7a4a8a',
+  argentinian:'#5a8aa0', venezuelan:'#c8a838',
+  senegalese:'#7a8a30',
+};
+const CUISINE_LABEL = {
+  italian:'Italian', chinese:'Chinese', japanese:'Japanese', korean:'Korean',
+  vietnamese:'Vietnamese', filipino:'Filipino', thai:'Thai',
+  indonesian:'Indonesian', malaysian:'Malaysian', burmese:'Burmese',
+  cambodian:'Cambodian', laotian:'Laotian',
+  south_asian:'South Asian', indian:'Indian', pakistani:'Pakistani', afghan:'Afghan',
+  bangladeshi:'Bangladeshi', tamil:'Tamil', tibetan:'Tibetan',
+  sri_lankan:'Sri Lankan', nepalese:'Nepalese',
+  caribbean:'Caribbean', jamaican:'Jamaican', trinidadian:'Trinidadian', guyanese:'Guyanese', haitian:'Haitian',
+  cuban:'Cuban', dominican:'Dominican',
+  greek:'Greek', portuguese:'Portuguese', polish:'Polish', french:'French',
+  irish_uk:'Irish/UK', german:'German', jewish_deli:'Jewish deli', spanish:'Spanish',
+  eastern_eu:'Eastern European', ukrainian:'Ukrainian', russian:'Russian', hungarian:'Hungarian',
+  middle_east:'Middle Eastern', lebanese:'Lebanese', turkish:'Turkish', syrian:'Syrian', persian:'Persian',
+  israeli:'Israeli', egyptian:'Egyptian', yemeni:'Yemeni', armenian:'Armenian', georgian:'Georgian',
+  latin:'Latin American', mexican:'Mexican', salvadoran:'Salvadoran', peruvian:'Peruvian',
+  colombian:'Colombian', brazilian:'Brazilian', argentinian:'Argentinian', venezuelan:'Venezuelan',
+  african_horn:'East African', ethiopian:'Ethiopian', eritrean:'Eritrean', somali:'Somali',
+  african_west:'West African', nigerian:'Nigerian', ghanaian:'Ghanaian', moroccan:'Moroccan', senegalese:'Senegalese',
+};
+
+const NAME_STOP = new Set(['THE','AND','OF','RESTAURANT','CAFE','BAR','GRILL','KITCHEN','TORONTO','INC','LTD','CO','CORP','CUISINE','HOUSE','SHOP','MARKET','STORE','FOOD','FOODS','SUPER','PLACE','SPOT','EATERY','BISTRO','PUB','BAKERY','DELI','DINER','LOUNGE']);
+function nameTokens(s) {
+  if (!s) return new Set();
+  const out = new Set();
+  s.toUpperCase().replace(/[^A-Z0-9 ]/g,' ').split(/\s+/).forEach(w => {
+    if (w.length > 1 && !NAME_STOP.has(w)) out.add(w);
+  });
+  return out;
+}
+function nameJaccard(a, b) {
+  const A = nameTokens(a), B = nameTokens(b);
+  if (!A.size || !B.size) return 0;
+  let inter = 0; A.forEach(x => B.has(x) && inter++);
+  return inter / (A.size + B.size - inter);
+}
+
+function agoLabel(days) {
+  if (days <= 1)   return 'licensed today';
+  if (days <= 60)  return 'licensed ' + days + 'd ago';
+  if (days <= 365) return 'licensed ' + Math.round(days/30) + 'mo ago';
+  return 'licensed ' + (days/365).toFixed(1) + 'y ago';
+}
+
+fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
+  const no = data.newOpenings;
+  // (Subtitle reads "updated daily" — no dynamic date to inject.)
+
+  // Dynamic cuisine taxonomy: corridors.json carries label + color for every
+  // active cuisine (curated palette for seed keys, hash-derived hex for
+  // novel keys auto-registered when Haiku surfaced a new ethnicity). This
+  // map lets the renderer use server-side colors/labels first, falling back
+  // to the legacy JS CUISINE_PALETTE/LABEL only for keys the JSON didn't
+  // ship — typically nothing, since the JSON is the source of truth now.
+  const CUISINE_META = {};
+  (no && no.cuisines || []).forEach(c => {
+    if (c && c.key) CUISINE_META[c.key] = { label: c.label, color: c.color };
+  });
+
+  // Favorites: localStorage-backed set of saved slugs. No accounts, no backend.
+  function getSaved() { try { return new Set(JSON.parse(localStorage.getItem('nsto_saved') || '[]')); } catch { return new Set(); } }
+  function isSaved(slug) { return getSaved().has(slug); }
+  function toggleSaved(slug) {
+    const s = getSaved();
+    if (s.has(slug)) s.delete(slug); else s.add(slug);
+    localStorage.setItem('nsto_saved', JSON.stringify([...s]));
+    return s.has(slug);
+  }
+  let savedOnly = false;
+  function refreshSavedToggle() {
+    const btn = document.getElementById('saved-toggle');
+    if (!btn) return;
+    const n = getSaved().size;
+    btn.textContent = n ? `♥ Saved (${n})` : '♡ Saved';
+    btn.classList.toggle('has-saves', n > 0);
+    btn.classList.toggle('active', savedOnly);
+  }
+
+  if (!no || !no.cuisines || !no.cuisines.length) {
+    document.getElementById('open-feed').innerHTML = '<div class="empty">No new-openings data in feed.</div>';
+    return;
+  }
+
+  const trigger = document.getElementById('cp-trigger');
+  const panel = document.getElementById('cp-panel');
+  const rTrigger = document.getElementById('rp-trigger');
+  const rPanel = document.getElementById('rp-panel');
+  const feed = document.getElementById('open-feed');
+
+  // District list — same 6 derived from FSA mapping in inject_openings.py
+  const DISTRICTS = ['Downtown', 'East Toronto', 'Etobicoke', 'North York', 'Scarborough', 'West Toronto'];
+
+  // Build the custom dropdown options: "All cuisines" pinned top, then alphabetical
+  const totalCount = no.cuisines.reduce((s,c)=>s+c.count365d,0);
+  function makeOpt(key, label, count, allFlag) {
+    const b = document.createElement('button');
+    b.className = 'cp-opt' + (allFlag ? ' cp-all' : '');
+    b.type = 'button';
+    b.role = 'option';
+    b.dataset.key = key;
+    b.innerHTML = `<span class="lbl">${label}</span><span class="ct">${count}</span>`;
+    return b;
+  }
+  panel.appendChild(makeOpt('__all', 'All cuisines', totalCount, true));
+  [...no.cuisines]
+    .sort((a, b) => (a.label || a.key).localeCompare(b.label || b.key))
+    .forEach(c => panel.appendChild(makeOpt(c.key, c.label, c.count365d, false)));
+
+  // Region dropdown — count entries per district from the recent feed
+  const regionCount = {};
+  no.recent.forEach(r => { if (r.district) regionCount[r.district] = (regionCount[r.district]||0)+1; });
+  rPanel.appendChild(makeOpt('__all', 'All Toronto', no.recent.length, true));
+  DISTRICTS.forEach(d => rPanel.appendChild(makeOpt(d, d, regionCount[d] || 0, false)));
+
+  const INITIAL_SHOW = 50, PAGE_SIZE = 50;
+  let currentRows = [], currentShown = INITIAL_SHOW;
+  let currentCuisine = '__all', currentRegion = '__all';
+  function buildRowEl(r) {
+    // Multi-cuisine entries render one pill per declared cuisine; legacy single-
+    // cuisine entries fall back to `r.cuisine`.
+    const cuisineKeys = (r.cuisines && r.cuisines.length) ? r.cuisines : [r.cuisine];
+    const pillsHtml = cuisineKeys
+      .map(k => {
+        const meta = CUISINE_META[k];
+        const bg = (meta && meta.color) || CUISINE_PALETTE[k] || '#999';
+        const lab = (meta && meta.label) || CUISINE_LABEL[k] || k;
+        return `<span class="pill" style="background:${bg}">${lab}</span>`;
+      }).join('');
+    const isHot = r.daysOpen <= 30;
+    const row = document.createElement('div');
+    row.className = 'open-row';
+    if (isHot) row.setAttribute('data-fresh', 'hot');
+    if (cuisineKeys.length > 1) row.setAttribute('data-multi', '');
+    const trustMatch = !r.matchedName || nameJaccard(r.operatingName, r.matchedName) >= 0.34;
+    // Per user directive 2026-05-15: name link is shown when the validator
+    // approved a website — either from Places or from the Google-search
+    // fallback (top match, judged on small-scale/independent/immigrant-owned
+    // ethnic-cuisine criteria). The validator-approved URL is in r.website;
+    // if absent, no link. trustMatch still gates against wrong-business
+    // Places matches (suppresses link + rating when the matched name diverges).
+    const link = (trustMatch && r.website) ? r.website : null;
+    const linkClass = link ? 'ext' : '';
+    // target=_blank on desktop (preserve NowServingTO tab); same-tab on mobile so
+    // the back button cleanly returns from Maps without stranding the user on a
+    // separate browser tab.
+    const desktopUA = window.matchMedia('(min-width: 700px)').matches && !('ontouchstart' in window);
+    const tgt = desktopUA ? ' target="_blank"' : '';
+    const nameHtml = link
+      ? `<a class="${linkClass}" href="${link}"${tgt} rel="noopener">${r.operatingName}</a>`
+      : r.operatingName;
+    const ratingHtml = (trustMatch && r.rating)
+      ? `<span class="rating">${r.rating.toFixed(1)}<span class="rc">· ${r.reviewCount ? r.reviewCount.toLocaleString() : '?'}</span></span>`
+      : '';
+    const unverifiedHtml = (!trustMatch && r.matchedName)
+      ? `<span class="unverified" title="Google's matched name (${r.matchedName}) differs too much from the licence name to trust — link suppressed">unverified</span>`
+      : '';
+    // Address links to Google Maps. Precedence:
+    //   1. r.mapsUrl — Places CID deep-link (e.g., maps.google.com?cid=...)
+    //      when Places matched the entry. Single result, exact business —
+    //      no ambiguity when multiple businesses share a name or address.
+    //   2. r.fallbackMapsUrl — name + address search URL when no Places
+    //      match exists. The wrong-brand routing risk (Mapo case) is
+    //      already prevented upstream by the brand-new-unverified gate.
+    // Both are address-anchored (no lat/lng coordinates), human-readable,
+    // and route to a real Google Maps result.
+    const addrUrl = r.mapsUrl || r.fallbackMapsUrl;
+    const addrText = r.address || '—';
+    const addrLink = addrUrl ? `<a href="${addrUrl}"${tgt} rel="noopener">${addrText}</a>` : addrText;
+    // Suffix the address with either distance (when Near me is active and we
+    // have coords) or the district (when not, and we're showing all-Toronto).
+    // Distance replaces district under near-me — the district is less useful
+    // once the user's already filtered to their own neighbourhood radius.
+    let addrSuffix = '';
+    if (nearMeActive && userLatLng && r.lat && r.lng) {
+      const km = haversineKm(userLatLng, [r.lat, r.lng]);
+      const kmText = km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
+      addrSuffix = `<span class="oad-d oad-dist"> · ${kmText}</span>`;
+    } else if (r.district && currentRegion === '__all') {
+      addrSuffix = `<span class="oad-d"> · ${r.district}</span>`;
+    }
+    const addrLine = `${addrLink}${addrSuffix}`;
+    const saved = r.slug && isSaved(r.slug);
+    const favHtml = r.slug
+      ? `<button class="row-fav ${saved ? 'fav-on' : ''}" type="button" aria-label="${saved ? 'Remove from saved' : 'Save for later'}">${saved ? '♥' : '♡'}</button>`
+      : '';
+    // Material/Android share glyph — 3 dots connected by lines. More universally
+    // recognized as "share" than ↗ (which we already use for external links on
+    // business names).
+    const shareHtml = r.slug
+      ? `<button class="row-share" type="button" aria-label="Share this listing"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg></button>`
+      : '';
+    row.innerHTML = `
+      <div class="od"><span class="ago">${agoLabel(r.daysOpen)}</span></div>
+      <div class="on">${nameHtml}${ratingHtml}${unverifiedHtml}<span class="oad">${addrLine}</span></div>
+      <div class="oc">${favHtml}${shareHtml}${pillsHtml}</div>`;
+    const favBtn = row.querySelector('.row-fav');
+    if (favBtn) {
+      favBtn.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        const now = toggleSaved(r.slug);
+        favBtn.classList.toggle('fav-on', now);
+        favBtn.textContent = now ? '♥' : '♡';
+        favBtn.setAttribute('aria-label', now ? 'Remove from saved' : 'Save for later');
+        refreshSavedToggle();
+        if (savedOnly && !now) renderFeed();
+      });
+    }
+    const shareBtn = row.querySelector('.row-share');
+    if (shareBtn) {
+      shareBtn.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        window.__nsShare(r.slug, shareBtn);
+      });
+    }
+    return row;
+  }
+  function paintFeed() {
+    feed.innerHTML = '';
+    if (!currentRows.length) {
+      let msg = 'No tagged openings in the last 365 days.';
+      if (currentCuisine !== '__all' && currentRegion !== '__all') {
+        const c = no.cuisines.find(x => x.key === currentCuisine);
+        msg = `No new ${c ? c.label : ''} kitchens in ${currentRegion} yet.`;
+      } else if (currentCuisine !== '__all') {
+        const c = no.cuisines.find(x => x.key === currentCuisine);
+        msg = `No new ${c ? c.label : ''} kitchens in the last 365 days.`;
+      } else if (currentRegion !== '__all') {
+        msg = `No new kitchens in ${currentRegion} yet.`;
+      }
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.innerHTML = msg + (currentRegion !== '__all'
+        ? ' <button class="filter-clear" id="clear-region">Clear region filter</button>'
+        : '');
+      feed.appendChild(empty);
+      const clr = document.getElementById('clear-region');
+      if (clr) clr.addEventListener('click', () => applyFilters(currentCuisine, '__all'));
+      return;
+    }
+    const visible = currentRows.slice(0, currentShown);
+    visible.forEach(r => feed.appendChild(buildRowEl(r)));
+    if (currentRows.length > currentShown) {
+      const remaining = currentRows.length - currentShown;
+      const more = document.createElement('button');
+      more.className = 'show-more';
+      more.type = 'button';
+      more.textContent = `Show ${Math.min(PAGE_SIZE, remaining)} more`;
+      more.addEventListener('click', () => {
+        currentShown += PAGE_SIZE;
+        paintFeed();
+      });
+      feed.appendChild(more);
+    }
+  }
+  function renderFeed() {
+    feed.classList.toggle('single-cuisine', currentCuisine !== '__all');
+    let rows;
+    if (currentCuisine === '__all') {
+      rows = no.recent.slice();
+    } else {
+      // Multi-cuisine entries (e.g. Afghan + Pakistani + Indian) match each cuisine
+      // they claim. Falls back to single `cuisine` for legacy entries.
+      rows = no.recent.filter(r => (r.cuisines || [r.cuisine]).includes(currentCuisine));
+      // pull in cuisine's full curated set (recent5 = top 10 per cuisine)
+      const c = no.cuisines.find(x => x.key === currentCuisine);
+      if (c && c.recent5) {
+        const seen = new Set(rows.map(r => r.operatingName + '|' + r.issuedDate));
+        c.recent5.forEach(r => { const k = r.operatingName+'|'+r.issuedDate; if (!seen.has(k)) { rows.push(r); seen.add(k); } });
+        rows.sort((a,b)=> a.issuedDate < b.issuedDate ? 1 : -1);
+      }
+    }
+    if (savedOnly) {
+      const saved = getSaved();
+      rows = rows.filter(r => saved.has(r.slug));
+    }
+    if (nearMeActive && userLatLng) {
+      rows = rows.filter(r => r.lat && r.lng && haversineKm(userLatLng, [r.lat, r.lng]) <= nearMeRadius);
+    } else if (currentRegion !== '__all') {
+      rows = rows.filter(r => r.district === currentRegion);
+    }
+    currentRows = rows;
+    currentShown = INITIAL_SHOW;
+    paintFeed();
+  }
+  // Build the row set that would result from a given (cuisine, region, nearMe) tuple.
+  // Mirrors the logic in renderFeed() so option counts agree with what the user sees.
+  // When nearMe is true (and userLatLng is set), filters to entries within nearMeRadius
+  // of the user — overriding the region argument since they're mutually exclusive.
+  function rowsFor(cuisineKey, regionKey, nearMe) {
+    let rows;
+    if (cuisineKey === '__all') rows = no.recent.slice();
+    else {
+      // Multi-cuisine entries match each of their declared cuisines.
+      rows = no.recent.filter(r => (r.cuisines || [r.cuisine]).includes(cuisineKey));
+      const c = no.cuisines.find(x => x.key === cuisineKey);
+      if (c && c.recent5) {
+        const seen = new Set(rows.map(r => r.operatingName + '|' + r.issuedDate));
+        c.recent5.forEach(r => { const k = r.operatingName+'|'+r.issuedDate; if (!seen.has(k)) { rows.push(r); seen.add(k); } });
+      }
+    }
+    if (savedOnly) {
+      const saved = getSaved();
+      rows = rows.filter(r => saved.has(r.slug));
+    }
+    if (nearMe && userLatLng) {
+      // Entries without coords can't be evaluated for proximity — exclude them.
+      rows = rows.filter(r => r.lat && r.lng && haversineKm(userLatLng, [r.lat, r.lng]) <= nearMeRadius);
+    } else if (regionKey !== '__all') {
+      rows = rows.filter(r => r.district === regionKey);
+    }
+    return rows;
+  }
+  function updateOptionCounts() {
+    // Region counts = entries that survive (currentCuisine, that-region, no near-me).
+    // Region pickers are "if I picked this region" hypotheticals — distinct from near-me.
+    rPanel.querySelectorAll('.cp-opt').forEach(o => {
+      const ct = o.querySelector('.ct'); if (!ct) return;
+      ct.textContent = rowsFor(currentCuisine, o.dataset.key, false).length;
+    });
+    // Cuisine counts = entries that survive (that-cuisine, currentRegion, currentNearMe).
+    panel.querySelectorAll('.cp-opt').forEach(o => {
+      const ct = o.querySelector('.ct'); if (!ct) return;
+      ct.textContent = rowsFor(o.dataset.key, currentRegion, nearMeActive).length;
+    });
+  }
+  function applyFilters(cuisineKey, regionKey, updateHash=true) {
+    currentCuisine = cuisineKey;
+    currentRegion = regionKey;
+    // Recompute counts for both dropdowns under the new filter state
+    updateOptionCounts();
+    // Update cuisine trigger — count reflects current region (or near-me) too
+    const cuisineN = rowsFor(cuisineKey, regionKey, nearMeActive).length;
+    const c = cuisineKey === '__all' ? null : no.cuisines.find(x => x.key === cuisineKey);
+    trigger.textContent = c ? `${c.label} (${cuisineN})` : `All cuisines (${cuisineN})`;
+    panel.querySelectorAll('.cp-opt').forEach(o => o.setAttribute('aria-selected', o.dataset.key === cuisineKey ? 'true' : 'false'));
+    // Update region trigger — Near me overrides the region pick.
+    // Near me overrides the region pick. Trigger shows just "Near me" — no
+    // km value, because the dropdown only offers regions and a number in the
+    // trigger misleads users into expecting a km picker inside.
+    rTrigger.textContent = nearMeActive
+      ? 'Near me'
+      : (regionKey === '__all' ? 'All Toronto' : regionKey);
+    rPanel.querySelectorAll('.cp-opt').forEach(o => o.setAttribute('aria-selected', !nearMeActive && o.dataset.key === regionKey ? 'true' : 'false'));
+    renderFeed();
+    renderMapPins();  // no-op if map hasn't been initialized yet
+    if (updateHash) {
+      const parts = [];
+      if (cuisineKey !== '__all') parts.push('cuisine=' + cuisineKey);
+      if (regionKey !== '__all') parts.push('region=' + encodeURIComponent(regionKey));
+      const newHash = parts.length ? '#' + parts.join('&') : '';
+      if (location.hash !== newHash) history.replaceState(null, '', location.pathname + location.search + newHash);
+    }
+  }
+  // Initial filter state. Priority:
+  //   1. URL hash (`#cuisine=X&region=Y`) — sticky across refreshes + share-links
+  //   2. URL path (`/cuisine/X`) — SEO landing pages
+  //   3. defaults
+  const pathCuisineMatch = location.pathname.match(/^\/cuisine\/([a-z_]+)\/?$/);
+  const pathListingMatch = location.pathname.match(/^\/r\/([\w-]+)\/?$/);
+  const hashCuisine = (location.hash.match(/cuisine=([a-z_]+)/) || [])[1];
+  const hashRegion = (location.hash.match(/region=([^&]+)/) || [])[1];
+  const cuisineFromUrl = hashCuisine || (pathCuisineMatch && pathCuisineMatch[1]);
+  const initialCuisine = (cuisineFromUrl && no.cuisines.some(c => c.key === cuisineFromUrl)) ? cuisineFromUrl : '__all';
+  const decodedRegion = hashRegion ? decodeURIComponent(hashRegion) : '';
+  const initialRegion = DISTRICTS.includes(decodedRegion) ? decodedRegion : '__all';
+  applyFilters(initialCuisine, initialRegion, false);
+
+  // Cuisine landing pages get a per-cuisine title + description for SEO. Done
+  // post-render since the JS app boots from a single index.html in all cases.
+  if (initialCuisine !== '__all' && pathCuisineMatch) {
+    const c = no.cuisines.find(x => x.key === initialCuisine);
+    if (c) {
+      const t = `Toronto's newest ${c.label} restaurants — NowServingTO`;
+      document.title = t;
+      const desc = `A daily-fresh list of every new ${c.label} restaurant licensed in Toronto in the past 365 days. ${c.count365d} entries currently tracked.`;
+      const setMeta = (sel, attr, val) => {
+        const el = document.querySelector(sel);
+        if (el) el.setAttribute(attr, val);
+      };
+      setMeta('meta[name="description"]', 'content', desc);
+      setMeta('meta[property="og:title"]', 'content', t);
+      setMeta('meta[property="og:description"]', 'content', desc);
+      setMeta('meta[name="twitter:title"]', 'content', t);
+      setMeta('meta[name="twitter:description"]', 'content', desc);
+      setMeta('link[rel="canonical"]', 'href', `https://nowservingto.com/cuisine/${c.key}`);
+    }
+  }
+
+  // Per-listing share link `/r/{slug}` — scroll to the matching row and flash-
+  // highlight it briefly so the user can see where it lives in the list.
+  if (pathListingMatch) {
+    const slug = pathListingMatch[1];
+    const target = no.recent.find(r => r.slug === slug);
+    if (target) {
+      applyFilters('__all', '__all', false);
+      setTimeout(() => {
+        for (const row of document.querySelectorAll('.open-row')) {
+          if (row.textContent.includes(target.operatingName)) {
+            row.scrollIntoView({behavior: 'smooth', block: 'center'});
+            row.style.transition = 'background 0.4s';
+            row.style.background = 'rgba(212, 160, 23, 0.18)';
+            setTimeout(() => row.style.background = '', 2200);
+            break;
+          }
+        }
+      }, 200);
+      document.title = `${target.operatingName} — NowServingTO`;
+      const link = document.querySelector('link[rel="canonical"]');
+      if (link) link.setAttribute('href', `https://nowservingto.com/r/${slug}`);
+    }
+  }
+
+  // Reusable dropdown toggle/close for both pickers. allPickers lets each picker
+  // close the others on open — fixes the "both open at once" overlap bug since
+  // stopPropagation on the trigger click prevents the document-level outside-click
+  // from reaching the other picker's handler.
+  const allPickers = [];
+  function setupPicker(trig, pnl, onSelect) {
+    const close = () => { if (!pnl.hidden) { pnl.hidden = true; trig.setAttribute('aria-expanded', 'false'); } };
+    const open = () => {
+      allPickers.forEach(p => { if (p.trig !== trig) p.close(); });
+      pnl.hidden = false;
+      trig.setAttribute('aria-expanded', 'true');
+      const sel = pnl.querySelector('.cp-opt[aria-selected="true"]');
+      if (sel) sel.scrollIntoView({block: 'nearest'});
+    };
+    trig.addEventListener('click', e => { e.stopPropagation(); pnl.hidden ? open() : close(); });
+    pnl.addEventListener('click', e => {
+      const opt = e.target.closest('.cp-opt'); if (!opt) return;
+      onSelect(opt.dataset.key); close(); trig.focus();
+    });
+    document.addEventListener('click', e => { if (!pnl.hidden && !pnl.contains(e.target) && e.target !== trig) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pnl.hidden) { close(); trig.focus(); } });
+    const picker = { trig, pnl, close };
+    allPickers.push(picker);
+    return picker;
+  }
+  setupPicker(trigger, panel, key => applyFilters(key, currentRegion));
+  setupPicker(rTrigger, rPanel, key => {
+    // Picking any region (including "All Toronto") turns Near me off — they're
+    // mutually exclusive spatial filters.
+    if (nearMeActive) {
+      nearMeActive = false;
+      document.getElementById('locate-btn').classList.remove('active');
+      if (mapInstance && userMarker) mapInstance.removeLayer(userMarker);
+    }
+    applyFilters(currentCuisine, key);
+  });
+
+  // Brand-as-reload: clicking NowServingTO clears any filter hash and reloads
+  // the page so fresh corridors.json + index.html are revalidated.
+  const brandLink = document.getElementById('brand-link');
+  if (brandLink) {
+    brandLink.addEventListener('click', e => {
+      e.preventDefault();
+      if (location.hash || location.search) {
+        // strip filter hash, then reload — replacing rather than pushing avoids polluting history
+        history.replaceState(null, '', '/');
+      }
+      location.reload();
+    });
+  }
+
+
+  // ---- MAP VIEW ----
+  // Leaflet + markercluster. Lazy-inits on first toggle to Map view.
+  // Pins drawn from currentRows (the filtered set) — re-renders on filter change
+  // and on view toggle. Geolocation is user-initiated only.
+  //
+  // `var` (not `let`) so these hoist alongside their function decls. `renderMapPins`
+  // gets called from applyFilters during initial hash-restore, BEFORE control flow
+  // reaches this block — `let` would put these in TDZ and the call would throw.
+  var mapInstance = null;
+  var mapMarkers = null;
+  var userMarker = null;
+  var userLatLng = null;
+  var mapInitialized = false;
+
+
+  // 📱 Send to phone — show a QR code linking to Google Maps with the
+  // destination pre-filled. Phone's camera scans → opens in its native Maps app
+  // (Google on Android, Apple Maps via Safari handoff on iOS) with directions
+  // ready. We let the phone provide its own current location as the origin —
+  // more reliable than passing our (possibly browser-cached) lat/lng across.
+  function sendToPhone(lat, lng, encodedName) {
+    const name = decodeURIComponent(encodedName || '');
+    const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}` +
+                    (name ? `&destination_place_id=&travelmode=walking` : '');
+    if (typeof qrcode !== 'function') { alert('QR library still loading — try again in a moment.'); return; }
+    const qr = qrcode(0, 'M');
+    qr.addData(mapsUrl);
+    qr.make();
+    const imgTag = qr.createImgTag(6, 12);
+
+    const modal = document.createElement('div');
+    modal.className = 'phone-modal';
+    modal.innerHTML = `
+      <div class="pm-card" role="dialog" aria-label="Send to phone">
+        <div class="pm-head">
+          <span class="pm-title">📱 Open on your phone</span>
+          <button class="pm-close" aria-label="Close">×</button>
+        </div>
+        <div class="pm-name">${name || 'Restaurant'}</div>
+        <div class="pm-qr">${imgTag}</div>
+        <div class="pm-hint">Scan with your phone's camera to open directions in Google Maps.</div>
+        <div class="pm-url"><a href="${mapsUrl}" target="_blank" rel="noopener">${mapsUrl}</a></div>
+      </div>`;
+    const close = () => modal.remove();
+    modal.querySelector('.pm-close').addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.body.appendChild(modal);
+  }
+  window.__nsSendToPhone = sendToPhone;
+  // Near-me is a proximity-based spatial filter that REPLACES the region pick.
+  // Once active, all counts/feed/pins constrain to entries within nearMeRadius km
+  // of userLatLng. Selecting any region from the dropdown turns this off.
+  var nearMeActive = false;
+  var nearMeRadius = 5; // km — generous enough that one transit hop (TTC bus or
+                         // streetcar from a typical neighbourhood) lands inside
+                         // the radius, not just walking distance.
+
+  function haversineKm(a, b) {
+    const R = 6371, toRad = x => x * Math.PI / 180;
+    const dLat = toRad(b[0] - a[0]), dLon = toRad(b[1] - a[1]);
+    const A = Math.sin(dLat/2)**2 + Math.sin(dLon/2)**2 * Math.cos(toRad(a[0])) * Math.cos(toRad(b[0]));
+    return 2 * R * Math.asin(Math.sqrt(A));
+  }
+
+  function initMap() {
+    if (mapInitialized) return;
+    if (typeof L === 'undefined') {
+      document.getElementById('map').innerHTML = '<div style="padding:20px;color:#7a746a">Map library still loading — try again in a moment.</div>';
+      return;
+    }
+    mapInstance = L.map('map', { preferCanvas: true }).setView([43.6532, -79.3832], 12);
+    // CartoDB Voyager: full-color basemap (parks/water/streets look alive) but
+    // strips most POI icons so our green pins are the only "where to eat" signal.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      attribution: '© <a href="https://openstreetmap.org/copyright">OSM</a> · © <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }).addTo(mapInstance);
+    mapMarkers = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50 });
+    mapInstance.addLayer(mapMarkers);
+    mapInitialized = true;
+    renderMapPins();
+    // Frame to actually fit the current pins (downtown-centered default cuts off
+    // West-Toronto/Parkdale and Scarborough). Cap zoom so a sparse set doesn't
+    // over-zoom into a single block.
+    const coords = currentRows.filter(r => r.lat && r.lng).map(r => [r.lat, r.lng]);
+    if (coords.length >= 2) mapInstance.fitBounds(coords, { padding: [30, 30], maxZoom: 13 });
+  }
+
+  function renderMapPins() {
+    if (!mapInitialized) return;
+    mapMarkers.clearLayers();
+    const rows = currentRows.filter(r => r.lat && r.lng);
+    const PIN_COLOR = '#1a7340';  // var(--fresh) — same green as walking route
+    // Permanent name labels are useful when there are few pins (e.g. filtered to
+    // a small cuisine). Above ~25 they crowd the map and we let clicks reveal names.
+    const showLabels = rows.length <= 25;
+    rows.forEach(r => {
+      const m = L.marker([r.lat, r.lng], {
+        icon: L.divIcon({
+          className: 'cuisine-pin',
+          html: `<span style="background:${PIN_COLOR}"></span>`,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        }),
+      });
+      if (showLabels) {
+        m.bindTooltip(r.operatingName, {
+          permanent: true,
+          direction: 'right',
+          offset: [10, 0],
+          className: 'pin-label',
+        });
+      }
+      m.bindPopup(() => buildPopupHtml(r), { maxWidth: 280 });
+      mapMarkers.addLayer(m);
+    });
+    const total = currentRows.length;
+    const info = document.getElementById('map-info');
+    if (info) {
+      info.textContent = rows.length < total
+        ? `${rows.length.toLocaleString()} of ${total.toLocaleString()} on map · rest geocoding (check back tomorrow)`
+        : `${rows.length.toLocaleString()} on map`;
+    }
+  }
+
+  function buildPopupHtml(r) {
+    const keys = (r.cuisines && r.cuisines.length) ? r.cuisines : [r.cuisine];
+    const cuisineLbl = keys.map(k => (CUISINE_META[k] && CUISINE_META[k].label) || CUISINE_LABEL[k] || k).join(' · ');
+    const dist = userLatLng
+      ? `<div class="pop-dist">${haversineKm(userLatLng, [r.lat, r.lng]).toFixed(1)} km away</div>`
+      : '';
+    const shareLink = r.slug
+      ? `<button class="pop-share" onclick="window.__nsShare('${r.slug}', this)"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true" style="vertical-align:-2px;margin-right:4px"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>Share</button>`
+      : '';
+    // Always show route buttons. If location isn't granted yet, showRoute() will
+    // prompt for it and auto-route once acquired.
+    // On mobile, the user IS the phone — open Google Maps directly. On desktop,
+    // show a QR for handoff to a separate phone.
+    const onMobile = window.matchMedia('(max-width: 700px)').matches || ('ontouchstart' in window);
+    const encName = encodeURIComponent(r.operatingName||'');
+    // Single Directions button — opens Google Maps' Directions UI where the user
+    // picks walk/drive/transit themselves. Cleaner than duplicating mode selection
+    // here. On desktop, also offer 📱 To phone (QR for handoff).
+    const dirBtn = onMobile
+      ? `<button class="pop-btn" onclick="location.href='https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}'">🗺️ Directions</button>`
+      : `<button class="pop-btn" onclick="location.href='https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}'">🗺️ Directions</button>
+         <button class="pop-btn" onclick="window.__nsSendToPhone(${r.lat},${r.lng},'${encName}')">📱 To phone</button>`;
+    const routeBtns = `<div class="pop-routes">${dirBtn}</div>`;
+    return `
+      <div class="pop-name">${r.operatingName}</div>
+      <div class="pop-addr">${r.address || ''}${r.district ? ' · ' + r.district : ''}</div>
+      <div class="pop-cuisine">${cuisineLbl}</div>
+      ${dist}
+      ${routeBtns}
+      ${shareLink}`;
+  }
+  // Native share with full restaurant context. Web Share API opens the OS share
+  // sheet on mobile (Messages, Email, WhatsApp, etc.) and on desktop in supporting
+  // browsers. Falls back to clipboard copy on browsers without navigator.share.
+  window.__nsShare = async (slug, btn) => {
+    const r = no.recent.find(x => x.slug === slug);
+    if (!r) return;
+    const url = `https://nowservingto.com/r/${slug}`;
+    const sKeys = (r.cuisines && r.cuisines.length) ? r.cuisines : [r.cuisine];
+    const cuisineLbl = sKeys.map(k => (CUISINE_META[k] && CUISINE_META[k].label) || CUISINE_LABEL[k] || k).join(' · ');
+    const ago = r.daysOpen <= 1 ? 'today'
+              : r.daysOpen <= 60 ? `${r.daysOpen}d ago`
+              : `${Math.round(r.daysOpen/30)}mo ago`;
+    // "Downtown" alone reads awkwardly — pin it as "Downtown Toronto". Other
+    // districts (Scarborough, Etobicoke, North York) are well-known on their own.
+    const districtPhrase = r.district === 'Downtown' ? 'Downtown Toronto' : r.district;
+    const where = r.address && districtPhrase
+      ? ` at ${r.address} in ${districtPhrase}`
+      : r.address ? ` at ${r.address}`
+      : districtPhrase ? ` in ${districtPhrase}` : '';
+    const text = `${r.operatingName} — newly-licensed ${cuisineLbl} kitchen${where}. Licensed ${ago}.`;
+    if (navigator.share) {
+      try { await navigator.share({ title: r.operatingName, text, url }); }
+      catch (e) { /* user dismissed */ }
+      return;
+    }
+    // Fallback: copy URL with the pitch text
+    const fallback = text + '\n' + url;
+    try {
+      await navigator.clipboard.writeText(fallback);
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copied';
+      btn.disabled = true;
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1500);
+    } catch {
+      prompt('Copy this link:', fallback);
+    }
+  };
+
+  function setNearMeActive(on) {
+    nearMeActive = on;
+    const btn = document.getElementById('locate-btn');
+    btn.classList.toggle('active', on);
+    if (mapInstance && userMarker) {
+      if (on) userMarker.addTo(mapInstance);
+      else mapInstance.removeLayer(userMarker);
+    }
+    applyFilters(currentCuisine, '__all', true);
+  }
+
+  function locateUser() {
+    // Already active? Treat the click as a toggle-off.
+    if (nearMeActive) { setNearMeActive(false); return; }
+    const btn = document.getElementById('locate-btn');
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+
+    // Apply a fix and turn Near Me on. Used for cache hits, ipapi hits,
+    // and (silent background) browser-geolocation upgrades.
+    const applyFix = (latlng, persist) => {
+      const wasActive = nearMeActive;
+      userLatLng = latlng;
+      if (mapInstance) {
+        if (userMarker) mapInstance.removeLayer(userMarker);
+        userMarker = L.marker(userLatLng, {
+          icon: L.divIcon({ className: 'user-pin', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] }),
+          zIndexOffset: 1000,
+        }).addTo(mapInstance);
+        if (!wasActive) mapInstance.setView(userLatLng, 14);
+      }
+      if (persist) {
+        try {
+          localStorage.setItem('nsto.userLatLng', JSON.stringify({
+            lat: latlng[0], lng: latlng[1], t: Date.now()
+          }));
+        } catch (_) {}
+      }
+      btn.textContent = originalLabel;
+      btn.disabled = false;
+      if (!wasActive) setNearMeActive(true);
+      else applyFilters(currentCuisine, '__all', true);  // silent upgrade — refresh distances
+    };
+
+    // Stage 1: localStorage cache (30-min TTL). Re-clicks are instant.
+    try {
+      const cached = JSON.parse(localStorage.getItem('nsto.userLatLng') || 'null');
+      if (cached && cached.t && Date.now() - cached.t < 30 * 60 * 1000
+          && typeof cached.lat === 'number' && typeof cached.lng === 'number') {
+        applyFix([cached.lat, cached.lng], false);
+        return;
+      }
+    } catch (_) {}
+
+    btn.textContent = 'locating…';
+
+    // Stage 2: ipapi.co — free, ~200ms, city-level accuracy (~5-10km).
+    // No permission prompt, no waiting. Plenty precise for the 5km Near
+    // Me radius. Free tier: 1K req/day per IP, no key, HTTPS. Falls
+    // through to browser geolocation only if ipapi fails.
+    fetch('https://ipapi.co/json/', { credentials: 'omit' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('ipapi http ' + r.status)))
+      .then(data => {
+        if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
+          throw new Error('ipapi returned no lat/lng');
+        }
+        applyFix([data.latitude, data.longitude], true);
+
+        // Stage 3 (silent background): browser geolocation. If it returns
+        // a more precise fix (GPS on mobile) replace the pin and refresh
+        // distances. Skipped if the browser doesn't support it or denies.
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            pos => applyFix([pos.coords.latitude, pos.coords.longitude], true),
+            () => {},
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 }
+          );
+        }
+      })
+      .catch(() => {
+        // ipapi unreachable — fall back to native geolocation.
+        if (!navigator.geolocation) {
+          btn.textContent = originalLabel;
+          btn.disabled = false;
+          alert('Could not get your location.');
+          return;
+        }
+        const slowTimer = setTimeout(() => { if (btn.disabled) btn.textContent = 'still locating…'; }, 2500);
+        navigator.geolocation.getCurrentPosition(pos => {
+          clearTimeout(slowTimer);
+          applyFix([pos.coords.latitude, pos.coords.longitude], true);
+        }, err => {
+          clearTimeout(slowTimer);
+          btn.textContent = originalLabel;
+          btn.disabled = false;
+          const msg = err.code === 1 ? 'Permission denied — enable location in your browser to use this.'
+                    : err.code === 2 ? 'Location unavailable right now.'
+                    : err.code === 3 ? 'Timed out — try again.' : 'Could not get location.';
+          alert(msg);
+        }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 30 * 60 * 1000 });
+      });
+  }
+
+  function setView(v) {
+    document.querySelectorAll('.view-toggle .vt-btn').forEach(x => {
+      const active = x.dataset.view === v;
+      x.classList.toggle('vt-active', active);
+      x.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    const feed = document.getElementById('open-feed');
+    const mapView = document.getElementById('map-view');
+    if (v === 'map') {
+      feed.hidden = true;
+      mapView.hidden = false;
+      if (!mapInitialized) initMap();
+      else renderMapPins();
+      setTimeout(() => mapInstance && mapInstance.invalidateSize(), 60);
+    } else {
+      feed.hidden = false;
+      mapView.hidden = true;
+    }
+  }
+
+  // View toggle wiring
+  document.querySelectorAll('.view-toggle .vt-btn').forEach(b => {
+    b.addEventListener('click', () => setView(b.dataset.view));
+  });
+
+  // 📍 Near me — visible in the filter row regardless of view. Locate-and-filter
+  // works in both list and map view; no auto-switch.
+  document.getElementById('locate-btn').addEventListener('click', locateUser);
+
+  // ♡ Saved toggle — filters list + map to only saved entries
+  refreshSavedToggle();
+  document.getElementById('saved-toggle').addEventListener('click', () => {
+    savedOnly = !savedOnly;
+    refreshSavedToggle();
+    renderFeed();
+    renderMapPins();
+  });
+
+}).catch(err => {
+  document.getElementById('open-feed').innerHTML = '<div class="empty">error loading data — ' + (err && err.message ? err.message : String(err)) + '</div>';
+  console.error('NSTO load error:', err && err.stack ? err.stack : err);
+});
+</script>
+
+</body>
+</html>

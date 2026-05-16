@@ -697,6 +697,116 @@ for c in cuisines_out:
     cuisine_pages_written += 1
 print(f"  wrote {cuisine_pages_written} per-cuisine SEO landing pages → cuisine/<key>.html")
 
+
+# ---------------------------------------------------------------------------
+# Per-LISTING pages at r/<slug>.html  +  OG image cards at og/<slug>.png.
+# ---------------------------------------------------------------------------
+# Every kept entry gets:
+#   r/<slug>.html  — own title/og:image/canonical/h1, single-row static feed,
+#                    single-Restaurant JSON-LD. Apache .htaccess rewrites
+#                    /r/<slug> → /r/<slug>.html.
+#   og/<slug>.png  — 1200×675 branded card used as og:image so X/FB/iMessage
+#                    show the personalized image when the URL is shared,
+#                    with the IMAGE itself being a click-target to the page.
+from og_card import render_card_png as _render_og_card
+LISTING_DIR = Path(ROOT) / 'r'
+OG_DIR      = Path(ROOT) / 'og'
+LISTING_DIR.mkdir(exist_ok=True)
+OG_DIR.mkdir(exist_ok=True)
+
+listing_template = open(INDEX_PATH).read()
+n_listing_html = 0
+n_listing_png  = 0
+for entry in seen_entries.values():
+    slug = entry.get('slug')
+    if not slug: continue
+
+    # 1) PNG card → og/<slug>.png
+    try:
+        _render_og_card(entry, out_path=str(OG_DIR / f'{slug}.png'))
+        n_listing_png += 1
+    except Exception as ex:
+        print(f"  WARN: og card failed for {slug}: {ex}")
+        continue  # skip the HTML too — no point without the og:image
+
+    # 2) HTML → r/<slug>.html
+    name = entry.get('operatingName', '')
+    keys = entry.get('cuisines') or ([entry['cuisine']] if entry.get('cuisine') else [])
+    primary_key = keys[0] if keys else ''
+    primary_lbl = CUISINE_LABEL.get(primary_key, primary_key.replace('_', ' ').title()) if primary_key else 'restaurant'
+    addr     = entry.get('address') or ''
+    district = entry.get('district') or ''
+
+    title = f"{name} — {primary_lbl} restaurant in Toronto · NowServingTO"
+    desc_addr = addr + (f', {district}' if district and district not in addr else '')
+    desc  = (f"{name} — newly licensed {primary_lbl} restaurant at {desc_addr}. "
+             f"Part of NowServingTO's daily-updated directory of Toronto's "
+             f"newest restaurants, by cuisine.")
+    canonical = f"https://nowservingto.com/r/{slug}"
+    og_image  = f"https://nowservingto.com/og/{slug}.png"
+
+    page = listing_template
+    page = re.sub(r'<title>[^<]*</title>',
+                  lambda m: f'<title>{_esc(title)}</title>', page, count=1)
+    for sel, val in [
+        (r'(<meta name="description" content=")[^"]*(")',     desc),
+        (r'(<meta property="og:title" content=")[^"]*(")',    title),
+        (r'(<meta property="og:description" content=")[^"]*(")', desc),
+        (r'(<meta property="og:image" content=")[^"]*(")',    og_image),
+        # Match the card's actual 1200×675 dimensions (the template defaults
+        # to 1200×630 for the homepage og.svg, which is a different image).
+        (r'(<meta property="og:image:width" content=")[^"]*(")',  '1200'),
+        (r'(<meta property="og:image:height" content=")[^"]*(")', '675'),
+        (r'(<meta name="twitter:title" content=")[^"]*(")',   title),
+        (r'(<meta name="twitter:description" content=")[^"]*(")', desc),
+        (r'(<meta name="twitter:image" content=")[^"]*(")',   og_image),
+        (r'(<link rel="canonical" href=")[^"]*(")',           canonical),
+    ]:
+        page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
+                      page, count=1)
+
+    # Swap the homepage's h1 for the listing's name.
+    page = re.sub(r'<h1 class="cuisine-h1">[\s\S]*?</h1>',
+                  lambda m: f'<h1 class="cuisine-h1">{_esc(name)}</h1>',
+                  page, count=1)
+    # Tailor the subtitle to this listing.
+    page = re.sub(
+        r'<div class="sub">[\s\S]*?</div>',
+        lambda m: (f'<div class="sub">Newly licensed {_esc(primary_lbl)} '
+                   f'restaurant — {_esc(desc_addr)}. From NowServingTO\'s '
+                   f'daily directory of Toronto\'s newest restaurants.</div>'),
+        page, count=1,
+    )
+
+    # Single-entry static feed + single-Restaurant JSON-LD.
+    one_row = build_static_rows([entry])
+    listing_ld = {
+        '@context': 'https://schema.org',
+        '@type': 'Restaurant',
+        'name': name,
+        'address': {
+            '@type': 'PostalAddress', 'streetAddress': addr,
+            'addressLocality': 'Toronto', 'addressRegion': 'ON', 'addressCountry': 'CA',
+        },
+        'servesCuisine': [CUISINE_LABEL.get(k, k) for k in keys if k],
+        'url': entry.get('website') or canonical,
+        'image': og_image,
+        'dateOpened': entry.get('issuedDate'),
+    }
+    if entry.get('rating'):
+        listing_ld['aggregateRating'] = {
+            '@type': 'AggregateRating',
+            'ratingValue': entry['rating'],
+            'reviewCount': entry.get('reviewCount') or 1,
+        }
+    page = inject_into_html(page, static_block=one_row, ld_payload=listing_ld)
+
+    (LISTING_DIR / f'{slug}.html').write_text(page)
+    n_listing_html += 1
+
+print(f"  wrote {n_listing_html} per-listing pages → r/<slug>.html")
+print(f"  wrote {n_listing_png} per-listing OG cards → og/<slug>.png")
+
 # Write sitemap.xml with today's lastmod + one URL per cuisine landing page so
 # Google indexes "newest ethiopian toronto" etc. separately from the home page.
 url_blocks = [
