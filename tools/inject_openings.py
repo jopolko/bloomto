@@ -662,22 +662,14 @@ for c in cuisines_out:
     page = re.sub(r'(<link rel="canonical" href=")[^"]*(")',
                   lambda m: m.group(1) + canonical + m.group(2), page, count=1)
 
-    # Insert a cuisine-specific <h1> before the subtitle. The homepage
-    # ships without an h1 (user directive 2026-05-16), so each /cuisine/
-    # landing page provides its own page-defining heading here.
-    h1 = (f'<h1 class="cuisine-h1">New <span class="hl">{_esc(label)}</span> '
-          f'restaurants in Toronto</h1>\n    ')
-    page = page.replace('<div class="sub">', h1 + '<div class="sub">', 1)
-
-    # Also tailor the subtitle to this cuisine.
-    page = re.sub(
-        r'<div class="sub">[\s\S]*?</div>',
-        lambda m: (f'<div class="sub">Every newly licensed {_esc(label)} '
-                   f'restaurant in Toronto from the past 12 months, sourced '
-                   f'from City of Toronto open data, updated daily — '
-                   f'{n365} entries tracked.</div>'),
-        page, count=1,
-    )
+    # Replace the homepage's <h1 class="sub"> with a cuisine-specific
+    # one. Format follows the user-specified pattern (2026-05-16):
+    # "Toronto's newest <Label> cuisine" — targets the "newest <Label>
+    # cuisine Toronto" / "<Label> cuisine Toronto" query family.
+    cuisine_h1 = (f'<h1 class="sub">Toronto\'s <span class="hl">newest</span> '
+                  f'{_esc(label)} cuisine</h1>')
+    page = re.sub(r'<h1 class="sub">[\s\S]*?</h1>',
+                  lambda m: cuisine_h1, page, count=1)
 
     # Replace STATIC-FEED + LD-ITEMLIST with cuisine-scoped versions.
     cuisine_static = build_static_rows(entries)
@@ -760,17 +752,10 @@ for entry in seen_entries.values():
         page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
                       page, count=1)
 
-    # Insert an h1 for this listing before the subtitle.
-    listing_h1 = f'<h1 class="cuisine-h1">{_esc(name)}</h1>\n    '
-    page = page.replace('<div class="sub">', listing_h1 + '<div class="sub">', 1)
-    # Tailor the subtitle to this listing.
-    page = re.sub(
-        r'<div class="sub">[\s\S]*?</div>',
-        lambda m: (f'<div class="sub">Newly licensed {_esc(primary_lbl)} '
-                   f'restaurant — {_esc(desc_addr)}. From NowServingTO\'s '
-                   f'daily directory of Toronto\'s newest restaurants.</div>'),
-        page, count=1,
-    )
+    # Replace the homepage's <h1 class="sub"> with this listing's name.
+    listing_h1 = f'<h1 class="sub">{_esc(name)}</h1>'
+    page = re.sub(r'<h1 class="sub">[\s\S]*?</h1>',
+                  lambda m: listing_h1, page, count=1)
 
     # Single-entry static feed + single-Restaurant JSON-LD.
     one_row = build_static_rows([entry])
