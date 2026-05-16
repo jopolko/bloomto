@@ -517,82 +517,167 @@ def _ago(days):
     if days <= 365: return f'licensed {round(days/30)}mo ago'
     return f'licensed {days/365:.1f}y ago'
 
-# Build static HTML rows for the top 30 newest verified-open entries.
-top_for_static = all_recent[:30]
-static_rows_html = []
-for r in top_for_static:
-    # Multi-cuisine row: emit one colored pill per declared cuisine, falling
-    # back to the single `cuisine` field for legacy entries.
-    cuisine_keys = r.get('cuisines') or ([r['cuisine']] if r.get('cuisine') else [])
-    pills_html = ''.join(
-        f'<span class="pill" style="background:{PALETTE_HEX.get(k) or cuisine_color(k)}">{_esc(CUISINE_LABEL.get(k, k))}</span>'
-        for k in cuisine_keys
-    )
-    name = _esc(r['operatingName'])
-    addr = _esc(r.get('address') or '')
-    district = _esc(r.get('district') or '')
-    addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
-    addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
-    addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
-    ago = _esc(_ago(r['daysOpen']))
-    link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
-    name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
-    multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
-    static_rows_html.append(
-        f'<div class="open-row"{multi_attr}>'
-        f'<div class="od"><span class="ago">{ago}</span></div>'
-        f'<div class="on">{name_html}<span class="oad">{addr_html}</span></div>'
-        f'<div class="oc">{pills_html}</div>'
-        f'</div>'
-    )
-static_block = '\n    '.join(static_rows_html)
+# ---------------------------------------------------------------------------
+# Static-feed + JSON-LD builders (shared between homepage and per-cuisine pages).
+# ---------------------------------------------------------------------------
+def build_static_rows(entries):
+    """Pre-rendered HTML rows for the top-N feed. Same markup the JS renderer
+    produces so visitors / crawlers see real content before JS hydrates."""
+    out = []
+    for r in entries:
+        cuisine_keys = r.get('cuisines') or ([r['cuisine']] if r.get('cuisine') else [])
+        pills = ''.join(
+            f'<span class="pill" style="background:{PALETTE_HEX.get(k) or cuisine_color(k)}">{_esc(CUISINE_LABEL.get(k, k))}</span>'
+            for k in cuisine_keys
+        )
+        name = _esc(r['operatingName'])
+        addr = _esc(r.get('address') or '')
+        district = _esc(r.get('district') or '')
+        addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+        addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
+        addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
+        ago = _esc(_ago(r['daysOpen']))
+        link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+        name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
+        multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
+        out.append(
+            f'<div class="open-row"{multi_attr}>'
+            f'<div class="od"><span class="ago">{ago}</span></div>'
+            f'<div class="on">{name_html}<span class="oad">{addr_html}</span></div>'
+            f'<div class="oc">{pills}</div>'
+            f'</div>'
+        )
+    return '\n    '.join(out)
 
-# Build JSON-LD ItemList — top 30 entries as Restaurant items
-ld_items = []
-for i, r in enumerate(top_for_static, 1):
-    rest = {
-        '@type': 'Restaurant',
-        'name': r['operatingName'],
-        'address': {'@type': 'PostalAddress', 'streetAddress': r.get('address') or '', 'addressLocality': 'Toronto', 'addressRegion': 'ON', 'addressCountry': 'CA'},
-        # schema.org/Restaurant.servesCuisine accepts an array of strings, so we
-        # emit the full multi-cuisine list when available (better SEO signal).
-        'servesCuisine': [CUISINE_LABEL.get(k, k) for k in (r.get('cuisines') or [r.get('cuisine')]) if k],
-        'dateOpened': r.get('issuedDate'),
+
+def build_ld_itemlist(entries, name, description):
+    items = []
+    for i, r in enumerate(entries, 1):
+        rest = {
+            '@type': 'Restaurant',
+            'name': r['operatingName'],
+            'address': {'@type': 'PostalAddress', 'streetAddress': r.get('address') or '', 'addressLocality': 'Toronto', 'addressRegion': 'ON', 'addressCountry': 'CA'},
+            'servesCuisine': [CUISINE_LABEL.get(k, k) for k in (r.get('cuisines') or [r.get('cuisine')]) if k],
+            'dateOpened': r.get('issuedDate'),
+        }
+        if r.get('website'): rest['url'] = r['website']
+        if r.get('rating'): rest['aggregateRating'] = {'@type': 'AggregateRating', 'ratingValue': r['rating'], 'reviewCount': r.get('reviewCount') or 1}
+        items.append({'@type': 'ListItem', 'position': i, 'item': rest})
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        'name': name,
+        'description': description,
+        'itemListElement': items,
     }
-    if r.get('website'): rest['url'] = r['website']
-    if r.get('rating'): rest['aggregateRating'] = {'@type': 'AggregateRating', 'ratingValue': r['rating'], 'reviewCount': r.get('reviewCount') or 1}
-    ld_items.append({'@type': 'ListItem', 'position': i, 'item': rest})
-ld_payload = {
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    'name': "Toronto's newest restaurants by cuisine",
-    'description': 'Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.',
-    'itemListElement': ld_items,
-}
-ld_json_str = json.dumps(ld_payload, separators=(',', ':'))
 
-# Rewrite the index.html markers in place
+
 import re
-try:
-    html = open(INDEX_PATH).read()
+
+def inject_into_html(html, *, static_block, ld_payload):
+    """Replace STATIC-FEED and LD-ITEMLIST marker blocks. Uses lambda
+    replacements so backslash sequences in the replacement (e.g. \\uXXXX
+    in JSON-LD) aren't interpreted as regex backreferences."""
     html = re.sub(
         r'(<!-- STATIC-FEED-START[^>]*-->).*?(<!-- STATIC-FEED-END -->)',
-        f'\\1\n    {static_block}\n    \\2',
+        lambda m: m.group(1) + '\n    ' + static_block + '\n    ' + m.group(2),
         html, count=1, flags=re.DOTALL,
     )
-    # Markers MUST sit outside <script type="application/ld+json"> so the script
-    # content stays pure JSON (Google's structured-data parser rejects HTML
-    # comments inside the script body).
-    ld_script_block = f'<script type="application/ld+json" id="ld-itemlist">{ld_json_str}</script>'
+    ld_json_str = json.dumps(ld_payload, separators=(',', ':'))
+    ld_script = f'<script type="application/ld+json" id="ld-itemlist">{ld_json_str}</script>'
     html = re.sub(
         r'(<!-- LD-ITEMLIST-START -->).*?(<!-- LD-ITEMLIST-END -->)',
-        f'\\1\n{ld_script_block}\n\\2',
+        lambda m: m.group(1) + '\n' + ld_script + '\n' + m.group(2),
         html, count=1, flags=re.DOTALL,
     )
-    open(INDEX_PATH, 'w').write(html)
+    return html
+
+
+# ---------------------------------------------------------------------------
+# Inject into the HOMEPAGE (index.html).
+# ---------------------------------------------------------------------------
+top_for_static = all_recent[:30]
+static_block = build_static_rows(top_for_static)
+ld_payload = build_ld_itemlist(
+    top_for_static,
+    name="Toronto's newest restaurants by cuisine",
+    description='Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.',
+)
+try:
+    home_html = open(INDEX_PATH).read()
+    home_html = inject_into_html(home_html, static_block=static_block, ld_payload=ld_payload)
+    open(INDEX_PATH, 'w').write(home_html)
     print(f"  pre-rendered {len(top_for_static)} static feed rows + JSON-LD ItemList into index.html")
 except Exception as e:
     print(f"  WARN: index.html injection failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Inject PER-CUISINE landing pages at cuisine/<key>.html.
+# ---------------------------------------------------------------------------
+# Each cuisine gets its own HTML file with:
+#   - title / og:title / twitter:title baked in (server-rendered, so first-pass
+#     crawls see cuisine-specific signal instead of the generic home title)
+#   - meta description scoped to the cuisine + count
+#   - canonical pointing at the /cuisine/<key> route
+#   - <h1> inserted after the brand line with "New <Cuisine> restaurants in Toronto"
+#   - STATIC-FEED block rendered from THIS cuisine's top-30 (not the mixed feed)
+#   - JSON-LD ItemList scoped to this cuisine
+# Apache .htaccess rewrites /cuisine/<key> → /cuisine/<key>.html when the file
+# exists (added in this same commit).
+CUISINE_DIR = Path(ROOT) / 'cuisine'
+CUISINE_DIR.mkdir(exist_ok=True)
+cuisine_pages_written = 0
+template = open(INDEX_PATH).read()   # post-homepage-inject — has the fresh JS bundle
+for c in cuisines_out:
+    key = c['key']; label = c['label']; n365 = c['count365d']; n30 = c['count30d']
+    entries = opens_365_by_cuisine.get(key, [])[:30]
+    if not entries: continue
+
+    title = f"New {label} restaurants in Toronto — NowServingTO"
+    desc = (f"Every newly licensed {label} restaurant in Toronto over the past 365 "
+            f"days, updated daily. {n365} entries tracked, {n30} from the last 30 days.")
+    canonical = f"https://nowservingto.com/cuisine/{key}"
+
+    page = template
+    # Replace meta tags — first occurrence each.
+    page = re.sub(r'<title>[^<]*</title>', f'<title>{_esc(title)}</title>', page, count=1)
+    page = re.sub(r'(<meta name="description" content=")[^"]*(")',
+                  lambda m: m.group(1) + _esc(desc) + m.group(2), page, count=1)
+    page = re.sub(r'(<meta property="og:title" content=")[^"]*(")',
+                  lambda m: m.group(1) + _esc(title) + m.group(2), page, count=1)
+    page = re.sub(r'(<meta property="og:description" content=")[^"]*(")',
+                  lambda m: m.group(1) + _esc(desc) + m.group(2), page, count=1)
+    page = re.sub(r'(<meta name="twitter:title" content=")[^"]*(")',
+                  lambda m: m.group(1) + _esc(title) + m.group(2), page, count=1)
+    page = re.sub(r'(<meta name="twitter:description" content=")[^"]*(")',
+                  lambda m: m.group(1) + _esc(desc) + m.group(2), page, count=1)
+    page = re.sub(r'(<link rel="canonical" href=")[^"]*(")',
+                  lambda m: m.group(1) + canonical + m.group(2), page, count=1)
+
+    # Insert <h1> right after the brand link so the first heading is the
+    # cuisine-defining one. The .sub div below already has subtitle text;
+    # this h1 makes the page's primary topic unambiguous to crawlers.
+    h1 = (f'<h1 class="cuisine-h1">New <span class="hl">{_esc(label)}</span> '
+          f'restaurants in Toronto</h1>')
+    page = page.replace(
+        '<div class="sub">',
+        f'{h1}\n    <div class="sub">',
+        1,
+    )
+
+    # Replace STATIC-FEED + LD-ITEMLIST with cuisine-scoped versions.
+    cuisine_static = build_static_rows(entries)
+    cuisine_ld = build_ld_itemlist(
+        entries,
+        name=f"Newest {label} restaurants in Toronto",
+        description=desc,
+    )
+    page = inject_into_html(page, static_block=cuisine_static, ld_payload=cuisine_ld)
+
+    (CUISINE_DIR / f'{key}.html').write_text(page)
+    cuisine_pages_written += 1
+print(f"  wrote {cuisine_pages_written} per-cuisine SEO landing pages → cuisine/<key>.html")
 
 # Write sitemap.xml with today's lastmod + one URL per cuisine landing page so
 # Google indexes "newest ethiopian toronto" etc. separately from the home page.
