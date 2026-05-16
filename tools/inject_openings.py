@@ -662,17 +662,12 @@ for c in cuisines_out:
     page = re.sub(r'(<link rel="canonical" href=")[^"]*(")',
                   lambda m: m.group(1) + canonical + m.group(2), page, count=1)
 
-    # Swap the homepage's generic <h1> for a cuisine-specific one. The
-    # homepage h1 reads "New restaurants in Toronto, by cuisine"; we
-    # replace it with "New <Cuisine> restaurants in Toronto" so crawlers
-    # see a single, cuisine-defining heading on each landing page.
+    # Insert a cuisine-specific <h1> before the subtitle. The homepage
+    # ships without an h1 (user directive 2026-05-16), so each /cuisine/
+    # landing page provides its own page-defining heading here.
     h1 = (f'<h1 class="cuisine-h1">New <span class="hl">{_esc(label)}</span> '
-          f'restaurants in Toronto</h1>')
-    page = re.sub(
-        r'<h1 class="cuisine-h1">[\s\S]*?</h1>',
-        lambda m: h1,
-        page, count=1,
-    )
+          f'restaurants in Toronto</h1>\n    ')
+    page = page.replace('<div class="sub">', h1 + '<div class="sub">', 1)
 
     # Also tailor the subtitle to this cuisine.
     page = re.sub(
@@ -765,10 +760,9 @@ for entry in seen_entries.values():
         page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
                       page, count=1)
 
-    # Swap the homepage's h1 for the listing's name.
-    page = re.sub(r'<h1 class="cuisine-h1">[\s\S]*?</h1>',
-                  lambda m: f'<h1 class="cuisine-h1">{_esc(name)}</h1>',
-                  page, count=1)
+    # Insert an h1 for this listing before the subtitle.
+    listing_h1 = f'<h1 class="cuisine-h1">{_esc(name)}</h1>\n    '
+    page = page.replace('<div class="sub">', listing_h1 + '<div class="sub">', 1)
     # Tailor the subtitle to this listing.
     page = re.sub(
         r'<div class="sub">[\s\S]*?</div>',
