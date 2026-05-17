@@ -647,7 +647,9 @@ def build_static_rows(entries):
         name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
         multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
         thumb = r.get('thumb')
-        thumb_html = (f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
+        thumb_html = (f'<a class="row-pic-link" href="/r/{_esc(r.get("slug",""))}" aria-label="View {_esc(r["operatingName"])}">'
+                      f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
+                      f'</a>'
                       if thumb else '')
         out.append(
             f'<div class="open-row{ " has-pic" if thumb else "" }"{multi_attr}>'
