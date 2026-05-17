@@ -335,6 +335,10 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             'daysOpen': days_open,
             'address': addr1,                 # default: permit address. Overridden by Places.matchedAddress below when available.
             'slug': slug,
+            # Stash the cache-key built from PERMIT name+address so downstream
+            # places_cache lookups work even after entry.address has been
+            # overridden by Places' formatted matchedAddress.
+            '_cacheKey': f"{op_raw.strip().upper()}||{address_full.strip().upper()}",
         }
         district = district_from_postal(address_full)
         if district: entry['district'] = district
@@ -696,25 +700,65 @@ print(f"  wrote {cuisine_pages_written} per-cuisine SEO landing pages → cuisin
 #                    show the personalized image when the URL is shared,
 #                    with the IMAGE itself being a click-target to the page.
 from og_card import render_card_png as _render_og_card
+from enrich_places import download_place_photo
 LISTING_DIR = Path(ROOT) / 'r'
 OG_DIR      = Path(ROOT) / 'og'
+PHOTO_DIR   = Path(ROOT) / 'og' / 'photo'
 LISTING_DIR.mkdir(exist_ok=True)
 OG_DIR.mkdir(exist_ok=True)
+PHOTO_DIR.mkdir(exist_ok=True)
 
 listing_template = open(INDEX_PATH).read()
 n_listing_html = 0
 n_listing_png  = 0
+n_listing_photo = 0
 for entry in seen_entries.values():
     slug = entry.get('slug')
     if not slug: continue
 
-    # 1) PNG card → og/<slug>.png
+    # 1) PNG card → og/<slug>.png — branded fallback
     try:
         _render_og_card(entry, out_path=str(OG_DIR / f'{slug}.png'))
         n_listing_png += 1
     except Exception as ex:
         print(f"  WARN: og card failed for {slug}: {ex}")
-        continue  # skip the HTML too — no point without the og:image
+        continue
+
+    # 1a) Google Places photo → og/photo/<slug>.jpg when the entry has a
+    # Places match with a photo_reference cached. ~$0.007 per first-time
+    # download (Places Photo SKU); skips on subsequent runs since the file
+    # is on disk. Becomes the preferred og:image because actual restaurant
+    # photos drive far more clicks than branded cards.
+    #
+    # Lookup uses entry['_cacheKey'] (built from PERMIT name+address) since
+    # entry['address'] may have been overridden by Places' formatted address
+    # which won't match the cache key.
+    pe = PLACES_CACHE.get(entry.get('_cacheKey', '')) or {}
+    photo_ref = pe.get('photoRef')
+    # Fallback: if the cached entry came from the older code path without
+    # the photoRef field, fetch place_details once to grab it. Costs ~$0.025
+    # per entry; capped to entries that are bot-eligible (daysOpen <= 30 —
+    # the X bot's --since-days window) so we only spend on entries that
+    # might actually be tweeted. Older entries fall back to the SVG card.
+    if (pe.get('status') == 'ok' and pe.get('place_id') and not photo_ref
+            and entry.get('daysOpen', 999) <= 30):
+        try:
+            from enrich_places import place_details
+            det = place_details(pe['place_id'])
+            photos = (det.get('photos') or [])
+            if photos:
+                photo_ref = photos[0].get('photo_reference')
+                pe['photoRef'] = photo_ref
+                PLACES_CACHE[entry['_cacheKey']] = pe   # mutate the in-mem cache
+        except Exception:
+            pass
+
+    photo_file = PHOTO_DIR / f'{slug}.jpg'
+    if photo_ref and not photo_file.exists():
+        data, ct = download_place_photo(photo_ref, max_width=1600)
+        if data:
+            photo_file.write_bytes(data)
+            n_listing_photo += 1
 
     # 2) HTML → r/<slug>.html
     name = entry.get('operatingName', '')
@@ -730,7 +774,11 @@ for entry in seen_entries.values():
              f"Part of NowServingTO's daily-updated directory of Toronto's "
              f"newest restaurants, by cuisine.")
     canonical = f"https://nowservingto.com/r/{slug}"
-    og_image  = f"https://nowservingto.com/og/{slug}.png"
+    # Prefer the actual restaurant photo (Places) when we have one; falls
+    # back to the branded SVG card. Photo gives the X/FB/Slack card a real
+    # food/storefront image instead of generic typography.
+    og_image  = (f"https://nowservingto.com/og/photo/{slug}.jpg" if photo_file.exists()
+                 else f"https://nowservingto.com/og/{slug}.png")
 
     page = listing_template
     page = re.sub(r'<title>[^<]*</title>',
@@ -785,6 +833,15 @@ for entry in seen_entries.values():
 
 print(f"  wrote {n_listing_html} per-listing pages → r/<slug>.html")
 print(f"  wrote {n_listing_png} per-listing OG cards → og/<slug>.png")
+print(f"  downloaded {n_listing_photo} new Places photos → og/photo/<slug>.jpg")
+
+# Persist any photoRef values we backfilled into PLACES_CACHE so the next
+# inject doesn't have to re-call place_details for the same entries.
+try:
+    with open(PLACES_CACHE_PATH, 'w') as f:
+        json.dump(PLACES_CACHE, f, separators=(',', ':'))
+except Exception as ex:
+    print(f"  WARN: places_cache save failed: {ex}")
 
 # Write sitemap.xml with today's lastmod + one URL per cuisine landing page so
 # Google indexes "newest ethiopian toronto" etc. separately from the home page.

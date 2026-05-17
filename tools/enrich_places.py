@@ -58,17 +58,36 @@ def place_details(place_id):
     # `reviews` and `editorial_summary` are within the Atmosphere Data SKU we
     # already hit (via `rating`/`user_ratings_total`), so adding them is free
     # at our scale (well under the 10K/month per-SKU free tier on legacy API).
-    # They carry the cultural-marker signal name+website often lacks — e.g.
-    # reviews mention "their kunafa is the best" → Lebanese/Syrian markers
-    # name alone can't disambiguate.
+    # `photos` returns photo_references at no extra cost; downloading the
+    # actual bytes via download_place_photo() is what's billed.
     r = http_get_json(
         'https://maps.googleapis.com/maps/api/place/details/json',
         {'place_id': place_id,
-         'fields': 'name,website,types,rating,user_ratings_total,formatted_address,geometry/location,url,business_status,reviews,editorial_summary',
+         'fields': 'name,website,types,rating,user_ratings_total,formatted_address,geometry/location,url,business_status,reviews,editorial_summary,photos',
          'key': API_KEY}
     )
     if r.get('status') != 'OK': return None
     return r.get('result')
+
+
+def download_place_photo(photo_reference, max_width=1600):
+    """Fetch the actual JPEG bytes for a Place photo. Costs ~$0.007 per call
+    (Places Photo SKU). Returns (bytes, content_type) or (None, None)."""
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+    url = 'https://maps.googleapis.com/maps/api/place/photo?' + urlencode({
+        'maxwidth': str(max_width),
+        'photo_reference': photo_reference,
+        'key': API_KEY,
+    })
+    req = Request(url, headers={'User-Agent': 'nowservingto-enrich/1.0'})
+    try:
+        with urlopen(req, timeout=30) as r:
+            data = r.read()
+            ct = r.headers.get('Content-Type', 'image/jpeg')
+            return data, ct
+    except Exception:
+        return None, None
 
 def cache_key(name, address):
     return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
@@ -186,6 +205,10 @@ def enrich_one(operating_name, address):
         t = (r.get('text') or '').strip()
         if t: reviews_text.append(t[:600])
     editorial = (details.get('editorial_summary') or {}).get('overview') if isinstance(details.get('editorial_summary'), dict) else None
+    # First photo reference (if any) — downloading the bytes is a separate
+    # billable Places Photo SKU; we cache the ref here and download on demand.
+    photos = details.get('photos') or []
+    photo_ref = photos[0].get('photo_reference') if photos else None
     return {
         'status': 'ok',
         'place_id': cand['place_id'],
@@ -201,6 +224,7 @@ def enrich_one(operating_name, address):
         'businessStatus': details.get('business_status'),
         'reviews': reviews_text,             # list[str] — up to 5 trimmed review texts
         'editorialSummary': editorial,       # str or None — Google's curated description
+        'photoRef': photo_ref,               # str or None — first photo_reference for og:image
         'query': query,
     }
 
