@@ -449,6 +449,101 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
 # Multi-cuisine entries (e.g., "Afghan + Pakistani + Indian") appear in EACH
 # of their cuisine buckets — totalTagged365d counts entries (not bucket-rows),
 # so a 3-cuisine place still counts as 1 toward the total.
+# Photo pre-pass — download Place/Street View photos NOW (before serializing
+# corridors.json and rendering static feeds) so each entry can carry a
+# `photo` field that the frontend renders as a row thumbnail. Same priority
+# order as the og:image: cached Places photoRef → Place Details re-fetch
+# (bot-eligible <=30d) → Street View → none.
+from pathlib import Path as _Path
+import subprocess as _sub
+_PHOTO_DIR = _Path(ROOT) / 'og' / 'photo'
+_THUMB_DIR = _Path(ROOT) / 'og' / 'thumb'
+_PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+_THUMB_DIR.mkdir(parents=True, exist_ok=True)
+from enrich_places import (download_place_photo as _dl_photo,
+                            streetview_metadata as _sv_meta,
+                            streetview_image as _sv_img,
+                            place_details as _pd)
+
+def _make_thumb(src, dst, size=160):
+    """Center-square-crop + resize to size×size, save as JPEG q=78. ~6KB per
+    thumb. Tries ImageMagick `convert` first (VPS has it), falls back to PIL
+    (local dev has it)."""
+    try:
+        _sub.run(
+            ['convert', str(src), '-resize', f'{size}x{size}^',
+             '-gravity', 'center', '-extent', f'{size}x{size}',
+             '-quality', '78', '-strip', str(dst)],
+            check=True, capture_output=True,
+        )
+        return True
+    except (_sub.SubprocessError, FileNotFoundError):
+        pass
+    try:
+        from PIL import Image
+        with Image.open(str(src)) as im:
+            im = im.convert('RGB')
+            # Center-square crop
+            w, h = im.size
+            s = min(w, h)
+            im = im.crop(((w-s)//2, (h-s)//2, (w+s)//2, (h+s)//2))
+            im = im.resize((size, size), Image.LANCZOS)
+            im.save(str(dst), 'JPEG', quality=78, optimize=True)
+        return True
+    except Exception:
+        return False
+
+n_photo_downloads = 0
+n_streetview_downloads = 0
+n_thumb_renders = 0
+for entry in seen_entries.values():
+    slug = entry.get('slug')
+    if not slug: continue
+    photo_path = _PHOTO_DIR / f'{slug}.jpg'
+    thumb_path = _THUMB_DIR / f'{slug}.jpg'
+
+    if not photo_path.exists():
+        pe = PLACES_CACHE.get(entry.get('_cacheKey', '')) or {}
+        photo_ref = pe.get('photoRef')
+        # Backfill photoRef from place_details when missing (bot-eligible only)
+        if (pe.get('status') == 'ok' and pe.get('place_id') and not photo_ref
+                and entry.get('daysOpen', 999) <= 30):
+            try:
+                det = _pd(pe['place_id'])
+                photos = det.get('photos') or []
+                if photos:
+                    photo_ref = photos[0].get('photo_reference')
+                    pe['photoRef'] = photo_ref
+                    PLACES_CACHE[entry['_cacheKey']] = pe
+            except Exception: pass
+        # 1) Try Places photo
+        if photo_ref:
+            data, _ = _dl_photo(photo_ref, max_width=1600)
+            if data:
+                photo_path.write_bytes(data); n_photo_downloads += 1
+        # 2) Fall back to Street View (free metadata check first)
+        if (not photo_path.exists()
+                and entry.get('daysOpen', 999) <= 30
+                and entry.get('lat') is not None and entry.get('lng') is not None):
+            meta = _sv_meta(entry['lat'], entry['lng'])
+            if meta and meta.get('status') == 'OK':
+                data, _ = _sv_img(entry['lat'], entry['lng'], size='640x640', fov=80)
+                if data:
+                    photo_path.write_bytes(data); n_streetview_downloads += 1
+
+    if photo_path.exists():
+        # Make sure thumbnail exists too (regen when full photo is fresher)
+        if not thumb_path.exists() or thumb_path.stat().st_mtime < photo_path.stat().st_mtime:
+            if _make_thumb(photo_path, thumb_path, size=160):
+                n_thumb_renders += 1
+        entry['photo'] = f'/og/photo/{slug}.jpg'
+        if thumb_path.exists():
+            entry['thumb'] = f'/og/thumb/{slug}.jpg'
+
+print(f"  photos: {n_photo_downloads} new Places + {n_streetview_downloads} new Street View "
+      f"(total entries with photos: {sum(1 for e in seen_entries.values() if e.get('photo'))}; "
+      f"{n_thumb_renders} thumbnails regenerated)")
+
 opens_365_by_cuisine = defaultdict(list)
 for entry in seen_entries.values():
     n_tagged_365 += 1
@@ -551,8 +646,12 @@ def build_static_rows(entries):
         link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
         name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
         multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
+        thumb = r.get('thumb')
+        thumb_html = (f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
+                      if thumb else '')
         out.append(
-            f'<div class="open-row"{multi_attr}>'
+            f'<div class="open-row{ " has-pic" if thumb else "" }"{multi_attr}>'
+            f'{thumb_html}'
             f'<div class="od"><span class="ago">{ago}</span></div>'
             f'<div class="on">{name_html}<span class="oad">{addr_html}</span></div>'
             f'<div class="oc">{pills}</div>'
@@ -725,56 +824,8 @@ for entry in seen_entries.values():
         print(f"  WARN: og card failed for {slug}: {ex}")
         continue
 
-    # 1a) Google Places photo → og/photo/<slug>.jpg when the entry has a
-    # Places match with a photo_reference cached. ~$0.007 per first-time
-    # download (Places Photo SKU); skips on subsequent runs since the file
-    # is on disk. Becomes the preferred og:image because actual restaurant
-    # photos drive far more clicks than branded cards.
-    #
-    # Lookup uses entry['_cacheKey'] (built from PERMIT name+address) since
-    # entry['address'] may have been overridden by Places' formatted address
-    # which won't match the cache key.
-    pe = PLACES_CACHE.get(entry.get('_cacheKey', '')) or {}
-    photo_ref = pe.get('photoRef')
-    # Fallback: if the cached entry came from the older code path without
-    # the photoRef field, fetch place_details once to grab it. Costs ~$0.025
-    # per entry; capped to entries that are bot-eligible (daysOpen <= 30 —
-    # the X bot's --since-days window) so we only spend on entries that
-    # might actually be tweeted. Older entries fall back to the SVG card.
-    if (pe.get('status') == 'ok' and pe.get('place_id') and not photo_ref
-            and entry.get('daysOpen', 999) <= 30):
-        try:
-            from enrich_places import place_details
-            det = place_details(pe['place_id'])
-            photos = (det.get('photos') or [])
-            if photos:
-                photo_ref = photos[0].get('photo_reference')
-                pe['photoRef'] = photo_ref
-                PLACES_CACHE[entry['_cacheKey']] = pe   # mutate the in-mem cache
-        except Exception:
-            pass
-
+    # Photo file path (downloads happened in the pre-pass above).
     photo_file = PHOTO_DIR / f'{slug}.jpg'
-    if photo_ref and not photo_file.exists():
-        data, ct = download_place_photo(photo_ref, max_width=1600)
-        if data:
-            photo_file.write_bytes(data)
-            n_listing_photo += 1
-
-    # 1b) Street View fallback — when no Places photo is available, grab
-    # the storefront from Street View. Free metadata check first so we
-    # only pay (~$0.007) when imagery actually exists. Capped to
-    # bot-eligible entries (daysOpen <= 30) to bound spend; older
-    # entries fall back to the SVG card.
-    if (not photo_file.exists()
-            and entry.get('daysOpen', 999) <= 30
-            and entry.get('lat') is not None and entry.get('lng') is not None):
-        meta = streetview_metadata(entry['lat'], entry['lng'])
-        if meta and meta.get('status') == 'OK':
-            data, _ = streetview_image(entry['lat'], entry['lng'], size='640x640', fov=80)
-            if data:
-                photo_file.write_bytes(data)
-                n_listing_streetview += 1
 
     # 2) HTML → r/<slug>.html
     name = entry.get('operatingName', '')
@@ -849,8 +900,6 @@ for entry in seen_entries.values():
 
 print(f"  wrote {n_listing_html} per-listing pages → r/<slug>.html")
 print(f"  wrote {n_listing_png} per-listing OG cards → og/<slug>.png")
-print(f"  downloaded {n_listing_photo} new Places photos → og/photo/<slug>.jpg")
-print(f"  fetched {n_listing_streetview} Street View fallbacks for entries with no Places photo")
 
 # Persist any photoRef values we backfilled into PLACES_CACHE so the next
 # inject doesn't have to re-call place_details for the same entries.
