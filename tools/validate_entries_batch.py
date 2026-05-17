@@ -308,6 +308,20 @@ cuisines — list of 1 to 3 SPECIFIC country / diaspora cuisine labels.
 
   Do NOT invent vague descriptors like "Asian Fusion" or "International".
 
+  EXPLICIT BANS — never return these labels:
+    "Canadian", "American", "Hawaiian", "European" — these aren't immigrant
+       diaspora cuisines we surface; set is_restaurant="no" instead.
+    "Mediterranean" — too broad; use "Middle Eastern" or the specific
+       country (Lebanese, Greek, Turkish, etc.).
+    "Indian-Chinese", "Hakka" — collapse to "Indian" or "Chinese" based
+       on which tradition dominates the menu; never use the fusion label.
+    "Nepali" — use "Nepalese" (canonical spelling in our taxonomy).
+    Any "<Region> <Country>" label like "South Indian", "North Indian",
+       "Maharashtrian", "Southern Italian", "Northern Chinese" — collapse
+       to the parent country.
+
+  The grain we keep is COUNTRY, NOT region. Always.
+
 best_website — the URL we should put on the entry's name link.
 
 USER DIRECTIVE (verbatim, 2026-05-15): "Haiku will identify website from

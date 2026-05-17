@@ -137,17 +137,28 @@ def register_cuisine(label):
     slug. Auto-registers (and persists) novel cuisines so the next cron
     run knows the key. Returns '' if the label can't be slugified.
     Parent-country collapsing (Sichuan → Chinese) lives in the validator
-    prompt, not here — keeps judgment with Haiku, not in a hardcoded map."""
+    prompt, not here — keeps judgment with Haiku, not in a hardcoded map.
+
+    Label reverse-lookup: if Haiku returns "Middle Eastern" but our seed
+    taxonomy has key=middle_east with label="Middle Eastern", reuse the
+    existing key instead of creating a duplicate `middle_eastern` slug.
+    Same for any seed cuisine whose display label differs from its slug.
+    """
     key = _slugify_cuisine(label)
     if not key: return ''
     if key in CUISINE_LABEL or key == 'unknown':
         return key
+    # Reverse-lookup by display label so we don't create slug duplicates
+    # of existing seed cuisines ("Middle Eastern" → middle_east).
+    pretty_in = _re.sub(r'\s+', ' ', str(label).strip()).title()
+    for existing_key, existing_label in CUISINE_LABEL.items():
+        if existing_label.lower() == pretty_in.lower():
+            return existing_key
     # Novel cuisine — title-case the human label and persist.
-    pretty = _re.sub(r'\s+', ' ', str(label).strip()).title()
-    CUISINE_LABEL[key] = pretty
+    CUISINE_LABEL[key] = pretty_in
     VALID_CUISINE_KEYS.add(key)
     dyn = _load_dynamic()
-    dyn[key] = pretty
+    dyn[key] = pretty_in
     _save_dynamic(dyn)
     return key
 

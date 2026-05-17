@@ -146,12 +146,11 @@ def build_tweet(entry):
     socials = entry.get('socials') or {}
     handle_at = socials.get('x')   # only true @-mention if X handle is known
     handle_ig = socials.get('instagram') if not handle_at else None
-    # Direct link — the restaurant's own website if validated, else the
-    # Places Maps card, else the aggregator listing (last resort). Saves
-    # the reader a click vs routing through nowservingto.com/r/<slug>.
-    direct_url = (entry.get('website') or entry.get('mapsUrl')
-                  or entry.get('fallbackMapsUrl')
-                  or f"{SITE_BASE}/r/{entry['slug']}")
+    # Use the nowservingto listing URL — X auto-cards from the listing's
+    # og:image (the Places photo) and the WHOLE card is one click-target.
+    # Most user-friendly pattern on mobile: tap image = tap link. Attached
+    # media would open the photo fullscreen on tap, which is a dead-end.
+    listing_url = f"{SITE_BASE}/r/{entry['slug']}"
     licensed_lead = _licensed_line(entry.get('daysOpen'))
 
     # Suffix the cuisine label with a contextual word from the restaurant's
@@ -172,7 +171,7 @@ def build_tweet(entry):
         lines.append(f"@{handle_at}")
     elif handle_ig:
         lines.append(f"📷 instagram.com/{handle_ig}")
-    lines.append(direct_url)
+    lines.append(listing_url)
     hashtag = cuisine_hashtag(primary_key, primary_lbl) if primary_lbl else ''
     tags = '#Toronto #TOEats' + (f' #{hashtag}' if hashtag else '')
     lines.append(tags)
@@ -180,7 +179,7 @@ def build_tweet(entry):
     # X 280-char limit — trim address/handle lines first, keep the temporal
     # hook + name + URL + hashtags as the irreducible core.
     if len(text) > 280:
-        keep = [licensed_lead, name_line, direct_url, tags]
+        keep = [licensed_lead, name_line, listing_url, tags]
         if handle_at: keep.insert(-2, f"@{handle_at}")
         text = '\n'.join(keep)
         if len(text) > 280:
@@ -281,34 +280,23 @@ def main():
             print('---')
             continue
         print(f"posting: {e['slug']} ({len(text)} chars)")
+        # Default: text-only tweet. X auto-renders a Twitter Card from the
+        # listing page's og:image (the Places photo we set). Whole card
+        # becomes one click-target — taps the image OR title → goes to
+        # nowservingto.com/r/<slug>. Most user-friendly pattern.
+        #
+        # --attach-card flag forces the SVG fallback as attached media
+        # (fullscreen-on-tap behavior). Rarely needed — kept for manual
+        # use when X's scraper is mis-rendering the auto-card.
         media_ids = None
-        # Photo precedence for tweet attachment:
-        #   1. Places photo at og/photo/<slug>.jpg (real food/storefront)
-        #   2. Rendered SVG card (branded fallback) — only if --attach-card
-        # Tweet URL points DIRECTLY at restaurant (website/Places), so the
-        # attached image becomes the visual hook — image-click opens
-        # fullscreen, URL-click goes to the restaurant. No detour.
-        photo_path = Path(__file__).resolve().parent.parent / 'og' / 'photo' / f"{e['slug']}.jpg"
-        media_blob = None
-        if photo_path.exists():
-            try:
-                media_blob = photo_path.read_bytes()
-                print(f"  attaching Places photo: {photo_path.name} ({len(media_blob)} bytes)")
-            except Exception as ex:
-                print(f"  photo read failed: {ex}")
-        elif args.attach_card:
+        if args.attach_card:
             try:
                 media_blob = render_card_png(e)
-                print(f"  attaching SVG card fallback ({len(media_blob)} bytes)")
-            except Exception as ex:
-                print(f"  card render failed: {ex}")
-        if media_blob:
-            try:
                 media_id = upload_media(media_blob, creds)
                 media_ids = [media_id]
-                print(f"  uploaded: media_id={media_id}")
+                print(f"  forced SVG card attachment: media_id={media_id}")
             except Exception as ex:
-                print(f"  media upload failed (posting text-only): {ex}")
+                print(f"  card render/upload failed: {ex}")
         try:
             result = post_tweet(text, creds, media_ids=media_ids)
             tweet_id = result.get('data', {}).get('id')
