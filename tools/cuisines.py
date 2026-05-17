@@ -110,6 +110,8 @@ def _slugify_cuisine(label):
     return s
 
 
+
+
 def cuisine_color(key):
     """Deterministic hex color for a cuisine key. Used for cuisines NOT
     in the curated index.html palette — gives them a stable, distinct
@@ -133,7 +135,9 @@ def cuisine_color(key):
 def register_cuisine(label):
     """Given a free-form cuisine label from Haiku, return its canonical
     slug. Auto-registers (and persists) novel cuisines so the next cron
-    run knows the key. Returns '' if the label can't be slugified."""
+    run knows the key. Returns '' if the label can't be slugified.
+    Parent-country collapsing (Sichuan → Chinese) lives in the validator
+    prompt, not here — keeps judgment with Haiku, not in a hardcoded map."""
     key = _slugify_cuisine(label)
     if not key: return ''
     if key in CUISINE_LABEL or key == 'unknown':

@@ -505,9 +505,10 @@ for entry in seen_entries.values():
     if not photo_path.exists():
         pe = PLACES_CACHE.get(entry.get('_cacheKey', '')) or {}
         photo_ref = pe.get('photoRef')
-        # Backfill photoRef from place_details when missing (bot-eligible only)
-        if (pe.get('status') == 'ok' and pe.get('place_id') and not photo_ref
-                and entry.get('daysOpen', 999) <= 30):
+        # Backfill photoRef from place_details when missing — every kept
+        # entry deserves a thumbnail, not just bot-eligible ones. Costs
+        # ~$0.025 per first-time fetch then cached forever.
+        if (pe.get('status') == 'ok' and pe.get('place_id') and not photo_ref):
             try:
                 det = _pd(pe['place_id'])
                 photos = det.get('photos') or []
@@ -521,9 +522,9 @@ for entry in seen_entries.values():
             data, _ = _dl_photo(photo_ref, max_width=1600)
             if data:
                 photo_path.write_bytes(data); n_photo_downloads += 1
-        # 2) Fall back to Street View (free metadata check first)
+        # 2) Fall back to Street View (free metadata check first; only
+        # pay the ~$0.007 image fetch when imagery actually exists).
         if (not photo_path.exists()
-                and entry.get('daysOpen', 999) <= 30
                 and entry.get('lat') is not None and entry.get('lng') is not None):
             meta = _sv_meta(entry['lat'], entry['lng'])
             if meta and meta.get('status') == 'OK':
@@ -574,6 +575,23 @@ for c, entries in opens_365_by_cuisine.items():
         'recent5': entries[:10],        # for per-cuisine card (bumped to 10, key kept for back-compat)
     })
 cuisines_out.sort(key=lambda r: -r['count365d'])
+
+# Prune cuisines_dynamic.json — keep only keys that are actually IN USE by
+# the current feed. Sub-cuisines collapsed by the prompt's parent-country
+# rule (e.g., Sichuan → Chinese) leave orphan entries in the dynamic dict
+# that would otherwise clutter the cuisine dropdown forever. Seed
+# (curated) cuisines in CUISINE_LABEL are never pruned — they may have 0
+# entries today but reappear tomorrow.
+try:
+    from cuisines import _load_dynamic, _save_dynamic, _DYNAMIC_PATH
+    in_use = {c['key'] for c in cuisines_out}
+    dyn = _load_dynamic()
+    pruned = {k: v for k, v in dyn.items() if k in in_use}
+    if len(pruned) != len(dyn):
+        print(f"  pruned {len(dyn) - len(pruned)} unused dynamic cuisines from {_DYNAMIC_PATH.name}")
+        _save_dynamic(pruned)
+except Exception as ex:
+    print(f"  WARN: dynamic-cuisine prune failed: {ex}")
 
 # Flat feed: all openings, newest first. Iterate seen_entries directly (NOT the
 # per-cuisine buckets) so multi-cuisine entries — which appear in multiple cuisine

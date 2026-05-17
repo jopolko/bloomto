@@ -261,27 +261,52 @@ country/diaspora identity visible somewhere in the evidence.
 cuisines — list of 1 to 3 SPECIFIC country / diaspora cuisine labels.
 
   Return labels in any natural casing — e.g., "Sri Lankan", "Cape Verdean",
-  "Uyghur", "Hakka", "Persian", "Trinidadian-Chinese". The system slugifies
-  and auto-registers any cuisine it hasn't seen before; no ethnicity goes
+  "Uyghur", "Persian", "Trinidadian-Chinese". The system slugifies and
+  auto-registers any cuisine it hasn't seen before; no ethnicity goes
   unrecognized.
 
-  GUIDANCE:
-  - Always prefer the SMALLEST accurate scope. If the menu is clearly
-    Sri Lankan (hoppers, kottu), label it "Sri Lankan" — not "South Asian".
-    If pupusas are featured, "Salvadoran" — not "Latin American".
-  - For genuine dual-cuisine spots (Korean+Japanese izakaya, Trinidadian
-    roti with Chinese stir-fry), multi-list: ["Korean","Japanese"] /
-    ["Trinidadian","Chinese"].
-  - Use umbrella labels ("South Asian", "Caribbean", "Middle Eastern",
-    "Latin American", "West African", "East African") only when evidence
-    is genuinely multi-region with no specific country resolvable.
-  - Use ["unknown"] when the menu is pan-cuisine without a single anchor
-    (3+ unrelated regions, "fusion" with no diaspora tie-in, generic
-    North-American comfort food). is_restaurant should usually be "no"
-    in those cases (see the audience criteria above).
-  - Do NOT invent vague descriptors like "Asian Fusion" or "International"
-    — those aren't a diaspora identity. Either name a country, multi-list
-    two specific ones, or return "unknown".
+  GRANULARITY: use the PARENT COUNTRY, never regional sub-cuisines or
+  dish-types. A user browsing the cuisine dropdown shouldn't have to
+  scroll past five regional Italian buckets to find "Italian".
+
+    DO use the parent country               DO NOT use the sub-region
+    -------------------------------------    ----------------------------------
+    "Italian"  (any region of Italy)        "Northern Italian", "Sicilian",
+                                            "Tuscan", "Neapolitan", "Roman"
+    "Chinese"  (any region of China)        "Sichuan", "Cantonese", "Hunan",
+                                            "Shanghainese", "Hakka", "Hong Kong"
+    "Indian"   (any region of India)        "Punjabi", "South Indian",
+                                            "Kerala", "Gujarati", "Mughlai"
+    "Mexican"  (any region of Mexico)       "Oaxacan", "Yucatecan", "Baja"
+    "Japanese" (any region/style)           "Sushi", "Ramen", "Izakaya"
+    "Vietnamese" (any region)               "Pho", "Banh Mi", "Hanoi-style"
+    "Korean"   (any style)                  "KBBQ", "Korean BBQ", "Bibimbap"
+    "Thai"     (any region)                 "Isaan", "Northern Thai"
+    "Middle Eastern" or country (Lebanese,  "Shawarma", "Falafel", "Kebab",
+       Syrian, Persian, etc.)               "Mediterranean"
+
+  COUNTRY-LEVEL distinctions ARE granular enough — keep these separate:
+    Tamil (Sri Lankan Tamil diaspora, distinct cuisine)
+    Sri Lankan (broader, hoppers / kottu)
+    Bangladeshi (vs Indian — separate national cuisine)
+    Pakistani (vs Indian — separate national cuisine)
+    Taiwanese (politically + culturally distinct from mainland Chinese)
+    Tibetan (distinct from Chinese)
+    Uyghur (distinct from Chinese — Central Asian Turkic Muslim)
+
+  WHEN TO MULTI-LIST: two specific countries blended at the same shop
+    (Korean+Japanese izakaya → ["Korean", "Japanese"], not "Asian Fusion").
+    Trinidadian-Chinese roti+wonton → ["Trinidadian", "Chinese"].
+
+  WHEN TO USE UMBRELLAS: only when evidence is genuinely multi-region
+    with no specific country resolvable. "South Asian", "Caribbean",
+    "Middle Eastern", "Latin American", "West African", "East African".
+
+  WHEN TO USE ["unknown"]: pan-cuisine with no single anchor (3+ unrelated
+    regions, "fusion" with no diaspora tie, generic North-American
+    comfort food). is_restaurant should usually be "no" in those cases.
+
+  Do NOT invent vague descriptors like "Asian Fusion" or "International".
 
 best_website — the URL we should put on the entry's name link.
 
