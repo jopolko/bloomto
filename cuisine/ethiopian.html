@@ -79,13 +79,13 @@
 <!-- LD-ITEMLIST-END -->
 <style>
   :root {
-    --bg: #faf7ee;
+    --bg: #fafafa;
     --paper: #ffffff;
-    --ink: #15110d;
-    --ink2: #45403a;
-    --muted: #7a746a;
-    --line: #d9d2bf;
-    --rule: #15110d;
+    --ink: #131516;
+    --ink2: #46494c;
+    --muted: #74787c;
+    --line: #ebecef;
+    --rule: #131516;
     --accent: #c83624;
     --moss: #4a6b2b;
     --fresh: #1a7340;
@@ -136,13 +136,13 @@
   body { overflow-x: hidden; }
 
   /* List ↔ Map view toggle + map container */
-  .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .view-toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--paper); }
   .view-toggle .vt-btn { font: 600 12px/1 var(--sans); padding: 9px 14px; background: var(--paper); color: var(--ink2); border: 0; cursor: pointer; transition: background 0.12s, color 0.12s; }
   .view-toggle .vt-btn:hover { color: var(--ink); }
   .view-toggle .vt-btn.vt-active { background: var(--ink); color: #fff; }
   .map-view { margin-bottom: 28px; }
   .map-toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: rgba(45, 165, 92, 0.045); border: 1px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; flex-wrap: wrap; }
-  .map-btn { font: 600 11.5px/1 var(--sans); padding: 7px 12px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; transition: border-color 0.12s, background 0.12s; }
+  .map-btn { font: 600 12px/1 var(--sans); padding: 9px 14px; background: var(--paper); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; cursor: pointer; transition: border-color 0.12s, background 0.12s; }
   .map-btn:hover { border-color: var(--ink2); }
   .map-btn:disabled { opacity: 0.5; cursor: wait; }
   .map-btn.active { background: var(--fresh); color: #fff; border-color: var(--fresh); }
@@ -202,45 +202,46 @@
   .filters .filter-clear:hover { color: var(--accent); }
   .cuisine-picker { position: relative; }
   .cuisine-picker.region button.cp-trigger { min-width: 160px; }
-  .cuisine-picker button.cp-trigger { font: 600 13px/1.3 var(--serif); font-variant-numeric: lining-nums tabular-nums; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px 30px 8px 12px; cursor: pointer; min-width: 200px; max-width: 100%; text-align: left; position: relative; transition: border-color 0.12s, box-shadow 0.12s; }
+  .cuisine-picker button.cp-trigger { font: 600 13px/1.3 var(--sans); font-variant-numeric: lining-nums tabular-nums; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 9px 32px 9px 16px; cursor: pointer; min-width: 200px; max-width: 100%; text-align: left; position: relative; transition: border-color 0.12s, box-shadow 0.12s, background 0.12s; }
   .cuisine-picker button.cp-trigger::after { content: ''; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 5px solid var(--ink); transition: transform 0.12s; }
   .cuisine-picker button.cp-trigger[aria-expanded="true"]::after { transform: translateY(-50%) rotate(180deg); }
   .cuisine-picker button.cp-trigger:hover { border-color: var(--rule); }
   .cuisine-picker button.cp-trigger:focus-visible { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(21,17,13,0.08); }
   .cuisine-picker .cp-panel { position: absolute; top: calc(100% + 4px); left: 0; min-width: 240px; max-width: min(360px, calc(100vw - 28px)); max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 28px rgba(21,17,13,0.18); z-index: 1001; padding: 4px 0; -webkit-overflow-scrolling: touch; }
   .cuisine-picker .cp-panel[hidden] { display: none; }
-  .cuisine-picker .cp-opt { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px; cursor: pointer; font: 500 13.5px/1.3 var(--serif); color: var(--ink); border: 0; background: transparent; width: 100%; text-align: left; min-height: 38px; }
+  .cuisine-picker .cp-opt { display: flex; align-items: baseline; gap: 8px; padding: 10px 16px; cursor: pointer; font: 500 14px/1.3 var(--sans); color: var(--ink); border: 0; background: transparent; width: 100%; text-align: left; min-height: 40px; }
   .cuisine-picker .cp-opt:hover, .cuisine-picker .cp-opt:focus-visible { background: var(--bg); outline: none; }
   .cuisine-picker .cp-opt[aria-selected="true"] { background: rgba(200, 54, 36, 0.06); font-weight: 700; }
   .cuisine-picker .cp-opt .ct { color: var(--muted); font: 500 11.5px/1 var(--mono); font-variant-numeric: lining-nums tabular-nums; margin-left: auto; }
   .cuisine-picker .cp-opt.cp-all { border-bottom: 1px solid var(--line); }
 
-  .open-feed { background: rgba(45, 165, 92, 0.045); border: 1px solid var(--line); border-radius: 10px; padding: 4px 0; margin-bottom: 28px; }
-  .open-row { display: grid; grid-template-columns: 110px 1fr 165px; align-items: center; gap: 14px; padding: 13px 20px; border-bottom: 1px solid #ece6d5; }
-  .open-row.has-pic { grid-template-columns: 64px 110px 1fr 165px; }
-  .open-row .row-pic-link { display: block; line-height: 0; text-decoration: none; border-radius: 6px; overflow: hidden; transition: transform 0.12s; }
-  .open-row .row-pic-link:hover { transform: scale(1.04); }
-  .open-row .row-pic { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; background: #ece6d5; display: block; }
+  .open-feed { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 0; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+  .open-row { display: grid; grid-template-columns: 110px 1fr 165px; align-items: center; gap: 16px; padding: 16px 20px; border-bottom: 1px solid var(--line); transition: background 0.12s; }
+  .open-row:hover { background: #f6f7f8; }
+  .open-row.has-pic { grid-template-columns: 80px 110px 1fr 165px; }
+  .open-row .row-pic-link { display: block; line-height: 0; text-decoration: none; border-radius: 10px; overflow: hidden; transition: transform 0.18s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .open-row .row-pic-link:hover { transform: scale(1.03); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+  .open-row .row-pic { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: var(--line); display: block; }
   .open-row:last-child { border-bottom: 0; }
-  .open-row .od { font: 700 9.5px/1.1 var(--sans); color: var(--moss); text-transform: uppercase; letter-spacing: 0.08em; }
+  .open-row .od { font: 700 10px/1.2 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .open-row .od .ago { display: block; }
   .open-row[data-fresh="hot"] .od .ago { color: var(--fresh); font-size: 10.5px; }
   .open-row[data-fresh="hot"] .od .ago::before { content: '★ '; }
-  .open-row .on { font: 700 15.5px/1.25 var(--serif); color: var(--ink); letter-spacing: -0.005em; }
+  .open-row .on { font: 700 16px/1.3 var(--sans); color: var(--ink); letter-spacing: -0.01em; }
   /* Quiet dotted underline says "this is a link" without committing to a heavy
      solid underline. Solid red underline on hover/active for the affordance. */
-  .open-row .on a { color: var(--ink); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.3); text-decoration-thickness: 1px; text-underline-offset: 3px; transition: color 0.12s, text-decoration-color 0.12s, text-decoration-style 0.12s; }
+  .open-row .on a { color: var(--ink); text-decoration: none; transition: color 0.12s; }
   .open-row .on a:hover,
-  .open-row .on a:active { color: var(--accent); text-decoration-style: solid; text-decoration-color: var(--accent); }
+  .open-row .on a:active { color: var(--accent); }
   .open-row .on .rating { display: inline-block; margin-left: 10px; font: 700 12px/1 var(--sans); color: var(--ink2); font-variant-numeric: tabular-nums; vertical-align: 1px; white-space: nowrap; }
   .open-row .on .rating::before { content: '★'; color: #d4a017; margin-right: 3px; font-size: 13px; }
   .open-row .on .rating .rc { color: var(--muted); font-weight: 500; margin-left: 4px; font-size: 11px; }
   .open-row .on .unverified { display: inline-block; margin-left: 8px; font: 700 9.5px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; border: 1px solid var(--line); padding: 3px 6px; border-radius: 99px; vertical-align: 2px; }
-  .open-row .on .oad { display: block; font: 400 11.5px/1.3 var(--sans); color: var(--muted); margin-top: 4px; }
-  .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 600; }
+  .open-row .on .oad { display: block; font: 400 13px/1.4 var(--sans); color: var(--muted); margin-top: 4px; }
+  .open-row .on .oad .oad-d { color: var(--ink2); font-weight: 500; }
   .open-row .on .oad .oad-dist { font-variant-numeric: tabular-nums; }
-  .open-row .on .oad a { color: var(--muted); text-decoration: underline; text-decoration-style: dotted; text-decoration-color: rgba(21,17,13,0.25); text-decoration-thickness: 1px; text-underline-offset: 2px; transition: color 0.12s, text-decoration-color 0.12s; }
-  .open-row .on .oad a:hover { color: var(--accent); text-decoration-color: var(--accent); text-decoration-style: solid; }
+  .open-row .on .oad a { color: var(--muted); text-decoration: none; transition: color 0.12s; }
+  .open-row .on .oad a:hover { color: var(--accent); }
   .open-row .oc { text-align: right; display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 4px 6px; }
   .open-row .oc .pill { font: 700 9.5px/1 var(--sans); padding: 5px 10px; border-radius: 99px; color: #fff; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
   .open-row .oc .row-fav,
@@ -256,7 +257,7 @@
      visible so the user sees "Afghan · Pakistani · Indian" even on the Indian
      filter — useful signal that the place serves multiple traditions. */
   .open-feed.single-cuisine .open-row:not([data-multi]) { grid-template-columns: 110px 1fr; }
-  .open-feed.single-cuisine .open-row.has-pic:not([data-multi]) { grid-template-columns: 64px 110px 1fr; }
+  .open-feed.single-cuisine .open-row.has-pic:not([data-multi]) { grid-template-columns: 80px 110px 1fr; }
   .open-feed.single-cuisine .open-row:not([data-multi]) .oc { display: none; }
   .open-feed .empty { padding: 28px 20px; color: var(--muted); font: italic 13px/1.4 var(--serif); text-align: center; }
   .open-feed .show-more { display: block; width: calc(100% - 36px); margin: 8px 18px 12px; padding: 11px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font: 700 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink2); transition: all 0.12s; }
@@ -266,9 +267,9 @@
 
   @media (max-width: 760px) {
     .wrap { padding: 0 14px; }
-    .open-row { grid-template-columns: 1fr 130px; gap: 8px; padding: 12px 14px; }
-    .open-row.has-pic { grid-template-columns: 48px 1fr 130px; }
-    .open-row.has-pic .row-pic { width: 48px; height: 48px; }
+    .open-row { grid-template-columns: 1fr 130px; gap: 12px; padding: 14px 14px; }
+    .open-row.has-pic { grid-template-columns: 56px 1fr 130px; }
+    .open-row.has-pic .row-pic { width: 56px; height: 56px; border-radius: 8px; }
     .open-feed.single-cuisine .open-row { grid-template-columns: 1fr; }
     .open-feed.single-cuisine .open-row .on { grid-column: 1 / -1; }
     .open-row .od { grid-column: 1 / 3; order: -1; display: flex; gap: 10px; align-items: baseline; }
@@ -312,10 +313,10 @@
     <!-- STATIC-FEED-START — pre-rendered daily by tools/inject_openings.py for crawlers + no-JS visitors. Replaced by interactive JS render on page load. -->
     <div class="open-row has-pic"><a class="row-pic-link" href="https://medalounge.ca" rel="noopener" aria-label="View YEGNA MEDA"><img class="row-pic" src="/og/thumb/yegna-meda-1397.jpg" alt="" loading="lazy" decoding="async"></a><div class="od"><span class="ago">licensed 16d ago</span></div><div class="on"><a href="https://medalounge.ca" rel="noopener">YEGNA MEDA</a><span class="oad"><a href="https://www.google.com/maps/search/?api=1&amp;query=YEGNA+MEDA+1397+DANFORTH+AVE%2C+MAIN+%26+BST+Toronto%2C+ON" rel="noopener">1397 DANFORTH AVE, MAIN &amp; BST</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
     <div class="open-row has-pic" data-multi><a class="row-pic-link" href="https://maps.google.com/?cid=3074560623723118397" rel="noopener" aria-label="View MERKATO ERI-ETHIO CAFE &amp; RESTAURANT"><img class="row-pic" src="/og/thumb/merkato-eri-ethio-cafe-restaurant-436.jpg" alt="" loading="lazy" decoding="async"></a><div class="od"><span class="ago">licensed 27d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=3074560623723118397" rel="noopener">MERKATO ERI-ETHIO CAFE &amp; RESTAURANT</a><span class="oad"><a href="https://maps.google.com/?cid=3074560623723118397" rel="noopener">436 Parliament St, Toronto, ON M5A 3A2</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span><span class="pill" style="background:#8a4528">Eritrean</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 55d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=10401497683024578344" rel="noopener">ABYSSINIA RESTAURANT</a><span class="oad"><a href="https://maps.google.com/?cid=10401497683024578344" rel="noopener">884 Danforth Ave, Toronto, ON M4J 1L7</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
-    <div class="open-row" data-multi><div class="od"><span class="ago">licensed 2mo ago</span></div><div class="on"><a href="https://maps.google.com/?cid=5047948677694365433" rel="noopener">ETHIO-ERI CAFE</a><span class="oad"><a href="https://maps.google.com/?cid=5047948677694365433" rel="noopener">707 Dundas St W, Toronto, ON M5T 2W6</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span><span class="pill" style="background:#8a4528">Eritrean</span></div></div>
-    <div class="open-row" data-multi><div class="od"><span class="ago">licensed 9mo ago</span></div><div class="on"><a href="https://freshabesharestaurantbbqbar.com/" rel="noopener">FRESH HABESHA AND BBQ RESTAURANT &amp; BAR</a><span class="oad"><a href="https://maps.google.com/?cid=3561083478130740190" rel="noopener">810 Bloor St W, Toronto, ON M6G 1L9</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span><span class="pill" style="background:#8a4528">Eritrean</span></div></div>
-    <div class="open-row"><div class="od"><span class="ago">licensed 12mo ago</span></div><div class="on"><a href="https://maps.google.com/?cid=667696358257954048" rel="noopener">BUNNA AROMA COFFEE</a><span class="oad"><a href="https://maps.google.com/?cid=667696358257954048" rel="noopener">1189 Bloor St W, Toronto, ON M6H 1M9</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
+    <div class="open-row has-pic"><a class="row-pic-link" href="https://maps.google.com/?cid=10401497683024578344" rel="noopener" aria-label="View ABYSSINIA RESTAURANT"><img class="row-pic" src="/og/thumb/abyssinia-restaurant-884.jpg" alt="" loading="lazy" decoding="async"></a><div class="od"><span class="ago">licensed 55d ago</span></div><div class="on"><a href="https://maps.google.com/?cid=10401497683024578344" rel="noopener">ABYSSINIA RESTAURANT</a><span class="oad"><a href="https://maps.google.com/?cid=10401497683024578344" rel="noopener">884 Danforth Ave, Toronto, ON M4J 1L7</a><span class="oad-d"> · East Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
+    <div class="open-row has-pic" data-multi><a class="row-pic-link" href="https://maps.google.com/?cid=5047948677694365433" rel="noopener" aria-label="View ETHIO-ERI CAFE"><img class="row-pic" src="/og/thumb/ethio-eri-cafe-707.jpg" alt="" loading="lazy" decoding="async"></a><div class="od"><span class="ago">licensed 2mo ago</span></div><div class="on"><a href="https://maps.google.com/?cid=5047948677694365433" rel="noopener">ETHIO-ERI CAFE</a><span class="oad"><a href="https://maps.google.com/?cid=5047948677694365433" rel="noopener">707 Dundas St W, Toronto, ON M5T 2W6</a><span class="oad-d"> · Downtown</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span><span class="pill" style="background:#8a4528">Eritrean</span></div></div>
+    <div class="open-row has-pic" data-multi><a class="row-pic-link" href="https://freshabesharestaurantbbqbar.com/" rel="noopener" aria-label="View FRESH HABESHA AND BBQ RESTAURANT &amp; BAR"><img class="row-pic" src="/og/thumb/fresh-habesha-and-bbq-restaurant-bar-810.jpg" alt="" loading="lazy" decoding="async"></a><div class="od"><span class="ago">licensed 9mo ago</span></div><div class="on"><a href="https://freshabesharestaurantbbqbar.com/" rel="noopener">FRESH HABESHA AND BBQ RESTAURANT &amp; BAR</a><span class="oad"><a href="https://maps.google.com/?cid=3561083478130740190" rel="noopener">810 Bloor St W, Toronto, ON M6G 1L9</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span><span class="pill" style="background:#8a4528">Eritrean</span></div></div>
+    <div class="open-row has-pic"><a class="row-pic-link" href="https://maps.google.com/?cid=667696358257954048" rel="noopener" aria-label="View BUNNA AROMA COFFEE"><img class="row-pic" src="/og/thumb/bunna-aroma-coffee-1189.jpg" alt="" loading="lazy" decoding="async"></a><div class="od"><span class="ago">licensed 12mo ago</span></div><div class="on"><a href="https://maps.google.com/?cid=667696358257954048" rel="noopener">BUNNA AROMA COFFEE</a><span class="oad"><a href="https://maps.google.com/?cid=667696358257954048" rel="noopener">1189 Bloor St W, Toronto, ON M6H 1M9</a><span class="oad-d"> · West Toronto</span></span></div><div class="oc"><span class="pill" style="background:#a0522d">Ethiopian</span></div></div>
     <!-- STATIC-FEED-END -->
   </div>
 
