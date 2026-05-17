@@ -700,7 +700,7 @@ print(f"  wrote {cuisine_pages_written} per-cuisine SEO landing pages → cuisin
 #                    show the personalized image when the URL is shared,
 #                    with the IMAGE itself being a click-target to the page.
 from og_card import render_card_png as _render_og_card
-from enrich_places import download_place_photo
+from enrich_places import download_place_photo, streetview_metadata, streetview_image
 LISTING_DIR = Path(ROOT) / 'r'
 OG_DIR      = Path(ROOT) / 'og'
 PHOTO_DIR   = Path(ROOT) / 'og' / 'photo'
@@ -712,6 +712,7 @@ listing_template = open(INDEX_PATH).read()
 n_listing_html = 0
 n_listing_png  = 0
 n_listing_photo = 0
+n_listing_streetview = 0
 for entry in seen_entries.values():
     slug = entry.get('slug')
     if not slug: continue
@@ -759,6 +760,21 @@ for entry in seen_entries.values():
         if data:
             photo_file.write_bytes(data)
             n_listing_photo += 1
+
+    # 1b) Street View fallback — when no Places photo is available, grab
+    # the storefront from Street View. Free metadata check first so we
+    # only pay (~$0.007) when imagery actually exists. Capped to
+    # bot-eligible entries (daysOpen <= 30) to bound spend; older
+    # entries fall back to the SVG card.
+    if (not photo_file.exists()
+            and entry.get('daysOpen', 999) <= 30
+            and entry.get('lat') is not None and entry.get('lng') is not None):
+        meta = streetview_metadata(entry['lat'], entry['lng'])
+        if meta and meta.get('status') == 'OK':
+            data, _ = streetview_image(entry['lat'], entry['lng'], size='640x640', fov=80)
+            if data:
+                photo_file.write_bytes(data)
+                n_listing_streetview += 1
 
     # 2) HTML → r/<slug>.html
     name = entry.get('operatingName', '')
@@ -834,6 +850,7 @@ for entry in seen_entries.values():
 print(f"  wrote {n_listing_html} per-listing pages → r/<slug>.html")
 print(f"  wrote {n_listing_png} per-listing OG cards → og/<slug>.png")
 print(f"  downloaded {n_listing_photo} new Places photos → og/photo/<slug>.jpg")
+print(f"  fetched {n_listing_streetview} Street View fallbacks for entries with no Places photo")
 
 # Persist any photoRef values we backfilled into PLACES_CACHE so the next
 # inject doesn't have to re-call place_details for the same entries.

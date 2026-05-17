@@ -89,6 +89,51 @@ def download_place_photo(photo_reference, max_width=1600):
     except Exception:
         return None, None
 
+
+def streetview_metadata(lat, lng):
+    """Check whether Street View imagery exists at the given coords. FREE
+    (no charge for the metadata endpoint). Returns the dict {'status':...,
+    'date':..., 'pano_id':...} or None on error. Used to gate the billable
+    streetview_image() call so we don't pay for ZERO_RESULTS responses."""
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+    url = 'https://maps.googleapis.com/maps/api/streetview/metadata?' + urlencode({
+        'location': f'{lat},{lng}', 'key': API_KEY,
+    })
+    try:
+        req = Request(url, headers={'User-Agent': 'nowservingto-enrich/1.0'})
+        with urlopen(req, timeout=15) as r:
+            return json.loads(r.read())
+    except Exception:
+        return None
+
+
+def streetview_image(lat, lng, size='640x640', fov=80, heading=None, pitch=0):
+    """Fetch the Street View Static JPEG bytes for the given coords. Costs
+    ~$0.007 per call (Street View Static SKU). Standard tier caps each
+    dimension at 640. Returns (bytes, content_type) or (None, None).
+    Use streetview_metadata() first to gate this — paying $0.007 only on
+    coords Google has imagery for."""
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+    params = {
+        'location': f'{lat},{lng}',
+        'size': size,
+        'fov': str(fov),
+        'pitch': str(pitch),
+        'key': API_KEY,
+    }
+    if heading is not None:
+        params['heading'] = str(heading)
+    url = 'https://maps.googleapis.com/maps/api/streetview?' + urlencode(params)
+    req = Request(url, headers={'User-Agent': 'nowservingto-enrich/1.0'})
+    try:
+        with urlopen(req, timeout=30) as r:
+            data = r.read()
+            return data, r.headers.get('Content-Type', 'image/jpeg')
+    except Exception:
+        return None, None
+
 def cache_key(name, address):
     return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
 
