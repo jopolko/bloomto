@@ -647,9 +647,16 @@ def build_static_rows(entries):
         name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
         multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
         thumb = r.get('thumb')
-        thumb_html = (f'<a class="row-pic-link" href="/r/{_esc(r.get("slug",""))}" aria-label="View {_esc(r["operatingName"])}">'
+        # Thumbnail click goes directly to the restaurant — their own website
+        # if validated, otherwise the Google Maps Place card. No detour
+        # through the aggregator listing page (less friction for visitors
+        # who clearly want to see the place itself).
+        thumb_target = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+        thumb_html = (f'<a class="row-pic-link" href="{_esc(thumb_target)}" rel="noopener" aria-label="View {_esc(r["operatingName"])}">'
                       f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
                       f'</a>'
+                      if thumb and thumb_target else
+                      f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
                       if thumb else '')
         out.append(
             f'<div class="open-row{ " has-pic" if thumb else "" }"{multi_attr}>'
