@@ -18,9 +18,13 @@ RewriteCond %{HTTP_HOST} ^www\.nowservingto\.com$ [NC]
 RewriteRule ^(.*)$ https://nowservingto.com/$1 [R=301,L]
 
 # SEO landing pages: /cuisine/{key} → cuisine/{key}.html when present.
+# No fallback to /index.html for unknown keys — Apache returns a real 404,
+# which Google de-indexes cleanly. The old fallback made every typo or
+# stale URL look like a duplicate of the homepage in GSC, and pages that
+# don't generate (e.g. cuisine keys with zero entries like african_horn
+# after the parent-country collapse) silently served the homepage.
 RewriteCond %{DOCUMENT_ROOT}/cuisine/$1.html -f
 RewriteRule ^cuisine/([a-z_]+)/?$ /cuisine/$1.html [L]
-RewriteRule ^cuisine/([a-z_]+)/?$ /index.html [L]
 
 # /usage → usage.html (one-pager showing per-provider API spend)
 RewriteRule ^usage/?$ /usage.html [L]
@@ -32,7 +36,7 @@ RewriteRule ^district/([a-z-]+)/?$ /district/$1.html [L]
 # Per-listing share links: /r/{slug} → r/{slug}.html when present
 # (pre-rendered with per-listing title/og:image so X / FB / iMessage
 # auto-card the personalized image and route the click to the listing
-# page). Falls back to /index.html for any slug without a generated file.
+# page). No fallback to /index.html — a dropped/old slug must 404 so
+# Google de-indexes it instead of treating it as a homepage duplicate.
 RewriteCond %{DOCUMENT_ROOT}/r/$1.html -f
 RewriteRule ^r/([\w-]+)/?$ /r/$1.html [L]
-RewriteRule ^r/([\w-]+)/?$ /index.html [L]
