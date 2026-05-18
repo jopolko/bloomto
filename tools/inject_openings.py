@@ -1280,6 +1280,20 @@ for label in by_district:
     url_blocks.append(
         f'  <url>\n    <loc>{SITE_BASE}/district/{slug}</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>'
     )
+# Per-listing pages — every kept entry. Mid-tier priority (0.5) since each
+# is thin-ish on its own, but Google needs to see them in the sitemap to
+# discover them — they were completely absent before, which is why the
+# GSC "Discovered - not indexed" count tracks the cuisine/district pages,
+# not the 444 r/<slug> pages Google doesn't even know about.
+# lastmod = each entry's actual issued date so Google sees stable URLs
+# (revisit only when the listing's own data changes, not on every cron).
+for entry in seen_entries.values():
+    slug = entry.get('slug')
+    if not slug: continue
+    iss = entry.get('issuedDate', REFERENCE_DATE.isoformat())
+    url_blocks.append(
+        f'  <url>\n    <loc>{SITE_BASE}/r/{slug}</loc>\n    <lastmod>{iss}</lastmod>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>'
+    )
 sitemap = (
     '<?xml version="1.0" encoding="UTF-8"?>\n'
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

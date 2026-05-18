@@ -1,0 +1,38 @@
+# Cache policy — index.html and corridors.json refresh daily; revalidate.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|json)$">
+        Header set Cache-Control "public, max-age=3600, must-revalidate"
+    </FilesMatch>
+    <FilesMatch "\.(svg|png|jpg|jpeg|ico|woff2?)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+</IfModule>
+
+RewriteEngine On
+
+# Canonicalize www → non-www. Every generated page already has a
+# <link rel="canonical"> pointing at the bare-domain version, so this
+# 301 makes the HTTP-level URL match the canonical declaration and
+# stops Google from flagging www pages as soft-redirects.
+RewriteCond %{HTTP_HOST} ^www\.nowservingto\.com$ [NC]
+RewriteRule ^(.*)$ https://nowservingto.com/$1 [R=301,L]
+
+# SEO landing pages: /cuisine/{key} → cuisine/{key}.html when present.
+RewriteCond %{DOCUMENT_ROOT}/cuisine/$1.html -f
+RewriteRule ^cuisine/([a-z_]+)/?$ /cuisine/$1.html [L]
+RewriteRule ^cuisine/([a-z_]+)/?$ /index.html [L]
+
+# /usage → usage.html (one-pager showing per-provider API spend)
+RewriteRule ^usage/?$ /usage.html [L]
+
+# Per-district SEO landing pages: /district/{slug} → district/{slug}.html
+RewriteCond %{DOCUMENT_ROOT}/district/$1.html -f
+RewriteRule ^district/([a-z-]+)/?$ /district/$1.html [L]
+
+# Per-listing share links: /r/{slug} → r/{slug}.html when present
+# (pre-rendered with per-listing title/og:image so X / FB / iMessage
+# auto-card the personalized image and route the click to the listing
+# page). Falls back to /index.html for any slug without a generated file.
+RewriteCond %{DOCUMENT_ROOT}/r/$1.html -f
+RewriteRule ^r/([\w-]+)/?$ /r/$1.html [L]
+RewriteRule ^r/([\w-]+)/?$ /index.html [L]
