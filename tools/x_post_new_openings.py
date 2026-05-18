@@ -37,20 +37,6 @@ POSTED_PATH = ROOT / 'tools' / 'cache' / 'x_posted.json'
 SECRETS_PATH = Path('/var/secrets/nowservingto.env')
 SITE_BASE = 'https://nowservingto.com'
 
-# Toronto cuisine-hashtag convention: <Label>TO with no space. A few keys
-# don't render cleanly that way, so override; everything else is computed
-# from the human-readable label.
-CUISINE_HASHTAG_OVERRIDE = {
-    'middle_east': 'MiddleEastTO',
-    'south_asian': 'SouthAsianTO',
-    'african_horn': 'EastAfricanTO',
-    'african_west': 'WestAfricanTO',
-    'eastern_eu': 'EasternEuTO',
-    'irish_uk': 'IrishUKTO',
-    'jewish_deli': 'JewishDeliTO',
-}
-
-
 def _load_secrets():
     out = {}
     for line in SECRETS_PATH.read_text().splitlines():
@@ -120,16 +106,6 @@ def post_tweet(text, creds, media_ids=None):
         raise RuntimeError(f'HTTP {e.code}: {e.read().decode(errors="replace")[:500]}')
 
 
-def cuisine_hashtag(key, label):
-    if key in CUISINE_HASHTAG_OVERRIDE:
-        return CUISINE_HASHTAG_OVERRIDE[key]
-    # Strip non-alphanumerics from the human label; everything else (Italian,
-    # Korean, Sri Lankan, Cape Verdean) ends up as ItalianTO, KoreanTO,
-    # SriLankanTO, CapeVerdeanTO.
-    import re as _re
-    return _re.sub(r'[^A-Za-z0-9]', '', label) + 'TO'
-
-
 def _licensed_line(days):
     """Temporal hook for the tweet's lead line. Mirrors the site's _ago()
     language but capitalized for tweet display."""
@@ -177,14 +153,12 @@ def build_tweet(entry):
     elif handle_ig:
         lines.append(f"📷 instagram.com/{handle_ig}")
     lines.append(listing_url)
-    hashtag = cuisine_hashtag(primary_key, primary_lbl) if primary_lbl else ''
-    tags = '#Toronto #TOEats' + (f' #{hashtag}' if hashtag else '')
-    lines.append(tags)
+    lines.append('#Toronto #TOEats')
     text = '\n'.join(lines)
     # X 280-char limit — trim address/handle lines first, keep the temporal
     # hook + name + URL + hashtags as the irreducible core.
     if len(text) > 280:
-        keep = [licensed_lead, name_line, listing_url, tags]
+        keep = [licensed_lead, name_line, listing_url, '#Toronto #TOEats']
         if handle_at: keep.insert(-2, f"@{handle_at}")
         text = '\n'.join(keep)
         if len(text) > 280:
