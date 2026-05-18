@@ -755,6 +755,63 @@ def build_ld_faq(qa_pairs):
     }
 
 
+def build_xaxis_html(entries, *, axis_label, group_fn, h3_template, jump_template, anchor_prefix, base_url):
+    """Build a compound-query SEO block: groups `entries` by `group_fn(entry)`,
+    emits an h2 + jump-nav + one h3 per group. Each h3 targets the
+    `cuisine + district` query class directly ("Pakistani restaurants in
+    Etobicoke") without requiring a separate URL per combination.
+
+    - `axis_label`: heading for the whole section (e.g. "Pakistani restaurants by Toronto district")
+    - `group_fn`: callable that returns the group key for an entry (str or None)
+    - `h3_template`: f-string-like with {label} and {count} for each group's h3
+    - `jump_template`: same for the jump-nav link text
+    - `anchor_prefix`: prefix for the section id attributes ("in-" or "type-")
+    - `base_url`: canonical of the host page, used for jump-link href
+    """
+    buckets = defaultdict(list)
+    for e in entries:
+        k = group_fn(e)
+        if k: buckets[k].append(e)
+    if not buckets: return ''
+    # Sort groups by entry count desc, ties broken by group label asc
+    sorted_groups = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+
+    def _anchor(label):
+        return anchor_prefix + _re.sub(r'[^a-z0-9]+', '-', label.lower()).strip('-')
+
+    jump_links = []
+    blocks = []
+    for label, ents in sorted_groups:
+        anchor = _anchor(label)
+        n = len(ents)
+        jump_links.append(
+            f'<a href="{_esc(base_url)}#{anchor}">{_esc(jump_template.format(label=label))} '
+            f'<span class="ct">{n}</span></a>'
+        )
+        # Sort within-bucket newest-first
+        ents_sorted = sorted(ents, key=lambda r: r.get('issuedDate', ''), reverse=True)
+        items = []
+        for r in ents_sorted:
+            slug = r.get('slug')
+            href = f'/r/{slug}' if slug else (r.get('website') or '#')
+            name = _esc(r.get('operatingName') or '')
+            addr = _esc(r.get('address') or '')
+            items.append(f'<li><a href="{_esc(href)}">{name}</a>'
+                         + (f'<span class="ad">— {addr}</span>' if addr else '') + '</li>')
+        blocks.append(
+            f'<section class="xa-block" id="{anchor}">'
+            f'<h3>{_esc(h3_template.format(label=label))} '
+            f'<span class="ct">({n})</span></h3>'
+            f'<ul class="xa-list">{"".join(items)}</ul>'
+            f'</section>'
+        )
+    return (f'<section class="x-axis">'
+            f'<h2>{_esc(axis_label)}</h2>'
+            f'<nav class="xa-jump" aria-label="Jump to section">{"".join(jump_links)}</nav>'
+            f'{"".join(blocks)}'
+            f'</section>')
+
+
 def build_breadcrumb_html(parts):
     """Visible breadcrumb HTML matching the BreadcrumbList JSON-LD. parts:
     list of (name, url-or-None); the last entry has url=None (current page,
@@ -772,7 +829,7 @@ def build_breadcrumb_html(parts):
 
 import re
 
-def inject_into_html(html, *, static_block, ld_payloads, breadcrumb_html=''):
+def inject_into_html(html, *, static_block, ld_payloads, breadcrumb_html='', xaxis_html=''):
     """Replace STATIC-FEED, LD-ITEMLIST, and BREADCRUMB marker blocks.
 
     `ld_payloads` is a list of schema.org dicts (ItemList / CollectionPage /
@@ -801,6 +858,11 @@ def inject_into_html(html, *, static_block, ld_payloads, breadcrumb_html=''):
     html = re.sub(
         r'(<!-- BREADCRUMB-START -->).*?(<!-- BREADCRUMB-END -->)',
         lambda m: m.group(1) + breadcrumb_html + m.group(2),
+        html, count=1, flags=re.DOTALL,
+    )
+    html = re.sub(
+        r'(<!-- XAXIS-START -->).*?(<!-- XAXIS-END -->)',
+        lambda m: m.group(1) + xaxis_html + m.group(2),
         html, count=1, flags=re.DOTALL,
     )
     return html
@@ -851,7 +913,8 @@ cuisine_pages_written = 0
 template = open(INDEX_PATH).read()   # post-homepage-inject — has the fresh JS bundle
 for c in cuisines_out:
     key = c['key']; label = c['label']; n365 = c['count365d']; n30 = c['count30d']
-    entries = opens_365_by_cuisine.get(key, [])[:30]
+    all_for_cuisine = opens_365_by_cuisine.get(key, [])
+    entries = all_for_cuisine[:30]   # top 30 power the chronological feed + ItemList
     if not entries: continue
 
     title = f"New {label} restaurants in Toronto — NowServingTO"
@@ -914,11 +977,24 @@ for c in cuisines_out:
          f"content, and Google Places category to determine the cuisine. "
          f"Multi-cuisine spots get tagged with every applicable cuisine."),
     ])
+    # Compound-query section: bucket THIS cuisine's full 365d list by district.
+    # H3 per district hits the "<Cuisine> restaurants in <District>" query
+    # family without us having to spin up cuisine×district URLs.
+    cuisine_xaxis = build_xaxis_html(
+        all_for_cuisine,
+        axis_label=f'{label} restaurants by Toronto district',
+        group_fn=lambda e: e.get('district'),
+        h3_template=f'{label} restaurants in {{label}}',
+        jump_template='{label}',
+        anchor_prefix='in-',
+        base_url=canonical,
+    )
     page = inject_into_html(
         page,
         static_block=cuisine_static,
         ld_payloads=[cuisine_collection, cuisine_breadcrumb_ld, cuisine_faq],
         breadcrumb_html=build_breadcrumb_html(cuisine_breadcrumb_parts),
+        xaxis_html=cuisine_xaxis,
     )
 
     (CUISINE_DIR / f'{key}.html').write_text(page)
@@ -1014,11 +1090,28 @@ for label, entries in by_district.items():
          f"dataset of active business licences, cross-checked against "
          f"Google Places to confirm operating status."),
     ])
+    # Compound-query section: bucket THIS district's 365d list by primary
+    # cuisine. H3 per cuisine hits the "<Cuisine> restaurants in <District>"
+    # query family — same pattern as the cuisine page's by-district section,
+    # so either page can rank for the compound query depending on link weight.
+    def _cuisine_label_of(e):
+        keys = e.get('cuisines') or ([e.get('cuisine')] if e.get('cuisine') else [])
+        return CUISINE_LABEL.get(keys[0], keys[0].replace('_', ' ').title()) if keys else None
+    district_xaxis = build_xaxis_html(
+        entries,
+        axis_label=f'Restaurants in {place} by cuisine',
+        group_fn=_cuisine_label_of,
+        h3_template=f'{{label}} restaurants in {place}',
+        jump_template='{label}',
+        anchor_prefix='type-',
+        base_url=canonical,
+    )
     page = inject_into_html(
         page,
         static_block=district_static,
         ld_payloads=[district_collection, district_breadcrumb_ld, district_faq],
         breadcrumb_html=build_breadcrumb_html(district_breadcrumb_parts),
+        xaxis_html=district_xaxis,
     )
 
     (DISTRICT_DIR / f'{slug}.html').write_text(page)
