@@ -238,6 +238,12 @@ def main():
     # Batch API is 50% off
     cost = (total_in/1e6 * 1.0 + total_out/1e6 * 5.0) * 0.5
     print(f"\nbatch merged: ok={n_ok} err={n_err}  tokens in={total_in:,} out={total_out:,}  est ${cost:.3f} (50%-off)")
+    try:
+        sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+        from usage_log import log_usage
+        log_usage('anthropic.haiku.batch.in',  units=total_in,  meta={'script':'classify_batch','batch_id':full_id})
+        log_usage('anthropic.haiku.batch.out', units=total_out, meta={'script':'classify_batch','batch_id':full_id})
+    except Exception: pass
 
     # Final distribution
     breakdown = {}

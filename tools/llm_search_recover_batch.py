@@ -300,6 +300,14 @@ def main():
     print(f"\nDone: recovered={n_recovered}  unknown={n_unknown}  parse_failed={n_parse_fail}  errors={n_err}")
     print(f"  web_search calls: {tot_search}  in_tokens: {tot_in:,}  out_tokens: {tot_out:,}")
     print(f"  approx cost: ${cost:.2f}")
+    try:
+        sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+        from usage_log import log_usage
+        log_usage('anthropic.haiku.batch.in',  units=tot_in,  meta={'script':'search_recover_batch'})
+        log_usage('anthropic.haiku.batch.out', units=tot_out, meta={'script':'search_recover_batch'})
+        if tot_search:
+            log_usage('anthropic.web_search.batch', units=tot_search, meta={'script':'search_recover_batch'})
+    except Exception: pass
 
 if __name__ == '__main__':
     main()

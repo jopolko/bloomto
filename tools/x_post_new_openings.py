@@ -110,7 +110,12 @@ def post_tweet(text, creds, media_ids=None):
     })
     try:
         with urlopen(req, timeout=30) as r:
-            return json.loads(r.read())
+            result = json.loads(r.read())
+        try:
+            from usage_log import log_usage
+            log_usage('x.tweet', meta={'tweet_id': result.get('data', {}).get('id')})
+        except Exception: pass
+        return result
     except HTTPError as e:
         raise RuntimeError(f'HTTP {e.code}: {e.read().decode(errors="replace")[:500]}')
 

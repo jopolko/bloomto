@@ -719,6 +719,7 @@ def main():
     n_total = n_parse_fail = 0
     n_same_no = n_isr_no = n_isr_unclear = 0
     n_cuisine_changed = n_website_dropped = n_website_changed = 0
+    tot_in_tok = tot_out_tok = 0
     examples = {'same_no': [], 'isr_no': [], 'cuisine_changed': [], 'website_dropped': [], 'website_changed': []}
     now_iso = datetime.now(timezone.utc).isoformat()
 
@@ -730,6 +731,9 @@ def main():
         if res.get('type') != 'succeeded':
             n_parse_fail += 1
             continue
+        usage = (res.get('message') or {}).get('usage') or {}
+        tot_in_tok  += usage.get('input_tokens', 0)
+        tot_out_tok += usage.get('output_tokens', 0)
         parsed = parse_result(res['message'])
         if parsed is None:
             n_parse_fail += 1
@@ -837,6 +841,13 @@ def main():
     print(f"  cuisine changed:               {n_cuisine_changed}")
     print(f"  website dropped (aggregator):  {n_website_dropped}")
     print(f"  website changed (better URL):  {n_website_changed}")
+    print(f"  Haiku tokens:                  in={tot_in_tok:,}  out={tot_out_tok:,}")
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from usage_log import log_usage
+        log_usage('anthropic.haiku.batch.in',  units=tot_in_tok,  meta={'script':'validate_entries_batch','batch_id':full_id})
+        log_usage('anthropic.haiku.batch.out', units=tot_out_tok, meta={'script':'validate_entries_batch','batch_id':full_id})
+    except Exception: pass
     print()
     for cat, items in examples.items():
         if not items: continue

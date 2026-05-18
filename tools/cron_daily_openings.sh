@@ -196,6 +196,11 @@ else
     log "  X_API_KEY not in /var/secrets/nowservingto.env — skipping X post"
 fi
 
+# Step 6.5: aggregate the per-call usage ledger into data/usage.json so
+# the /usage page reflects today's spend. Cheap (just reads a JSONL file).
+log "→ aggregate_usage.py"
+"$PYTHON" -u tools/aggregate_usage.py >> "$LOG_FILE" 2>&1 || log "WARN: usage aggregate failed (non-fatal)"
+
 # Step 5: sanity-check + deploy
 DATA="$ROOTED_DIR/data/corridors.json"
 if [[ ! -s "$DATA" ]]; then

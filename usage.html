@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sources & API spend — NowServingTO</title>
+<meta name="description" content="Where NowServingTO pulls data + AI judgement from, and what each component costs.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://nowservingto.com/usage">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #fafafa; --paper: #ffffff; --ink: #131516; --ink2: #46494c;
+    --muted: #74787c; --line: #ebecef; --accent: #c83624;
+    --sans: -apple-system, 'Helvetica Neue', ui-sans-serif, sans-serif;
+    --serif: 'Iowan Old Style', 'Charter', Georgia, ui-serif, serif;
+    --mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 0 20px 60px; }
+  header { padding: 22px 0 0; }
+  header .inner { border-bottom: 3px solid var(--ink); padding-bottom: 16px; }
+  .brand { font: 800 28px/1 var(--serif); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+  .brand sup { font: 600 10px/1 var(--sans); letter-spacing: 0.08em; color: var(--muted); margin-left: 6px; vertical-align: super; text-transform: uppercase; }
+  .sub { color: var(--muted); font: 400 14px/1.4 var(--serif); margin: 6px 0 0; font-style: italic; }
+  h1 { font: 700 26px/1.2 var(--serif); margin: 30px 0 6px; letter-spacing: -0.01em; }
+  h2 { font: 700 17px/1.2 var(--sans); margin: 28px 0 12px; letter-spacing: -0.005em; }
+  p { color: var(--ink2); }
+  .totals { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0 0; }
+  .totals .card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .totals .card .lbl { font: 700 11px/1 var(--sans); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+  .totals .card .num { font: 800 32px/1.1 var(--sans); color: var(--ink); margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .totals .card .calls { font: 500 13px/1 var(--muted); color: var(--muted); margin-top: 6px; }
+  .providers { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow: hidden; }
+  .prov { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+  .prov:last-child { border-bottom: 0; }
+  .prov-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .prov-name { font: 700 16px/1 var(--sans); color: var(--ink); letter-spacing: -0.005em; }
+  .prov-cost { font: 800 18px/1 var(--sans); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .prov-calls { font: 500 12px/1 var(--sans); color: var(--muted); margin-left: 10px; }
+  .skus { margin-top: 10px; display: grid; gap: 4px; }
+  .sku { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 4px 0; font: 13px/1.4 var(--mono); color: var(--ink2); border-top: 1px dashed var(--line); }
+  .sku-name { color: var(--ink2); }
+  .sku-cost { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .sku-calls { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; min-width: 60px; }
+  .footer-note { color: var(--muted); font: italic 13px/1.5 var(--serif); margin-top: 24px; }
+  .stamp { font: 500 12px/1 var(--mono); color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap inner">
+    <a href="/" class="brand">NowServingTO<sup>beta</sup></a>
+    <div class="sub">API spend &amp; data sources.</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Where the data comes from</h1>
+  <p>NowServingTO pulls from a handful of paid + free APIs. This page tracks
+     our own usage of each — what we've called and what it's cost — so you
+     can see exactly where the budget goes.</p>
+
+  <div class="totals">
+    <div class="card">
+      <div class="lbl">Total spent</div>
+      <div class="num" id="all-cost">—</div>
+      <div class="calls" id="all-calls">— calls since <span id="first-day">—</span></div>
+    </div>
+    <div class="card">
+      <div class="lbl">Today</div>
+      <div class="num" id="today-cost">—</div>
+      <div class="calls" id="today-calls">— calls</div>
+    </div>
+  </div>
+
+  <h2>By provider</h2>
+  <div class="providers" id="providers"></div>
+
+  <p class="footer-note">
+    These are our internal estimates from a per-call ledger
+    (<code>tools/cache/usage_log.jsonl</code>). Authoritative billing lives
+    in each provider's dashboard:
+    <a href="https://console.cloud.google.com/billing" rel="noopener">Google Cloud Billing</a>,
+    <a href="https://console.anthropic.com/" rel="noopener">Anthropic Console</a>,
+    <a href="https://jina.ai/api-dashboard" rel="noopener">Jina dashboard</a>,
+    <a href="https://developer.x.com/en/portal/dashboard" rel="noopener">X developer portal</a>.
+  </p>
+  <p class="stamp">Snapshot: <span id="stamp">—</span></p>
+</main>
+
+<script>
+fetch('/data/usage.json?v=' + Date.now()).then(r => r.json()).then(data => {
+  const fmt = n => '$' + (Math.round((n||0) * 100) / 100).toFixed(2);
+  const fmtFine = n => '$' + (Math.round((n||0) * 10000) / 10000).toFixed(4);
+  const fmtCalls = n => (n||0).toLocaleString();
+  document.getElementById('all-cost').textContent   = fmt(data.totals?.all?.cost);
+  document.getElementById('all-calls').innerHTML    = `${fmtCalls(data.totals?.all?.calls)} calls since <span id="first-day">${data.first || '—'}</span>`;
+  document.getElementById('today-cost').textContent = fmt(data.totals?.today?.cost);
+  document.getElementById('today-calls').textContent= `${fmtCalls(data.totals?.today?.calls)} calls today`;
+  document.getElementById('stamp').textContent      = (data.generatedAt || '—').replace('T', ' ').slice(0, 19) + ' UTC';
+  const labels = {
+    google_places: 'Google Places',
+    google_streetview: 'Google Street View',
+    anthropic: 'Anthropic (Claude Haiku)',
+    jina: 'Jina Reader',
+    x: 'X / Twitter',
+    other: 'Other',
+  };
+  const container = document.getElementById('providers');
+  (data.byProvider || []).forEach(p => {
+    const skus = p.skus.map(s =>
+      `<div class="sku"><span class="sku-name">${s.sku}</span><span class="sku-cost">${fmtFine(s.cost)}</span><span class="sku-calls">${fmtCalls(s.calls)} calls</span></div>`
+    ).join('');
+    container.insertAdjacentHTML('beforeend',
+      `<div class="prov">
+        <div class="prov-head">
+          <div><span class="prov-name">${labels[p.provider] || p.provider}</span><span class="prov-calls">${fmtCalls(p.calls)} calls</span></div>
+          <div class="prov-cost">${fmt(p.cost)}</div>
+        </div>
+        <div class="skus">${skus}</div>
+      </div>`);
+  });
+  if (!(data.byProvider && data.byProvider.length)) {
+    container.innerHTML = '<div class="prov"><div class="prov-name">No usage logged yet.</div></div>';
+  }
+}).catch(e => {
+  document.getElementById('providers').innerHTML = '<div class="prov"><div class="prov-name">Could not load /data/usage.json</div></div>';
+});
+</script>
+</body>
+</html>

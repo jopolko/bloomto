@@ -209,6 +209,12 @@ def _fetch_jina(url):
         except Exception:
             return None
     txt = (txt or '').strip()
+    try:
+        from usage_log import log_usage
+        # Estimate tokens from rendered char count (4 chars/token rough avg).
+        log_usage('jina.reader', units=max(1, len(txt) // 4),
+                  meta={'url': url[:120]})
+    except Exception: pass
     return txt if len(txt) >= 80 else None
 
 

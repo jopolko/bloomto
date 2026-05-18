@@ -50,6 +50,10 @@ def find_place(query):
         {'input': query, 'inputtype': 'textquery',
          'fields': 'place_id,name,formatted_address', 'key': API_KEY}
     )
+    try:
+        from usage_log import log_usage
+        log_usage('places.find_place', meta={'q': query[:80]})
+    except Exception: pass
     if r.get('status') != 'OK': return None
     cands = r.get('candidates') or []
     return cands[0] if cands else None
@@ -66,6 +70,10 @@ def place_details(place_id):
          'fields': 'name,website,types,rating,user_ratings_total,formatted_address,geometry/location,url,business_status,reviews,editorial_summary,photos',
          'key': API_KEY}
     )
+    try:
+        from usage_log import log_usage
+        log_usage('places.details', meta={'place_id': place_id})
+    except Exception: pass
     if r.get('status') != 'OK': return None
     return r.get('result')
 
@@ -85,6 +93,10 @@ def download_place_photo(photo_reference, max_width=1600):
         with urlopen(req, timeout=30) as r:
             data = r.read()
             ct = r.headers.get('Content-Type', 'image/jpeg')
+            try:
+                from usage_log import log_usage
+                log_usage('places.photo')
+            except Exception: pass
             return data, ct
     except Exception:
         return None, None
@@ -103,7 +115,12 @@ def streetview_metadata(lat, lng):
     try:
         req = Request(url, headers={'User-Agent': 'nowservingto-enrich/1.0'})
         with urlopen(req, timeout=15) as r:
-            return json.loads(r.read())
+            data = json.loads(r.read())
+        try:
+            from usage_log import log_usage
+            log_usage('streetview.metadata')   # free, logged for visibility
+        except Exception: pass
+        return data
     except Exception:
         return None
 
@@ -130,6 +147,10 @@ def streetview_image(lat, lng, size='640x640', fov=80, heading=None, pitch=0):
     try:
         with urlopen(req, timeout=30) as r:
             data = r.read()
+            try:
+                from usage_log import log_usage
+                log_usage('streetview.image')
+            except Exception: pass
             return data, r.headers.get('Content-Type', 'image/jpeg')
     except Exception:
         return None, None

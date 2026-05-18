@@ -389,6 +389,14 @@ def main():
     cost = (tot_in/1e6 + tot_out/1e6*5 + tot_search*0.01) * 0.5
     print(f"\nDone: yes={yes}  no={no}  unclear={unclear}  err={err}")
     print(f"  tokens in={tot_in:,} out={tot_out:,} searches={tot_search}  est ${cost:.2f} (50% off)")
+    try:
+        sys.path.insert(0, str(__import__('pathlib').Path(__file__).resolve().parent))
+        from usage_log import log_usage
+        log_usage('anthropic.haiku.batch.in',  units=tot_in,  meta={'script':'verify_batch'})
+        log_usage('anthropic.haiku.batch.out', units=tot_out, meta={'script':'verify_batch'})
+        if tot_search:
+            log_usage('anthropic.web_search.batch', units=tot_search, meta={'script':'verify_batch'})
+    except Exception: pass
 
 if __name__ == '__main__':
     main()
