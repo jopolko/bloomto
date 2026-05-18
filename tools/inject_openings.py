@@ -707,22 +707,100 @@ def build_ld_itemlist(entries, name, description):
     }
 
 
+def build_ld_collectionpage(itemlist, *, url, dateModified):
+    """Wrap an ItemList in CollectionPage so it carries url + dateModified
+    (ItemList itself has no dateModified property). Boosts the freshness
+    signal Google reads — the whole point of the daily refresh."""
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        'url': url,
+        'name': itemlist['name'],
+        'description': itemlist['description'],
+        'inLanguage': 'en-CA',
+        'dateModified': dateModified,
+        'isPartOf': {'@type': 'WebSite', 'name': 'NowServingTO',
+                     'url': 'https://nowservingto.com/'},
+        'mainEntity': {k: v for k, v in itemlist.items() if k != '@context'},
+    }
+
+
+def build_ld_breadcrumb(parts):
+    """parts: list of (name, url) tuples in trail order. Returns a
+    schema.org BreadcrumbList — drives the breadcrumb display Google
+    sometimes substitutes for the URL in SERP results, generally lifting CTR."""
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        'itemListElement': [
+            {'@type': 'ListItem', 'position': i, 'name': name, 'item': url}
+            for i, (name, url) in enumerate(parts, 1)
+        ],
+    }
+
+
+def build_ld_faq(qa_pairs):
+    """qa_pairs: list of (question, answer) tuples. Returns FAQPage schema.
+    Google has tightened FAQ rich-result eligibility (mostly gov/health now)
+    but the structured data still helps the page rank for the underlying
+    'how' / 'what' / 'where' query family."""
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        'mainEntity': [
+            {'@type': 'Question', 'name': q,
+             'acceptedAnswer': {'@type': 'Answer', 'text': a}}
+            for q, a in qa_pairs
+        ],
+    }
+
+
+def build_breadcrumb_html(parts):
+    """Visible breadcrumb HTML matching the BreadcrumbList JSON-LD. parts:
+    list of (name, url-or-None); the last entry has url=None (current page,
+    rendered as text with aria-current)."""
+    items = []
+    for name, url in parts:
+        if url:
+            items.append(f'<a href="{_esc(url)}">{_esc(name)}</a>')
+        else:
+            items.append(f'<span aria-current="page">{_esc(name)}</span>')
+    return ('<nav class="breadcrumb" aria-label="Breadcrumb">'
+            + '<span class="sep">›</span>'.join(items)
+            + '</nav>')
+
+
 import re
 
-def inject_into_html(html, *, static_block, ld_payload):
-    """Replace STATIC-FEED and LD-ITEMLIST marker blocks. Uses lambda
-    replacements so backslash sequences in the replacement (e.g. \\uXXXX
-    in JSON-LD) aren't interpreted as regex backreferences."""
+def inject_into_html(html, *, static_block, ld_payloads, breadcrumb_html=''):
+    """Replace STATIC-FEED, LD-ITEMLIST, and BREADCRUMB marker blocks.
+
+    `ld_payloads` is a list of schema.org dicts (ItemList / CollectionPage /
+    BreadcrumbList / FAQPage). Each is emitted as its own <script> tag —
+    Google parses them all independently and never penalizes multiple
+    JSON-LD blocks on a page.
+
+    Lambda replacements keep backslash sequences in the replacement (e.g.
+    \\uXXXX in JSON-LD) from being interpreted as regex backreferences.
+    """
     html = re.sub(
         r'(<!-- STATIC-FEED-START[^>]*-->).*?(<!-- STATIC-FEED-END -->)',
         lambda m: m.group(1) + '\n    ' + static_block + '\n    ' + m.group(2),
         html, count=1, flags=re.DOTALL,
     )
-    ld_json_str = json.dumps(ld_payload, separators=(',', ':'))
-    ld_script = f'<script type="application/ld+json" id="ld-itemlist">{ld_json_str}</script>'
+    scripts = []
+    for i, p in enumerate(ld_payloads):
+        ld_json_str = json.dumps(p, separators=(',', ':'))
+        sid = ' id="ld-itemlist"' if i == 0 else ''
+        scripts.append(f'<script type="application/ld+json"{sid}>{ld_json_str}</script>')
     html = re.sub(
         r'(<!-- LD-ITEMLIST-START -->).*?(<!-- LD-ITEMLIST-END -->)',
-        lambda m: m.group(1) + '\n' + ld_script + '\n' + m.group(2),
+        lambda m: m.group(1) + '\n' + '\n'.join(scripts) + '\n' + m.group(2),
+        html, count=1, flags=re.DOTALL,
+    )
+    html = re.sub(
+        r'(<!-- BREADCRUMB-START -->).*?(<!-- BREADCRUMB-END -->)',
+        lambda m: m.group(1) + breadcrumb_html + m.group(2),
         html, count=1, flags=re.DOTALL,
     )
     return html
@@ -733,14 +811,21 @@ def inject_into_html(html, *, static_block, ld_payload):
 # ---------------------------------------------------------------------------
 top_for_static = all_recent[:30]
 static_block = build_static_rows(top_for_static)
-ld_payload = build_ld_itemlist(
+home_url = 'https://nowservingto.com/'
+home_itemlist = build_ld_itemlist(
     top_for_static,
     name="Toronto's newest restaurants by cuisine",
     description='Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.',
 )
+home_collection = build_ld_collectionpage(
+    home_itemlist, url=home_url, dateModified=REFERENCE_DATE.isoformat(),
+)
 try:
     home_html = open(INDEX_PATH).read()
-    home_html = inject_into_html(home_html, static_block=static_block, ld_payload=ld_payload)
+    # Homepage gets no breadcrumb (it IS the root) — just the CollectionPage
+    # wrapper to carry dateModified + url; no extra BreadcrumbList script.
+    home_html = inject_into_html(home_html,
+        static_block=static_block, ld_payloads=[home_collection], breadcrumb_html='')
     open(INDEX_PATH, 'w').write(home_html)
     print(f"  pre-rendered {len(top_for_static)} static feed rows + JSON-LD ItemList into index.html")
 except Exception as e:
@@ -777,18 +862,17 @@ for c in cuisines_out:
     page = template
     # Replace meta tags — first occurrence each.
     page = re.sub(r'<title>[^<]*</title>', f'<title>{_esc(title)}</title>', page, count=1)
-    page = re.sub(r'(<meta name="description" content=")[^"]*(")',
-                  lambda m: m.group(1) + _esc(desc) + m.group(2), page, count=1)
-    page = re.sub(r'(<meta property="og:title" content=")[^"]*(")',
-                  lambda m: m.group(1) + _esc(title) + m.group(2), page, count=1)
-    page = re.sub(r'(<meta property="og:description" content=")[^"]*(")',
-                  lambda m: m.group(1) + _esc(desc) + m.group(2), page, count=1)
-    page = re.sub(r'(<meta name="twitter:title" content=")[^"]*(")',
-                  lambda m: m.group(1) + _esc(title) + m.group(2), page, count=1)
-    page = re.sub(r'(<meta name="twitter:description" content=")[^"]*(")',
-                  lambda m: m.group(1) + _esc(desc) + m.group(2), page, count=1)
-    page = re.sub(r'(<link rel="canonical" href=")[^"]*(")',
-                  lambda m: m.group(1) + canonical + m.group(2), page, count=1)
+    for sel, val in [
+        (r'(<meta name="description" content=")[^"]*(")',         desc),
+        (r'(<meta property="og:title" content=")[^"]*(")',        title),
+        (r'(<meta property="og:description" content=")[^"]*(")',  desc),
+        (r'(<meta property="og:url" content=")[^"]*(")',          canonical),
+        (r'(<meta name="twitter:title" content=")[^"]*(")',       title),
+        (r'(<meta name="twitter:description" content=")[^"]*(")', desc),
+        (r'(<link rel="canonical" href=")[^"]*(")',               canonical),
+    ]:
+        page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
+                      page, count=1)
 
     # Replace the homepage's <h1 class="sub"> with a cuisine-specific
     # one. Format follows the user-specified pattern (2026-05-16):
@@ -801,12 +885,41 @@ for c in cuisines_out:
 
     # Replace STATIC-FEED + LD-ITEMLIST with cuisine-scoped versions.
     cuisine_static = build_static_rows(entries)
-    cuisine_ld = build_ld_itemlist(
+    cuisine_itemlist = build_ld_itemlist(
         entries,
         name=f"Newest {label} restaurants in Toronto",
         description=desc,
     )
-    page = inject_into_html(page, static_block=cuisine_static, ld_payload=cuisine_ld)
+    cuisine_collection = build_ld_collectionpage(
+        cuisine_itemlist, url=canonical, dateModified=REFERENCE_DATE.isoformat(),
+    )
+    cuisine_breadcrumb_parts = [
+        ('Home',     'https://nowservingto.com/'),
+        (f'{label} restaurants', None),
+    ]
+    cuisine_breadcrumb_ld = build_ld_breadcrumb([
+        ('Home', 'https://nowservingto.com/'),
+        (f'{label} restaurants', canonical),
+    ])
+    cuisine_faq = build_ld_faq([
+        (f"How often is the {label} restaurant list updated?",
+         f"Daily. Every morning we pull the latest City of Toronto business "
+         f"licences open data and re-classify any new entries."),
+        (f"Where does the {label} restaurant data come from?",
+         f"The City of Toronto's Municipal Licensing and Standards open dataset "
+         f"of active business licences, cross-checked against Google Places to "
+         f"confirm the business is currently operating."),
+        (f"How is a restaurant classified as {label}?",
+         f"An AI model (Anthropic Claude) reviews the operating name, website "
+         f"content, and Google Places category to determine the cuisine. "
+         f"Multi-cuisine spots get tagged with every applicable cuisine."),
+    ])
+    page = inject_into_html(
+        page,
+        static_block=cuisine_static,
+        ld_payloads=[cuisine_collection, cuisine_breadcrumb_ld, cuisine_faq],
+        breadcrumb_html=build_breadcrumb_html(cuisine_breadcrumb_parts),
+    )
 
     (CUISINE_DIR / f'{key}.html').write_text(page)
     cuisine_pages_written += 1
@@ -853,12 +966,13 @@ for label, entries in by_district.items():
     # Replace meta tags
     page = re.sub(r'<title>[^<]*</title>', f'<title>{_esc(title)}</title>', page, count=1)
     for sel, val in [
-        (r'(<meta name="description" content=")[^"]*(")',     desc),
-        (r'(<meta property="og:title" content=")[^"]*(")',    title),
-        (r'(<meta property="og:description" content=")[^"]*(")', desc),
-        (r'(<meta name="twitter:title" content=")[^"]*(")',   title),
+        (r'(<meta name="description" content=")[^"]*(")',         desc),
+        (r'(<meta property="og:title" content=")[^"]*(")',        title),
+        (r'(<meta property="og:description" content=")[^"]*(")',  desc),
+        (r'(<meta property="og:url" content=")[^"]*(")',          canonical),
+        (r'(<meta name="twitter:title" content=")[^"]*(")',       title),
         (r'(<meta name="twitter:description" content=")[^"]*(")', desc),
-        (r'(<link rel="canonical" href=")[^"]*(")',           canonical),
+        (r'(<link rel="canonical" href=")[^"]*(")',               canonical),
     ]:
         page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
                       page, count=1)
@@ -869,14 +983,43 @@ for label, entries in by_district.items():
     page = re.sub(r'<h1 class="sub">[\s\S]*?</h1>',
                   lambda m: district_h1, page, count=1)
 
-    # District-scoped static feed (top 30) + ld+json
+    # District-scoped static feed (top 30) + structured data set
     district_static = build_static_rows(entries[:30])
-    district_ld = build_ld_itemlist(
+    district_itemlist = build_ld_itemlist(
         entries[:30],
         name=f"Newest restaurants in {place}",
         description=desc,
     )
-    page = inject_into_html(page, static_block=district_static, ld_payload=district_ld)
+    district_collection = build_ld_collectionpage(
+        district_itemlist, url=canonical, dateModified=REFERENCE_DATE.isoformat(),
+    )
+    district_breadcrumb_parts = [
+        ('Home', 'https://nowservingto.com/'),
+        (f'Restaurants in {place}', None),
+    ]
+    district_breadcrumb_ld = build_ld_breadcrumb([
+        ('Home', 'https://nowservingto.com/'),
+        (f'Restaurants in {place}', canonical),
+    ])
+    district_faq = build_ld_faq([
+        (f"How often is the {place} restaurant list updated?",
+         f"Daily. We pull fresh City of Toronto business-licences data every "
+         f"morning and re-classify any new entries."),
+        (f"What counts as {place} in this directory?",
+         f"We use the postal-code prefix on each business licence (FSA) to "
+         f"map every restaurant to one of six Toronto districts: Downtown, "
+         f"East Toronto, West Toronto, North York, Scarborough, or Etobicoke."),
+        (f"Where does the {place} restaurant data come from?",
+         f"The City of Toronto's Municipal Licensing and Standards open "
+         f"dataset of active business licences, cross-checked against "
+         f"Google Places to confirm operating status."),
+    ])
+    page = inject_into_html(
+        page,
+        static_block=district_static,
+        ld_payloads=[district_collection, district_breadcrumb_ld, district_faq],
+        breadcrumb_html=build_breadcrumb_html(district_breadcrumb_parts),
+    )
 
     (DISTRICT_DIR / f'{slug}.html').write_text(page)
     district_pages_written += 1
@@ -946,18 +1089,19 @@ for entry in seen_entries.values():
     page = re.sub(r'<title>[^<]*</title>',
                   lambda m: f'<title>{_esc(title)}</title>', page, count=1)
     for sel, val in [
-        (r'(<meta name="description" content=")[^"]*(")',     desc),
-        (r'(<meta property="og:title" content=")[^"]*(")',    title),
-        (r'(<meta property="og:description" content=")[^"]*(")', desc),
-        (r'(<meta property="og:image" content=")[^"]*(")',    og_image),
+        (r'(<meta name="description" content=")[^"]*(")',         desc),
+        (r'(<meta property="og:title" content=")[^"]*(")',        title),
+        (r'(<meta property="og:description" content=")[^"]*(")',  desc),
+        (r'(<meta property="og:url" content=")[^"]*(")',          canonical),
+        (r'(<meta property="og:image" content=")[^"]*(")',        og_image),
         # Match the card's actual 1200×675 dimensions (the template defaults
         # to 1200×630 for the homepage og.svg, which is a different image).
         (r'(<meta property="og:image:width" content=")[^"]*(")',  '1200'),
         (r'(<meta property="og:image:height" content=")[^"]*(")', '675'),
-        (r'(<meta name="twitter:title" content=")[^"]*(")',   title),
+        (r'(<meta name="twitter:title" content=")[^"]*(")',       title),
         (r'(<meta name="twitter:description" content=")[^"]*(")', desc),
-        (r'(<meta name="twitter:image" content=")[^"]*(")',   og_image),
-        (r'(<link rel="canonical" href=")[^"]*(")',           canonical),
+        (r'(<meta name="twitter:image" content=")[^"]*(")',       og_image),
+        (r'(<link rel="canonical" href=")[^"]*(")',               canonical),
     ]:
         page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
                       page, count=1)
@@ -988,7 +1132,25 @@ for entry in seen_entries.values():
             'ratingValue': entry['rating'],
             'reviewCount': entry.get('reviewCount') or 1,
         }
-    page = inject_into_html(page, static_block=one_row, ld_payload=listing_ld)
+    # Breadcrumb: Home → {Cuisine} restaurants → {Name}. Lifts SERP CTR
+    # and ties this listing back to its cuisine landing page so Google
+    # sees them as a hub + spokes for the cuisine query.
+    cuisine_slug = primary_key
+    listing_breadcrumb_parts = [('Home', 'https://nowservingto.com/')]
+    listing_breadcrumb_ld_parts = [('Home', 'https://nowservingto.com/')]
+    if cuisine_slug:
+        cu_url = f'https://nowservingto.com/cuisine/{cuisine_slug}'
+        listing_breadcrumb_parts.append((f'{primary_lbl} restaurants', cu_url))
+        listing_breadcrumb_ld_parts.append((f'{primary_lbl} restaurants', cu_url))
+    listing_breadcrumb_parts.append((name, None))
+    listing_breadcrumb_ld_parts.append((name, canonical))
+    listing_breadcrumb_ld = build_ld_breadcrumb(listing_breadcrumb_ld_parts)
+    page = inject_into_html(
+        page,
+        static_block=one_row,
+        ld_payloads=[listing_ld, listing_breadcrumb_ld],
+        breadcrumb_html=build_breadcrumb_html(listing_breadcrumb_parts),
+    )
 
     (LISTING_DIR / f'{slug}.html').write_text(page)
     n_listing_html += 1
