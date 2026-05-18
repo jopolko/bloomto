@@ -816,6 +816,76 @@ print(f"  wrote {cuisine_pages_written} per-cuisine SEO landing pages → cuisin
 
 
 # ---------------------------------------------------------------------------
+# Per-DISTRICT landing pages at district/<slug>.html — parallels the
+# /cuisine/ pages but bucketed by Toronto district (Downtown, East Toronto,
+# Etobicoke, North York, Scarborough, West Toronto). Targets queries like
+# "new restaurants Scarborough" that have real volume and almost no ranked
+# competition. Same template + h1/title/og treatment as per-cuisine pages.
+DISTRICT_DIR = Path(ROOT) / 'district'
+DISTRICT_DIR.mkdir(exist_ok=True)
+# Group entries by district from the in-memory feed (no extra inject pass).
+by_district = defaultdict(list)
+for entry in seen_entries.values():
+    d = (entry.get('district') or '').strip()
+    if d: by_district[d].append(entry)
+# Sort each district's list freshest-first
+for d in by_district:
+    by_district[d].sort(key=lambda r: r['issuedDate'], reverse=True)
+
+# slugify: "East Toronto" → "east-toronto"
+def _district_slug(label):
+    return _re.sub(r'[^a-z0-9]+', '-', label.lower()).strip('-')
+
+district_template = open(INDEX_PATH).read()
+district_pages_written = 0
+for label, entries in by_district.items():
+    if not entries: continue
+    slug = _district_slug(label)
+    n365 = len(entries)
+    n30  = sum(1 for e in entries if e['daysOpen'] <= 30)
+
+    # Use "in Downtown Toronto" when label is "Downtown" — reads better.
+    place = f'{label} Toronto' if label == 'Downtown' else label
+    title = f"New restaurants in {place} — NowServingTO"
+    desc = (f"Every newly licensed restaurant in {place}, by cuisine, updated "
+            f"daily. {n365} entries tracked, {n30} from the last 30 days.")
+    canonical = f"https://nowservingto.com/district/{slug}"
+
+    page = district_template
+    # Replace meta tags
+    page = re.sub(r'<title>[^<]*</title>', f'<title>{_esc(title)}</title>', page, count=1)
+    for sel, val in [
+        (r'(<meta name="description" content=")[^"]*(")',     desc),
+        (r'(<meta property="og:title" content=")[^"]*(")',    title),
+        (r'(<meta property="og:description" content=")[^"]*(")', desc),
+        (r'(<meta name="twitter:title" content=")[^"]*(")',   title),
+        (r'(<meta name="twitter:description" content=")[^"]*(")', desc),
+        (r'(<link rel="canonical" href=")[^"]*(")',           canonical),
+    ]:
+        page = re.sub(sel, lambda m, v=val: m.group(1) + _esc(v) + m.group(2),
+                      page, count=1)
+
+    # District-specific h1
+    district_h1 = (f'<h1 class="sub">New <span class="hl">restaurants</span> '
+                   f'in {_esc(place)}</h1>')
+    page = re.sub(r'<h1 class="sub">[\s\S]*?</h1>',
+                  lambda m: district_h1, page, count=1)
+
+    # District-scoped static feed (top 30) + ld+json
+    district_static = build_static_rows(entries[:30])
+    district_ld = build_ld_itemlist(
+        entries[:30],
+        name=f"Newest restaurants in {place}",
+        description=desc,
+    )
+    page = inject_into_html(page, static_block=district_static, ld_payload=district_ld)
+
+    (DISTRICT_DIR / f'{slug}.html').write_text(page)
+    district_pages_written += 1
+print(f"  wrote {district_pages_written} per-district SEO landing pages → district/<slug>.html")
+
+
+# ---------------------------------------------------------------------------
 # Per-LISTING pages at r/<slug>.html  +  OG image cards at og/<slug>.png.
 # ---------------------------------------------------------------------------
 # Every kept entry gets:
@@ -949,6 +1019,13 @@ for c in cuisines_out:
     if c.get('count365d', 0) < 1: continue
     url_blocks.append(
         f'  <url>\n    <loc>{SITE_BASE}/cuisine/{c["key"]}</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>'
+    )
+# Per-district landing pages — same priority as cuisines.
+for label in by_district:
+    if not by_district[label]: continue
+    slug = _district_slug(label)
+    url_blocks.append(
+        f'  <url>\n    <loc>{SITE_BASE}/district/{slug}</loc>\n    <lastmod>{REFERENCE_DATE.isoformat()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>'
     )
 sitemap = (
     '<?xml version="1.0" encoding="UTF-8"?>\n'
