@@ -273,25 +273,28 @@
   .breadcrumb a:hover { color: var(--ink); border-bottom-color: var(--line); }
   .breadcrumb [aria-current="page"] { color: var(--ink2); }
   .breadcrumb .sep { margin: 0 6px; opacity: 0.55; }
-  /* Compound-query SEO sections — only emitted on /cuisine/X and /district/X
-     pages. The h3 of each block ("Pakistani restaurants in Etobicoke (8)")
-     targets the compound cuisine+district query directly so the page ranks
-     for "<cuisine> restaurant <district>" without spinning up new URLs. */
-  .x-axis { margin: 32px 0 12px; }
-  .x-axis > h2 { font: 700 18px/1.25 var(--sans); margin: 0 0 14px; color: var(--ink); letter-spacing: -0.005em; }
-  .xa-jump { display: flex; flex-wrap: wrap; gap: 6px 8px; margin: 0 0 22px; font: 500 12.5px/1 var(--sans); }
-  .xa-jump a { color: var(--ink2); text-decoration: none; padding: 6px 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; transition: all 0.12s; }
-  .xa-jump a:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .xa-jump .ct { color: var(--muted); font-weight: 400; margin-left: 4px; font-variant-numeric: tabular-nums; }
-  .xa-block { margin: 0 0 22px; padding: 0; scroll-margin-top: 16px; }
-  .xa-block h3 { font: 600 15.5px/1.3 var(--sans); margin: 0 0 8px; color: var(--ink); letter-spacing: -0.005em; }
-  .xa-block h3 .ct { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; margin-left: 6px; }
+  /* Compound-query SEO sections — only on /cuisine/X and /district/X pages.
+     Wrapped in <details> so the h3 content ("Pakistani restaurants in
+     Etobicoke") is in the HTML for Google to rank against the compound
+     query, but stays collapsed by default so the page doesn't visually
+     duplicate the chronological feed. Per Google's guidance, content in
+     disclosure widgets gets full ranking value. */
+  .x-axis { margin: 24px 0 8px; }
+  .x-axis details { border-top: 1px solid var(--line); }
+  .x-axis details > summary { list-style: none; cursor: pointer; user-select: none; padding: 12px 0; font: 700 11.5px/1 var(--sans); text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); display: flex; align-items: center; gap: 8px; transition: color 0.12s; }
+  .x-axis details > summary::-webkit-details-marker { display: none; }
+  .x-axis details > summary::after { content: "▾"; font-size: 9px; opacity: 0.55; transition: transform 0.18s; }
+  .x-axis details[open] > summary::after { transform: rotate(180deg); }
+  .x-axis details > summary:hover { color: var(--ink); }
+  .x-axis-body { padding: 4px 0 14px; }
+  .xa-block { margin: 0 0 18px; padding: 0; scroll-margin-top: 16px; }
+  .xa-block:last-child { margin-bottom: 0; }
+  .xa-block h3 { font: 600 14px/1.3 var(--sans); margin: 0 0 6px; color: var(--ink2); letter-spacing: -0.005em; }
+  .xa-block h3 .ct { color: var(--muted); font-weight: 400; font-variant-numeric: tabular-nums; margin-left: 4px; }
   .xa-list { list-style: none; padding: 0; margin: 0; }
-  .xa-list li { padding: 6px 0; border-top: 1px solid var(--line); font: 14px/1.45 var(--sans); }
-  .xa-list li:first-child { border-top: 0; }
-  .xa-list li a { color: var(--ink); text-decoration: none; font-weight: 600; }
+  .xa-list li { padding: 4px 0; font: 13.5px/1.4 var(--sans); }
+  .xa-list li a { color: var(--ink); text-decoration: none; }
   .xa-list li a:hover { text-decoration: underline; }
-  .xa-list li .ad { color: var(--muted); margin-left: 6px; }
   .site-foot { margin: 36px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); font: 400 12.5px/1.6 var(--sans); color: var(--muted); text-align: center; }
   .site-foot a { color: var(--ink2); text-decoration: none; font-weight: 600; transition: color 0.12s; }
   .site-foot a:hover { color: var(--accent); }

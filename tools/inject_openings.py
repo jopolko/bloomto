@@ -755,60 +755,52 @@ def build_ld_faq(qa_pairs):
     }
 
 
-def build_xaxis_html(entries, *, axis_label, group_fn, h3_template, jump_template, anchor_prefix, base_url):
+def build_xaxis_html(entries, *, axis_label, group_fn, h3_template, anchor_prefix):
     """Build a compound-query SEO block: groups `entries` by `group_fn(entry)`,
-    emits an h2 + jump-nav + one h3 per group. Each h3 targets the
-    `cuisine + district` query class directly ("Pakistani restaurants in
-    Etobicoke") without requiring a separate URL per combination.
+    emits one h3 per group. Each h3 targets the `cuisine + district` query
+    class directly ("Pakistani restaurants in Etobicoke") without requiring a
+    separate URL per combination.
 
-    - `axis_label`: heading for the whole section (e.g. "Pakistani restaurants by Toronto district")
-    - `group_fn`: callable that returns the group key for an entry (str or None)
-    - `h3_template`: f-string-like with {label} and {count} for each group's h3
-    - `jump_template`: same for the jump-nav link text
-    - `anchor_prefix`: prefix for the section id attributes ("in-" or "type-")
-    - `base_url`: canonical of the host page, used for jump-link href
+    Wrapped in <details> with the axis_label as the <summary>. Per Google's
+    official guidance (2019, reaffirmed since), content inside disclosure
+    widgets is indexed at full ranking value — but visually stays out of
+    the way until a user expands it. Addresses are omitted from the list
+    items because they're already shown in the chronological feed above
+    (the duplication looked spammy + cluttered).
     """
     buckets = defaultdict(list)
     for e in entries:
         k = group_fn(e)
         if k: buckets[k].append(e)
     if not buckets: return ''
-    # Sort groups by entry count desc, ties broken by group label asc
     sorted_groups = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), kv[0]))
 
     def _anchor(label):
         return anchor_prefix + _re.sub(r'[^a-z0-9]+', '-', label.lower()).strip('-')
 
-    jump_links = []
     blocks = []
     for label, ents in sorted_groups:
         anchor = _anchor(label)
         n = len(ents)
-        jump_links.append(
-            f'<a href="{_esc(base_url)}#{anchor}">{_esc(jump_template.format(label=label))} '
-            f'<span class="ct">{n}</span></a>'
-        )
-        # Sort within-bucket newest-first
         ents_sorted = sorted(ents, key=lambda r: r.get('issuedDate', ''), reverse=True)
         items = []
         for r in ents_sorted:
             slug = r.get('slug')
             href = f'/r/{slug}' if slug else (r.get('website') or '#')
             name = _esc(r.get('operatingName') or '')
-            addr = _esc(r.get('address') or '')
-            items.append(f'<li><a href="{_esc(href)}">{name}</a>'
-                         + (f'<span class="ad">— {addr}</span>' if addr else '') + '</li>')
+            items.append(f'<li><a href="{_esc(href)}">{name}</a></li>')
         blocks.append(
-            f'<section class="xa-block" id="{anchor}">'
+            f'<div class="xa-block" id="{anchor}">'
             f'<h3>{_esc(h3_template.format(label=label))} '
             f'<span class="ct">({n})</span></h3>'
             f'<ul class="xa-list">{"".join(items)}</ul>'
-            f'</section>'
+            f'</div>'
         )
     return (f'<section class="x-axis">'
-            f'<h2>{_esc(axis_label)}</h2>'
-            f'<nav class="xa-jump" aria-label="Jump to section">{"".join(jump_links)}</nav>'
-            f'{"".join(blocks)}'
+            f'<details>'
+            f'<summary>{_esc(axis_label)}</summary>'
+            f'<div class="x-axis-body">{"".join(blocks)}</div>'
+            f'</details>'
             f'</section>')
 
 
@@ -982,12 +974,10 @@ for c in cuisines_out:
     # family without us having to spin up cuisine×district URLs.
     cuisine_xaxis = build_xaxis_html(
         all_for_cuisine,
-        axis_label=f'{label} restaurants by Toronto district',
+        axis_label=f'Browse {label} restaurants by Toronto district',
         group_fn=lambda e: e.get('district'),
         h3_template=f'{label} restaurants in {{label}}',
-        jump_template='{label}',
         anchor_prefix='in-',
-        base_url=canonical,
     )
     page = inject_into_html(
         page,
@@ -1099,12 +1089,10 @@ for label, entries in by_district.items():
         return CUISINE_LABEL.get(keys[0], keys[0].replace('_', ' ').title()) if keys else None
     district_xaxis = build_xaxis_html(
         entries,
-        axis_label=f'Restaurants in {place} by cuisine',
+        axis_label=f'Browse restaurants in {place} by cuisine',
         group_fn=_cuisine_label_of,
         h3_template=f'{{label}} restaurants in {place}',
-        jump_template='{label}',
         anchor_prefix='type-',
-        base_url=canonical,
     )
     page = inject_into_html(
         page,
