@@ -66,6 +66,7 @@ south_asian) instead of guessing a specific country."""
 import sys as _sys
 _sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cuisines import VALID_CUISINE_KEYS as VALID_KEYS, parse_cuisines_from_llm
+from places_key import cache_key
 
 def load_api_key():
     for line in SECRETS.read_text().splitlines():
@@ -117,7 +118,7 @@ def main():
                 addr1 = (row.get('Licence Address Line 1') or '').strip()
                 addr3 = (row.get('Licence Address Line 3') or '').strip()
                 address = (addr1 + ' ' + addr3).strip() or '—'
-                key = f"{name.upper()}||{address.upper()}"
+                key = cache_key(name, address)
                 if key in seen: continue
                 seen.add(key)
                 ex = cache.get(key)

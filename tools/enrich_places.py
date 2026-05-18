@@ -155,8 +155,7 @@ def streetview_image(lat, lng, size='640x640', fov=80, heading=None, pitch=0):
     except Exception:
         return None, None
 
-def cache_key(name, address):
-    return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
+from places_key import cache_key  # canonical shared helper
 
 def _address_matches(queried_addr, matched_addr):
     """Sanity-check that Google's match actually sits on the same street as the
@@ -306,7 +305,7 @@ def main():
     # Collect unique (name, address) pairs across the recent feed and per-cuisine recent5 lists
     pairs = {}
     def add(e):
-        k = cache_key(e.get('operatingName'), e.get('address'))
+        k = e.get('_cacheKey') or cache_key(e.get('operatingName'), e.get('address'))
         if k not in pairs: pairs[k] = e
     for e in no.get('recent', []): add(e)
     for c in no.get('cuisines', []):
@@ -351,7 +350,7 @@ def main():
     # Now merge cache → corridors.json newOpenings entries
     print("Merging enrichments back into data/corridors.json…")
     def merge(e):
-        k = cache_key(e.get('operatingName'), e.get('address'))
+        k = e.get('_cacheKey') or cache_key(e.get('operatingName'), e.get('address'))
         ent = cache.get(k)
         if not ent or ent.get('status') != 'ok': return
         for key in ('website', 'mapsUrl', 'rating', 'reviewCount', 'matchedName', 'lat', 'lng'):

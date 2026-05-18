@@ -32,8 +32,10 @@ SLEEP_SEC = 1.1
 TIMEOUT_SEC = 15
 SAVE_EVERY = 25
 
-def cache_key(name, address):
-    return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
+import sys as _sys
+from pathlib import Path as _Path
+_sys.path.insert(0, str(_Path(__file__).resolve().parent))
+from places_key import cache_key  # canonical shared helper
 
 def geocode_one(address):
     """Returns dict with lat/lng/display_name on success, or {'lat': None, 'lng': None, 'fail': reason}."""
@@ -71,7 +73,12 @@ def main():
         addr = r.get('address') or ''
         if not addr:
             continue
-        k = cache_key(name, addr)
+        # Prefer the permit-derived _cacheKey stashed by inject_openings.py
+        # (name||addr1 addr3). r.address is just addr1 — possibly overwritten
+        # with Places' matchedAddress — neither of which matches places_cache
+        # keys. Fall back to building from r.address only when _cacheKey
+        # is absent (older corridors.json or non-inject sources).
+        k = r.get('_cacheKey') or cache_key(name, addr)
         if k in seen:
             continue
         seen.add(k)

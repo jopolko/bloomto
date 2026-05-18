@@ -176,8 +176,7 @@ def verify_one(name, address, retries=2):
         'searches': server_tool.get('web_search_requests', 0),
     }
 
-def cache_key(name, address):
-    return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
+from places_key import cache_key  # canonical shared helper
 
 def website_tier(url):
     """1=own site (best), 2=social, 3=blog/aggregator, 4=no link"""

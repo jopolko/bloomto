@@ -61,6 +61,7 @@ WINDOW_30  = REFERENCE_DATE - timedelta(days=30)
 # Canonical cuisine taxonomy — defined in tools/cuisines.py so recovery scripts
 # share the same set. Adding a bucket there is enough; do NOT re-declare here.
 from cuisines import CUISINE_LABEL, normalize_cuisines, cuisine_color
+from places_key import cache_key
 FOOD_CATS = {
     'EATING OR DRINKING ESTABLISHMENT',
     'TAKE-OUT OR RETAIL FOOD ESTABLISHMENT',
@@ -163,8 +164,7 @@ def get_cuisine(name, address):
     institutional operators with `validator_drop` directly; inject just honors
     that flag in the main loop.
     """
-    name_upper = (name or '').strip().upper()
-    key = f"{name_upper}||{(address or '').strip().upper()}"
+    key = cache_key(name, address)
 
     # 1. Web-verified cuisines — richest signal (web search + page content + Places extras).
     w = WEB_VERIFY_CACHE.get(key)
@@ -204,13 +204,11 @@ def verification_for(name, address):
     """Returns dict of fields to merge if verified-open, else None. Drops the
     website field when url_health_cache reports it as broken. Coords come from
     Places when available, else from the Nominatim geocode cache."""
-    name_up = (name or '').strip().upper()
-    addr_up = (address or '').strip().upper()
-    key = f"{name_up}||{addr_up}"
+    key = cache_key(name, address)
     # Geocode cache is keyed by street address only (no postal code). Try the
     # full key first, then a stripped-postal fallback to match older cache entries.
-    addr_no_postal = _re.sub(r'\s+[A-Z]\d[A-Z]\s*\d[A-Z]\d$', '', addr_up)
-    geo = GEOCODE_CACHE.get(key) or GEOCODE_CACHE.get(f"{name_up}||{addr_no_postal}")
+    addr_no_postal = _re.sub(r'\s+[A-Z]\d[A-Z]\s*\d[A-Z]\d$', '', (address or '').strip().upper())
+    geo = GEOCODE_CACHE.get(key) or GEOCODE_CACHE.get(cache_key(name, addr_no_postal))
     geo_coords = (geo.get('lat'), geo.get('lng')) if (geo and geo.get('lat') and geo.get('lng')) else (None, None)
     # Source 1: Google Places
     p = PLACES_CACHE.get(key)
@@ -306,7 +304,7 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # editorial + reviews and concluded this is not a consumer restaurant
         # (institutional caterer, packaged-food brand, grocery counter, etc.).
         # Authoritative — trumps the cuisine signal.
-        wv_e = WEB_VERIFY_CACHE.get(f"{op_raw.strip().upper()}||{address_full.strip().upper()}")
+        wv_e = WEB_VERIFY_CACHE.get(cache_key(op_raw, address_full))
         if wv_e and wv_e.get('validator_drop'):
             n_dropped_validator += 1   # Haiku-judged: chain, institutional, ghost, etc.
             continue
@@ -338,7 +336,7 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             # Stash the cache-key built from PERMIT name+address so downstream
             # places_cache lookups work even after entry.address has been
             # overridden by Places' formatted matchedAddress.
-            '_cacheKey': f"{op_raw.strip().upper()}||{address_full.strip().upper()}",
+            '_cacheKey': cache_key(op_raw, address_full),
         }
         district = district_from_postal(address_full)
         if district: entry['district'] = district
@@ -355,7 +353,7 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # data where Places has authoritative info. Use the matchedAddress as
         # the displayed address (cleaner formatting, validated location).
         # Fallback: permit address (when no Places match).
-        places_match = PLACES_CACHE.get(f"{op_raw.strip().upper()}||{address_full.strip().upper()}")
+        places_match = PLACES_CACHE.get(entry['_cacheKey'])
         if places_match and places_match.get('status') == 'ok' and places_match.get('matchedAddress'):
             # Strip the ", Canada" suffix; keep "123 Main St, Toronto, ON M5V 1A1"
             ma = places_match['matchedAddress']

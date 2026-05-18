@@ -119,8 +119,7 @@ def lookup_website(name, address, retries=2):
         'web_search_count': usage.get('server_tool_use', {}).get('web_search_requests', 0) if isinstance(usage.get('server_tool_use'), dict) else 0,
     }
 
-def cache_key(name, address):
-    return f"{(name or '').strip().upper()}||{(address or '').strip().upper()}"
+from places_key import cache_key  # canonical shared helper
 
 def main():
     data = json.loads(DATA_PATH.read_text())
@@ -133,7 +132,7 @@ def main():
     # Collect all visible entries
     pairs = {}
     def add(e):
-        k = cache_key(e.get('operatingName'), e.get('address'))
+        k = e.get('_cacheKey') or cache_key(e.get('operatingName'), e.get('address'))
         if k in pairs: return
         # Skip if already has website (from places_cache merge) OR website lookup done
         if e.get('website'): return
@@ -191,7 +190,7 @@ def main():
     # Merge into corridors.json
     print("Merging websites into corridors.json…")
     def merge(e):
-        k = cache_key(e.get('operatingName'), e.get('address'))
+        k = e.get('_cacheKey') or cache_key(e.get('operatingName'), e.get('address'))
         wb = web_cache.get(k)
         if wb and wb.get('status') == 'ok' and wb.get('website'):
             e['website'] = wb['website']
