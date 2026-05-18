@@ -731,9 +731,16 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       ct.textContent = rowsFor(currentCuisine, o.dataset.key, false).length;
     });
     // Cuisine counts = entries that survive (that-cuisine, currentRegion, currentNearMe).
+    // Hide zero-count cuisines when a region/near-me filter is active so
+    // the dropdown shows only what's actually available in the current
+    // slice. The "All cuisines" entry is always visible.
+    const cuisineFilterActive = currentRegion !== '__all' || nearMeActive;
     panel.querySelectorAll('.cp-opt').forEach(o => {
       const ct = o.querySelector('.ct'); if (!ct) return;
-      ct.textContent = rowsFor(o.dataset.key, currentRegion, nearMeActive).length;
+      const n = rowsFor(o.dataset.key, currentRegion, nearMeActive).length;
+      ct.textContent = n;
+      const isAll = o.classList.contains('cp-all');
+      o.hidden = (cuisineFilterActive && n === 0 && !isAll);
     });
   }
   function applyFilters(cuisineKey, regionKey, updateHash=true) {
