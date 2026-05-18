@@ -812,8 +812,9 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   //   1. URL hash (`#cuisine=X&region=Y`) — sticky across refreshes + share-links
   //   2. URL path (`/cuisine/X`) — SEO landing pages
   //   3. defaults
-  const pathCuisineMatch = location.pathname.match(/^\/cuisine\/([a-z_]+)\/?$/);
-  const pathListingMatch = location.pathname.match(/^\/r\/([\w-]+)\/?$/);
+  const pathCuisineMatch  = location.pathname.match(/^\/cuisine\/([a-z_]+)\/?$/);
+  const pathDistrictMatch = location.pathname.match(/^\/district\/([a-z-]+)\/?$/);
+  const pathListingMatch  = location.pathname.match(/^\/r\/([\w-]+)\/?$/);
   const hashCuisine = (location.hash.match(/cuisine=([a-z_]+)/) || [])[1];
   const hashRegion = (location.hash.match(/region=([^&]+)/) || [])[1];
   const cuisineFromUrl = hashCuisine || (pathCuisineMatch && pathCuisineMatch[1]);
@@ -896,7 +897,23 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     allPickers.push(picker);
     return picker;
   }
-  setupPicker(trigger, panel, key => applyFilters(key, currentRegion));
+  // District slug helper — mirrors tools/inject_openings.py _district_slug.
+  // Used to navigate between /district/<slug> landing pages.
+  const districtSlug = label => label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+  setupPicker(trigger, panel, key => {
+    // On a /cuisine/X SEO landing page, picking a DIFFERENT cuisine must
+    // hard-navigate to that cuisine's landing page — otherwise the static
+    // SEO chrome (breadcrumb / h1 / FAQ / xaxis) stays locked to the page
+    // that originally loaded and ends up contradicting the filter (e.g.
+    // "Home › Brazilian restaurants" while the dropdown shows Chinese).
+    // Same for switching off a cuisine page back to "All cuisines".
+    if (pathCuisineMatch && key !== pathCuisineMatch[1]) {
+      location.href = (key === '__all') ? '/' : ('/cuisine/' + key);
+      return;
+    }
+    applyFilters(key, currentRegion);
+  });
   setupPicker(rTrigger, rPanel, key => {
     // Picking any region (including "All Toronto") turns Near me off — they're
     // mutually exclusive spatial filters.
@@ -904,6 +921,17 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       nearMeActive = false;
       document.getElementById('locate-btn').classList.remove('active');
       if (mapInstance && userMarker) mapInstance.removeLayer(userMarker);
+    }
+    // Same fix as the cuisine picker but for /district/X pages: hard-navigate
+    // when changing the district so the static district-scoped SEO stays
+    // consistent with what the dropdown now shows.
+    if (pathDistrictMatch && key !== '__all' && districtSlug(key) !== pathDistrictMatch[1]) {
+      location.href = '/district/' + districtSlug(key);
+      return;
+    }
+    if (pathDistrictMatch && key === '__all') {
+      location.href = '/';
+      return;
     }
     applyFilters(currentCuisine, key);
   });
