@@ -867,17 +867,21 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     applyFilters(currentCuisine, key);
   });
 
-  // Brand-as-reload: clicking NowServingTO clears any filter hash and reloads
-  // the page so fresh corridors.json + index.html are revalidated.
+  // Brand-as-home: clicking NowServingTO always navigates to the
+  // root, clearing any cuisine/district path AND any filter hash.
+  // Using location.href = '/' (not location.reload) so we leave the
+  // current per-cuisine/per-district page properly rather than just
+  // refreshing it. assign() pushes history; current behavior matches
+  // the user's "go home" intent.
   const brandLink = document.getElementById('brand-link');
   if (brandLink) {
     brandLink.addEventListener('click', e => {
       e.preventDefault();
-      if (location.hash || location.search) {
-        // strip filter hash, then reload — replacing rather than pushing avoids polluting history
-        history.replaceState(null, '', '/');
+      if (location.pathname === '/' && !location.hash && !location.search) {
+        location.reload();  // already at root — refresh in place
+      } else {
+        location.href = '/';
       }
-      location.reload();
     });
   }
 

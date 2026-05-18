@@ -264,6 +264,10 @@
   .open-feed .show-more:hover { background: var(--bg); border-color: var(--rule); color: var(--ink); }
 
   main.wrap { padding-bottom: 60px; }
+  .site-foot { margin: 36px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); font: 400 12.5px/1.6 var(--sans); color: var(--muted); text-align: center; }
+  .site-foot a { color: var(--ink2); text-decoration: none; font-weight: 600; transition: color 0.12s; }
+  .site-foot a:hover { color: var(--accent); }
+  .site-foot .dot { margin: 0 6px; color: #c5c8cd; }
 
   @media (max-width: 760px) {
     .wrap { padding: 0 14px; }
@@ -351,6 +355,15 @@
     <div id="map" role="region" aria-label="Map of new restaurant openings"></div>
   </div>
 
+  <footer class="site-foot">
+    <a href="https://x.com/nowservingto" target="_blank" rel="noopener">Follow @nowservingto on X</a>
+    <span class="dot">·</span>
+    <a href="/usage">Sources</a>
+    <span class="dot">·</span>
+    City of Toronto open data <span class="dot">·</span>
+    Google Places <span class="dot">·</span>
+    Anthropic Claude
+  </footer>
 </main>
 
 
@@ -854,17 +867,21 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     applyFilters(currentCuisine, key);
   });
 
-  // Brand-as-reload: clicking NowServingTO clears any filter hash and reloads
-  // the page so fresh corridors.json + index.html are revalidated.
+  // Brand-as-home: clicking NowServingTO always navigates to the
+  // root, clearing any cuisine/district path AND any filter hash.
+  // Using location.href = '/' (not location.reload) so we leave the
+  // current per-cuisine/per-district page properly rather than just
+  // refreshing it. assign() pushes history; current behavior matches
+  // the user's "go home" intent.
   const brandLink = document.getElementById('brand-link');
   if (brandLink) {
     brandLink.addEventListener('click', e => {
       e.preventDefault();
-      if (location.hash || location.search) {
-        // strip filter hash, then reload — replacing rather than pushing avoids polluting history
-        history.replaceState(null, '', '/');
+      if (location.pathname === '/' && !location.hash && !location.search) {
+        location.reload();  // already at root — refresh in place
+      } else {
+        location.href = '/';
       }
-      location.reload();
     });
   }
 
