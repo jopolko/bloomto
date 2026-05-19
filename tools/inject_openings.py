@@ -42,6 +42,33 @@ try:
 except FileNotFoundError:
     URL_HEALTH_CACHE = {}
 
+# OSM-derived chain brand set, built daily by tools/build_osm_chain_set.py
+# from OpenStreetMap. Keys are UPPER-CASED brand names ("241 PIZZA", "A&W")
+# with osmCount = how many OSM nodes carry that brand tag. Any Toronto
+# licence whose operating name matches one of these names is by definition
+# a multi-location chain and disqualified from the directory regardless of
+# what the per-entry validator decides — the validator can miss chains
+# when an entry's specific website/Places data is incomplete, but OSM
+# crowd-tagging across many cities never has that gap. Free pre-filter
+# that's also cheaper than a Haiku batch call (the dropped entries skip
+# all downstream verify/validate work).
+try:
+    OSM_CHAIN_SET = json.load(open(f'{ROOT}/tools/cache/osm_chain_set.json')).get('brands', {})
+except FileNotFoundError:
+    OSM_CHAIN_SET = {}
+
+def is_osm_chain(op_raw):
+    """True if the operating name matches an OSM-tagged chain brand. Match
+    is case-insensitive on the exact name OR a normalized variant (strip
+    trailing 'INC'/'LTD' suffixes and trailing licence-numbering like '#3')."""
+    if not op_raw or not OSM_CHAIN_SET: return False
+    name = op_raw.strip().upper()
+    if name in OSM_CHAIN_SET: return True
+    import re as _re_chain
+    cleaned = _re_chain.sub(r'\s+(INC|LTD|LLC|CORP|CO|LIMITED)\.?$', '', name).strip()
+    cleaned = _re_chain.sub(r'\s*#\s*\d+$', '', cleaned).strip()
+    return cleaned in OSM_CHAIN_SET
+
 def url_is_alive(url):
     """True if URL not in health cache, or last check said ok. False if known-broken."""
     if not url: return False
@@ -252,7 +279,7 @@ from urllib.parse import quote_plus
 # Issued date — that's when the kitchen actually opened, not just when a category was added.
 seen_entries = {}
 n_food_active = 0; n_food_active_365 = 0; n_tagged_365 = 0; n_tagged_30 = 0
-n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0; n_dropped_brand_new_unverified = 0; n_dropped_validator = 0
+n_dropped_unverified = 0; n_dropped_closed = 0; n_deduped = 0; n_dropped_instore = 0; n_dropped_institutional = 0; n_dropped_weak_match = 0; n_dropped_brand_new_unverified = 0; n_dropped_validator = 0; n_dropped_chain_osm = 0
 
 # Grocery/retail chains whose in-store sushi/sandwich counters are NOT consumer-
 # destination restaurants. Three orthogonal signals catch them:
@@ -294,6 +321,15 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
         # The validator_drop honoring below handles all of these uniformly.)
         op_raw = (row.get('Operating Name') or '').strip()
         if not op_raw: continue
+        # Pre-filter: OSM-tagged chain brands. If OpenStreetMap has tagged
+        # this exact operating name as a multi-location brand (e.g. 241
+        # Pizza, A&W, Subway), it's a chain regardless of what the per-entry
+        # validator decides. Saves the downstream verify/validate spend AND
+        # catches chain locations where per-entry Haiku evidence is sparse
+        # (e.g. UberEats URL for one location and 241pizza.com for others).
+        if is_osm_chain(op_raw):
+            n_dropped_chain_osm += 1
+            continue
         addr1 = (row.get('Licence Address Line 1') or '').strip()
         addr3 = (row.get('Licence Address Line 3') or '').strip()
         address_full = (addr1 + ' ' + addr3).strip()
@@ -550,7 +586,7 @@ for entry in seen_entries.values():
     for c in entry.get('cuisines') or [entry['cuisine']]:
         opens_365_by_cuisine[c].append(entry)
 
-print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_validator} validator (Haiku: chain/institutional/ghost) + {n_dropped_unverified} unverified (no Places, no web_verify yet) + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_dropped_brand_new_unverified} brand-new-unverified (<30d, no Places/website) + {n_deduped} duplicate rows collapsed")
+print(f"  verification gate: kept {n_tagged_365}, dropped {n_dropped_chain_osm} OSM-known chains + {n_dropped_validator} validator (Haiku: chain/institutional/ghost) + {n_dropped_unverified} unverified (no Places, no web_verify yet) + {n_dropped_closed} closed/temp + {n_dropped_instore} in-store kiosks + {n_dropped_institutional} institutional-operator rows + {n_dropped_weak_match} weak-match (no Places / no site / name-guess only) + {n_dropped_brand_new_unverified} brand-new-unverified (<30d, no Places/website) + {n_deduped} duplicate rows collapsed")
 
 # Sort each cuisine's list by issued date desc (newest first)
 for c in opens_365_by_cuisine:
