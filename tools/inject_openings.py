@@ -493,15 +493,20 @@ from enrich_places import (download_place_photo as _dl_photo,
                             streetview_image as _sv_img,
                             place_details as _pd)
 
-def _make_thumb(src, dst, size=160):
-    """Center-square-crop + resize to size×size, save as JPEG q=78. ~6KB per
-    thumb. Tries ImageMagick `convert` first (VPS has it), falls back to PIL
-    (local dev has it)."""
+def _make_thumb(src, dst, size=196):
+    """Center-square-crop + resize to size×size, save as WebP q=80. ~3KB per
+    thumb (~50% smaller than the prior 160×160 JPEG q=78). 196×196 is the 2x-
+    retina size for a 98×98 CSS box, so it stays crisp on hidpi displays
+    while shedding bytes vs the old 160×160 JPEG which was both oversized
+    for 1x and undersized for 2x. WebP is supported by ~98% of browsers.
+
+    Tries ImageMagick `convert` first (VPS has it), falls back to PIL (local
+    dev has it). Both write WebP at quality 80."""
     try:
         _sub.run(
             ['convert', str(src), '-resize', f'{size}x{size}^',
              '-gravity', 'center', '-extent', f'{size}x{size}',
-             '-quality', '78', '-strip', str(dst)],
+             '-quality', '80', '-strip', str(dst)],
             check=True, capture_output=True,
         )
         return True
@@ -511,12 +516,11 @@ def _make_thumb(src, dst, size=160):
         from PIL import Image
         with Image.open(str(src)) as im:
             im = im.convert('RGB')
-            # Center-square crop
             w, h = im.size
             s = min(w, h)
             im = im.crop(((w-s)//2, (h-s)//2, (w+s)//2, (h+s)//2))
             im = im.resize((size, size), Image.LANCZOS)
-            im.save(str(dst), 'JPEG', quality=78, optimize=True)
+            im.save(str(dst), 'WEBP', quality=80, method=6)
         return True
     except Exception:
         return False
@@ -528,7 +532,7 @@ for entry in seen_entries.values():
     slug = entry.get('slug')
     if not slug: continue
     photo_path = _PHOTO_DIR / f'{slug}.jpg'
-    thumb_path = _THUMB_DIR / f'{slug}.jpg'
+    thumb_path = _THUMB_DIR / f'{slug}.webp'
 
     if not photo_path.exists():
         pe = PLACES_CACHE.get(entry.get('_cacheKey', '')) or {}
@@ -567,7 +571,7 @@ for entry in seen_entries.values():
                 n_thumb_renders += 1
         entry['photo'] = f'/og/photo/{slug}.jpg'
         if thumb_path.exists():
-            entry['thumb'] = f'/og/thumb/{slug}.jpg'
+            entry['thumb'] = f'/og/thumb/{slug}.webp'
 
 print(f"  photos: {n_photo_downloads} new Places + {n_streetview_downloads} new Street View "
       f"(total entries with photos: {sum(1 for e in seen_entries.values() if e.get('photo'))}; "
@@ -1379,7 +1383,16 @@ n_listing_stale  = _cleanup(LISTING_DIR,  live_slugs)
 # /og.svg — only the <slug>.png pattern matters here.)
 n_og_card_stale  = _cleanup(OG_DIR,           live_slugs, suffix='.png')
 n_og_photo_stale = _cleanup(OG_DIR / 'photo', live_slugs, suffix='.jpg')
-n_og_thumb_stale = _cleanup(OG_DIR / 'thumb', live_slugs, suffix='.jpg')
+n_og_thumb_stale = _cleanup(OG_DIR / 'thumb', live_slugs, suffix='.webp')
+# Transitional cleanup 2026-05-19: thumbnails switched from JPG → WebP.
+# Sweep ALL leftover .jpg thumbs (regardless of slug match — they're no
+# longer referenced by HTML; the new code only generates .webp).
+_thumb_jpg_dir = OG_DIR / 'thumb'
+if _thumb_jpg_dir.exists():
+    for _f in _thumb_jpg_dir.iterdir():
+        if _f.is_file() and _f.name.endswith('.jpg'):
+            try: _f.unlink(); n_og_thumb_stale += 1
+            except Exception: pass
 print(f"  cleanup: removed {n_cuisine_stale} stale cuisine pages, "
       f"{n_district_stale} stale district pages, {n_listing_stale} stale listings, "
       f"{n_og_card_stale} cards, {n_og_photo_stale} photos, {n_og_thumb_stale} thumbs")
