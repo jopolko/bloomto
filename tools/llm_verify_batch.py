@@ -193,7 +193,24 @@ Rules for "website" (return the BEST link you find, in this STRICT order of pref
    (not a generic "best of" list mentioning many places).
 5. A Yelp or TripAdvisor page for this specific restaurant.
 6. If nothing usable above, null.
-Skip pure aggregator listings, licence-lookup pages, address directories."""
+
+Skip pure aggregator listings, licence-lookup pages, address directories.
+
+CRITICAL — directory hosts that look like own-sites but aren't:
+  - Mall/plaza directory pages: yorkdale.com/store/<biz>, sherwayplaza.com/...,
+    cfshops.com/...,  squareone.com/..., fairviewmall.com/... — these are
+    landlord directory entries, NOT the restaurant's website. Reject.
+  - Inspection/regulatory pages: dinesafe.to, ontario.ca/business — Reject.
+  - Property-listing pages: spacelist.ca, propertyfinder, commercial real
+    estate — Reject (they're listing the SPACE, not the business).
+  - Generic Google Places URLs that aren't the maps.google.com/?cid= or
+    maps.app.goo.gl/ format — these may also be aggregators or stale URLs.
+
+For each candidate URL the search surfaced, ask: "If I clicked this, would
+I see content authored by the restaurant itself (or directly representing
+them on a social/maps profile they control)?" If no, reject and consider
+the next candidate. If no candidate passes, return website=null. A null
+website is a better signal than a misleading link to a mall directory."""
 
 def load_api_key():
     for line in SECRETS.read_text().splitlines():

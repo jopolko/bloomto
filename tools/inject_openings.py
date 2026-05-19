@@ -247,6 +247,17 @@ def verification_for(name, address):
                 if p.get(k) is not None: out[k] = p[k]
             if out.get('website') and not url_is_alive(out['website']):
                 del out['website']  # let mapsUrl be the link instead
+            # When Places matched but has no own-website (or its URL was
+            # dead), fall back to the web_verify-surfaced URL (top Google-
+            # search match Haiku found earlier). Without this, JARDIN NOIR
+            # had a Places match + a yorkdale.com URL from web_verify, but
+            # the Places merge dropped through without ever consulting WV.
+            if not out.get('website'):
+                w = WEB_VERIFY_CACHE.get(key)
+                if w and w.get('status') == 'ok' and w.get('operating') == 'yes':
+                    wv_site = w.get('website')
+                    if wv_site and url_is_alive(wv_site):
+                        out['website'] = wv_site
             if out.get('lat') is None and geo_coords[0] is not None:
                 out['lat'], out['lng'] = geo_coords
             return out
@@ -682,19 +693,21 @@ def build_static_rows(entries):
         addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
         addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
         ago = _esc(_ago(r['daysOpen']))
-        # Name + thumbnail link precedence: own website > Places deep-link >
-        # our own /r/<slug> listing page. The listing page is the always-
-        # available fallback — never sends the user to a wrong business
-        # or a generic-building Maps result, and the page itself has cuisine,
-        # address, district, breadcrumb back to the cuisine hub. Better than
-        # a dead row when external URLs are missing.
+        # Click-target precedence by intent:
+        #   - Name click = "go to the business's own site" → website preferred
+        #   - Photo click = "see more photos / business info" → Places card
+        #     preferred (Maps has more photos + reviews + hours than a one-page
+        #     restaurant website typically does)
+        #   - Address click = "get directions" → Places card only (handled
+        #     above; plain text when no Places match)
+        # Internal /r/<slug> is the fallback when neither external URL exists.
         slug = r.get('slug') or ''
         internal_url = f'/r/{slug}' if slug else ''
         link = r.get('website') or r.get('mapsUrl') or internal_url
         name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
         multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
         thumb = r.get('thumb')
-        thumb_target = r.get('website') or r.get('mapsUrl') or internal_url
+        thumb_target = r.get('mapsUrl') or r.get('website') or internal_url
         thumb_html = (f'<a class="row-pic-link" href="{_esc(thumb_target)}" rel="noopener" aria-label="View {_esc(r["operatingName"])}">'
                       f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
                       f'</a>'

@@ -628,7 +628,10 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const thumb = r.thumb || '';
     // Thumbnail click → restaurant's own website if validated, else the
     // Places Maps card. Direct destination, no aggregator detour.
-    const thumbTarget = r.website || r.mapsUrl || internalUrl || '';
+    // Photo click → Google Places card preferred (Maps has more photos +
+    // reviews + hours than a typical one-page restaurant website). Falls
+    // back to website then internal listing page.
+    const thumbTarget = r.mapsUrl || r.website || internalUrl || '';
     const thumbHtml = thumb && thumbTarget
       ? `<a class="row-pic-link" href="${thumbTarget}"${tgt} rel="noopener" aria-label="View ${r.operatingName}"><img class="row-pic" src="${thumb}" alt="" loading="lazy" decoding="async"></a>`
       : thumb
