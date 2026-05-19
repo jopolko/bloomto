@@ -908,8 +908,8 @@ static_block = build_static_rows(top_for_static)
 home_url = 'https://nowservingto.com/'
 home_itemlist = build_ld_itemlist(
     top_for_static,
-    name="Toronto's newest restaurants by cuisine",
-    description='Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine.',
+    name="Toronto's newest licensed restaurants by cuisine",
+    description='Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine. Updated weekly from City of Toronto open data.',
 )
 home_collection = build_ld_collectionpage(
     home_itemlist, url=home_url, dateModified=REFERENCE_DATE.isoformat(),
@@ -951,7 +951,7 @@ for c in cuisines_out:
 
     title = f"New {label} restaurants in Toronto — NowServingTO"
     desc = (f"Every newly licensed {label} restaurant in Toronto over the past 365 "
-            f"days, updated daily. {n365} entries tracked, {n30} from the last 30 days.")
+            f"days, updated weekly. {n365} entries tracked, {n30} from the last 30 days.")
     canonical = f"https://nowservingto.com/cuisine/{key}"
 
     page = template
@@ -1065,7 +1065,7 @@ for label, entries in by_district.items():
     place = f'{label} Toronto' if label == 'Downtown' else label
     title = f"New restaurants in {place} — NowServingTO"
     desc = (f"Every newly licensed restaurant in {place}, by cuisine, updated "
-            f"daily. {n365} entries tracked, {n30} from the last 30 days.")
+            f"weekly. {n365} entries tracked, {n30} from the last 30 days.")
     canonical = f"https://nowservingto.com/district/{slug}"
 
     page = district_template

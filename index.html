@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NowServingTO — Toronto's newest restaurants by cuisine, updated daily</title>
-<meta name="description" content="A daily-fresh directory of every new restaurant licensed in Toronto in the past 365 days, classified by cuisine: Ethiopian, Tamil, Filipino, Persian, Salvadoran, Bangladeshi, Korean, Vietnamese and 30+ more. Find the newest spot in any cuisine.">
+<title>NowServingTO — Toronto's newest licensed restaurants by cuisine, updated weekly</title>
+<meta name="description" content="A directory of every newly licensed restaurant in Toronto in the past 365 days, classified by cuisine: Ethiopian, Tamil, Filipino, Persian, Salvadoran, Bangladeshi, Korean, Vietnamese and 30+ more. Updated weekly from City of Toronto open data.">
 <!-- meta keywords removed 2026-05-18: Google ignores the tag and a generic
      cuisine-stuffed list reused across every generated page reads as spam. -->
 <meta name="author" content="NowServingTO">
@@ -38,8 +38,8 @@
 <!-- Open Graph for sharing previews -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nowservingto.com/">
-<meta property="og:title" content="NowServingTO — Toronto's newest restaurants by cuisine, updated daily">
-<meta property="og:description" content="Every new restaurant licensed in Toronto in the last 365 days, classified by cuisine. Find the newest Ethiopian, Tamil, Filipino, Persian, Mexican, Korean, or any of 40+ specific cuisines. Updated every morning from City of Toronto Open Data.">
+<meta property="og:title" content="NowServingTO — Toronto's newest licensed restaurants by cuisine, updated weekly">
+<meta property="og:description" content="Every newly licensed restaurant in Toronto in the last 365 days, classified by cuisine. Find the newest Ethiopian, Tamil, Filipino, Persian, Mexican, Korean, or any of 40+ specific cuisines. Updated weekly from City of Toronto open data.">
 <meta property="og:image" content="https://nowservingto.com/og.svg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -48,8 +48,8 @@
 
 <!-- Twitter / X cards -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="NowServingTO — Toronto's newest restaurants by cuisine, updated daily">
-<meta name="twitter:description" content="Find the newest Ethiopian, Tamil, Filipino, Persian, Mexican, Korean, or any of 40+ cuisines in Toronto. Updated every morning from City of Toronto licence data.">
+<meta name="twitter:title" content="NowServingTO — Toronto's newest licensed restaurants by cuisine, updated weekly">
+<meta name="twitter:description" content="Find the newest Ethiopian, Tamil, Filipino, Persian, Mexican, Korean, or any of 40+ cuisines in Toronto. Updated weekly from City of Toronto licence data.">
 <meta name="twitter:image" content="https://nowservingto.com/og.svg">
 
 <!-- Structured data: WebSite for the directory itself. Restaurant ItemList is
@@ -322,7 +322,7 @@
 <header class="mast">
   <div class="wrap">
     <a href="/" class="brand" id="brand-link">NowServingTO</a>
-    <h1 class="sub">Toronto's <span class="hl">newest</span> restaurants — updated daily.</h1>
+    <h1 class="sub">Toronto's <span class="hl">newest licensed</span> restaurants — updated weekly.</h1>
   </div>
 </header>
 
@@ -473,7 +473,7 @@ function agoLabel(days) {
 
 fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   const no = data.newOpenings;
-  // (Subtitle reads "updated daily" — no dynamic date to inject.)
+  // (Subtitle reads "updated weekly" — no dynamic date to inject.)
 
   // Dynamic cuisine taxonomy: corridors.json carries label + color for every
   // active cuisine (curated palette for seed keys, hash-derived hex for
