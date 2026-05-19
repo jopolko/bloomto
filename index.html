@@ -587,16 +587,13 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     // and concatenating it next to the restaurant name in SERP snippets
     // ("CAFEMIA ITALIAN BAKERYunverified 84 OAKDALE RD"), which read
     // worse to searchers than the protective behavior was worth.)
-// Address links to Google Maps. Precedence:
-    //   1. r.mapsUrl — Places CID deep-link (e.g., maps.google.com?cid=...)
-    //      when Places matched the entry. Single result, exact business —
-    //      no ambiguity when multiple businesses share a name or address.
-    //   2. r.fallbackMapsUrl — name + address search URL when no Places
-    //      match exists. The wrong-brand routing risk (Mapo case) is
-    //      already prevented upstream by the brand-new-unverified gate.
-    // Both are address-anchored (no lat/lng coordinates), human-readable,
-    // and route to a real Google Maps result.
-    const addrUrl = r.mapsUrl || r.fallbackMapsUrl;
+// Address link: ONLY the Places CID deep-link. When there's no Places
+    // match we previously fell back to a name+address search URL, but that
+    // lands on neighboring businesses (CAFEMIA case → Messina/Amico/Tre
+    // Mari bakeries instead of CAFEMIA) and an address-only search lands
+    // on a generic building. Plain text is more honest when we don't have
+    // an authoritative deep-link.
+    const addrUrl = r.mapsUrl;
     const addrText = r.address || '—';
     const addrLink = addrUrl ? `<a href="${addrUrl}"${tgt} rel="noopener">${addrText}</a>` : addrText;
     // Suffix the address with either distance (when Near me is active and we
@@ -625,7 +622,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const thumb = r.thumb || '';
     // Thumbnail click → restaurant's own website if validated, else the
     // Places Maps card. Direct destination, no aggregator detour.
-    const thumbTarget = r.website || r.mapsUrl || r.fallbackMapsUrl || '';
+    const thumbTarget = r.website || r.mapsUrl || '';
     const thumbHtml = thumb && thumbTarget
       ? `<a class="row-pic-link" href="${thumbTarget}"${tgt} rel="noopener" aria-label="View ${r.operatingName}"><img class="row-pic" src="${thumb}" alt="" loading="lazy" decoding="async"></a>`
       : thumb

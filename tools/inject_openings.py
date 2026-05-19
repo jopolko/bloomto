@@ -396,32 +396,17 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             ma = _re.sub(r',\s*Canada\s*$', '', ma)
             entry['address'] = ma
 
-        # fallbackMapsUrl — Google Maps search using NAME + ADDRESS being
-        # DISPLAYED to the user. One consistent format across every listing
-        # per user directive 2026-05-15.
-        #
-        # Why name+address (not address-only): Google's Maps geocoder lands
-        # bare addresses in multi-unit buildings on the building centroid
-        # (e.g. "364 Huron St C104" → generic spot in a hospital block, not
-        # the actual gimbap shop). The Place card is reachable only via
-        # name-in-query search. The earlier "no name" rule existed to dodge
-        # established-same-name-brand routing (the Mapo Korean BBQ case),
-        # but the brand-new-unverified gate above now drops every entry
-        # without Places match AND without a validator-approved website,
-        # so every entry that reaches this code path has been independently
-        # verified to exist at this address — name-in-search routes
-        # correctly to the actual Place card.
-        disp_addr = (entry.get('address') or addr1 or '').strip()
-        if disp_addr:
-            parts = [op_raw, disp_addr] if op_raw else [disp_addr]
-            q = ' '.join(p for p in parts if p)
-            if 'toronto' not in q.lower():
-                q = f"{q} Toronto, ON"
-            entry['fallbackMapsUrl'] = (
-                f"https://www.google.com/maps/search/?api=1&query={quote_plus(q)}"
-            )
-        else:
-            entry['fallbackMapsUrl'] = ''
+        # fallbackMapsUrl removed 2026-05-19. The previous design assumed
+        # every entry reaching this code path had been independently verified
+        # to exist at this address (the brand-new-unverified gate enforced
+        # Places match OR website). After 2026-05-19's gate refinement let
+        # web-verify-only entries through (e.g. CAFEMIA: DineSafe + Yelp
+        # confirmed but no Places profile yet), a name+address search no
+        # longer reliably lands on the right business — Google Maps returns
+        # OTHER businesses at nearby addresses (Messina/Amico/Tre Mari
+        # bakeries instead of CAFEMIA), which is worse UX than no link at
+        # all. The row renderer now shows the address as plain text when no
+        # Places-backed mapsUrl exists.
 
         # (REMOVED 2026-05-14: brand-website inheritance dict — the validator
         # returns best_website per entry directly, computed from full evidence.)
@@ -695,19 +680,23 @@ def build_static_rows(entries):
         name = _esc(r['operatingName'])
         addr = _esc(r.get('address') or '')
         district = _esc(r.get('district') or '')
-        addr_url = r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+        # Address link: ONLY the Places CID deep-link (mapsUrl). When there's
+        # no Places match, show plain text — a name+address search lands on
+        # neighboring businesses and an address-only search lands on a
+        # generic building. Plain text is more honest.
+        addr_url = r.get('mapsUrl') or ''
         addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
         addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
         ago = _esc(_ago(r['daysOpen']))
-        link = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+        # Name link precedence: own website > Places deep-link > nothing.
+        # Same reasoning as the address link — don't fall back to a search URL
+        # that lands on the wrong business.
+        link = r.get('website') or r.get('mapsUrl') or ''
         name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
         multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
         thumb = r.get('thumb')
-        # Thumbnail click goes directly to the restaurant — their own website
-        # if validated, otherwise the Google Maps Place card. No detour
-        # through the aggregator listing page (less friction for visitors
-        # who clearly want to see the place itself).
-        thumb_target = r.get('website') or r.get('mapsUrl') or r.get('fallbackMapsUrl') or ''
+        # Thumbnail click: same precedence as name link.
+        thumb_target = r.get('website') or r.get('mapsUrl') or ''
         thumb_html = (f'<a class="row-pic-link" href="{_esc(thumb_target)}" rel="noopener" aria-label="View {_esc(r["operatingName"])}">'
                       f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
                       f'</a>'
