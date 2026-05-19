@@ -1,11 +1,22 @@
-# Cache policy — index.html and corridors.json refresh daily; revalidate.
+# Cache policy:
+#   - HTML and JSON refresh daily; revalidate after 1 hour.
+#   - General images (favicons, OG cards, fonts): 1-day cache.
+#   - Thumbnails under og/thumb/* are content-addressed by slug and only
+#     regenerate when the source photo changes — 30-day cache + immutable
+#     hint. Saves repeat-visitor bandwidth + improves perceived load.
 <IfModule mod_headers.c>
     <FilesMatch "\.(html|json)$">
         Header set Cache-Control "public, max-age=3600, must-revalidate"
     </FilesMatch>
-    <FilesMatch "\.(svg|png|jpg|jpeg|ico|woff2?)$">
+    <FilesMatch "\.(svg|png|jpg|jpeg|webp|ico|woff2?)$">
         Header set Cache-Control "public, max-age=86400"
     </FilesMatch>
+</IfModule>
+<IfModule mod_setenvif.c>
+    SetEnvIf Request_URI "^/og/thumb/" LONG_CACHE
+</IfModule>
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=2592000, immutable" env=LONG_CACHE
 </IfModule>
 
 RewriteEngine On
