@@ -116,6 +116,26 @@ restaurants. Return cuisine=unknown.
 - Genuine retail with hot prepared food (a roti shop, a butcher counter that fries
   samosas to order, a grocery store with a full hot table) → tag with the appropriate cuisine
 
+CRITICAL: A DineSafe (dinesafe.to) inspection record is NOT evidence the place is
+wholesale-only. DineSafe inspects EVERY food premise in Toronto — sit-down restaurants,
+bakeries with retail counters, takeout shops, and yes some wholesale plants. Treat
+DineSafe as confirming the place is a regulated food establishment but NEUTRAL on
+the consumer-vs-wholesale question. Look for separate consumer-facing signals
+(Instagram posts of finished dishes, customer reviews, hours of operation, menu prices,
+photos of a storefront with walk-in customers) before concluding wholesale-only.
+- DineSafe says "Cafemia Italian Bakery, 84 Oakdale Rd" with an inspection in 2025
+  AND Instagram shows recent posts of finished pastries → operating=yes, italian
+- DineSafe alone with NO consumer signal at all → unclear (NOT a wholesale conclusion)
+
+CRITICAL: When your first web search returns only regulatory/inspection results
+(DineSafe, business-licence lookup pages, BIN searches) and no consumer-facing
+signal, your second search MUST target social media or local listings — try
+`"<NAME>" instagram` or `"<NAME>" "<neighborhood>"` to surface the Instagram /
+Facebook page that almost every Toronto restaurant has. Don't return
+operating=unclear, cuisine=unknown, website=None when you haven't actually
+searched for the place's consumer presence — that's a false negative that
+drops a real restaurant from the directory.
+
 Rules for "operating":
 - "yes" — ANY plausible online evidence the place exists. The bar is LOW.
   Acceptable: own website, Instagram or Facebook page matching the name, a Google Maps
