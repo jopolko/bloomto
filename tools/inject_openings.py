@@ -688,15 +688,19 @@ def build_static_rows(entries):
         addr_inner = f'<a href="{_esc(addr_url)}" rel="noopener">{addr}</a>' if addr_url and addr else addr
         addr_html = f'{addr_inner}<span class="oad-d"> · {district}</span>' if district else addr_inner
         ago = _esc(_ago(r['daysOpen']))
-        # Name link precedence: own website > Places deep-link > nothing.
-        # Same reasoning as the address link — don't fall back to a search URL
-        # that lands on the wrong business.
-        link = r.get('website') or r.get('mapsUrl') or ''
+        # Name + thumbnail link precedence: own website > Places deep-link >
+        # our own /r/<slug> listing page. The listing page is the always-
+        # available fallback — never sends the user to a wrong business
+        # or a generic-building Maps result, and the page itself has cuisine,
+        # address, district, breadcrumb back to the cuisine hub. Better than
+        # a dead row when external URLs are missing.
+        slug = r.get('slug') or ''
+        internal_url = f'/r/{slug}' if slug else ''
+        link = r.get('website') or r.get('mapsUrl') or internal_url
         name_html = f'<a href="{_esc(link)}" rel="noopener">{name}</a>' if link else name
         multi_attr = ' data-multi' if len(cuisine_keys) > 1 else ''
         thumb = r.get('thumb')
-        # Thumbnail click: same precedence as name link.
-        thumb_target = r.get('website') or r.get('mapsUrl') or ''
+        thumb_target = r.get('website') or r.get('mapsUrl') or internal_url
         thumb_html = (f'<a class="row-pic-link" href="{_esc(thumb_target)}" rel="noopener" aria-label="View {_esc(r["operatingName"])}">'
                       f'<img class="row-pic" src="{_esc(thumb)}" alt="" loading="lazy" decoding="async">'
                       f'</a>'

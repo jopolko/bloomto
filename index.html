@@ -567,7 +567,13 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     // ethnic-cuisine criteria). The validator-approved URL is in r.website;
     // if absent, no link. trustMatch still gates against wrong-business
     // Places matches (suppresses link + rating when the matched name diverges).
-    const link = (trustMatch && r.website) ? r.website : null;
+    // Name link precedence: own website (when trust gate passes) > Places
+    // deep-link > our own /r/<slug> listing page. The listing page is the
+    // always-available fallback — never sends to a wrong business or a
+    // generic-building Maps result, and provides cuisine + address + a
+    // breadcrumb back to the cuisine hub.
+    const internalUrl = r.slug ? `/r/${r.slug}` : null;
+    const link = (trustMatch && r.website) ? r.website : (r.mapsUrl || internalUrl);
     const linkClass = link ? 'ext' : '';
     // target=_blank on desktop (preserve NowServingTO tab); same-tab on mobile so
     // the back button cleanly returns from Maps without stranding the user on a
@@ -622,7 +628,7 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
     const thumb = r.thumb || '';
     // Thumbnail click → restaurant's own website if validated, else the
     // Places Maps card. Direct destination, no aggregator detour.
-    const thumbTarget = r.website || r.mapsUrl || '';
+    const thumbTarget = r.website || r.mapsUrl || internalUrl || '';
     const thumbHtml = thumb && thumbTarget
       ? `<a class="row-pic-link" href="${thumbTarget}"${tgt} rel="noopener" aria-label="View ${r.operatingName}"><img class="row-pic" src="${thumb}" alt="" loading="lazy" decoding="async"></a>`
       : thumb
