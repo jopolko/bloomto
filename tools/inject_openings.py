@@ -795,18 +795,34 @@ def build_ld_faq(qa_pairs):
     }
 
 
-def build_xaxis_html(entries, *, axis_label, group_fn, h3_template, anchor_prefix):
-    """Build a compound-query SEO block: groups `entries` by `group_fn(entry)`,
-    emits one h3 per group. Each h3 targets the `cuisine + district` query
-    class directly ("Pakistani restaurants in Etobicoke") without requiring a
-    separate URL per combination.
+# slugify: "East Toronto" → "east-toronto" (also used by district page
+# generator below; defined here so the xaxis strip on cuisine pages can
+# build /district/<slug> links).
+def _district_slug(label):
+    return _re.sub(r'[^a-z0-9]+', '-', label.lower()).strip('-')
 
-    Wrapped in <details> with the axis_label as the <summary>. Per Google's
-    official guidance (2019, reaffirmed since), content inside disclosure
-    widgets is indexed at full ranking value — but visually stays out of
-    the way until a user expands it. Addresses are omitted from the list
-    items because they're already shown in the chronological feed above
-    (the duplication looked spammy + cluttered).
+
+def build_xaxis_strip(entries, *, group_fn, anchor_template, link_fn, intro):
+    """Compound-query SEO via a single-line nav strip.
+
+    Buckets `entries` by group_fn(entry), then emits a one-line `<nav>` like:
+        Pakistani by district: <a>Pakistani in Downtown (3)</a> · <a>...</a> · ...
+    Each anchor's text contains the compound query phrase ("<Cuisine> in
+    <District>") so Google reads it as a strong topical signal; the href
+    points to the cross-axis page (district pages link from cuisine pages,
+    cuisine pages link from district pages), giving the site a clean
+    internal-linking graph between the two surface dimensions.
+
+    Replaced the previous <details>/<h3> implementation 2026-05-19. The
+    earlier version emitted full restaurant sub-lists per district which
+    duplicated content already on the page; this version keeps the SEO
+    signal (compound phrase in anchor text) without re-listing entries.
+
+    - `group_fn(entry)` → group label string or None
+    - `anchor_template` → f-string-compatible with {label} and {count}
+       for the link text (e.g. f"{cuisine_label} in {{label}} ({{count}})")
+    - `link_fn(label)` → URL the link should point to
+    - `intro` → text shown before the link list (e.g. "Pakistani by district:")
     """
     buckets = defaultdict(list)
     for e in entries:
@@ -815,33 +831,16 @@ def build_xaxis_html(entries, *, axis_label, group_fn, h3_template, anchor_prefi
     if not buckets: return ''
     sorted_groups = sorted(buckets.items(), key=lambda kv: (-len(kv[1]), kv[0]))
 
-    def _anchor(label):
-        return anchor_prefix + _re.sub(r'[^a-z0-9]+', '-', label.lower()).strip('-')
-
-    blocks = []
+    links = []
     for label, ents in sorted_groups:
-        anchor = _anchor(label)
         n = len(ents)
-        ents_sorted = sorted(ents, key=lambda r: r.get('issuedDate', ''), reverse=True)
-        items = []
-        for r in ents_sorted:
-            slug = r.get('slug')
-            href = f'/r/{slug}' if slug else (r.get('website') or '#')
-            name = _esc(r.get('operatingName') or '')
-            items.append(f'<li><a href="{_esc(href)}">{name}</a></li>')
-        blocks.append(
-            f'<div class="xa-block" id="{anchor}">'
-            f'<h3>{_esc(h3_template.format(label=label))} '
-            f'<span class="ct">({n})</span></h3>'
-            f'<ul class="xa-list">{"".join(items)}</ul>'
-            f'</div>'
-        )
-    return (f'<section class="x-axis">'
-            f'<details>'
-            f'<summary>{_esc(axis_label)}</summary>'
-            f'<div class="x-axis-body">{"".join(blocks)}</div>'
-            f'</details>'
-            f'</section>')
+        href = link_fn(label)
+        text = anchor_template.format(label=label, count=n)
+        links.append(f'<a href="{_esc(href)}">{_esc(text)}</a>')
+    return (f'<nav class="xa-strip" aria-label="{_esc(intro)}">'
+            f'<span class="xa-intro">{_esc(intro)}</span> '
+            f'{" · ".join(links)}'
+            f'</nav>')
 
 
 def build_breadcrumb_html(parts):
@@ -1009,15 +1008,16 @@ for c in cuisines_out:
          f"content, and Google Places category to determine the cuisine. "
          f"Multi-cuisine spots get tagged with every applicable cuisine."),
     ])
-    # Compound-query section: bucket THIS cuisine's full 365d list by district.
-    # H3 per district hits the "<Cuisine> restaurants in <District>" query
-    # family without us having to spin up cuisine×district URLs.
-    cuisine_xaxis = build_xaxis_html(
+    # Compound-query nav strip: bucket THIS cuisine's full 365d list by
+    # district, link each district page with the compound phrase as anchor
+    # text. Hits the "<Cuisine> restaurants in <District>" query family
+    # without re-listing the same restaurants the user is already viewing.
+    cuisine_xaxis = build_xaxis_strip(
         all_for_cuisine,
-        axis_label=f'Browse {label} restaurants by Toronto district',
         group_fn=lambda e: e.get('district'),
-        h3_template=f'{label} restaurants in {{label}}',
-        anchor_prefix='in-',
+        anchor_template=f'{label} in {{label}} ({{count}})',
+        link_fn=lambda d: f'/district/{_district_slug(d)}',
+        intro=f'{label} by district:',
     )
     page = inject_into_html(
         page,
@@ -1049,9 +1049,7 @@ for entry in seen_entries.values():
 for d in by_district:
     by_district[d].sort(key=lambda r: r['issuedDate'], reverse=True)
 
-# slugify: "East Toronto" → "east-toronto"
-def _district_slug(label):
-    return _re.sub(r'[^a-z0-9]+', '-', label.lower()).strip('-')
+# (_district_slug defined earlier near build_xaxis_strip)
 
 district_template = open(INDEX_PATH).read()
 district_pages_written = 0
@@ -1120,19 +1118,26 @@ for label, entries in by_district.items():
          f"dataset of active business licences, cross-checked against "
          f"Google Places to confirm operating status."),
     ])
-    # Compound-query section: bucket THIS district's 365d list by primary
-    # cuisine. H3 per cuisine hits the "<Cuisine> restaurants in <District>"
-    # query family — same pattern as the cuisine page's by-district section,
-    # so either page can rank for the compound query depending on link weight.
+    # Compound-query nav strip: bucket THIS district's 365d list by primary
+    # cuisine. Each cuisine page is the link target; anchor text holds the
+    # compound phrase "<Cuisine> in <District>". Same family of queries the
+    # cuisine-page strip targets — either cuisine OR district page can rank
+    # for the compound query, depending on which Google weights higher.
     def _cuisine_label_of(e):
         keys = e.get('cuisines') or ([e.get('cuisine')] if e.get('cuisine') else [])
         return CUISINE_LABEL.get(keys[0], keys[0].replace('_', ' ').title()) if keys else None
-    district_xaxis = build_xaxis_html(
+    def _cuisine_key_for(label):
+        # Reverse-lookup the cuisine key from its display label (we
+        # only have label → key in CUISINE_LABEL, so walk the dict).
+        for k, v in CUISINE_LABEL.items():
+            if v == label: return k
+        return label.lower().replace(' ', '_')
+    district_xaxis = build_xaxis_strip(
         entries,
-        axis_label=f'Browse restaurants in {place} by cuisine',
         group_fn=_cuisine_label_of,
-        h3_template=f'{{label}} restaurants in {place}',
-        anchor_prefix='type-',
+        anchor_template=f'{{label}} in {place} ({{count}})',
+        link_fn=lambda c: f'/cuisine/{_cuisine_key_for(c)}',
+        intro=f'Cuisines in {place}:',
     )
     page = inject_into_html(
         page,
