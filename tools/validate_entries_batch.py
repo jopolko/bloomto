@@ -568,12 +568,19 @@ def main():
         if k not in wv:
             wv[k] = {'status': 'ok', 'operating': 'yes', 'cuisine': None, 'cuisines': None,
                      'synthesized_for_validator': True}
-    # Skip entries validated in the last 24h — avoids re-spending on already-
-    # judged entries. Pass --force on the command line to re-validate everything.
+    # Skip entries validated in the last 14 days — avoids re-spending on
+    # already-judged entries. The previous 24h cutoff re-validated every
+    # entry every day, which cost ~$2/day in Anthropic Haiku batch input
+    # tokens (444 entries × ~3k tokens) for content that fundamentally
+    # doesn't change daily (cuisine, address, operating status). Bad URLs
+    # are caught separately by check_link_health.py (daily HEAD probe);
+    # this loop only needs to re-judge when something semantic might
+    # have shifted, which is more like a 1-2 week cadence in practice.
+    # Pass --force on the command line to re-validate everything.
     # AGED-OUT-UNVERIFIABLE drops carry a validator_recheck_after timestamp
     # 30 days out; honor it so we don't re-judge a ghost entry every day.
     force = '--force' in sys.argv
-    cutoff_iso = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
+    cutoff_iso = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
     now_iso = datetime.now(timezone.utc).isoformat()
     if not force:
         filtered = set()
