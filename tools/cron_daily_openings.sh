@@ -195,18 +195,20 @@ log "→ inject_openings.py (final, post-verify + post-health-check)"
 "$PYTHON" tools/inject_openings.py >> "$LOG_FILE" 2>&1 || log "WARN: final inject failed"
 
 # Step 7: post the freshest unposted entry to @nowservingto on X.
-# Reads OAuth1.0a creds from /var/secrets/nowservingto.env. Tracks posted
-# slugs in tools/cache/x_posted.json to avoid double-posting. ~$0.01/post.
-# --max=1 → one tweet per cron pass; bump for backlog burn-down.
-# --since-days 30 → don't post anything older than a month (avoid stale
-# "newly licensed" tweets that are actually 6 weeks old).
-if [[ -n "$(grep '^X_API_KEY=' /var/secrets/nowservingto.env 2>/dev/null)" ]]; then
-    log "→ x_post_new_openings.py (1 tweet)"
-    "$PYTHON" tools/x_post_new_openings.py --max 1 --since-days 30 >> "$LOG_FILE" 2>&1 \
-        || log "WARN: x post failed (non-fatal)"
-else
-    log "  X_API_KEY not in /var/secrets/nowservingto.env — skipping X post"
-fi
+#
+# DISABLED 2026-05-19 — @nowservingto is shadow-banned; daily auto-posts
+# reinforce the bot classification. Pausing to let the account go dormant
+# for ~30 days. If shadow-ban doesn't lift, plan is to delete the account
+# and recreate as personal. To re-enable: uncomment the block below.
+#
+# if [[ -n "$(grep '^X_API_KEY=' /var/secrets/nowservingto.env 2>/dev/null)" ]]; then
+#     log "→ x_post_new_openings.py (1 tweet)"
+#     "$PYTHON" tools/x_post_new_openings.py --max 1 --since-days 30 >> "$LOG_FILE" 2>&1 \
+#         || log "WARN: x post failed (non-fatal)"
+# else
+#     log "  X_API_KEY not in /var/secrets/nowservingto.env — skipping X post"
+# fi
+log "  step 7 (x_post) DISABLED — account dormant for shadow-ban recovery"
 
 # Step 6.5: aggregate the per-call usage ledger into data/usage.json so
 # the /usage page reflects today's spend. Cheap (just reads a JSONL file).
