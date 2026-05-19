@@ -668,10 +668,13 @@ def _esc(s):
             .replace('"', '&quot;').replace("'", '&#39;'))
 
 def _ago(days):
-    if days <= 1: return 'licensed today'
-    if days <= 60: return f'licensed {days}d ago'
-    if days <= 365: return f'licensed {round(days/30)}mo ago'
-    return f'licensed {days/365:.1f}y ago'
+    # Time-only labels — dropped the "licensed" prefix as redundant
+    # (every site entry is licensed by definition; the masthead already
+    # says "newest licensed restaurants"). User-flagged 2026-05-19.
+    if days <= 1: return 'today'
+    if days <= 60: return f'{days}d ago'
+    if days <= 365: return f'{round(days/30)}mo ago'
+    return f'{days/365:.1f}y ago'
 
 # ---------------------------------------------------------------------------
 # Static-feed + JSON-LD builders (shared between homepage and per-cuisine pages).

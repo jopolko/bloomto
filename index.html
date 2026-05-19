@@ -469,10 +469,13 @@ function nameJaccard(a, b) {
 }
 
 function agoLabel(days) {
-  if (days <= 1)   return 'licensed today';
-  if (days <= 60)  return 'licensed ' + days + 'd ago';
-  if (days <= 365) return 'licensed ' + Math.round(days/30) + 'mo ago';
-  return 'licensed ' + (days/365).toFixed(1) + 'y ago';
+  // Dropped the "licensed" prefix — every entry on this site is licensed,
+  // and the whole header tagline says "newest licensed restaurants". The
+  // word was just noise in every row. Time-only is much cleaner.
+  if (days <= 1)   return 'today';
+  if (days <= 60)  return days + 'd ago';
+  if (days <= 365) return Math.round(days/30) + 'mo ago';
+  return (days/365).toFixed(1) + 'y ago';
 }
 
 fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
