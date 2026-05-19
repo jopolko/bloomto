@@ -29,6 +29,9 @@ RewriteRule ^cuisine/([a-z_]+)/?$ /cuisine/$1.html [L]
 # /usage → usage.html (one-pager showing per-provider API spend)
 RewriteRule ^usage/?$ /usage.html [L]
 
+# /contribute → contribute.html (Tally form for tips + corrections)
+RewriteRule ^contribute/?$ /contribute.html [L]
+
 # Per-district SEO landing pages: /district/{slug} → district/{slug}.html
 RewriteCond %{DOCUMENT_ROOT}/district/$1.html -f
 RewriteRule ^district/([a-z-]+)/?$ /district/$1.html [L]

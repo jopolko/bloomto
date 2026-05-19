@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Got a tip? — NowServingTO</title>
+<meta name="description" content="Tell us about a newly opened Toronto restaurant we missed, or flag an issue with an existing listing.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://nowservingto.com/contribute">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/favicon.svg">
+<style>
+  :root {
+    --bg: #fafafa; --paper: #ffffff; --ink: #131516; --ink2: #46494c;
+    --muted: #74787c; --line: #ebecef; --accent: #c83624;
+    --sans: -apple-system, 'Helvetica Neue', ui-sans-serif, sans-serif;
+    --serif: 'Iowan Old Style', 'Charter', Georgia, ui-serif, serif;
+    --mono: ui-monospace, 'JetBrains Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 60px; }
+  header { padding: 22px 0 0; }
+  header .inner { border-bottom: 3px solid var(--ink); padding-bottom: 16px; }
+  .brand { font: 800 28px/1 var(--serif); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+  .sub { color: var(--muted); font: 400 14px/1.4 var(--serif); margin: 6px 0 0; font-style: italic; }
+  h1 { font: 700 28px/1.2 var(--serif); margin: 36px 0 6px; letter-spacing: -0.01em; }
+  .lead { color: var(--ink2); font: 15px/1.55 var(--sans); margin: 0 0 28px; }
+  .lead a { color: var(--accent); text-decoration: none; }
+  .lead a:hover { text-decoration: underline; }
+  .form-card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .form-card iframe { display: block; min-height: 480px; }
+  .site-foot { margin: 36px 0 8px; padding-top: 18px; border-top: 1px solid var(--line); font: 400 12.5px/1.6 var(--sans); color: var(--muted); text-align: center; }
+  .site-foot a { color: var(--ink2); text-decoration: none; font-weight: 600; transition: color 0.12s; }
+  .site-foot a:hover { color: var(--accent); }
+  .site-foot .dot { margin: 0 6px; color: #c5c8cd; }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap inner">
+    <a href="/" class="brand">NowServingTO</a>
+    <div class="sub">Toronto's newest licensed restaurants — updated weekly.</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Got a tip?</h1>
+  <p class="lead">
+    We pull from <a href="https://open.toronto.ca/dataset/municipal-licensing-and-standards-business-licences-and-permits/">City of Toronto Open Data</a>,
+    but new openings often appear in real life weeks before they're in the CSV.
+    If you know about a spot we're missing — or you've spotted something wrong
+    with an existing listing — tell us below. We'll check it out.
+  </p>
+
+  <div class="form-card">
+    <iframe data-tally-src="https://tally.so/embed/9qRYkp?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
+            loading="lazy" width="100%" height="480" frameborder="0"
+            marginheight="0" marginwidth="0" title="Got a tip?"></iframe>
+  </div>
+
+  <footer class="site-foot">
+    <a href="/">Browse the directory</a>
+    <span class="dot">·</span>
+    <a href="/usage">Sources</a>
+    <span class="dot">·</span>
+    City of Toronto Open Data <span class="dot">·</span>
+    Google Places <span class="dot">·</span>
+    Anthropic Claude
+  </footer>
+</main>
+
+<script>
+var d=document,w="https://tally.so/widgets/embed.js",v=function(){"undefined"!=typeof Tally?Tally.loadEmbeds():document.querySelectorAll("iframe[data-tally-src]:not([src])").forEach(function(e){e.src=e.dataset.tallySrc})};
+"undefined"!=typeof Tally?v():d.querySelector('script[src="'+w+'"]')?v():(()=>{var s=d.createElement("script");s.src=w,s.onload=v,s.onerror=v,d.body.appendChild(s);})();
+</script>
+</body>
+</html>
