@@ -1301,6 +1301,44 @@ print("Top cuisines by 12-month new-opening count:")
 for c in cuisines_out[:12]:
     print(f"  {c['label']:20s} {c['count365d']:>4} new (last 30d: {c['count30d']})   newest: {c['newest']['operatingName'][:42]}")
 
+# ---------------------------------------------------------------------------
+# Cleanup pass — delete stale generated files for entries that no longer
+# exist in the live data. Without this, every dropped restaurant + every
+# emptied-out cuisine leaves an orphaned HTML file on disk serving 200 OK
+# to Google, polluting the indexing report with "discovered but not
+# indexed" URLs that point at content that doesn't reflect current state.
+# ---------------------------------------------------------------------------
+live_cuisines  = {c['key'] for c in cuisines_out}
+live_districts = {_district_slug(d) for d in by_district if by_district[d]}
+live_slugs     = {e.get('slug') for e in seen_entries.values() if e.get('slug')}
+
+def _cleanup(directory, live_keys, suffix='.html'):
+    if not directory.exists(): return 0
+    removed = 0
+    for f in directory.iterdir():
+        if not f.is_file() or not f.name.endswith(suffix): continue
+        key = f.name[:-len(suffix)]
+        if key not in live_keys:
+            try:
+                f.unlink()
+                removed += 1
+            except Exception as ex:
+                print(f"  WARN: failed to remove stale {f}: {ex}")
+    return removed
+
+n_cuisine_stale  = _cleanup(CUISINE_DIR,  live_cuisines)
+n_district_stale = _cleanup(DISTRICT_DIR, live_districts)
+n_listing_stale  = _cleanup(LISTING_DIR,  live_slugs)
+# Same for the per-listing OG card PNGs + photo JPGs + thumb JPGs that
+# track the listing lifecycle. (og/ also holds non-listing assets like
+# /og.svg — only the <slug>.png pattern matters here.)
+n_og_card_stale  = _cleanup(OG_DIR,           live_slugs, suffix='.png')
+n_og_photo_stale = _cleanup(OG_DIR / 'photo', live_slugs, suffix='.jpg')
+n_og_thumb_stale = _cleanup(OG_DIR / 'thumb', live_slugs, suffix='.jpg')
+print(f"  cleanup: removed {n_cuisine_stale} stale cuisine pages, "
+      f"{n_district_stale} stale district pages, {n_listing_stale} stale listings, "
+      f"{n_og_card_stale} cards, {n_og_photo_stale} photos, {n_og_thumb_stale} thumbs")
+
 # Loud sanity check: if any recovery script tagged a cuisine that cuisines.py
 # doesn't have a display label for, those entries were silently dropped above.
 # Surface it so the fix (add the key to cuisines.py CUISINE_LABEL) is obvious.
