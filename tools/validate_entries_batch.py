@@ -376,9 +376,44 @@ When content evaluation says approve:
       * Generic CMS shell ("Welcome to my new website" Squarespace default)
       * Page is just a single image or social-redirect with no text content
       * Returns the wrong business entirely (different restaurant name)
-  - REJECT URLs whose host is itself an aggregator: skipthedishes.com,
-    doordash.com, ubereats.com, grubhub.com, foodora.ca, menulog.com,
-    seamless.com, tripadvisor.com, yelp.com, chownow.com, toasttab.com.
+  - Evaluate each candidate URL by what KIND of page it is. Examples of
+    each category are illustrative, not exhaustive — apply the principle.
+
+    APPROVE:
+    * The business's own website (own domain, own brand, business-authored
+      content — menu, hours, story, ordering).
+    * A landlord/mall directory page DEDICATED to one tenant with
+      substantial business-specific content (description, hours, address
+      match, marketing copy). E.g. yorkdale.com/store/<biz>/. For new mall
+      tenants without their own site, this is often the best link.
+    * A real social profile (instagram.com/<handle>, facebook.com/<handle>)
+      matching the business name, with consumer-facing posts.
+
+    REJECT — the page is ABOUT the business but not authored by them:
+    * Inspection / regulatory / public-health records — pages that catalog
+      health-inspection results, infractions, licence data. The tone is
+      governmental; the content is "what we found", not "what we serve".
+      Hint hosts: dinesafe.to, public-health portals, business-licence
+      lookups. But identify the category from content + URL together;
+      a regulator under any domain still produces regulatory pages.
+    * Delivery/ordering aggregators — third-party platforms that list many
+      restaurants. Hint hosts: skipthedishes, doordash, ubereats, grubhub,
+      foodora, menulog, seamless, chownow, toasttab, order.online.
+    * Review aggregators with user-generated content — hint hosts: yelp,
+      tripadvisor. The reviews may be about the business but the page
+      isn't.
+    * Commercial real estate / property listings — pages selling/leasing
+      the SPACE, not representing the business.
+    * Social search-results / aggregate pages (instagram.com/popular/,
+      instagram.com/explore/, facebook.com/search/) — these aren't
+      profiles.
+    * Generic landlord directory navigation (a "list of all stores at the
+      mall") without business-specific detail.
+
+  Use the page content as the primary signal; URL host is a hint. If the
+  page reads as a regulator's record, an aggregator's listing, or a real-
+  estate listing — reject regardless of the host. If it reads as the
+  business's own marketing/menu/story — approve regardless of the host.
   - Return null if no good website exists — entry falls back to Places mapsUrl.
 
 evidence — one short sentence quoting the strongest signal that justified the

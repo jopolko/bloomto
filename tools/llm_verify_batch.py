@@ -194,23 +194,42 @@ Rules for "website" (return the BEST link you find, in this STRICT order of pref
 5. A Yelp or TripAdvisor page for this specific restaurant.
 6. If nothing usable above, null.
 
-Skip pure aggregator listings, licence-lookup pages, address directories.
+Evaluate each candidate URL by what KIND of page it is — judge from the
+URL host + path + search snippet content together. Examples of hosts are
+illustrative, not exhaustive; apply the principle to new hosts you find.
 
-CRITICAL — directory hosts that look like own-sites but aren't:
-  - Mall/plaza directory pages: yorkdale.com/store/<biz>, sherwayplaza.com/...,
-    cfshops.com/...,  squareone.com/..., fairviewmall.com/... — these are
-    landlord directory entries, NOT the restaurant's website. Reject.
-  - Inspection/regulatory pages: dinesafe.to, ontario.ca/business — Reject.
-  - Property-listing pages: spacelist.ca, propertyfinder, commercial real
-    estate — Reject (they're listing the SPACE, not the business).
-  - Generic Google Places URLs that aren't the maps.google.com/?cid= or
-    maps.app.goo.gl/ format — these may also be aggregators or stale URLs.
+APPROVE pages that are AUTHORED BY (or directly representing) the business:
+  - Own website (own domain, own brand, business-authored content).
+  - Landlord/mall-directory page DEDICATED to one tenant with rich
+    business-specific content (description, hours, name+address match).
+    Hint: paths like /store/<biz>/ on yorkdale.com, sherwayplaza.com,
+    cfshops.com, squareone.com, fairviewmall.com. For new mall tenants
+    without their own site, this is often the best link available.
+  - Real social profile matching the business name: instagram.com/<handle>,
+    facebook.com/<handle>.
 
-For each candidate URL the search surfaced, ask: "If I clicked this, would
-I see content authored by the restaurant itself (or directly representing
-them on a social/maps profile they control)?" If no, reject and consider
-the next candidate. If no candidate passes, return website=null. A null
-website is a better signal than a misleading link to a mall directory."""
+REJECT pages that are ABOUT the business but authored by someone else:
+  - Inspection / regulatory / public-health records (cataloging inspection
+    results, infractions, licence data). Hint hosts: dinesafe.to, public-
+    health portals, business-licence lookups. The tone is governmental —
+    "what we found", not "what we serve".
+  - Delivery/ordering aggregators listing many restaurants. Hint hosts:
+    skipthedishes, doordash, ubereats, grubhub, foodora, menulog,
+    seamless, chownow, toasttab, order.online.
+  - Review aggregators with user-generated content. Hint hosts: yelp,
+    tripadvisor.
+  - Commercial real estate / property-listing pages.
+  - Social search-results / aggregate pages: instagram.com/popular/,
+    instagram.com/explore/, instagram.com/p/<id>, instagram.com/reel/<id>,
+    facebook.com/search/. These aren't profiles.
+  - Generic landlord directory navigation (a list of all stores at a mall,
+    no tenant-specific content).
+
+The snippet content is the primary signal; host is a hint. A regulator's
+domain still produces regulatory pages regardless of how friendly the
+content looks. An unfamiliar host with substantive business-authored
+content can still be valid. A null website is a better signal than a
+misleading link to a generic directory."""
 
 def load_api_key():
     for line in SECRETS.read_text().splitlines():
@@ -386,7 +405,14 @@ def main():
             llm_e = llm.get(k)
             if not (llm_e and llm_e.get('status') == 'ok' and llm_e.get('cuisine') and llm_e.get('cuisine') != 'unknown'): continue
             p = places.get(k)
-            if p and p.get('status') == 'ok' and p.get('businessStatus') == 'OPERATIONAL': continue
+            # Skip web_verify ONLY when both Places confirms operating AND
+            # we already have a populated verify cache entry. If verify cache
+            # is missing, run verify even with a Places match — Places often
+            # has no `website` field, and only web_verify can surface the
+            # business's web presence (own site, mall directory page, etc.)
+            # for the row's name-link.
+            if (p and p.get('status') == 'ok' and p.get('businessStatus') == 'OPERATIONAL'
+                    and cache.get(k)): continue
             if needs_recheck(cache.get(k)):
                 candidates.append((k, name, addr))
 
