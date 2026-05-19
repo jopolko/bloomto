@@ -919,17 +919,26 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
   const districtSlug = label => label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   setupPicker(trigger, panel, key => {
-    // On a /cuisine/X SEO landing page, picking a DIFFERENT cuisine must
-    // hard-navigate to that cuisine's landing page — otherwise the static
-    // SEO chrome (breadcrumb / h1 / FAQ / xaxis) stays locked to the page
-    // that originally loaded and ends up contradicting the filter (e.g.
-    // "Home › Brazilian restaurants" while the dropdown shows Chinese).
-    // Same for switching off a cuisine page back to "All cuisines".
-    if (pathCuisineMatch && key !== pathCuisineMatch[1]) {
-      location.href = (key === '__all') ? '/' : ('/cuisine/' + key);
+    // Cuisine pick → navigate to the canonical landing page in most cases.
+    // The cuisine landing page is richer than the homepage filter view
+    // (cuisine-specific h1, FAQ, breadcrumb, JSON-LD CollectionPage,
+    // and the by-district nav strip). Hash-filtering the homepage gave
+    // visitors none of that. Two cases that still in-page filter:
+    //   - "__all" picked while already on homepage: stay (already showing all)
+    //   - Same cuisine picked while already on that cuisine page: no-op
+    if (key === '__all') {
+      if (pathCuisineMatch || pathDistrictMatch) {
+        location.href = '/';
+      } else {
+        applyFilters(key, currentRegion);
+      }
       return;
     }
-    applyFilters(key, currentRegion);
+    if (pathCuisineMatch && key === pathCuisineMatch[1]) {
+      applyFilters(key, currentRegion);
+      return;
+    }
+    location.href = '/cuisine/' + key;
   });
   setupPicker(rTrigger, rPanel, key => {
     // Picking any region (including "All Toronto") turns Near me off — they're
@@ -939,18 +948,25 @@ fetch('/data/corridors.json?v=' + Date.now()).then(r => r.json()).then(data => {
       document.getElementById('locate-btn').classList.remove('active');
       if (mapInstance && userMarker) mapInstance.removeLayer(userMarker);
     }
-    // Same fix as the cuisine picker but for /district/X pages: hard-navigate
-    // when changing the district so the static district-scoped SEO stays
-    // consistent with what the dropdown now shows.
-    if (pathDistrictMatch && key !== '__all' && districtSlug(key) !== pathDistrictMatch[1]) {
-      location.href = '/district/' + districtSlug(key);
+    // Region pick → navigate to the canonical /district/<slug> landing page
+    // in most cases. The landing page is richer than the homepage filter
+    // view (district-specific h1, FAQ, breadcrumb, JSON-LD, and the
+    // by-cuisine nav strip). Two cases that still in-page filter:
+    //   - "__all" picked while already on homepage: stay
+    //   - Same district picked while already on that district page: no-op
+    if (key === '__all') {
+      if (pathCuisineMatch || pathDistrictMatch) {
+        location.href = '/';
+      } else {
+        applyFilters(currentCuisine, key);
+      }
       return;
     }
-    if (pathDistrictMatch && key === '__all') {
-      location.href = '/';
+    if (pathDistrictMatch && districtSlug(key) === pathDistrictMatch[1]) {
+      applyFilters(currentCuisine, key);
       return;
     }
-    applyFilters(currentCuisine, key);
+    location.href = '/district/' + districtSlug(key);
   });
 
   // Brand-as-home: clicking NowServingTO always navigates to the
