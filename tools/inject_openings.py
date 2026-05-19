@@ -909,7 +909,7 @@ home_url = 'https://nowservingto.com/'
 home_itemlist = build_ld_itemlist(
     top_for_static,
     name="Toronto's newest licensed restaurants by cuisine",
-    description='Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine. Updated weekly from City of Toronto open data.',
+    description='Restaurants newly licensed in Toronto in the past 365 days, classified by cuisine. Updated weekly from City of Toronto Open Data.',
 )
 home_collection = build_ld_collectionpage(
     home_itemlist, url=home_url, dateModified=REFERENCE_DATE.isoformat(),
