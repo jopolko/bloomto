@@ -437,24 +437,18 @@ with open(CSV_PATH, encoding='utf-8', errors='replace') as f:
             n_dropped_weak_match += 1
             continue
 
-        # Brand-new + unverified gate (originally added 2026-05-15). Drops
-        # entries with NO Places match AND NO website AND NO web-verify
-        # operating=yes AND licence < 30 days old. Rationale: a sub-30-day
-        # licence at an address Google doesn't know about AND with no web
-        # signal of operation is almost always pre-opening build-out or a
-        # permit that never materialized. Sending users to a plywood
-        # storefront is worse UX than not surfacing it.
-        #
-        # Refined 2026-05-19: keep the entry when web_verify confirmed
-        # operating=yes with cited evidence (DineSafe, Yelp, blog), even
-        # if no authoritative website was found. That's the CAFEMIA case
-        # — 7-day-old licence with DineSafe + Yelp evidence but no own
-        # website yet. Dropping on age alone hid real new restaurants
-        # whose presence we'd ALREADY confirmed.
-        if (not entry.get('matchedName')
-            and not entry.get('website')
-            and entry.get('verifiedBy') != 'web_search'
-            and days_open < 30):
+        # No-destination gate (tightened 2026-05-19 per user directive).
+        # Drop entries with NO Places match AND NO website at ANY age.
+        # Earlier iterations allowed "web_verify says operating=yes" to
+        # carry an entry through even without a destination URL — that
+        # produced rows whose name + thumbnail had to fall back to our
+        # own /r/<slug> internal page (no Maps, no website to send users
+        # to). User feedback: "verification too thin, social only and not
+        # even relevant social — I'll risk the clicks." Better to have
+        # fewer high-quality listings than ones we can't link anywhere
+        # useful. Re-verify will pick the entry up on a future cron once
+        # Places indexes the business or a real website is found.
+        if not entry.get('matchedName') and not entry.get('website'):
             n_dropped_brand_new_unverified += 1
             continue
 

@@ -116,16 +116,24 @@ restaurants. Return cuisine=unknown.
 - Genuine retail with hot prepared food (a roti shop, a butcher counter that fries
   samosas to order, a grocery store with a full hot table) → tag with the appropriate cuisine
 
-CRITICAL: A DineSafe (dinesafe.to) inspection record is NOT evidence the place is
-wholesale-only. DineSafe inspects EVERY food premise in Toronto — sit-down restaurants,
-bakeries with retail counters, takeout shops, and yes some wholesale plants. Treat
-DineSafe as confirming the place is a regulated food establishment but NEUTRAL on
-the consumer-vs-wholesale question. Look for separate consumer-facing signals
-(Instagram posts of finished dishes, customer reviews, hours of operation, menu prices,
-photos of a storefront with walk-in customers) before concluding wholesale-only.
-- DineSafe says "Cafemia Italian Bakery, 84 Oakdale Rd" with an inspection in 2025
-  AND Instagram shows recent posts of finished pastries → operating=yes, italian
-- DineSafe alone with NO consumer signal at all → unclear (NOT a wholesale conclusion)
+CRITICAL: A DineSafe (dinesafe.to) inspection record is POSITIVE evidence the
+place exists and is being inspected by Toronto Public Health at that address.
+A recent inspection date (within ~12 months) means the premise was operating
+when the inspector visited — that strongly supports operating=yes. But DineSafe
+inspects EVERY food premise (sit-down restaurants, bakeries with retail
+counters, takeout shops, AND some wholesale plants) so it is NEUTRAL on the
+consumer-vs-wholesale question and on cuisine. Use it as one signal, never as
+the final answer.
+
+Treatment:
+- DineSafe + Instagram with recent dish photos → operating=yes, cuisine from Insta
+- DineSafe + a Google Maps listing at the same address → operating=yes, cuisine
+  from the menu/reviews on that profile
+- DineSafe alone, no consumer signal anywhere → operating=yes (the place exists),
+  cuisine=unknown (we genuinely can't tell), website=null. NOT a wholesale
+  conclusion — just incomplete data. Inject pipeline can still surface it as a
+  brand-new entry with the City data; it just won't get cuisine tagging until a
+  later verify pass finds the consumer signal.
 
 CRITICAL: When your first web search returns only regulatory/inspection results
 (DineSafe, business-licence lookup pages, BIN searches) and no consumer-facing
@@ -142,6 +150,19 @@ Rules for "operating":
   profile with the address, recent Yelp/blogTO/TripAdvisor mention, food blog write-up,
   recent news article, TikTok/YouTube video, community board mention. If a person could
   reasonably find this place from a single search, it qualifies.
+
+  CRITICAL — same-name false-positive guard: when the ONLY evidence is a social
+  page (Instagram / Facebook / TikTok), the social page must plausibly tie to
+  this Toronto address. Confirm at least ONE of:
+  - The bio/posts explicitly mention the street, neighborhood, or postal-code area
+    (e.g. "Cafe Mia Italian Bakery North York" matches our M3N address)
+  - Recent posts geo-tag a Toronto location or mention the city
+  - The handle is a clear variation of the licence name AND no contradicting
+    location data appears (e.g. Insta bio says "Vancouver" — that's a different
+    business)
+  If a same-name social page is for a clearly different city or address, set
+  operating=unclear and website=null. Don't claim a Vancouver Cafe Mia as
+  evidence for a North York licence.
 - "no" — explicit evidence it has CLOSED (announcement, successor business now at the
   address, "permanently closed" notice, news about its closing).
 - "unclear" — search returned nothing at all relevant; no trace of the business anywhere
@@ -158,6 +179,16 @@ Rules for "website" (return the BEST link you find, in this STRICT order of pref
    (see instructions above) before falling back to social.
 3. An Instagram or Facebook page that clearly matches the restaurant name — ONLY if no Maps
    listing exists or you genuinely cannot find one after a targeted Maps search.
+   MUST be a real profile URL (instagram.com/<handle> or facebook.com/<handle>).
+   NEVER return Instagram's aggregate/search pages — these are NOT profiles, they
+   surface other people's posts about a topic and don't represent the business:
+   - instagram.com/popular/<slug>     ← search results aggregate, REJECT
+   - instagram.com/explore/<anything> ← explore feed, REJECT
+   - instagram.com/p/<id>             ← single post, REJECT (unless it's the business's own)
+   - instagram.com/reel/<id>          ← single reel, REJECT
+   - facebook.com/search/...          ← search results, REJECT
+   If you can't find a real handle-style profile URL for this business, set
+   website=null rather than returning an aggregate URL.
 4. A specific blogTO / Eater / Toronto Star / food-blog article about THIS restaurant
    (not a generic "best of" list mentioning many places).
 5. A Yelp or TripAdvisor page for this specific restaurant.
