@@ -134,6 +134,18 @@ if ! "$PYTHON" -u tools/places_recover_cuisine.py >> "$LOG_FILE" 2>&1; then
     log "WARN: Places coverage expansion failed (non-fatal)"
 fi
 
+# Step 5a3: catch-all Places enrichment — for every kept entry that none of
+# the targeted recovery scripts above queried (e.g. entry already has cuisine
+# from web_verify AND its website isn't social, so neither places_recover
+# nor places_enrich_socials triggers). Without this, entries like JARDIN
+# NOIR (yorkdale.com URL + cuisine=french from web_verify) never get
+# Places-queried → no photoRef → no row thumbnail. Idempotent: skips
+# entries already in places_cache.
+log "→ enrich_places.py (catch-all: Places lookup for any kept entry not yet cached)"
+if ! "$PYTHON" -u tools/enrich_places.py >> "$LOG_FILE" 2>&1; then
+    log "WARN: enrich_places catch-all failed (non-fatal)"
+fi
+
 # Step 5b: cuisine-recovery pass — for entries still without a cuisine, fetch
 # the best available website (Places' own-site preferred over verify-cache's
 # social URL; social used only as last resort) and classify via Haiku.
